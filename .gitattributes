@@ -1,0 +1,5 @@
+# Handle line endings
+* text=auto
+
+# Node modules should be treated as binary files (no line endings converted)
+node_modules/* binary

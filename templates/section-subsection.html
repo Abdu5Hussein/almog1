@@ -1,0 +1,159 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جدول البيان الرئيسي</title>
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+    <style>
+      table {
+        width: 100%;
+        margin-top: 20px;
+      }
+      .form-container {
+        margin-top: 20px;
+      }
+      .btn-container {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+ <body>
+  <div class="row flex-row-reverse">
+  <!-- Section Table -->
+  <div class="col">
+    <div class="container p-4">
+      <h2 class="text-center">جدول البند الرئيسي</h2>
+      <table class="table table-bordered" id="section-table">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>اسم البند</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for x in sections %}
+            <tr data-id="{{ x.autoid }}" data-name="{{ x.section }}">
+              <td>{{ x.autoid }}</td>
+              <td>{{ x.section }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="2" class="text-center">No data available</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Section Form Container -->
+      <div class="form-container">
+        <h4 class="text-center">ادارة البند الرئيسي</h4>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="id" id="section-id" />
+          <input type="hidden" name="section" value="1" />
+          <div class="form-group">
+            <label for="section-name">اسم البيان</label>
+            <input type="text" class="form-control mt-2" name="name" id="section-name" placeholder="Enter name" />
+          </div>
+          <div class="btn-container">
+            <button type="submit" name="action" value="add" class="btn btn-success">اضافة</button>
+            <button type="submit" name="action" value="edit" class="btn btn-primary">تعديل</button>
+            <button type="submit" name="action" value="delete" class="btn btn-danger">حذف</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subsection Table -->
+  <div class="col">
+    <div class="container p-4">
+      <h2 class="text-center">جدول البند الفرعي</h2>
+      <table class="table table-bordered" id="subsection-table">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>اسم البند</th>
+            <th>ب ر</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for x in subSections %}
+            <tr data-id="{{ x.autoid }}" data-name="{{ x.subsection }}" data-key="{{ x.sectionid.autoid }}">
+              <td>{{ x.autoid }}</td>
+              <td>{{ x.subsection }}</td>
+              <td>{{ x.sectionid.section }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="2" class="text-center">No data available</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Subsection Form Container -->
+      <div class="form-container">
+        <h4 class="text-center">ادارة البند الفرعي</h4>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="id" id="subsection-id" />
+          <input type="text" name="key" class="form-control mt-2" id="key" readonly placeholder="اختر بند رئيسي من الجدول"/>
+
+          <input type="hidden" name="subsection" value="1" />
+          <div class="form-group">
+            <label for="subsection-name">اسم البند</label>
+            <input type="text" class="form-control mt-2" name="name" id="subsection-name" placeholder="Enter name" />
+          </div>
+          <div class="btn-container">
+            <button type="submit" name="action" value="add" class="btn btn-success" id="subsection-add">اضافة</button>
+            <button type="submit" name="action" value="edit" class="btn btn-primary">تعديل</button>
+            <button type="submit" name="action" value="delete" class="btn btn-danger">حذف</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // JavaScript code to pre-fill the form when a row is clicked (for both section and subsection)
+  document.querySelectorAll("#section-table tbody tr").forEach((row) => {
+    row.addEventListener("click", () => {
+      document.getElementById("section-id").value = row.dataset.id;
+      document.getElementById("section-name").value = row.dataset.name;
+      document.getElementById("key").value = row.dataset.id;
+    });
+  });
+
+  document.querySelectorAll("#subsection-table tbody tr").forEach((row) => {
+    row.addEventListener("click", () => {
+      document.getElementById("subsection-id").value = row.dataset.id;
+      document.getElementById("subsection-name").value = row.dataset.name;
+    });
+    
+  });
+  document.getElementById("subsection-add").addEventListener("click", function(event) {
+    // Get the value of the section name input field
+    const sectionName = document.getElementById("key").value;
+
+    // Check if the section name is empty or null
+    if (!sectionName || sectionName.trim() === "") {
+      // Prevent form submission
+      event.preventDefault();
+
+      // Show an alert message to the user
+      alert("يرجى اختيار بند رئيسي"); // Alert message in Arabic: "Please enter the section name."
+    }
+  });
+</script>
+
+</body>
+
+  </body>
+</html>

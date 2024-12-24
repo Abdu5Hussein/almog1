@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sample Form</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Messages section -->
+    {% if messages %} {% for message in messages %}
+    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %} {% endif %}
+
+    <div class="container mt-5">
+      <h2 class="text-center mb-4">Sample Form</h2>
+      <form
+        action=""
+        method="post"
+        class="p-4 border rounded shadow-sm bg-light"
+      >
+        {% csrf_token %}
+        <!-- Name Input -->
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            name="name"
+            placeholder="Enter your name"
+            required
+          />
+        </div>
+
+        <!-- Email Input -->
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            name="email"
+            placeholder="Enter your email"
+            required
+          />
+        </div>
+
+        <!-- Age Input -->
+        <div class="form-group">
+          <label for="age">Age:</label>
+          <input
+            type="number"
+            class="form-control"
+            id="age"
+            name="age"
+            min="1"
+            max="120"
+            placeholder="Enter your age"
+            required
+          />
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+          />
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary btn-block">Submit</button>
+      </form>
+      <a href="/users"
+        ><div class="btn btn-primary btn-block">go to users</div></a
+      >
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+  </body>
+</html>

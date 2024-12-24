@@ -1,0 +1,1191 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بيانات العملاء</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/custom-tabulator.css' %}"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'dselect/choices.min.css' %}" />
+
+    <style>
+      .choices {
+        width: calc(100% - 73px); /*edit later*/
+      }
+      .dropdown {
+        display: none;
+        /* Initially hidden */
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        z-index: 1000;
+      }
+
+      .width-95 {
+        width: 95px;
+      }
+
+      .width-55 {
+        width: 55px;
+      }
+      .width-user {
+        width: calc(100% - 73px);
+      }
+      .width-170 {
+        width: 170px;
+      }
+      .width-73 {
+        width: 73px;
+      }
+
+      .width-80 {
+        width: 110px;
+      }
+
+      .dropdown label {
+        display: block;
+      }
+
+      #contextMenu {
+        display: none;
+        /* Hidden by default */
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        min-width: 150px;
+      }
+
+      .bi-question-circle {
+        padding-left: 2px;
+        font-size: 12px;
+      }
+
+      .bi-question-circle:hover {
+        color: #007bff;
+        /* Change color as needed */
+      }
+
+      #contextMenu div {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      #contextMenu div:hover {
+        background-color: #f0f0f0;
+      }
+
+      .large-textarea {
+        height: 235px;
+        /* Set a specific height for the textarea (adjust as needed) */
+      }
+
+      /* Set a fixed height for the Tabulator container */
+      /* Container for the table */
+
+      /* Container for the table */
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+      }
+
+      .row {
+        direction: rtl;
+        /* Set the direction of the row to right-to-left */
+      }
+
+      .form-label,
+      .form-control {
+        direction: ltr;
+        /* Make sure inputs and labels align correctly within the form */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Optional: Add space between buttons */
+      }
+
+      .small-input {
+        width: 50px;
+        padding: 5px;
+        /* Decrease padding */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height (optional) */
+        border: 1px solid #dee2e6;
+        border-radius: 0;
+        text-align: right;
+        direction: rtl;
+      }
+
+      form label {
+        margin-bottom: 0px;
+      }
+
+      th,
+      td {
+        padding: 2px;
+        /* Decrease padding */
+        font-size: 13px;
+        /* Decrease font size */
+        border: 1px solid #ddd;
+        /* Add borders for visibility */
+      }
+
+      input.form-control {
+        padding: 5px;
+        /* Decrease padding */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height (optional) */
+        border-radius: 0;
+        text-align: right;
+        direction: rtl;
+      }
+
+      select.form-select {
+        padding: 5px;
+        /* Decrease padding for select fields */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height for select fields (optional) */
+        border-radius: 0;
+        text-align: center;
+      }
+
+      h1,
+      h2,
+      h3,
+      label,
+      p,
+      table thead tbody {
+        font-size: 15px;
+        margin: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        text-align: right;
+        font-size: 15px;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-primary {
+        width: 100%;
+      }
+
+      .editable {
+        cursor: pointer;
+        background-color: #f9f9f9;
+        padding-right: 5px;
+      }
+
+      .editable:focus {
+        outline: none;
+        background-color: #e6e6e6;
+      }
+
+      .custom-table {
+        max-height: 200px;
+        min-height: 200px;
+        overflow-y: hidden;
+      }
+      #users-table {
+        max-height: 200px;
+        min-height: 200px;
+      }
+
+      table {
+        width: 100%;
+        margin: 0px;
+      }
+
+      thead {
+        background-color: #b3c9df;
+        color: rgb(0, 0, 0);
+        padding: 2px;
+      }
+
+      table thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        z-index: 1;
+      }
+
+      .title-container {
+        width: 100%;
+        background-color: #b3c9df;
+        text-align: center;
+        padding: 3px 0px;
+        margin-bottom: 4px;
+      }
+
+      /* Create a wrapper around the select element */
+      .custom-select-container {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+        margin: 0;
+        /* Ensure no extra margins are added */
+        padding: 0 0px;
+        /* Add padding to the row */
+        box-sizing: border-box;
+        /* Ensure padding is included in the width calculation */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Add space between buttons */
+      }
+
+      /* Move the arrow to the left */
+      .form-select {
+        padding-left: 2.5rem;
+        /* Add space on the left for the icon */
+        padding-right: 1rem;
+        /* Adjust right padding */
+        background: none;
+        /* Remove default background */
+      }
+
+      .custom-select-container::before {
+        content: "▾";
+        /* The caret symbol */
+        position: absolute;
+        left: 0.75rem;
+        /* Position it to the left */
+        top: 50%;
+        transform: translateY(-50%);
+        /* Center vertically */
+        pointer-events: none;
+        /* Prevent interaction with the icon */
+        color: #000;
+        /* Icon color (can be customized) */
+      }
+
+      /* Hide default dropdown arrow */
+      .form-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      .form-select-with-icon {
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+        appearance: auto;
+
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 0;
+        direction: rtl;
+        box-sizing: border-box;
+        margin: 0;
+        font-family: inherit;
+        text-transform: none;
+        word-wrap: normal;
+        --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        display: block;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--bs-body-color);
+        border: 1px solid #ced4da;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
+        background: none;
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
+        border-radius: 0;
+        text-align: center;
+        position: relative;
+        flex: 1 1 auto;
+        width: 1%;
+      }
+
+      /*//////////////////*/
+      .custom-form {
+        width: 100%;
+        max-width: 1100px;
+        padding: 0px 10px;
+      }
+
+      .row {
+        display: flex;
+        /* Use flexbox for layout */
+        margin-bottom: 5px;
+        /* Minimize vertical space */
+      }
+
+      .col-md-2,
+      .col-md-3 {
+        padding: 0 5px;
+        /* Reduce horizontal padding */
+      }
+
+      .form-label {
+        font-size: 12px;
+        /* Reduce font size */
+        margin-bottom: 2px;
+        /* Minimize label space */
+        margin-left: 10px;
+      }
+      .form-box {
+        height: 100px;
+        width: 100%;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+      .form-control {
+        height: 30px;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .form-select {
+        height: 30px;
+        /* Adjust select height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: nowrap;
+        /* Prevent wrapping */
+        justify-content: space-between;
+        /* Space buttons evenly */
+        margin-top: 5px;
+        /* Minimize space above button row */
+      }
+
+      button {
+        font-size: 12px;
+        /* Reduce button text size */
+        padding: 2px 5px;
+        /* Reduce button padding */
+      }
+
+      .custom-table table {
+        border-collapse: collapse;
+        /* Combine borders of adjacent cells */
+      }
+
+      .custom-table th,
+      .custom-table td {
+        padding: 0;
+        /* Remove all padding */
+        padding-right: 5px;
+        margin: 0;
+        /* Ensure no margins are applied */
+        height: auto;
+        /* Allow cells to have minimal height */
+      }
+
+      input[type="number"] {
+        direction: rtl;
+        /* For Arabic alignment */
+        padding-left: 2px;
+        /* Adds padding to the left to avoid overflow */
+        text-align: right;
+        /* Aligns the text inside the input to the right */
+        width: 100%;
+        /* Ensure full width */
+      }
+
+      /* Style for number input to always show increment/decrement arrows */
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Adjust for other browsers */
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+        /* Hides spinner on Firefox */
+      }
+
+      .modal-body {
+        max-height: 300px;
+        /* Set max height for modal body */
+        overflow-y: auto;
+        /* Enable scrolling in modal body */
+      }
+
+      .column-menu-btn {
+        font-size: 12px;
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Right-click context menu for operations -->
+      <div id="contextMenu">
+        <div onclick="performAction('Edit')">Edit</div>
+        <div onclick="performAction('Delete')">Delete</div>
+        <div onclick="performAction('View Details')">View Details</div>
+      </div>
+      <!-- Form Section with 5 input columns -->
+      <div class="custom-form">
+        <form id="firstForm">
+          {% csrf_token %}
+
+          <div class="row">
+            <!-- First column -->
+            <div class="col-md-6">
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >اسم العميل</label
+                  >
+                </div>
+                <input type="text" class="form-control" id="cname" />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >التاريخ</label
+                  >
+                </div>
+                <input type="date" class="form-control" id="from-date" /><input
+                  type="date"
+                  class="form-control"
+                  id="to-date"
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >بيان الحساب</label
+                  >
+                </div>
+                <input type="text" class="form-control" id="account-detail" />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="section" class="form-label">البند</label>
+                </div>
+                <select
+                  name="section"
+                  id="section"
+                  class="form-select-with-icon"
+                >
+                  <option value="" selected>اختر</option>
+                  {% for x in sections %}
+                  <option value="{{ x.autoid }}">{{ x.section }}</option>
+                  {% endfor %}</select
+                ><select
+                  name="sub-section"
+                  id="sub-section"
+                  class="form-select-with-icon"
+                >
+                  <option value="" selected>اختر</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Second column -->
+            <div class="col-md-3">
+              <div
+                class="border p-4 form-control d-flex align-items-center justify-content-center"
+              >
+                <div class="d-inline p-2">
+                  <label for="client">ح. عملاء</label>
+                  <input
+                    type="radio"
+                    id="clients"
+                    name="accountType"
+                    value="عميل"
+                  />
+                </div>
+                <div class="d-inline p-2">
+                  <label for="employee">ح. موظفين</label>
+                  <input
+                    type="radio"
+                    id="employees"
+                    name="accountType"
+                    value="موظف"
+                  />
+                </div>
+              </div>
+              <div
+                class="border p-4 form-control d-flex align-items-center justify-content-center"
+              >
+                <div class="d-inline p-2">
+                  <label for="client">ايداع</label>
+                  <input
+                    type="radio"
+                    id="deposit"
+                    name="transaction-type"
+                    value="ايداع"
+                  />
+                </div>
+                <div class="d-inline p-2">
+                  <label for="employee">صرف</label>
+                  <input
+                    type="radio"
+                    id="withdraw"
+                    name="transaction-type"
+                    value="صرف"
+                  />
+                </div>
+              </div>
+              <div
+                class="border p-4 form-control d-flex align-items-center justify-content-center"
+              >
+                <div class="d-inline p-2">
+                  <label for="client">نقدا</label>
+                  <input type="radio" id="cash" name="payment" value="نقدا" />
+                </div>
+                <div class="d-inline p-2">
+                  <label for="employee">صك</label>
+                  <input type="radio" id="check" name="payment" value="صك" />
+                </div>
+              </div>
+            </div>
+
+            <!-- third column -->
+            <div class="col-md-3">
+              <div class="border px-4 py-2 form-control h-100">
+                <div class="d-flex flex-column align-items-end">
+                  <div class="p-2">
+                    <label for="all">الكل</label>
+                    <input type="radio" id="all" name="place" value="" />
+                  </div>
+                  <div class="p-2">
+                    <label for="marine">شركة مارين</label>
+                    <input
+                      type="radio"
+                      id="marine"
+                      name="place"
+                      value="شركة مارين"
+                    />
+                  </div>
+                  <div class="p-2">
+                    <label for="storage">المصنع</label>
+                    <input
+                      type="radio"
+                      id="storage"
+                      name="place"
+                      value="المصنع"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+        <!-- Modal -->
+        <div
+          class="modal fade"
+          id="exampleModal"
+          tabindex="-1"
+          aria-labelledby="exampleModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">
+                  تصدير البيانات
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">اختر احدى خيارات التصدير</div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  data-bs-dismiss="modal"
+                  id="export-btn-excel"
+                  class="btn btn-primary"
+                  style="width: 100px"
+                >
+                  excel تصدير
+                </button>
+                <button
+                  type="button"
+                  id="export-btn-pdf"
+                  class="btn btn-secondary"
+                  style="width: 100px"
+                >
+                  pdf تصدير
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="title-container mb-2">
+        <h3 class="m-0">تقارير الخزينة</h3>
+      </div>
+      <!-- Table Section -->
+      <div class="custom-table mb-1">
+        <div
+          dir="rtl"
+          id="users-table"
+          data-url="{% url 'get_data' %}"
+          class="table table-striped table-bordered table-hover"
+        ></div>
+      </div>
+      <form id="secondForm">
+        {% csrf_token %}
+
+        <div class="row py-1">
+          <!-- First column -->
+          <div class="col-md-4">
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >ايداع نقدي</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="cash-sum"
+                readonly
+              />
+            </div>
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >اجمالي الصرف</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="withdraw-total"
+                readonly
+              />
+            </div>
+          </div>
+
+          <!-- Second column -->
+          <div class="col-md-4">
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >ايداع بصك</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="check-sum"
+                readonly
+              />
+            </div>
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >اجمالي الايداع</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="deposit-total"
+                readonly
+              />
+            </div>
+          </div>
+
+          <!-- third column -->
+          <div class="col-md-4">
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >النقدي الفعلي</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="real-cash"
+                readonly
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Button Row -->
+        <div class="row button-row mt-1">
+          <button type="button" class="btn btn-primary m-1" id="clear-btn">
+            مسح
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary m-1"
+            data-bs-toggle="modal"
+            data-bs-target="#exampleModal"
+          >
+            تصدير</button
+          ><button type="button" class="btn btn-primary m-1">طباعة</button>
+
+          <button
+            type="button"
+            class="btn btn-secondary m-1"
+            onclick="window.close()"
+          >
+            اغلاق
+          </button>
+        </div>
+      </form>
+    </div>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Use jQuery -->
+
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'dselect/choices.min.js' %}"></script>
+
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script>
+      // Fetch client ID from the URL query string
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientid = urlParams.get("id"); // Retrieve the client ID from the URL (e.g., ?id=123)
+
+      // Initialize Tabulator table
+      const table = new Tabulator("#users-table", {
+        index: "fileid", // Use "fileid" as the unique row identifier
+        height: "auto", // Adjust height or set a fixed height
+        layout: "fitColumns",
+        selectable: true,
+        pagination: "local", // Enable local pagination
+        paginationSize: 100, // Show 100 records per page
+        paginationSizeSelector: [50, 100, 200], // Page size options
+        paginationButtonCount: 5, // Number of visible pagination buttons
+        movableColumns: true,
+        columnHeaderVertAlign: "bottom",
+        columnMenu: true, // Enable column menu
+        data: [], // Placeholder, will be loaded dynamically
+        columns: [
+          { title: "رقم الي", field: "storageid", width: 90 },
+          { title: "نوع الحساب", field: "account_type", width: 90 },
+          { title: "نوع القيد", field: "transaction", width: 90 },
+          { title: "طريقة الدفع", field: "payment", width: 90 },
+          { title: "رقم الإيصال", field: "reciept_no", width: 90 },
+          { title: "تاريخ القيد", field: "transaction_date", width: 90 },
+          { title: "البند", field: "section", width: 90 },
+          { title: "البند الفرعي", field: "subsection", width: 90 },
+          { title: "اسم المستفيد", field: "person", width: 90 },
+          { title: "القيمة", field: "amount", width: 90 },
+          { title: "مقابل", field: "issued_for", width: 90 },
+          { title: "ملاحظة", field: "note", width: 90 },
+          { title: "المكان", field: "place", width: 90 },
+          { title: "اعدت من قبل", field: "done_by", width: 90 },
+          { title: "اسم المصرف", field: "bank", width: 90 },
+          { title: "رقم الصك", field: "check_no", width: 90 },
+
+          { title: "حالة اليومية", field: "daily_status", width: 90 },
+        ],
+        placeholder: "No Data Available",
+        rowFormatter: function (row) {
+          var rowData = row.getData(); // Get the row data
+
+          // You can add more conditions as needed
+        }, // Message when no data is present or after filtering
+        rowClick: function (e, row) {
+          const clickedPno = row.getData().pno; // Get pno of the clicked row
+          console.log("Clicked Pno:", clickedPno);
+        },
+        tableBuilt: function () {
+          console.log("table built");
+        },
+      });
+
+      document
+        .getElementById("section")
+        .addEventListener("change", function () {
+          const sectionId = this.value;
+          const subSectionSelect = document.getElementById("sub-section");
+
+          // Clear previous options
+          subSectionSelect.innerHTML =
+            '<option value="" selected>اختر</option>';
+
+          if (sectionId) {
+            fetch(`/get-subsections/?section_id=${sectionId}`)
+              .then((response) => response.json())
+              .then((data) => {
+                data.forEach((item) => {
+                  const option = document.createElement("option");
+                  option.value = item.autoid;
+                  option.textContent = item.subsection;
+                  subSectionSelect.appendChild(option);
+                });
+              })
+              .catch((error) =>
+                console.error("Error fetching subsections:", error)
+              );
+          }
+        });
+      // Function to calculate the sum of a column in Tabulator
+      function calculateColumnSum(columnName) {
+        let sum = 0;
+        const rowData = table.getData(); // Fetch row data from Tabulator
+
+        if (Array.isArray(rowData)) {
+          rowData.forEach((row) => {
+            if (!isNaN(row[columnName])) {
+              sum += parseFloat(row[columnName]); // Convert to float and add to sum
+            }
+          });
+        } else {
+          console.error(`rowData is not an array for column: ${columnName}`);
+        }
+
+        return sum;
+      }
+
+      // Function to update input fields with formatted sum values
+      function updateShowInput(selector, sum) {
+        const input = document.getElementById(selector);
+        if (input) {
+          input.value =
+            sum.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }) + " دل";
+        } else {
+          console.warn(`Selector "${selector}" did not match any elements.`);
+        }
+      }
+
+      function refreshShowInputs() {
+        const totalAmountDeposit = calculateTransactionSum("ايداع"); // Calculate sum when transaction is "ايداع"
+        const totalAmountWithdraw = calculateTransactionSum("صرف"); // Calculate sum when transaction is "صرف"
+
+        const totalAmountDepositCash = calculateTransactionSum("ايداع", "نقدا"); // Calculate sum when transaction is "ايداع" and payment is "نقدا"
+        const totalAmountDepositCheque = calculateTransactionSum("ايداع", "صك"); // Calculate sum when transaction is "ايداع" and payment is "صك"
+        const realcash = totalAmountDepositCash - totalAmountWithdraw;
+
+        console.log("ايداع", totalAmountDeposit);
+        console.log("صرف", totalAmountWithdraw);
+        console.log("ايداع نقدي", totalAmountDepositCash);
+        console.log("ايداع صك", totalAmountDepositCheque);
+
+        //Update input fields with calculated sums
+        updateShowInput("deposit-total", totalAmountDeposit);
+        updateShowInput("withdraw-total", totalAmountWithdraw);
+        updateShowInput("cash-sum", totalAmountDepositCash);
+        updateShowInput("check-sum", totalAmountDepositCheque);
+        updateShowInput("real-cash", realcash);
+      }
+
+      function calculateTransactionSum(transactionType, paymentMethod = null) {
+        let sum = 0;
+
+        // Access rows in Tabulator
+        const rows = table.getData(); // 'table' refers to your Tabulator instance
+
+        rows.forEach((row) => {
+          if (row.transaction === transactionType) {
+            if (paymentMethod) {
+              if (row.payment === paymentMethod) {
+                sum += parseFloat(row.amount);
+              }
+            } else {
+              sum += parseFloat(row.amount);
+            }
+          }
+        });
+        return sum;
+      }
+
+      // Function to fetch data from the API
+      function fetchData() {
+        const url = `api/get-all-storage`;
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            table.setData(data); // Load data into Tabulator
+            refreshShowInputs(); // Recalculate and display column sums
+          })
+          .catch((error) => {
+            console.error("Error fetching data:", error);
+            alert("Failed to fetch account statement. Please try again later.");
+          });
+      }
+      fetchData();
+      table.on("dataFiltered", function () {
+        refreshShowInputs();
+      });
+      function exportToExcel() {
+        table.download("xlsx", "table_data.xlsx"); // 'xlsx' is the file format
+      }
+      document
+        .getElementById("export-btn-excel")
+        .addEventListener("click", exportToExcel);
+      document
+        .getElementById("export-btn-pdf")
+        .addEventListener("click", exportToPDF);
+      // Example of vfs_fonts.js
+
+      function exportToPDF() {
+        // Get visible column field names
+        let visibleColumns = table
+          .getColumns() // Retrieve column components
+          .filter((col) => col.isVisible()) // Check if the column is visible
+          .map((col) => col.getField()); // Get the field names of visible columns
+
+        // Filter table data based on visible columns
+        let tableData = table.getData().map((row) => {
+          // Create a new object with only visible fields
+          return visibleColumns.reduce((filteredRow, field) => {
+            filteredRow[field] = row[field]; // Copy value of visible field
+            return filteredRow;
+          }, {});
+        });
+
+        // Now `filteredData` contains only the visible columns from tableData
+        console.log(tableData);
+
+        // Sending the data to Django backend using fetch
+        fetch("/generate-pdf/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: tableData,
+          }), // Send table data
+        })
+          .then((response) => response.blob())
+          .then((blob) => {
+            // Check if blob is a valid PDF
+            const file = new Blob([blob], { type: "application/pdf" });
+            const fileURL = URL.createObjectURL(file);
+
+            // Open the PDF in a new window or download it
+            const link = document.createElement("a");
+            link.href = fileURL;
+            link.download = "tabulator_data.pdf";
+            link.click();
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function applyFilters() {
+        // Helper functions remain the same
+        function getSelectedText(selectId) {
+          const select = document.getElementById(selectId);
+          return select && select.selectedIndex !== 0
+            ? select.options[select.selectedIndex].text
+            : "";
+        }
+
+        function getInputValue(inputId) {
+          const input = document.getElementById(inputId);
+          return input ? input.value.trim().toLowerCase() : "";
+        }
+
+        function getSelectedRadioValue(name) {
+          const selectedRadio = document.querySelector(
+            `input[name="${name}"]:checked`
+          );
+          return selectedRadio ? selectedRadio.value : null;
+        }
+
+        const filterValues = {
+          client: getInputValue("cname"),
+          fromdate: getInputValue("from-date"),
+          todate: getInputValue("to-date"),
+          account_detail: getInputValue("account-detail"),
+          section: getSelectedText("section"),
+          subsection: getSelectedText("sub-section"),
+          type: getSelectedRadioValue("accountType"),
+          transaction: getSelectedRadioValue("transaction-type"),
+          payment: getSelectedRadioValue("payment"),
+          place: getSelectedRadioValue("place"),
+        };
+
+        // Remove empty filters
+        const activeFilters = Object.fromEntries(
+          Object.entries(filterValues).filter(
+            ([key, value]) => value !== null && value !== ""
+          )
+        );
+
+        console.log("Active filter values:", activeFilters);
+
+        // Check if no filters are active
+        if (Object.keys(activeFilters).length === 0) {
+          console.log("No active filters; fetching all data...");
+          // Handle fetching all data here (send empty filters or default request)
+          activeFilters.filter = "all"; // Example: Set to "all" for default behavior
+        }
+
+        // Get CSRF token
+        function getCSRFToken() {
+          const csrfInput = document.querySelector(
+            "[name=csrfmiddlewaretoken]"
+          );
+          return csrfInput ? csrfInput.value : "";
+        }
+
+        fetch("api/filter-all-storage", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken(),
+          },
+          body: JSON.stringify(activeFilters),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `Network error: ${response.status} ${response.statusText}`
+              );
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Filtered data:", data);
+            table.replaceData(data); // Update Tabulator table
+          })
+          .catch((error) => {
+            console.error("Error fetching filtered data:", error);
+          });
+      }
+
+      // Add event listeners to all filter inputs
+      const inputIds = [
+        "cname",
+        "from-date",
+        "to-date",
+        "account-detail",
+        "section",
+        "sub-section",
+      ];
+
+      inputIds.forEach((inputId) => {
+        const inputElement = document.getElementById(inputId);
+        if (inputElement) {
+          inputElement.addEventListener("input", applyFilters);
+        }
+      });
+
+      // Add event listeners for radio buttons (grouped by name)
+      const radioGroups = [
+        "accountType",
+        "transaction-type",
+        "payment",
+        "place",
+      ];
+
+      radioGroups.forEach((groupName) => {
+        const radioButtons = document.querySelectorAll(
+          `input[name="${groupName}"]` // Use backticks (`) instead of single or double quotes
+        );
+        radioButtons.forEach((radioButton) => {
+          radioButton.addEventListener("change", applyFilters);
+        });
+      });
+
+      document.getElementById("clear-btn").addEventListener("click", clearForm);
+      function clearForm() {
+        window.requestAnimationFrame(function () {
+          const inputs = document.querySelectorAll(
+            "input:not([name='csrfmiddlewaretoken']), select"
+          );
+          inputs.forEach(function (element) {
+            if (!element.classList.contains("value-fixed")) {
+              if (
+                element.tagName.toLowerCase() === "input" ||
+                element.tagName.toLowerCase() === "textarea"
+              ) {
+                if (element.type === "checkbox" || element.type === "radio") {
+                  element.checked = false; // Clear checkboxes and radio buttons
+                } else {
+                  element.value = ""; // Reset other input types and textarea values
+                }
+              } else if (element.tagName.toLowerCase() === "select") {
+                element.selectedIndex = 0; // Reset select dropdowns
+              }
+            }
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1279 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Layout with Collapsible Subpages</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        height: 100vh;
+        margin-right: 250px;
+        background-color: #1c3766;
+      }
+      .full-height {
+        height: 100%;
+      }
+      .custom-height {
+        height: calc(100% - 50px);
+      }
+      .image-container {
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .image-container img {
+        width: inherit;
+        height: 100%;
+        object-fit: cover;
+      }
+      .sidebar {
+        background-color: #222c3db8;
+        color: white;
+        height: 100vh;
+        padding: 20px;
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 250px;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar a {
+        color: white;
+        padding: 6px 15px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background-color 0.3s;
+      }
+      .sidebar a:hover {
+        background-color: #495057;
+        text-decoration: none;
+        color: white !important; /* Ensure text stays white */
+      }
+      .sub-menu {
+        padding-right: 20px;
+        margin-top: 5px;
+        display: none;
+      }
+      .sub-menu a {
+        display: block;
+        text-align: right;
+        padding: 6px 15px;
+      }
+
+      .elementor-background-slideshow {
+        -webkit-text-size-adjust: 100%;
+        --totl-primary-background: rgba(255, 255, 255, 0.8);
+        --totl-primary-font-color: #000;
+        --totl-primate-font-descolor: #565656;
+        --rem: 16;
+        --ast-post-nav-space: 0;
+        --ast-container-default-xlg-padding: 6.67em;
+        --ast-container-default-lg-padding: 5.67em;
+        --ast-container-default-slg-padding: 4.34em;
+        --ast-container-default-md-padding: 3.34em;
+        --ast-container-default-sm-padding: 6.67em;
+        --ast-container-default-xs-padding: 2.4em;
+        --ast-container-default-xxs-padding: 1.4em;
+        --ast-code-block-background: #eeeeee;
+        --ast-comment-inputs-background: #fafafa;
+        --ast-normal-container-width: 1200px;
+        --ast-narrow-container-width: 750px;
+        --ast-blog-title-font-weight: normal;
+        --ast-blog-meta-weight: inherit;
+        --ast-global-color-0: #1c3765;
+        --ast-global-color-1: #243673;
+        --ast-global-color-2: #1a1a1a;
+        --ast-global-color-3: #6e7180;
+        --ast-global-color-4: #e2e5e7;
+        --ast-global-color-5: #ffffff;
+        --ast-global-color-6: #3c3c3c;
+        --ast-global-color-7: #1a1a1a;
+        --ast-global-color-8: #000000;
+        --ast-border-color: #dddddd;
+        --e-global-color-astglobalcolor0: #1c3765;
+        --e-global-color-astglobalcolor1: #243673;
+        --e-global-color-astglobalcolor2: #1a1a1a;
+        --e-global-color-astglobalcolor3: #6e7180;
+        --e-global-color-astglobalcolor4: #e2e5e7;
+        --e-global-color-astglobalcolor5: #ffffff;
+        --e-global-color-astglobalcolor6: #3c3c3c;
+        --e-global-color-astglobalcolor7: #1a1a1a;
+        --e-global-color-astglobalcolor8: #000000;
+        --wp--preset--aspect-ratio--square: 1;
+        --wp--preset--aspect-ratio--4-3: 4/3;
+        --wp--preset--aspect-ratio--3-4: 3/4;
+        --wp--preset--aspect-ratio--3-2: 3/2;
+        --wp--preset--aspect-ratio--2-3: 2/3;
+        --wp--preset--aspect-ratio--16-9: 16/9;
+        --wp--preset--aspect-ratio--9-16: 9/16;
+        --wp--preset--color--black: #000000;
+        --wp--preset--color--cyan-bluish-gray: #abb8c3;
+        --wp--preset--color--white: #ffffff;
+        --wp--preset--color--pale-pink: #f78da7;
+        --wp--preset--color--vivid-red: #cf2e2e;
+        --wp--preset--color--luminous-vivid-orange: #ff6900;
+        --wp--preset--color--luminous-vivid-amber: #fcb900;
+        --wp--preset--color--light-green-cyan: #7bdcb5;
+        --wp--preset--color--vivid-green-cyan: #00d084;
+        --wp--preset--color--pale-cyan-blue: #8ed1fc;
+        --wp--preset--color--vivid-cyan-blue: #0693e3;
+        --wp--preset--color--vivid-purple: #9b51e0;
+        --wp--preset--color--ast-global-color-0: var(--ast-global-color-0);
+        --wp--preset--color--ast-global-color-1: var(--ast-global-color-1);
+        --wp--preset--color--ast-global-color-2: var(--ast-global-color-2);
+        --wp--preset--color--ast-global-color-3: var(--ast-global-color-3);
+        --wp--preset--color--ast-global-color-4: var(--ast-global-color-4);
+        --wp--preset--color--ast-global-color-5: var(--ast-global-color-5);
+        --wp--preset--color--ast-global-color-6: var(--ast-global-color-6);
+        --wp--preset--color--ast-global-color-7: var(--ast-global-color-7);
+        --wp--preset--color--ast-global-color-8: var(--ast-global-color-8);
+        --wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(
+          135deg,
+          rgba(6, 147, 227, 1) 0%,
+          rgb(155, 81, 224) 100%
+        );
+        --wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(
+          135deg,
+          rgb(122, 220, 180) 0%,
+          rgb(0, 208, 130) 100%
+        );
+        --wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(
+          135deg,
+          rgba(252, 185, 0, 1) 0%,
+          rgba(255, 105, 0, 1) 100%
+        );
+        --wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(
+          135deg,
+          rgba(255, 105, 0, 1) 0%,
+          rgb(207, 46, 46) 100%
+        );
+        --wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(
+          135deg,
+          rgb(238, 238, 238) 0%,
+          rgb(169, 184, 195) 100%
+        );
+        --wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(
+          135deg,
+          rgb(74, 234, 220) 0%,
+          rgb(151, 120, 209) 20%,
+          rgb(207, 42, 186) 40%,
+          rgb(238, 44, 130) 60%,
+          rgb(251, 105, 98) 80%,
+          rgb(254, 248, 76) 100%
+        );
+        --wp--preset--gradient--blush-light-purple: linear-gradient(
+          135deg,
+          rgb(255, 206, 236) 0%,
+          rgb(152, 150, 240) 100%
+        );
+        --wp--preset--gradient--blush-bordeaux: linear-gradient(
+          135deg,
+          rgb(254, 205, 165) 0%,
+          rgb(254, 45, 45) 50%,
+          rgb(107, 0, 62) 100%
+        );
+        --wp--preset--gradient--luminous-dusk: linear-gradient(
+          135deg,
+          rgb(255, 203, 112) 0%,
+          rgb(199, 81, 192) 50%,
+          rgb(65, 88, 208) 100%
+        );
+        --wp--preset--gradient--pale-ocean: linear-gradient(
+          135deg,
+          rgb(255, 245, 203) 0%,
+          rgb(182, 227, 212) 50%,
+          rgb(51, 167, 181) 100%
+        );
+        --wp--preset--gradient--electric-grass: linear-gradient(
+          135deg,
+          rgb(202, 248, 128) 0%,
+          rgb(113, 206, 126) 100%
+        );
+        --wp--preset--gradient--midnight: linear-gradient(
+          135deg,
+          rgb(2, 3, 129) 0%,
+          rgb(40, 116, 252) 100%
+        );
+        --wp--preset--font-size--small: 13px;
+        --wp--preset--font-size--medium: 20px;
+        --wp--preset--font-size--large: 36px;
+        --wp--preset--font-size--x-large: 42px;
+        --wp--preset--spacing--20: 0.44rem;
+        --wp--preset--spacing--30: 0.67rem;
+        --wp--preset--spacing--40: 1rem;
+        --wp--preset--spacing--50: 1.5rem;
+        --wp--preset--spacing--60: 2.25rem;
+        --wp--preset--spacing--70: 3.38rem;
+        --wp--preset--spacing--80: 5.06rem;
+        --wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);
+        --wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);
+        --wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);
+        --wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1),
+          6px 6px rgba(0, 0, 0, 1);
+        --wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);
+        --wp--style--global--content-size: var(
+          --wp--custom--ast-content-width-size
+        );
+        --wp--style--global--wide-size: var(--wp--custom--ast-wide-width-size);
+        --wp--style--block-gap: 24px;
+        --page-title-display: block;
+        font-style: normal;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.85714285714286;
+        font-family: "Alexandria", sans-serif;
+        font-weight: 400;
+        font-size: 1rem;
+        color: var(--ast-global-color-3);
+        --wp--custom--ast-default-block-top-padding: 3em;
+        --wp--custom--ast-default-block-right-padding: 3em;
+        --wp--custom--ast-default-block-bottom-padding: 3em;
+        --wp--custom--ast-default-block-left-padding: 3em;
+        --wp--custom--ast-container-width: 1200px;
+        --wp--custom--ast-content-width-size: 1200px;
+        --wp--custom--ast-wide-width-size: calc(
+          1200px + var(--wp--custom--ast-default-block-left-padding) +
+            var(--wp--custom--ast-default-block-right-padding)
+        );
+        --e-global-color-primary: #6ec1e4;
+        --e-global-color-secondary: #54595f;
+        --e-global-color-text: #7a7a7a;
+        --e-global-color-accent: #61ce70;
+        --e-global-color-163a5695: #4054b2;
+        --e-global-color-30350695: #23a455;
+        --e-global-color-2b5b1670: #000;
+        --e-global-color-20858dd6: #fff;
+        --e-global-typography-primary-font-family: "Roboto";
+        --e-global-typography-primary-font-weight: 600;
+        --e-global-typography-secondary-font-family: "Roboto Slab";
+        --e-global-typography-secondary-font-weight: 400;
+        --e-global-typography-text-font-family: "Roboto";
+        --e-global-typography-text-font-weight: 400;
+        --e-global-typography-accent-font-family: "Roboto";
+        --e-global-typography-accent-font-weight: 500;
+        word-wrap: break-word;
+        --flex-wrap: initial;
+        --align-content: initial;
+        --order: initial;
+        --align-self: initial;
+        --border-top-width: 0px;
+        --border-right-width: 0px;
+        --border-bottom-width: 0px;
+        --border-left-width: 0px;
+        --border-style: initial;
+        --border-color: initial;
+        --content-width: min(100%, var(--container-max-width, 1140px));
+        --width: 100%;
+        --height: auto;
+        --text-align: initial;
+        --margin-top: 0px;
+        --margin-bottom: 0px;
+        --position: relative;
+        --z-index: revert;
+        --overflow: visible;
+        --overlay-mix-blend-mode: initial;
+        --overlay-transition: 0.3s;
+        --e-con-grid-template-columns: repeat(3, 1fr);
+        --e-con-grid-template-rows: repeat(2, 1fr);
+        --margin-block-start: var(--margin-top);
+        --margin-block-end: var(--margin-bottom);
+        --margin-inline-start: var(--margin-left);
+        --margin-inline-end: var(--margin-right);
+        --padding-inline-start: var(--padding-left);
+        --padding-inline-end: var(--padding-right);
+        --padding-block-start: var(--padding-top);
+        --padding-block-end: var(--padding-bottom);
+        --border-block-start-width: var(--border-top-width);
+        --border-block-end-width: var(--border-bottom-width);
+        --border-inline-start-width: var(--border-left-width);
+        --border-inline-end-width: var(--border-right-width);
+        text-align: initial;
+        --swiper-theme-color: #000;
+        --swiper-navigation-size: 44px;
+        --swiper-pagination-bullet-size: 6px;
+        --swiper-pagination-bullet-horizontal-gap: 6px;
+        --container-max-width: 1200px;
+        --widgets-spacing: 20px 20px;
+        --flex-basis: auto;
+        --flex-grow: 0;
+        --flex-shrink: 1;
+        --margin-left: auto;
+        --margin-right: auto;
+        --display: flex;
+        --min-height: 100vh;
+        --flex-direction: row;
+        --container-widget-width: calc(
+          (1 - var(--container-widget-flex-grow)) * 100%
+        );
+        --container-widget-height: 100%;
+        --container-widget-flex-grow: 1;
+        --container-widget-align-self: stretch;
+        --flex-wrap-mobile: wrap;
+        --justify-content: center;
+        --align-items: center;
+        --gap: 0px 0px;
+        --background-transition: 0.3s;
+        --overlay-opacity: 0.95;
+        --border-radius: 0px 0px 120px 0px;
+        --padding-top: 200px;
+        --padding-bottom: 160px;
+        --padding-left: 0px;
+        --padding-right: 0px;
+        --border-transition: 0.3s;
+        direction: rtl;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden;
+        list-style: none;
+        padding: 0;
+        touch-action: pan-y;
+        position: absolute;
+        z-index: 0;
+        border-radius: var(--border-radius);
+        border-style: var(--border-style);
+        border-color: var(--border-color);
+        border-block-start-width: var(--border-block-start-width);
+        border-inline-end-width: var(--border-inline-end-width);
+        border-block-end-width: var(--border-block-end-width);
+        border-inline-start-width: var(--border-inline-start-width);
+        top: calc(0px - var(--border-top-width));
+        left: calc(0px - var(--border-left-width));
+        width: max(
+          100% + var(--border-left-width) + var(--border-right-width),
+          100%
+        );
+        height: max(
+          100% + var(--border-top-width) + var(--border-bottom-width),
+          100%
+        );
+      }
+      .swiper-wrapper {
+        -webkit-text-size-adjust: 100%;
+        --totl-primary-background: rgba(255, 255, 255, 0.8);
+        --totl-primary-font-color: #000;
+        --totl-primate-font-descolor: #565656;
+        --rem: 16;
+        --ast-post-nav-space: 0;
+        --ast-container-default-xlg-padding: 6.67em;
+        --ast-container-default-lg-padding: 5.67em;
+        --ast-container-default-slg-padding: 4.34em;
+        --ast-container-default-md-padding: 3.34em;
+        --ast-container-default-sm-padding: 6.67em;
+        --ast-container-default-xs-padding: 2.4em;
+        --ast-container-default-xxs-padding: 1.4em;
+        --ast-code-block-background: #eeeeee;
+        --ast-comment-inputs-background: #fafafa;
+        --ast-normal-container-width: 1200px;
+        --ast-narrow-container-width: 750px;
+        --ast-blog-title-font-weight: normal;
+        --ast-blog-meta-weight: inherit;
+        --ast-global-color-0: #1c3765;
+        --ast-global-color-1: #243673;
+        --ast-global-color-2: #1a1a1a;
+        --ast-global-color-3: #6e7180;
+        --ast-global-color-4: #e2e5e7;
+        --ast-global-color-5: #ffffff;
+        --ast-global-color-6: #3c3c3c;
+        --ast-global-color-7: #1a1a1a;
+        --ast-global-color-8: #000000;
+        --ast-border-color: #dddddd;
+        --e-global-color-astglobalcolor0: #1c3765;
+        --e-global-color-astglobalcolor1: #243673;
+        --e-global-color-astglobalcolor2: #1a1a1a;
+        --e-global-color-astglobalcolor3: #6e7180;
+        --e-global-color-astglobalcolor4: #e2e5e7;
+        --e-global-color-astglobalcolor5: #ffffff;
+        --e-global-color-astglobalcolor6: #3c3c3c;
+        --e-global-color-astglobalcolor7: #1a1a1a;
+        --e-global-color-astglobalcolor8: #000000;
+        --wp--preset--aspect-ratio--square: 1;
+        --wp--preset--aspect-ratio--4-3: 4/3;
+        --wp--preset--aspect-ratio--3-4: 3/4;
+        --wp--preset--aspect-ratio--3-2: 3/2;
+        --wp--preset--aspect-ratio--2-3: 2/3;
+        --wp--preset--aspect-ratio--16-9: 16/9;
+        --wp--preset--aspect-ratio--9-16: 9/16;
+        --wp--preset--color--black: #000000;
+        --wp--preset--color--cyan-bluish-gray: #abb8c3;
+        --wp--preset--color--white: #ffffff;
+        --wp--preset--color--pale-pink: #f78da7;
+        --wp--preset--color--vivid-red: #cf2e2e;
+        --wp--preset--color--luminous-vivid-orange: #ff6900;
+        --wp--preset--color--luminous-vivid-amber: #fcb900;
+        --wp--preset--color--light-green-cyan: #7bdcb5;
+        --wp--preset--color--vivid-green-cyan: #00d084;
+        --wp--preset--color--pale-cyan-blue: #8ed1fc;
+        --wp--preset--color--vivid-cyan-blue: #0693e3;
+        --wp--preset--color--vivid-purple: #9b51e0;
+        --wp--preset--color--ast-global-color-0: var(--ast-global-color-0);
+        --wp--preset--color--ast-global-color-1: var(--ast-global-color-1);
+        --wp--preset--color--ast-global-color-2: var(--ast-global-color-2);
+        --wp--preset--color--ast-global-color-3: var(--ast-global-color-3);
+        --wp--preset--color--ast-global-color-4: var(--ast-global-color-4);
+        --wp--preset--color--ast-global-color-5: var(--ast-global-color-5);
+        --wp--preset--color--ast-global-color-6: var(--ast-global-color-6);
+        --wp--preset--color--ast-global-color-7: var(--ast-global-color-7);
+        --wp--preset--color--ast-global-color-8: var(--ast-global-color-8);
+        --wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(
+          135deg,
+          rgba(6, 147, 227, 1) 0%,
+          rgb(155, 81, 224) 100%
+        );
+        --wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(
+          135deg,
+          rgb(122, 220, 180) 0%,
+          rgb(0, 208, 130) 100%
+        );
+        --wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(
+          135deg,
+          rgba(252, 185, 0, 1) 0%,
+          rgba(255, 105, 0, 1) 100%
+        );
+        --wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(
+          135deg,
+          rgba(255, 105, 0, 1) 0%,
+          rgb(207, 46, 46) 100%
+        );
+        --wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(
+          135deg,
+          rgb(238, 238, 238) 0%,
+          rgb(169, 184, 195) 100%
+        );
+        --wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(
+          135deg,
+          rgb(74, 234, 220) 0%,
+          rgb(151, 120, 209) 20%,
+          rgb(207, 42, 186) 40%,
+          rgb(238, 44, 130) 60%,
+          rgb(251, 105, 98) 80%,
+          rgb(254, 248, 76) 100%
+        );
+        --wp--preset--gradient--blush-light-purple: linear-gradient(
+          135deg,
+          rgb(255, 206, 236) 0%,
+          rgb(152, 150, 240) 100%
+        );
+        --wp--preset--gradient--blush-bordeaux: linear-gradient(
+          135deg,
+          rgb(254, 205, 165) 0%,
+          rgb(254, 45, 45) 50%,
+          rgb(107, 0, 62) 100%
+        );
+        --wp--preset--gradient--luminous-dusk: linear-gradient(
+          135deg,
+          rgb(255, 203, 112) 0%,
+          rgb(199, 81, 192) 50%,
+          rgb(65, 88, 208) 100%
+        );
+        --wp--preset--gradient--pale-ocean: linear-gradient(
+          135deg,
+          rgb(255, 245, 203) 0%,
+          rgb(182, 227, 212) 50%,
+          rgb(51, 167, 181) 100%
+        );
+        --wp--preset--gradient--electric-grass: linear-gradient(
+          135deg,
+          rgb(202, 248, 128) 0%,
+          rgb(113, 206, 126) 100%
+        );
+        --wp--preset--gradient--midnight: linear-gradient(
+          135deg,
+          rgb(2, 3, 129) 0%,
+          rgb(40, 116, 252) 100%
+        );
+        --wp--preset--font-size--small: 13px;
+        --wp--preset--font-size--medium: 20px;
+        --wp--preset--font-size--large: 36px;
+        --wp--preset--font-size--x-large: 42px;
+        --wp--preset--spacing--20: 0.44rem;
+        --wp--preset--spacing--30: 0.67rem;
+        --wp--preset--spacing--40: 1rem;
+        --wp--preset--spacing--50: 1.5rem;
+        --wp--preset--spacing--60: 2.25rem;
+        --wp--preset--spacing--70: 3.38rem;
+        --wp--preset--spacing--80: 5.06rem;
+        --wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);
+        --wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);
+        --wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);
+        --wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1),
+          6px 6px rgba(0, 0, 0, 1);
+        --wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);
+        --wp--style--global--content-size: var(
+          --wp--custom--ast-content-width-size
+        );
+        --wp--style--global--wide-size: var(--wp--custom--ast-wide-width-size);
+        --wp--style--block-gap: 24px;
+        --page-title-display: block;
+        font-style: normal;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.85714285714286;
+        font-family: "Alexandria", sans-serif;
+        font-weight: 400;
+        font-size: 1rem;
+        color: var(--ast-global-color-3);
+        --wp--custom--ast-default-block-top-padding: 3em;
+        --wp--custom--ast-default-block-right-padding: 3em;
+        --wp--custom--ast-default-block-bottom-padding: 3em;
+        --wp--custom--ast-default-block-left-padding: 3em;
+        --wp--custom--ast-container-width: 1200px;
+        --wp--custom--ast-content-width-size: 1200px;
+        --wp--custom--ast-wide-width-size: calc(
+          1200px + var(--wp--custom--ast-default-block-left-padding) +
+            var(--wp--custom--ast-default-block-right-padding)
+        );
+        --e-global-color-primary: #6ec1e4;
+        --e-global-color-secondary: #54595f;
+        --e-global-color-text: #7a7a7a;
+        --e-global-color-accent: #61ce70;
+        --e-global-color-163a5695: #4054b2;
+        --e-global-color-30350695: #23a455;
+        --e-global-color-2b5b1670: #000;
+        --e-global-color-20858dd6: #fff;
+        --e-global-typography-primary-font-family: "Roboto";
+        --e-global-typography-primary-font-weight: 600;
+        --e-global-typography-secondary-font-family: "Roboto Slab";
+        --e-global-typography-secondary-font-weight: 400;
+        --e-global-typography-text-font-family: "Roboto";
+        --e-global-typography-text-font-weight: 400;
+        --e-global-typography-accent-font-family: "Roboto";
+        --e-global-typography-accent-font-weight: 500;
+        word-wrap: break-word;
+        --flex-wrap: initial;
+        --align-content: initial;
+        --order: initial;
+        --align-self: initial;
+        --border-top-width: 0px;
+        --border-right-width: 0px;
+        --border-bottom-width: 0px;
+        --border-left-width: 0px;
+        --border-style: initial;
+        --border-color: initial;
+        --content-width: min(100%, var(--container-max-width, 1140px));
+        --width: 100%;
+        --height: auto;
+        --text-align: initial;
+        --margin-top: 0px;
+        --margin-bottom: 0px;
+        --position: relative;
+        --z-index: revert;
+        --overflow: visible;
+        --overlay-mix-blend-mode: initial;
+        --overlay-transition: 0.3s;
+        --e-con-grid-template-columns: repeat(3, 1fr);
+        --e-con-grid-template-rows: repeat(2, 1fr);
+        --margin-block-start: var(--margin-top);
+        --margin-block-end: var(--margin-bottom);
+        --margin-inline-start: var(--margin-left);
+        --margin-inline-end: var(--margin-right);
+        --padding-inline-start: var(--padding-left);
+        --padding-inline-end: var(--padding-right);
+        --padding-block-start: var(--padding-top);
+        --padding-block-end: var(--padding-bottom);
+        --border-block-start-width: var(--border-top-width);
+        --border-block-end-width: var(--border-bottom-width);
+        --border-inline-start-width: var(--border-left-width);
+        --border-inline-end-width: var(--border-right-width);
+        text-align: initial;
+        --swiper-theme-color: #000;
+        --swiper-navigation-size: 44px;
+        --swiper-pagination-bullet-size: 6px;
+        --swiper-pagination-bullet-horizontal-gap: 6px;
+        --container-max-width: 1200px;
+        --widgets-spacing: 20px 20px;
+        --flex-basis: auto;
+        --flex-grow: 0;
+        --flex-shrink: 1;
+        --margin-left: auto;
+        --margin-right: auto;
+        --display: flex;
+        --min-height: 100vh;
+        --flex-direction: row;
+        --container-widget-width: calc(
+          (1 - var(--container-widget-flex-grow)) * 100%
+        );
+        --container-widget-height: 100%;
+        --container-widget-flex-grow: 1;
+        --container-widget-align-self: stretch;
+        --flex-wrap-mobile: wrap;
+        --justify-content: center;
+        --align-items: center;
+        --gap: 0px 0px;
+        --background-transition: 0.3s;
+        --overlay-opacity: 0.95;
+        --border-radius: 0px 0px 120px 0px;
+        --padding-top: 200px;
+        --padding-bottom: 160px;
+        --padding-left: 0px;
+        --padding-right: 0px;
+        --border-transition: 0.3s;
+        list-style: none;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        display: flex;
+        transition-property: transform;
+        box-sizing: content-box;
+        transform: translate3d(0px, 0, 0);
+        transition-duration: 0ms;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="d-flex full-height">
+      <!-- Main Content -->
+      <div class="main-content flex-grow-1">
+        <div
+          class="container-fluid custom-height d-flex justify-content-center align-items-center"
+        >
+          <div class="container rounded-circle image-container">
+            <img
+              src="{% static 'images/marine-logo.jpg' %}"
+              alt="logo"
+              class="logo m-4"
+            />
+          </div>
+        </div>
+      </div>
+      <div
+        class="elementor-background-slideshow swiper swiper-fade swiper-initialized swiper-horizontal swiper-pointer-events swiper-rtl swiper-watch-progress"
+        dir="rtl"
+      >
+        <div
+          class="swiper-wrapper"
+          id="swiper-wrapper-c15c7b71065e781c8"
+          aria-live="off"
+          style="transition-duration: 0ms"
+        >
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-prev"
+            data-swiper-slide-index="0"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(0px, 0px, 0px);
+            "
+            role="group"
+            aria-label="1 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/bmw-m4-csl-coupe-2022-grey-111.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-active"
+            data-swiper-slide-index="1"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(1915px, 0px, 0px);
+            "
+            role="group"
+            aria-label="2 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Mercedes-AMG-E-63-S-4MATIC-banner.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-next"
+            data-swiper-slide-index="2"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(3830px, 0px, 0px);
+            "
+            role="group"
+            aria-label="3 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/001-Kia-EV6-GT-Goodwood-1920x1080-1.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
+            data-swiper-slide-index="3"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(5745px, 0px, 0px);
+            "
+            role="group"
+            aria-label="4 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/hyundai-i30-n.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
+            data-swiper-slide-index="4"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(7660px, 0px, 0px);
+            "
+            role="group"
+            aria-label="5 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Artboard-1.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-prev"
+            data-swiper-slide-index="0"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(9575px, 0px, 0px);
+            "
+            role="group"
+            aria-label="1 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/bmw-m4-csl-coupe-2022-grey-111.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-visible swiper-slide-active"
+            data-swiper-slide-index="1"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 1;
+              transform: translate3d(11490px, 0px, 0px);
+            "
+            role="group"
+            aria-label="2 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out elementor-ken-burns--active"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Mercedes-AMG-E-63-S-4MATIC-banner.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-next"
+            data-swiper-slide-index="2"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(13405px, 0px, 0px);
+            "
+            role="group"
+            aria-label="3 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/001-Kia-EV6-GT-Goodwood-1920x1080-1.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide"
+            data-swiper-slide-index="3"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(15320px, 0px, 0px);
+            "
+            role="group"
+            aria-label="4 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/hyundai-i30-n.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide"
+            data-swiper-slide-index="4"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(17235px, 0px, 0px);
+            "
+            role="group"
+            aria-label="5 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Artboard-1.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-prev"
+            data-swiper-slide-index="0"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(19150px, 0px, 0px);
+            "
+            role="group"
+            aria-label="1 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/bmw-m4-csl-coupe-2022-grey-111.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-active"
+            data-swiper-slide-index="1"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(21065px, 0px, 0px);
+            "
+            role="group"
+            aria-label="2 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Mercedes-AMG-E-63-S-4MATIC-banner.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-next"
+            data-swiper-slide-index="2"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(22980px, 0px, 0px);
+            "
+            role="group"
+            aria-label="3 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/001-Kia-EV6-GT-Goodwood-1920x1080-1.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
+            data-swiper-slide-index="3"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(24895px, 0px, 0px);
+            "
+            role="group"
+            aria-label="4 / 5"
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/hyundai-i30-n.jpg&quot;);
+              "
+            ></div>
+          </div>
+          <div
+            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
+            data-swiper-slide-index="4"
+            role="group"
+            aria-label="5 / 5"
+            style="
+              width: 1915px;
+              transition-duration: 0ms;
+              opacity: 0;
+              transform: translate3d(26810px, 0px, 0px);
+            "
+          >
+            <div
+              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
+              style="
+                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Artboard-1.jpg&quot;);
+              "
+            ></div>
+          </div>
+        </div>
+        <span
+          class="swiper-notification"
+          aria-live="assertive"
+          aria-atomic="true"
+        ></span>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>الاصناف</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" id="item-1" href="#">بيانات الاصناف</a>
+              <a class="nav-link" id="item-2" href="#"
+                >تقارير الاصناف المحلية</a
+              >
+              <a class="nav-link" id="item-3">تقارير الاصناف الخارجية</a>
+              <a class="nav-link" id="item-4">تعديل الاسعار</a>
+              <a class="nav-link" id="item-5">تقرير حركة الاصناف</a>
+              <a class="nav-link" id="item-6">اعادة ترصيد الاصناف</a>
+              <a class="nav-link" id="item-7">الجرد</a>
+              <a class="nav-link" id="item-8">التلف والفقد</a>
+              <a class="nav-link" id="item-9">اماكن التخزين</a>
+              <a class="nav-link" id="item-10">التسمية الانجليزية</a>
+              <a class="nav-link" id="item-11">حجز اصناف</a>
+              <a class="nav-link" id="item-12">اعادة الترصيد</a>
+              <a class="nav-link" id="item-13">النواقص</a>
+              <a class="nav-link" id="item-14">اذونات الصرف</a>
+              <a class="nav-link" id="item-15">اصناف بالملاحظات</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>فواتير شراء محلية</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" id="item-2-1">Subitem</a>
+              <a class="nav-link" id="item-2-2">Subitem</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>فواتير شراء خارجية</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" id="item-3-1">ادخال فاتورة شراء</a>
+              <a class="nav-link" id="item-3-2">فواتير الشراء</a>
+              <a class="nav-link" id="item-3-3">تعديل اسعار البيع</a>
+              <a class="nav-link" id="item-3-4">تسوية حساب الفواتير</a>
+              <a class="nav-link" id="item-3-5">ترحيل الاصناف المؤقتة</a>
+              <a class="nav-link" id="item-3-6">جرد فواتير الشراء</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>ف. البيع المبدئية</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" href="#subitem4-1">Subitem 4-1</a>
+              <a class="nav-link" href="#subitem4-2">Subitem 4-2</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>فواتير البيع</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" href="#subitem5-1">Subitem 5-1</a>
+              <a class="nav-link" href="#subitem5-2">Subitem 5-2</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>الترجيعات</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" href="#subitem6-1">Subitem 6-1</a>
+              <a class="nav-link" href="#subitem6-2">Subitem 6-2</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>العملاء والموردين</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" id="item-7-1">دليل العملاء والموردين</a>
+              <a class="nav-link" id="item-7-2">تقارير العملاء والموردين</a>
+              <a class="nav-link" id="item-7-3">تسوية حساب</a>
+              <a class="nav-link" id="item-7-4">تقارير تسوية حساب</a>
+              <a class="nav-link" id="item-7-5">تقارير المراجعة</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>الموظفين</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" href="#subitem8-1">Subitem 8-1</a>
+              <a class="nav-link" href="#subitem8-2">Subitem 8-2</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>الخزينة</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" id="item-9-1">قيود الخزينة</a>
+              <a class="nav-link" id="item-9-2">تقارير الخزينة</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>الحسابات</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" href="#subitem10-1">Subitem 10-1</a>
+              <a class="nav-link" href="#subitem10-2">Subitem 10-2</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>المستخدمين</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" href="#subitem11-1">Subitem 11-1</a>
+              <a class="nav-link" href="#subitem11-2">Subitem 11-2</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"
+              ><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a
+            >
+            <div class="sub-menu">
+              <a class="nav-link" href="#subitem12-1">Subitem 12-1</a>
+              <a class="nav-link" href="#subitem12-2">Subitem 12-2</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bootstrap Bundle (includes Popper.js) -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+      // Toggle submenus
+      document.querySelectorAll(".toggle-submenu").forEach((item) => {
+        item.addEventListener("click", (event) => {
+          event.preventDefault(); // Prevent default anchor behavior
+          const submenu = item.nextElementSibling;
+
+          // Close all other submenus
+          document.querySelectorAll(".sub-menu").forEach((sub) => {
+            if (sub !== submenu) {
+              sub.style.display = "none"; // Hide other submenus
+            }
+          });
+
+          // Toggle the clicked submenu
+          submenu.style.display =
+            submenu.style.display === "block" ? "none" : "block";
+        });
+      });
+
+      let windows = {}; // Object to keep track of opened windows
+
+      // Function to open a new window or focus an existing one
+      function openWindow(url, name, width = 1100, height = 700) {
+        // Check if the window is already open
+        if (windows[name] && !windows[name].closed) {
+          windows[name].focus(); // Bring the existing window to the front
+        } else {
+          // Get the screen width and height
+          const screenWidth = window.innerWidth;
+          const screenHeight = window.innerHeight;
+
+          // Calculate the position to center the window
+          const left = (screenWidth - width) / 2;
+          const top = (screenHeight - height) / 2;
+
+          // Open the window with the specified or default dimensions, centered
+          windows[name] = window.open(
+            url,
+            name,
+            `width=${width},height=${height},left=${left},top=${top}`
+          );
+        }
+      }
+
+      // Helper function to assign click events
+      function assignClickEvent(elementId, url, windowName, width, height) {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.onclick = function () {
+            openWindow(url, windowName, width, height);
+          };
+        }
+      }
+
+      // Define menu items and their respective window properties
+      const menuItems = [
+        {
+          id: "item-1",
+          url: "/products-details",
+          name: "productsDetails",
+          width: 1100,
+          height: 900,
+        },
+        {
+          id: "item-2",
+          url: "/products-reports",
+          name: "productsReports",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-4",
+          url: "/edit-prices",
+          name: "editPrices",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-3",
+          url: "/partial-products-reports",
+          name: "partialProductsReports",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-5",
+          url: "/products-movement",
+          name: "products-movement",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-6",
+          url: "/products-balance",
+          name: "products-balance",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-7",
+          url: "/data-inventory",
+          name: "data-inventory",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-8",
+          url: "/lost-and-damaged",
+          name: "lost-and-damaged",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-9",
+          url: "/storage",
+          name: "storage",
+          width: 1100,
+          height: 500,
+        },
+        {
+          id: "item-7-1",
+          url: "/clients-management",
+          name: "clients-management",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-7-2",
+          url: "/clients-reports",
+          name: "clients-reports",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-9-1",
+          url: "/storage-records",
+          name: "storage-records",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-9-2",
+          url: "/storage-reports",
+          name: "storage-reports",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-3-1",
+          url: "/add-buy-invoice",
+          name: "add-buy-invoice",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-3-3",
+          url: "/buy-invoice_edit-prices",
+          name: "buy-invoice_edit-prices",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-3-5",
+          url: "/temp_confirm",
+          name: "temp_confirm",
+          width: 1100,
+          height: 700,
+        },
+      ];
+
+      // Assign click events for all menu items
+      menuItems.forEach((item) => {
+        assignClickEvent(item.id, item.url, item.name, item.width, item.height);
+      });
+    </script>
+  </body>
+</html>

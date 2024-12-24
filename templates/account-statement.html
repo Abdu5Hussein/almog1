@@ -1,0 +1,931 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بيانات العملاء</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/custom-tabulator.css' %}"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'dselect/choices.min.css' %}" />
+
+    <style>
+      .choices {
+        width: calc(100% - 73px); /*edit later*/
+      }
+      .dropdown {
+        display: none;
+        /* Initially hidden */
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        z-index: 1000;
+      }
+
+      .width-95 {
+        width: 95px;
+      }
+
+      .width-55 {
+        width: 55px;
+      }
+      .width-user {
+        width: calc(100% - 73px);
+      }
+      .width-170 {
+        width: 170px;
+      }
+      .width-73 {
+        width: 73px;
+      }
+
+      .width-80 {
+        width: 110px;
+      }
+
+      .dropdown label {
+        display: block;
+      }
+
+      #contextMenu {
+        display: none;
+        /* Hidden by default */
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        min-width: 150px;
+      }
+
+      .bi-question-circle {
+        padding-left: 2px;
+        font-size: 12px;
+      }
+
+      .bi-question-circle:hover {
+        color: #007bff;
+        /* Change color as needed */
+      }
+
+      #contextMenu div {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      #contextMenu div:hover {
+        background-color: #f0f0f0;
+      }
+
+      .large-textarea {
+        height: 235px;
+        /* Set a specific height for the textarea (adjust as needed) */
+      }
+
+      /* Set a fixed height for the Tabulator container */
+      /* Container for the table */
+
+      /* Container for the table */
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+      }
+
+      .row {
+        direction: rtl;
+        /* Set the direction of the row to right-to-left */
+      }
+
+      .form-label,
+      .form-control {
+        direction: ltr;
+        /* Make sure inputs and labels align correctly within the form */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Optional: Add space between buttons */
+      }
+
+      .small-input {
+        width: 50px;
+        padding: 5px;
+        /* Decrease padding */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height (optional) */
+        border: 1px solid #dee2e6;
+        border-radius: 0;
+        text-align: right;
+        direction: rtl;
+      }
+
+      form label {
+        margin-bottom: 0px;
+      }
+
+      th,
+      td {
+        padding: 2px;
+        /* Decrease padding */
+        font-size: 13px;
+        /* Decrease font size */
+        border: 1px solid #ddd;
+        /* Add borders for visibility */
+      }
+
+      input.form-control {
+        padding: 5px;
+        /* Decrease padding */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height (optional) */
+        border-radius: 0;
+        text-align: right;
+        direction: rtl;
+      }
+
+      select.form-select {
+        padding: 5px;
+        /* Decrease padding for select fields */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height for select fields (optional) */
+        border-radius: 0;
+        text-align: center;
+      }
+
+      h1,
+      h2,
+      h3,
+      label,
+      p,
+      table thead tbody {
+        font-size: 15px;
+        margin: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        text-align: right;
+        font-size: 15px;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-primary {
+        width: 100%;
+      }
+
+      .editable {
+        cursor: pointer;
+        background-color: #f9f9f9;
+        padding-right: 5px;
+      }
+
+      .editable:focus {
+        outline: none;
+        background-color: #e6e6e6;
+      }
+
+      .custom-table {
+        max-height: 300px;
+        min-height: 300px;
+        overflow-y: hidden;
+      }
+      #users-table {
+        max-height: 300px;
+        min-height: 300px;
+      }
+
+      table {
+        width: 100%;
+        margin: 0px;
+      }
+
+      thead {
+        background-color: #b3c9df;
+        color: rgb(0, 0, 0);
+        padding: 2px;
+      }
+
+      table thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        z-index: 1;
+      }
+
+      .title-container {
+        width: 100%;
+        background-color: #b3c9df;
+        text-align: center;
+        padding: 3px 0px;
+        margin-bottom: 4px;
+      }
+
+      /* Create a wrapper around the select element */
+      .custom-select-container {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+        margin: 0;
+        /* Ensure no extra margins are added */
+        padding: 0 0px;
+        /* Add padding to the row */
+        box-sizing: border-box;
+        /* Ensure padding is included in the width calculation */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Add space between buttons */
+      }
+
+      /* Move the arrow to the left */
+      .form-select {
+        padding-left: 2.5rem;
+        /* Add space on the left for the icon */
+        padding-right: 1rem;
+        /* Adjust right padding */
+        background: none;
+        /* Remove default background */
+      }
+
+      .custom-select-container::before {
+        content: "▾";
+        /* The caret symbol */
+        position: absolute;
+        left: 0.75rem;
+        /* Position it to the left */
+        top: 50%;
+        transform: translateY(-50%);
+        /* Center vertically */
+        pointer-events: none;
+        /* Prevent interaction with the icon */
+        color: #000;
+        /* Icon color (can be customized) */
+      }
+
+      /* Hide default dropdown arrow */
+      .form-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      .form-select-with-icon {
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+        appearance: auto;
+
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 0;
+        direction: rtl;
+        box-sizing: border-box;
+        margin: 0;
+        font-family: inherit;
+        text-transform: none;
+        word-wrap: normal;
+        --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        display: block;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--bs-body-color);
+        border: 1px solid #ced4da;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
+        background: none;
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
+        border-radius: 0;
+        text-align: center;
+        position: relative;
+        flex: 1 1 auto;
+        width: 1%;
+      }
+
+      /*//////////////////*/
+      .custom-form {
+        width: 100%;
+        max-width: 1100px;
+        padding: 0px 10px;
+      }
+
+      .row {
+        display: flex;
+        /* Use flexbox for layout */
+        margin-bottom: 5px;
+        /* Minimize vertical space */
+      }
+
+      .col-md-2,
+      .col-md-3 {
+        padding: 0 5px;
+        /* Reduce horizontal padding */
+      }
+
+      .form-label {
+        font-size: 12px;
+        /* Reduce font size */
+        margin-bottom: 2px;
+        /* Minimize label space */
+        margin-left: 10px;
+      }
+      .form-box {
+        height: 100px;
+        width: 100%;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+      .form-control {
+        height: 30px;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .form-select {
+        height: 30px;
+        /* Adjust select height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: nowrap;
+        /* Prevent wrapping */
+        justify-content: space-between;
+        /* Space buttons evenly */
+        margin-top: 5px;
+        /* Minimize space above button row */
+      }
+
+      button {
+        font-size: 12px;
+        /* Reduce button text size */
+        padding: 2px 5px;
+        /* Reduce button padding */
+      }
+
+      .custom-table table {
+        border-collapse: collapse;
+        /* Combine borders of adjacent cells */
+      }
+
+      .custom-table th,
+      .custom-table td {
+        padding: 0;
+        /* Remove all padding */
+        padding-right: 5px;
+        margin: 0;
+        /* Ensure no margins are applied */
+        height: auto;
+        /* Allow cells to have minimal height */
+      }
+
+      input[type="number"] {
+        direction: rtl;
+        /* For Arabic alignment */
+        padding-left: 2px;
+        /* Adds padding to the left to avoid overflow */
+        text-align: right;
+        /* Aligns the text inside the input to the right */
+        width: 100%;
+        /* Ensure full width */
+      }
+
+      /* Style for number input to always show increment/decrement arrows */
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Adjust for other browsers */
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+        /* Hides spinner on Firefox */
+      }
+
+      .modal-body {
+        max-height: 300px;
+        /* Set max height for modal body */
+        overflow-y: auto;
+        /* Enable scrolling in modal body */
+      }
+
+      .column-menu-btn {
+        font-size: 12px;
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Right-click context menu for operations -->
+      <div id="contextMenu">
+        <div onclick="performAction('Edit')">Edit</div>
+        <div onclick="performAction('Delete')">Delete</div>
+        <div onclick="performAction('View Details')">View Details</div>
+      </div>
+
+      <!-- Table Section -->
+      <div class="custom-table mb-1">
+        <div
+          dir="rtl"
+          id="users-table"
+          data-url="{% url 'get_data' %}"
+          class="table table-striped table-bordered table-hover"
+        ></div>
+      </div>
+
+      <!-- Form Section with 5 input columns -->
+      <div class="custom-form">
+        <div class="title-container mb-2">
+          <h3 class="m-0">قيود الخزينة</h3>
+        </div>
+
+        <form id="myForm">
+          {% csrf_token %}
+          <div class="row mb-1">
+            <div class="width-73 d-flex align-items-center px-2">
+              <label for="storage-balance" class="form-label">اسم العميل</label>
+            </div>
+            <div class="width-user">
+              <input
+                type="text"
+                class="form-control"
+                value="{{ client.name }}"
+                readonly
+              />
+            </div>
+          </div>
+          <div class="row">
+            <!-- First column -->
+            <div class="col-md-4">
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >مجموع الدائن</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="credit-sum"
+                  readonly
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >سقف العميل</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="loan-limit"
+                  value="{{ client.loan_limit|default:'(لايوجد سقف)' }} دل"
+                  readonly
+                />
+              </div>
+              <div class="col d-flex align-items-center py-3">
+                <div class="d-flex justify-content-center align-items-center">
+                  <input type="checkbox" id="detailed-check" />
+                </div>
+                <div
+                  class="width-80 d-flex justify-content-between align-items-center mx-3"
+                >
+                  <label for="reserved-balance" class="form-label"
+                    >عرض تفاصيل الحساب</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Second column -->
+            <div class="col-md-4">
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >مجموع المدين</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="debt-sum"
+                  readonly
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >رصيد اخر حركة</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="last-transaction"
+                  value="{{ client.last_transaction_amount|floatformat:2 }} دل"
+                  readonly
+                />
+              </div>
+            </div>
+
+            <!-- third column -->
+            <div class="col-md-4">
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label">الرصيد</label>
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="balance-sum"
+                  readonly
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >الرصيد الفعلي</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="real-balance"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Button Row -->
+          <div class="row button-row mt-1">
+            <button type="button" class="btn btn-primary m-1">كشف معدل</button>
+
+            <button
+              type="button"
+              class="btn btn-primary m-1"
+              data-bs-toggle="modal"
+              data-bs-target="#exampleModal"
+            >
+              تصدير</button
+            ><button type="button" class="btn btn-primary m-1">طباعة</button>
+
+            <button
+              type="button"
+              class="btn btn-secondary m-1"
+              onclick="window.close()"
+            >
+              اغلاق
+            </button>
+          </div>
+        </form>
+        <!-- Modal -->
+        <div
+          class="modal fade"
+          id="exampleModal"
+          tabindex="-1"
+          aria-labelledby="exampleModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">
+                  تصدير البيانات
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">اختر احدى خيارات التصدير</div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  data-bs-dismiss="modal"
+                  id="export-btn-excel"
+                  class="btn btn-primary"
+                  style="width: 100px"
+                >
+                  excel تصدير
+                </button>
+                <button
+                  type="button"
+                  id="export-btn-pdf"
+                  class="btn btn-secondary"
+                  style="width: 100px"
+                >
+                  pdf تصدير
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Use jQuery -->
+
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'dselect/choices.min.js' %}"></script>
+
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script>
+      // Fetch client ID from the URL query string
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientid = urlParams.get("id"); // Retrieve the client ID from the URL (e.g., ?id=123)
+
+      // Initialize Tabulator table
+      const table = new Tabulator("#users-table", {
+        index: "fileid", // Use "fileid" as the unique row identifier
+        height: "auto", // Adjust height or set a fixed height
+        layout: "fitColumns",
+        selectable: true,
+        pagination: "local", // Enable local pagination
+        paginationSize: 100, // Show 100 records per page
+        paginationSizeSelector: [50, 100, 200], // Page size options
+        paginationButtonCount: 5, // Number of visible pagination buttons
+        movableColumns: true,
+        columnHeaderVertAlign: "bottom",
+        columnMenu: true, // Enable column menu
+        data: [], // Placeholder, will be loaded dynamically
+        columns: [
+          {
+            title: "تاريخ القيد",
+            field: "registration_date",
+            width: 100,
+            formatter: function (cell) {
+              const value = cell.getValue();
+              if (value) {
+                const date = new Date(value); // Convert to a Date object
+                return date.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+              }
+              return ""; // Return an empty string if value is invalid
+            },
+          }, // Registration Date
+          { title: "رقم القيد", field: "autoid", width: 80 }, // Transaction ID
+          { title: "نوع القيد", field: "transaction", width: 80 }, // Transaction
+          {
+            title: "دائن",
+            field: "credit",
+            width: 80,
+            formatter: function (cell) {
+              const value = cell.getValue();
+              return !isNaN(value) ? parseFloat(value).toFixed(2) : value;
+            },
+          }, // Credit
+          {
+            title: "مدين",
+            field: "debt",
+            width: 80,
+            formatter: function (cell) {
+              const value = cell.getValue();
+              return !isNaN(value) ? parseFloat(value).toFixed(2) : value;
+            },
+          }, // Debt
+
+          { title: "بيان القيد", field: "details", width: 140 }, // Details
+
+          {
+            title: "تاريخ التسليم",
+            field: "delivered_date",
+            width: 100,
+            formatter: function (cell) {
+              const value = cell.getValue();
+              if (value) {
+                const date = new Date(value); // Convert to a Date object
+                return date.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+              }
+              return ""; // Return an empty string if value is invalid
+            },
+          }, // Delivered Date
+          { title: "لحساب", field: "delivered_for", width: 90 }, // Delivered To
+          {
+            title: "الرصيد الحالي",
+            field: "current_balance",
+            width: 90,
+            formatter: function (cell) {
+              const value = cell.getValue();
+              return !isNaN(value) ? parseFloat(value).toFixed(2) : value;
+            },
+          }, // Current Balance
+        ],
+        placeholder: "No Data Available", // Message when no data is present
+        rowFormatter: function (row) {
+          const rowData = row.getData();
+          // Customize row formatting logic here if needed
+        },
+        rowClick: function (e, row) {
+          const clickedPno = row.getData().pno; // Get pno of the clicked row
+          console.log("Clicked Pno:", clickedPno);
+        },
+        tableBuilt: function () {
+          console.log("Table has been built successfully.");
+        },
+      });
+
+      // Function to calculate the sum of a column in Tabulator
+      function calculateColumnSum(columnName) {
+        let sum = 0;
+        const rowData = table.getData(); // Fetch row data from Tabulator
+
+        if (Array.isArray(rowData)) {
+          rowData.forEach((row) => {
+            if (!isNaN(row[columnName])) {
+              sum += parseFloat(row[columnName]); // Convert to float and add to sum
+            }
+          });
+        } else {
+          console.error(`rowData is not an array for column: ${columnName}`);
+        }
+
+        return sum;
+      }
+
+      // Function to update input fields with formatted sum values
+      function updateShowInput(selector, sum) {
+        const input = document.querySelector(selector);
+        if (input) {
+          input.value =
+            sum.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }) + " دل";
+        } else {
+          console.warn(`Selector "${selector}" did not match any elements.`);
+        }
+      }
+
+      // Refresh the displayed sum inputs
+      function refreshShowInputs() {
+        const creditSum = calculateColumnSum("credit");
+        const debtSum = calculateColumnSum("debt"); // Corrected from "dept"
+        const balanceSum = calculateColumnSum("current_balance");
+        const realBalance = creditSum - debtSum;
+
+        // Update input fields with calculated sums
+        updateShowInput("#credit-sum", creditSum);
+        updateShowInput("#debt-sum", debtSum);
+        updateShowInput("#balance-sum", balanceSum);
+        updateShowInput("#real-balance", realBalance);
+      }
+
+      // Function to fetch data from the API
+      function fetchData(clientid) {
+        const url = `get-account-statement?id=${clientid}`;
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            table.setData(data); // Load data into Tabulator
+            refreshShowInputs(); // Recalculate and display column sums
+          })
+          .catch((error) => {
+            console.error("Error fetching data:", error);
+            alert("Failed to fetch account statement. Please try again later.");
+          });
+      }
+
+      // Call fetchData if client ID is found in the URL
+      if (clientid) {
+        fetchData(clientid);
+      } else {
+        alert("Client ID not found in the URL.");
+      }
+
+      function exportToExcel() {
+        table.download("xlsx", "table_data.xlsx"); // 'xlsx' is the file format
+      }
+      document
+        .getElementById("export-btn-excel")
+        .addEventListener("click", exportToExcel);
+      document
+        .getElementById("export-btn-pdf")
+        .addEventListener("click", exportToPDF);
+      // Example of vfs_fonts.js
+
+      function exportToPDF() {
+        // Get visible column field names
+        let visibleColumns = table
+          .getColumns() // Retrieve column components
+          .filter((col) => col.isVisible()) // Check if the column is visible
+          .map((col) => col.getField()); // Get the field names of visible columns
+
+        // Filter table data based on visible columns
+        let tableData = table.getData().map((row) => {
+          // Create a new object with only visible fields
+          return visibleColumns.reduce((filteredRow, field) => {
+            filteredRow[field] = row[field]; // Copy value of visible field
+            return filteredRow;
+          }, {});
+        });
+
+        // Now `filteredData` contains only the visible columns from tableData
+        console.log(tableData);
+
+        // Sending the data to Django backend using fetch
+        fetch("/generate-pdf/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: tableData,
+          }), // Send table data
+        })
+          .then((response) => response.blob())
+          .then((blob) => {
+            // Check if blob is a valid PDF
+            const file = new Blob([blob], { type: "application/pdf" });
+            const fileURL = URL.createObjectURL(file);
+
+            // Open the PDF in a new window or download it
+            const link = document.createElement("a");
+            link.href = fileURL;
+            link.download = "tabulator_data.pdf";
+            link.click();
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>

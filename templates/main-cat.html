@@ -1,0 +1,112 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جدول البيان الرئيسي</title>
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+    <style>
+      table {
+        width: 100%;
+        margin-top: 20px;
+      }
+      .form-container {
+        margin-top: 20px;
+      }
+      .btn-container {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container p-4">
+      <h2>جدول البيان الرئيسي</h2>
+
+      <!-- Data Grid -->
+      <table class="table table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>اسم البيان</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for x in mainType %}
+          <tr>
+            <td>{{ x.fileid }}</td>
+            <td>{{ x.typename }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">No data available</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Form Container -->
+      <div class="form-container">
+        <h4>ادارة البيان الرئيسي</h4>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="id" id="measurementId" />
+          <div class="form-group">
+            <label for="inputName">اسم البيان</label>
+            <input
+              type="text"
+              class="form-control mt-2"
+              name="name"
+              id="inputName"
+              placeholder="Enter name"
+            />
+          </div>
+
+          <div class="btn-container">
+            <button
+              type="submit"
+              name="action"
+              value="add"
+              class="btn btn-success"
+            >
+              اضافة
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="edit"
+              class="btn btn-primary"
+            >
+              تعديل
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="delete"
+              class="btn btn-danger"
+            >
+              حذف
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS (optional) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+      // Handle row click to pre-fill the form for editing
+      document.querySelectorAll("table tbody tr").forEach((row) => {
+        row.addEventListener("click", () => {
+          document.getElementById("measurementId").value =
+            row.cells[0].innerText;
+          document.getElementById("inputName").value = row.cells[1].innerText;
+        });
+      });
+    </script>
+  </body>
+</html>

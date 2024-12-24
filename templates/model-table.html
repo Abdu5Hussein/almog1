@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جدول الموديلات</title>
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+    <style>
+      table {
+        margin-top: 20px;
+      }
+      .form-container {
+        margin-top: 20px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .btn-container {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4">
+      <h2 class="mb-4 text-center">جدول الموديلات</h2>
+
+      <!-- Form Container -->
+      <div class="form-container">
+        <h4 class="mb-3">إدارة الشركات</h4>
+        <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="id" id="modelId" />
+
+          <div class="mb-3">
+            <label for="item-main" class="form-label">اسم البيان الرئيسي</label>
+            <select
+              id="item-main-filter"
+              name="model-main-type"
+              class="form-select"
+            >
+              <option value="">اختر بيان رئيسي</option>
+              {% for x in mainType %}
+              <option value="{{ x.fileid }}">{{ x.typename }}</option>
+              {% endfor %}
+            </select>
+
+            <div class="invalid-feedback">الرجاء اختيار بيان رئيسي.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="model-name" class="form-label">اسم الموديل</label>
+            <input
+              type="text"
+              name="model-name"
+              id="model-name"
+              class="form-control"
+              placeholder="ادخل اسم الموديل"
+              required
+            />
+            <div class="invalid-feedback">الرجاء إدخال اسم الموديل.</div>
+          </div>
+
+          <div class="btn-container d-flex justify-content-start gap-2">
+            <button
+              type="submit"
+              name="action"
+              value="add"
+              class="btn btn-success"
+              id="add-button"
+            >
+              إضافة
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="edit"
+              class="btn btn-primary"
+              id="edit-button"
+            >
+              تعديل
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="delete"
+              class="btn btn-danger"
+              id="delete-button"
+            >
+              حذف
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Data Grid -->
+      <table
+        id="models-table"
+        class="table table-bordered table-hover text-center"
+      >
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>اسم الموديل</th>
+            <th>البيان الرئيسي</th>
+            <!-- MainType column -->
+          </tr>
+        </thead>
+        <tbody>
+          {% for x in models %}
+          <tr data-main-type="{{ x.maintype.fileid }}">
+            <!-- Data attribute for MainType ID -->
+            <td>{{ x.fileid }}</td>
+            <td>{{ x.sname }}</td>
+            <td>{{ x.maintype.typename }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Custom Script -->
+    <script>
+      // JavaScript to filter the table based on selected MainType
+      document
+        .getElementById("item-main-filter")
+        .addEventListener("change", function () {
+          const selectedValue = this.value;
+          const rows = document.querySelectorAll("#models-table tbody tr");
+
+          rows.forEach(function (row) {
+            const mainTypeId = row.getAttribute("data-main-type");
+
+            if (selectedValue === "" || selectedValue === mainTypeId) {
+              row.style.display = ""; // Show row if it matches
+            } else {
+              row.style.display = "none"; // Hide row if it doesn't match
+            }
+          });
+        });
+      // Form validation
+      (function () {
+        "use strict";
+        const forms = document.querySelectorAll(".needs-validation");
+        Array.from(forms).forEach((form) => {
+          form.addEventListener(
+            "submit",
+            function (event) {
+              if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+              form.classList.add("was-validated");
+            },
+            false
+          );
+        });
+      })();
+
+      //////
+      document.querySelectorAll("tr").forEach((row) => {
+        row.addEventListener("click", function () {
+          const id = this.children[0].innerText; // Assuming the first column is the ID
+          const name = this.children[1].innerText; // Assuming the second column is the name
+
+          document.getElementById("modelId").value = id;
+          document.getElementById("model-name").value = name;
+        });
+      });
+
+      // Select the form elements and buttons
+      const itemMainFilter = document.getElementById("item-main-filter");
+      const addButton = document.getElementById("add-button");
+      const editButton = document.getElementById("edit-button");
+      const deleteButton = document.getElementById("delete-button");
+
+      // Set up event listeners for the buttons
+      addButton.addEventListener("click", function () {
+        // Make the item-main-filter required when adding
+        itemMainFilter.setAttribute("required", "true");
+      });
+
+      editButton.addEventListener("click", function () {
+        // Remove the required attribute for editing
+        itemMainFilter.removeAttribute("required");
+      });
+
+      deleteButton.addEventListener("click", function () {
+        // Remove the required attribute for deleting
+        itemMainFilter.removeAttribute("required");
+      });
+    </script>
+  </body>
+</html>

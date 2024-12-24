@@ -1,0 +1,148 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import Excel to Tabulator</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+
+    <!-- Tabulator CSS -->
+    <link
+      href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      #tabulator-table {
+        margin-top: 20px;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body class="container py-4">
+    <!-- Buttons -->
+    <div class="d-flex justify-content-start mb-3">
+      <form id="uploadForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input
+          type="file"
+          id="fileInput"
+          class="form-control m-2"
+          style="max-width: 300px"
+        />
+
+        <button id="uploadBtn" class="btn btn-primary me-2">
+          Upload Excel
+        </button>
+        <button id="importBtn" class="btn btn-success me-2">Import</button>
+        <button id="closeBtn" class="btn btn-danger">Close</button>
+      </form>
+    </div>
+
+    <!-- Tabulator Table -->
+    <div id="tabulator-table"></div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Tabulator JS -->
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+    <!-- XLSX Library for Excel Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+      const table = new Tabulator("#tabulator-table", {
+        height: "400px",
+        layout: "fitColumns",
+        placeholder: "No Data Available",
+      });
+
+      document
+        .getElementById("uploadBtn")
+        .addEventListener("click", (event) => {
+          event.preventDefault();
+          const fileInput = document.getElementById("fileInput");
+          const file = fileInput.files[0];
+
+          if (!file) {
+            alert("Please select an Excel file.");
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+            // Update Tabulator
+            if (jsonData.length > 0) {
+              const headers = Object.keys(jsonData[0]);
+              table.setColumns(
+                headers.map((header) => ({ title: header, field: header }))
+              );
+              table.setData(jsonData);
+            } else {
+              alert("No data found in the Excel file.");
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        });
+
+      document
+        .getElementById("importBtn")
+        .addEventListener("click", (event) => {
+          event.preventDefault();
+          const data = table.getData();
+
+          if (data.length === 0) {
+            alert("No data to import.");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("csrfmiddlewaretoken", "{{ csrf_token }}"); // Add CSRF token
+          formData.append("data", JSON.stringify(data)); // Add the data to be imported
+
+          console.log("Sending data to the server:", formData);
+
+          fetch("/import-tabulator-data/", {
+            method: "POST",
+            body: formData, // Send the data using FormData
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then((result) => {
+              console.log("Response from server:", result);
+              if (result.status === "success") {
+                alert(result.message);
+              } else {
+                alert("Error: " + result.message);
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("An error occurred while importing data.");
+            });
+        });
+
+      document.getElementById("closeBtn").addEventListener("click", () => {
+        table.clearData();
+        alert("Table cleared.");
+      });
+    </script>
+  </body>
+</html>

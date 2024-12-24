@@ -1,0 +1,1053 @@
+{% load static %} {% load custom_filters %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بيانات الاصناف</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/products-details.js' %}" defer></script>
+
+    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/custom-tabulator.css' %}"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      .dropdown {
+        display: none;
+        /* Initially hidden */
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        z-index: 1000;
+      }
+
+      .width-95 {
+        width: 95px;
+      }
+
+      .width-55 {
+        width: 55px;
+      }
+
+      .width-73 {
+        width: 73px;
+      }
+
+      .width-80 {
+        width: 80px;
+      }
+
+      .dropdown label {
+        display: block;
+      }
+
+      #contextMenu {
+        display: none;
+        /* Hidden by default */
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        min-width: 150px;
+      }
+
+      .bi-question-circle {
+        padding-left: 2px;
+        font-size: 12px;
+      }
+
+      .bi-question-circle:hover {
+        color: #007bff;
+        /* Change color as needed */
+      }
+
+      #contextMenu div {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      #contextMenu div:hover {
+        background-color: #f0f0f0;
+      }
+
+      .large-textarea {
+        height: 235px;
+        /* Set a specific height for the textarea (adjust as needed) */
+      }
+
+      /* Set a fixed height for the Tabulator container */
+      /* Container for the table */
+
+      /* Container for the table */
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+      }
+
+      .row {
+        direction: rtl;
+        /* Set the direction of the row to right-to-left */
+      }
+
+      .form-label,
+      .form-control {
+        direction: ltr;
+        /* Make sure inputs and labels align correctly within the form */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Optional: Add space between buttons */
+      }
+
+      .small-input {
+        width: 50px;
+      }
+
+      form label {
+        margin-bottom: 0px;
+      }
+
+      th,
+      td {
+        padding: 2px;
+        /* Decrease padding */
+        font-size: 13px;
+        /* Decrease font size */
+        border: 1px solid #ddd;
+        /* Add borders for visibility */
+      }
+
+      input.form-control {
+        padding: 5px;
+        /* Decrease padding */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height (optional) */
+        border-radius: 0;
+        text-align: right;
+        direction: rtl;
+      }
+
+      select.form-select {
+        padding: 5px;
+        /* Decrease padding for select fields */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height for select fields (optional) */
+        border-radius: 0;
+        text-align: center;
+      }
+
+      h1,
+      h2,
+      h3,
+      label,
+      p,
+      table thead tbody {
+        font-size: 15px;
+        margin: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        text-align: right;
+        font-size: 15px;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-primary {
+        width: 100%;
+      }
+
+      .editable {
+        cursor: pointer;
+        background-color: #f9f9f9;
+        padding-right: 5px;
+      }
+
+      .editable:focus {
+        outline: none;
+        background-color: #e6e6e6;
+      }
+
+      .custom-table {
+        max-height: 200px;
+        overflow-y: hidden;
+      }
+
+      table {
+        width: 100%;
+        margin: 0px;
+      }
+
+      thead {
+        background-color: #b3c9df;
+        color: rgb(0, 0, 0);
+        padding: 2px;
+      }
+
+      table thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        z-index: 1;
+      }
+
+      .title-container {
+        width: 100%;
+        background-color: #b3c9df;
+        text-align: center;
+        padding: 3px 0px;
+        margin-bottom: 4px;
+      }
+
+      /* Create a wrapper around the select element */
+      .custom-select-container {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+        margin: 0;
+        /* Ensure no extra margins are added */
+        padding: 0 0px;
+        /* Add padding to the row */
+        box-sizing: border-box;
+        /* Ensure padding is included in the width calculation */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Add space between buttons */
+      }
+
+      /* Move the arrow to the left */
+      .form-select {
+        padding-left: 2.5rem;
+        /* Add space on the left for the icon */
+        padding-right: 1rem;
+        /* Adjust right padding */
+        background: none;
+        /* Remove default background */
+      }
+
+      .custom-select-container::before {
+        content: "▾";
+        /* The caret symbol */
+        position: absolute;
+        left: 0.75rem;
+        /* Position it to the left */
+        top: 50%;
+        transform: translateY(-50%);
+        /* Center vertically */
+        pointer-events: none;
+        /* Prevent interaction with the icon */
+        color: #000;
+        /* Icon color (can be customized) */
+      }
+
+      /* Hide default dropdown arrow */
+      .form-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      .form-select-with-icon {
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+        appearance: auto;
+
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 0;
+        direction: rtl;
+        box-sizing: border-box;
+        margin: 0;
+        font-family: inherit;
+        text-transform: none;
+        word-wrap: normal;
+        --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        display: block;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--bs-body-color);
+        border: 1px solid #ced4da;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
+        background: none;
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
+        border-radius: 0;
+        text-align: center;
+        position: relative;
+        flex: 1 1 auto;
+        width: 1%;
+      }
+
+      /*//////////////////*/
+      .custom-form {
+        width: 100%;
+        max-width: 1100px;
+        padding: 0px 10px;
+      }
+
+      .row {
+        display: flex;
+        /* Use flexbox for layout */
+        margin-bottom: 5px;
+        /* Minimize vertical space */
+      }
+
+      .col-md-2,
+      .col-md-3 {
+        padding: 0 5px;
+        /* Reduce horizontal padding */
+      }
+
+      .form-label {
+        font-size: 12px;
+        /* Reduce font size */
+        margin-bottom: 2px;
+        /* Minimize label space */
+        margin-left: 2px;
+      }
+
+      .form-control {
+        height: 30px;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .form-select {
+        height: 30px;
+        /* Adjust select height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: nowrap;
+        /* Prevent wrapping */
+        justify-content: space-between;
+        /* Space buttons evenly */
+        margin-top: 5px;
+        /* Minimize space above button row */
+      }
+
+      button {
+        font-size: 12px;
+        /* Reduce button text size */
+        padding: 2px 5px;
+        /* Reduce button padding */
+      }
+
+      .custom-table table {
+        border-collapse: collapse;
+        /* Combine borders of adjacent cells */
+      }
+
+      .custom-table th,
+      .custom-table td {
+        padding: 0;
+        /* Remove all padding */
+        padding-right: 5px;
+        margin: 0;
+        /* Ensure no margins are applied */
+        height: auto;
+        /* Allow cells to have minimal height */
+      }
+
+      input[type="number"] {
+        direction: rtl;
+        /* For Arabic alignment */
+        padding-left: 2px;
+        /* Adds padding to the left to avoid overflow */
+        text-align: right;
+        /* Aligns the text inside the input to the right */
+        width: 100%;
+        /* Ensure full width */
+      }
+
+      /* Style for number input to always show increment/decrement arrows */
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Adjust for other browsers */
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+        /* Hides spinner on Firefox */
+      }
+
+      .modal-body {
+        max-height: 300px;
+        /* Set max height for modal body */
+        overflow-y: auto;
+        /* Enable scrolling in modal body */
+      }
+
+      .column-menu-btn {
+        font-size: 12px;
+        padding: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <button
+        class="btn column-menu-btn .btn-sm border btn-default"
+        id="toggle-column-menu"
+        style="margin-bottom: 10px"
+      >
+        Show/Hide Columns
+      </button>
+      <!-- Dropdown menu for column visibility -->
+      <div id="column-menu" class="dropdown" style="display: none">
+        {% for column in columns %}
+        <label>
+          <!-- prettier-ignore -->
+          <input
+            type="checkbox"
+            value="{{ column }}"
+            
+            {% if column_visibility|get:column %}
+            checked
+            {% endif %}
+          />
+          {{ column_titles|get:column }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <!-- Right-click context menu for operations -->
+      <div id="contextMenu">
+        <div onclick="performAction('Edit')">Edit</div>
+        <div onclick="performAction('Delete')">Delete</div>
+        <div onclick="performAction('View Details')">View Details</div>
+      </div>
+
+      <!-- Table Section -->
+      <div class="custom-table mb-1">
+        <div
+          dir="rtl"
+          id="users-table"
+          data-url="{% url 'get_data' %}"
+          class="table table-striped table-bordered table-hover"
+        ></div>
+      </div>
+
+      <!-- Form Section with 5 input columns -->
+      <div class="custom-form">
+        <div class="title-container">
+          <h3>بيانات الاصناف</h3>
+        </div>
+        <form>
+          {% csrf_token %}
+          <div class="row">
+            <!-- First column -->
+            <div class="col-md-4">
+              <div class="input-group mb-1">
+                <div class="width-95">
+                  <label for="pname-arabic" class="form-label"
+                    >اسم الصنف بالعربي</label
+                  >
+                </div>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="pname-arabic"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-95">
+                  <label for="pname-english" class="form-label"
+                    >اسم الصنف بالانجليزي</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="pname-english"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-95">
+                  <label for="original-no" class="form-label"
+                    >الرقم الاصلي</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="original-no"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-95">
+                  <label for="barcode-no" class="form-label"
+                    >رقم الباركود</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="barcode-no"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-95">
+                  <label for="company-no" class="form-label">رقم الشركة</label>
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="company-no"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-95">
+                  <label for="description" class="form-label">المواصفات</label>
+                </div>
+                <textarea
+                  id="description"
+                  class="form-control large-textarea"
+                  placeholder="Enter text here"
+                  style="height: 70px; text-align: right"
+                  dir="rtl"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Second column -->
+            <div class="col-md-2">
+              <div class="input-group mb-1">
+                <div class="width-73">
+                  <label for="item-main" class="form-label"
+                    >البيان الرئيسي</label
+                  ><i
+                    class="bi bi-question-circle"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    title="البيان الرئيسي للصنف"
+                    onclick="openWindow('maintype')"
+                  ></i>
+                </div>
+                <select
+                  name="car_brand"
+                  id="item-main"
+                  class="form-select-with-icon"
+                  placeholder="Enter value"
+                  required
+                >
+                  <option value="" selected>اختر بيان رئيسي</option>
+                  {% for x in mainType %}
+                  <option value="{{ x.fileid }}">{{ x.typename }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73">
+                  <label for="item-sub-main" class="form-label"
+                    >البيان الفرعي</label
+                  ><i
+                    class="bi bi-question-circle"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    onclick="openWindow('subtype')"
+                    title="Enter the item name in Arabic"
+                  ></i>
+                </div>
+                <select
+                  name="car_brand"
+                  id="item-sub-main"
+                  class="form-select-with-icon"
+                  placeholder="Enter value"
+                  required
+                >
+                  <option value="" selected>اختر بيان فرعي</option>
+                  {% for x in subType %}
+                  <option value="{{ x.fileid }}">{{ x.subtypename }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="input-group mb-1">
+                <div class="width-73">
+                  <label for="company" class="form-label">الشركة المنتجة</label
+                  ><i
+                    class="bi bi-question-circle"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    onclick="openWindow('manage_companies')"
+                    title="Enter the item name in Arabic"
+                  ></i>
+                </div>
+                <select
+                  name="company"
+                  id="company"
+                  class="form-select-with-icon"
+                  placeholder="Enter value"
+                  required
+                >
+                  <option value="" selected>اختر شركة</option>
+                  {% for x in company %}
+                  <option value="{{ x.fileid }}">{{ x.companyname }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="input-group mb-1">
+                <div class="width-73">
+                  <label for="manufac-country" class="form-label"
+                    >بلد الصنع</label
+                  ><i
+                    class="bi bi-question-circle"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    onclick="openWindow('countries')"
+                    title="Enter the item name in Arabic"
+                  ></i>
+                </div>
+                <select
+                  name="countries"
+                  id="countries"
+                  class="form-select-with-icon"
+                  placeholder="Enter value"
+                  required
+                >
+                  <option value="" selected>اختر بلد الصنع</option>
+                  {% for x in countries %}
+                  <option value="{{ x.fileid }}">{{ x.countryname }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-73">
+                  <label for="pieces-per-box" class="form-label"
+                    >عدد القطع بالصندوق</label
+                  >
+                </div>
+                <input
+                  type="number"
+                  class="form-control small-input"
+                  id="pieces-per-box"
+                  placeholder="0"
+                  min="0"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Third column -->
+            <div class="col-md-2">
+              <div class="input-group mb-1">
+                <div class="width-80">
+                  <label for="model" class="form-label">الموديل</label
+                  ><i
+                    class="bi bi-question-circle"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    title="Enter the item name in Arabic"
+                    onclick="openWindow('models')"
+                  ></i>
+                </div>
+                <select
+                  name="model"
+                  id="model"
+                  class="form-select-with-icon"
+                  placeholder="اختر موديل"
+                  required
+                >
+                  <option value="" selected>اختر موديل</option>
+                  {% for x in models %}
+                  <option
+                    value="{{ x.fileid }}"
+                    data-main-type="{{ x.maintype.fileid }}"
+                  >
+                    {{ x.sname }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="input-group mb-1">
+                <div class="width-80">
+                  <label for="storage-balance" class="form-label"
+                    >الرصيد بالمخزن</label
+                  ><i
+                    class="bi bi-question-circle"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    onclick="openWindow('measurements')"
+                    title="Enter the item name in Arabic"
+                  ></i>
+                </div>
+                <input
+                  type="number"
+                  class="form-control small-input"
+                  id="storage-balance"
+                  placeholder="0"
+                  required
+                  disabled
+                  style="width: 35px"
+                />
+                <select
+                  id="input25"
+                  name="input25"
+                  class="form-select"
+                  required
+                >
+                  {% for measurement in measurements %}
+                  <option value="{{ measurement.id }}">
+                    {{ measurement.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-80">
+                  <label for="backup-balance" class="form-label"
+                    >الرصيد الاحتياطي</label
+                  >
+                </div>
+                <input
+                  type="number"
+                  class="form-control small-input"
+                  id="backup-balance"
+                  placeholder="0"
+                  min="0"
+                  required
+                  disabled
+                  style="width: 35px"
+                />
+
+                <select
+                  id="input25"
+                  name="input25"
+                  class="form-select"
+                  required
+                >
+                  {% for measurement in measurements %}
+                  <option value="{{ measurement.id }}">
+                    {{ measurement.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-80">
+                  <label for="temp-balance" class="form-label"
+                    >الرصيد المؤقت</label
+                  >
+                </div>
+                <input
+                  type="number"
+                  class="form-control small-input"
+                  id="temp-balance"
+                  min="0"
+                  placeholder="0"
+                  required
+                  disabled
+                  style="width: 35px"
+                />
+                <select
+                  id="input25"
+                  name="input25"
+                  class="form-select"
+                  required
+                >
+                  {% for measurement in measurements %}
+                  <option value="{{ measurement.id }}">
+                    {{ measurement.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-80">
+                  <label for="reserved-balance" class="form-label"
+                    >الرصيد المحجوز</label
+                  >
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  class="form-control small-input"
+                  id="reserved-balance"
+                  placeholder="0"
+                  required
+                  disabled
+                  style="width: 35px"
+                />
+                <select
+                  id="input25"
+                  name="input25"
+                  class="form-select"
+                  required
+                >
+                  {% for measurement in measurements %}
+                  <option value="{{ measurement.id }}">
+                    {{ measurement.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- Fourth column -->
+            <div class="col-md-2">
+              <div class="input-group mb-1">
+                <div class="width-55">
+                  <label for="status" class="form-label">حالة الصنف</label>
+                </div>
+                <select
+                  id="status"
+                  name="status"
+                  class="form-select-with-icon"
+                  required
+                >
+                  <option value="" disabled selected>اختر حالة الصنف</option>
+                  <option value="storage">المصنع</option>
+                  <option selected value="marine">شركة مارين</option>
+                </select>
+              </div>
+
+              <div class="input-group mb-1">
+                <div class="width-55">
+                  <label for="location" class="form-label">الموقع</label>
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="location"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Fifth column -->
+            <div class="col-md-2">
+              <div class="input-group mb-1">
+                <div class="width-55">
+                  <label for="origin-price" class="form-label"
+                    >سعر التوريد</label
+                  >
+                </div>
+                <input
+                  type="number"
+                  class="form-control small-input"
+                  id="origin-price"
+                  min="0"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-55">
+                  <label for="buy-price" class="form-label">سعر الشراء</label>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  class="form-control small-input"
+                  id="buy-price"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-55">
+                  <label for="expenses-price" class="form-label"
+                    >سعر التكلفة</label
+                  >
+                </div>
+                <input
+                  type="number"
+                  class="form-control small-input"
+                  id="expenses-price"
+                  min="0"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-55">
+                  <label for="sell-price" class="form-label">سعر البيع</label>
+                </div>
+                <input
+                  type="number"
+                  class="form-control small-input"
+                  id="sell-price"
+                  min="0"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-55">
+                  <label for="less-price" class="form-label"
+                    >أقل سعر للبيع</label
+                  >
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  class="form-control small-input"
+                  id="less-price"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <div style="height: 60px"></div>
+              <div class="input-group mb-1">
+                <label for="pno" class="form-label">رقم خاص</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="pno"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Button Row -->
+          <div class="row button-row mt-1">
+            <button type="button" class="btn btn-primary m-1" id="reset-button">
+              مسح
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary m-1"
+              id="more-details-btn"
+            >
+              تفاصيل اخرى
+            </button>
+            <button
+              type="button"
+              onclick="openWindow('import-excel')"
+              class="btn btn-primary m-1"
+            >
+              استيراد
+            </button>
+            <button
+              id="new-record-button"
+              type="button"
+              class="btn btn-primary m-1"
+            >
+              جديد
+            </button>
+            <button type="button" id="oem-btn" class="btn btn-primary m-1">
+              ارقام OEM
+            </button>
+            <button type="button" id="images-btn" class="btn btn-primary m-1">
+              صورة الصنف
+            </button>
+            <button type="submit" class="btn btn-primary m-1" id="editButton">
+              تعديل
+            </button>
+            <button type="button" class="btn btn-primary m-1" id="deleteButton">
+              حذف
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary m-1"
+              onclick="window.close()"
+            >
+              اغلاق
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Use jQuery -->
+
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script></script>
+  </body>
+</html>

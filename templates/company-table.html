@@ -1,0 +1,133 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جدول الشركات</title>
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+    <style>
+      table {
+        width: 100%;
+        margin-top: 20px;
+      }
+      .form-container {
+        margin-top: 20px;
+      }
+      .btn-container {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4">
+      <h2 class="mb-4">جدول الشركات</h2>
+
+      <!-- Data Grid -->
+      <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>اسم الشركة</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for x in companyTable %}
+          <tr>
+            <td>{{ x.fileid }}</td>
+            <td>{{ x.companyname }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">No data available</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Form Container -->
+      <div class="form-container">
+        <h4>ادارة الشركات</h4>
+        <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="id" id="companyId" />
+          <div class="mb-3">
+            <label for="inputName" class="form-label">اسم الشركة</label>
+            <input
+              type="text"
+              class="form-control"
+              name="name"
+              id="inputName"
+              placeholder="Enter name"
+              required
+            />
+            <div class="invalid-feedback">Please enter a company name.</div>
+          </div>
+
+          <div class="btn-container">
+            <button
+              type="submit"
+              name="action"
+              value="add"
+              class="btn btn-success me-2"
+            >
+              اضافة
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="edit"
+              class="btn btn-primary me-2"
+            >
+              تعديل
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="delete"
+              class="btn btn-danger"
+            >
+              حذف
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS (optional) -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+      // Handle row click to pre-fill the form for editing
+      document.querySelectorAll("table tbody tr").forEach((row) => {
+        row.addEventListener("click", () => {
+          document.getElementById("companyId").value = row.cells[0].innerText;
+          document.getElementById("inputName").value = row.cells[1].innerText;
+        });
+      });
+
+      // Form validation
+      (function () {
+        "use strict";
+
+        const forms = document.querySelectorAll(".needs-validation");
+
+        Array.from(forms).forEach((form) => {
+          form.addEventListener(
+            "submit",
+            (event) => {
+              if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+              form.classList.add("was-validated");
+            },
+            false
+          );
+        });
+      })();
+    </script>
+  </body>
+</html>

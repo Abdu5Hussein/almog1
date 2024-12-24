@@ -1,0 +1,602 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تقارير الاصناف</title>
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/custom-tabulator.css' %}"
+    />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    <style>
+      .small-font {
+        font-size: 13px;
+      }
+      .row {
+        direction: rtl; /* Set the direction of the row to right-to-left */
+      }
+      .large-textarea {
+        height: 135px; /* Set a specific height for the textarea (adjust as needed) */
+      }
+      .form-label,
+      .form-control {
+        direction: ltr; /* Make sure inputs and labels align correctly within the form */
+      }
+
+      .button-row {
+        display: flex;
+        justify-content: space-between; /* Distributes space evenly between buttons */
+        width: 100%; /* Full width of the parent container */
+      }
+
+      .button-row .btn {
+        flex: 1; /* Each button takes up equal space */
+        margin: 0 5px; /* Optional: Add space between buttons */
+      }
+
+      form label {
+        margin-bottom: 0px;
+        margin-left: 10px;
+        margin-right: 0;
+      }
+
+      th,
+      td {
+        padding: 2px; /* Decrease padding */
+        font-size: 13px; /* Decrease font size */
+        border: 1px solid #ddd; /* Add borders for visibility */
+      }
+      .custom-table table {
+        border-collapse: collapse; /* Combine borders of adjacent cells */
+      }
+
+      .custom-table th,
+      .custom-table td {
+        padding: 0; /* Remove all padding */
+        padding-right: 5px;
+        margin: 0; /* Ensure no margins are applied */
+        height: auto; /* Allow cells to have minimal height */
+      }
+
+      input.form-control {
+        padding: 5px; /* Decrease padding */
+        font-size: 12px; /* Decrease font size */
+        height: 30px; /* Set a fixed height (optional) */
+        border-radius: 0;
+
+        text-align: right;
+        direction: rtl;
+      }
+
+      select.form-select {
+        padding: 5px; /* Decrease padding for select fields */
+        font-size: 12px; /* Decrease font size */
+        height: 30px; /* Set a fixed height for select fields (optional) */
+      }
+
+      h1,
+      h2,
+      h3,
+      label,
+      p,
+      table thead tbody {
+        font-size: 15px;
+        margin: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        text-align: right;
+        font-size: 15px;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-primary {
+        width: 100%;
+      }
+
+      .editable {
+        cursor: pointer;
+        background-color: #f9f9f9;
+      }
+
+      .editable:focus {
+        outline: none;
+        background-color: #e6e6e6;
+      }
+
+      .custom-table {
+        max-height: 230px;
+        overflow-y: auto;
+      }
+
+      table {
+        width: 100%;
+        margin: 0px;
+      }
+
+      thead {
+        background-color: #b3c9df;
+        color: rgb(0, 0, 0);
+        padding: 2px;
+      }
+
+      table thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        z-index: 1;
+      }
+      .title-container {
+        width: 100%;
+        background-color: #b3c9df;
+        text-align: center;
+        padding: 3px 0px;
+        margin-bottom: 2px;
+      }
+      .label-width {
+        width: 150px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="custom-form">
+        <div class="title-container mb-1">
+          <h3>تعديل الاسعار</h3>
+        </div>
+        <form>
+          <div class="row">
+            <!-- First column -->
+            <div class="col-md-4">
+              <div class="mb-1 d-flex align-items-center">
+                <div style="width: 100px">
+                  <label for="input1" class="form-label">البيان الرئيسي</label>
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="input1"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+              <div class="mb-1 d-flex align-items-center">
+                <div style="width: 100px">
+                  <label for="input2" class="form-label">اسم الصنف</label>
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="input2"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Second column -->
+            <div class="col-md-3">
+              <div class="mb-1 d-flex align-items-center">
+                <div style="width: 120px">
+                  <label for="input3" class="form-label">الرقم الاصلي</label>
+                </div>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="input3"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Third column -->
+            <div class="col-md-4">
+              <div class="mb-1 d-flex align-items-center">
+                <div style="width: 100px">
+                  <label for="input5" class="form-label">اسم الشركة</label>
+                </div>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="input5"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+              <div class="mb-1 d-flex align-items-center">
+                <div style="width: 100px">
+                  <label for="input4" class="form-label">رقم الشركة</label>
+                </div>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="input4"
+                  placeholder="Enter value"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkbox Row -->
+          <div class="row mt-2 justify-content-center">
+            <div class="col-md-2 d-flex align-items-center">
+              <input type="checkbox" id="check1" style="margin-left: 5px" />
+              <label for="check1">كمية محجوزة</label>
+            </div>
+            <div class="col-md-2 d-flex align-items-center">
+              <input type="checkbox" id="check2" style="margin-left: 5px" />
+              <label for="check2">كمية غير موجودة</label>
+            </div>
+            <div class="col-md-2 d-flex align-items-center">
+              <input type="checkbox" id="check3" style="margin-left: 5px" />
+              <label for="check3">كمية موجودة</label>
+            </div>
+            <div class="col-md-2 d-flex align-items-center">
+              <input type="checkbox" id="check4" style="margin-left: 5px" />
+              <label for="check4">حد الطلب</label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="title-container mt-1">
+        <h3>جدول الاصناف</h3>
+      </div>
+
+      <!-- Table Section -->
+      <div class="custom-table mb-1">
+        <div
+          dir="rtl"
+          id="users-table"
+          class="table table-striped table-bordered table-hover"
+        ></div>
+      </div>
+
+      <!-- Form Section with 5 input columns -->
+
+      <div class="row">
+        <!-- First Column: Checkboxes with Labels -->
+        <div class="col-md-5">
+          <div class="row mb-3">
+            <div class="col-12">
+              <div class="form-group border p-2">
+                <div class="row">
+                  <!-- First Column of Checkboxes -->
+                  <div class="col-md-6">
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check1"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-check-label label-width" for="check1"
+                          >سعر التوريد</label
+                        >
+                      </div>
+                    </div>
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check2"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-check-label label-width" for="check2"
+                          >سعر الشراء</label
+                        >
+                      </div>
+                    </div>
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check3"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-check-label label-width" for="check3"
+                          >سعر التكلفة</label
+                        >
+                      </div>
+                    </div>
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check4"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-check-label label-width" for="check4"
+                          >سعر البيع</label
+                        >
+                      </div>
+                    </div>
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check5"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-check-label label-width" for="check5"
+                          >اقل سعر للبيع</label
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Second Column of Checkboxes -->
+                  <div class="col-md-6">
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check6"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-check-label label-width" for="check6"
+                          >اقل سعر للبيع = سعر التكلفة +</label
+                        >
+                      </div>
+                    </div>
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check7"
+                        />
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-check-label label-width" for="check7"
+                          >اقل سعر للبيع = سعر البيع +/-</label
+                        >
+                      </div>
+                    </div>
+                    <div class="row" style="width: 200px">
+                      <div class="col-md-2">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="check8"
+                        />
+                      </div>
+                      <div class="col-md-6 label-width">
+                        <label class="form-check-label" for="check8"
+                          >تقريب سعر واقل سعر للبيع</label
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Second Column: Value Field with +/- Checkbox -->
+        <div class="col-md-3 d-flex flex-column gap-[5px]">
+          <div
+            class="row mb-3 border p-2 m-0 d-flex align-items-center justify-content-center"
+          >
+            <div class="col-md-2" style="margin-left: 10px">القيمة:</div>
+            <div class="col-md-7 text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Enter value"
+              />
+            </div>
+            <div class="col-md-1"><input type="checkbox" /></div>
+            <div class="col-md-1">%</div>
+          </div>
+
+          <div class="row border p-2 m-0">
+            <div class="col-md-2 align-items-center justify-content-center">
+              <div class="row" style="width: 100px">
+                <div class="col-md-2">
+                  <input class="form-check-input" type="checkbox" id="check9" />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-check-label" for="check9">+</label>
+                </div>
+              </div>
+              <div class="row" style="width: 100px">
+                <div class="col-md-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="check10"
+                  />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-check-label" for="check10">-</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Third Column: Buttons and Textarea -->
+        <div class="col-md-4">
+          <div class="row">
+            <!-- First Sub-Column for Buttons -->
+            <div class="col-4 button-container full-height">
+              <button class="btn btn-primary btn-block p-1 small-font">
+                اضافة القطعة الحالية
+              </button>
+              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
+                اضافة جميع القطع
+              </button>
+              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
+                مسح القطعة الحالية
+              </button>
+            </div>
+            <div class="col-3 button-container full-height">
+              <button class="btn btn-primary btn-block p-1 small-font">
+                مسح جميع القطع
+              </button>
+              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
+                اختيار الكل
+              </button>
+              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
+                رفض الكل
+              </button>
+            </div>
+            <!-- Second Sub-Column for Text Field -->
+            <div class="col-5 full-height">
+              <textarea
+                class="form-control large-textarea"
+                placeholder="Enter text here"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <button
+          class="btn btn-primary p-1 small-font"
+          style="width: 100px; margin: 5px"
+        >
+          مخصص
+        </button>
+        <button
+          class="btn btn-primary p-1 small-font"
+          style="width: 100px; margin: 5px"
+        >
+          استيراد
+        </button>
+        <button
+          class="btn btn-primary p-1 small-font"
+          style="width: 100px; margin: 5px"
+        >
+          موافق
+        </button>
+        <button
+          class="btn btn-primary p-1 small-font"
+          style="width: 100px; margin: 5px"
+        >
+          اغلاق
+        </button>
+      </div>
+    </div>
+
+    <script src="{% static 'js/products-details.js' %}" defer></script>
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script>
+      $(document).ready(function () {
+        // Initialize Tabulator
+        table = new Tabulator("#users-table", {
+          height: "auto",
+          layout: "fitColumns",
+          selectable: true,
+          rowHeight: 20,
+          pagination: "local", // Enable local pagination
+          paginationSize: 5, // Number of rows per page
+          movableColumns: true,
+          columnHeaderVertAlign: "bottom",
+          columnMenu: true, // Enable column menu
+          rowFormatter: function (row) {
+            // Set the height directly on each row
+            row.getElement().style.height = "20px";
+          },
+          data: [], // Placeholder, will be loaded dynamically
+          columns: [
+            { title: "ID", field: "id", headerMenu: true },
+            { title: "Name", field: "name", headerMenu: true },
+            { title: "Email", field: "email", headerMenu: true },
+            { title: "Age", field: "age", headerMenu: true },
+          ],
+        });
+
+        // Allow editing of table cells
+        $("#users-table").on("dblclick", ".editable", function () {
+          $(this).attr("contenteditable", "true").focus();
+        });
+
+        $("#users-table").on("blur", ".editable", function () {
+          const cell = $(this);
+          const userId = cell.closest("tr").data("id");
+          const columnIndex = cell.index();
+          const newValue = cell.text().trim();
+
+          $.ajax({
+            url: "/update-user/",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              id: userId,
+              column: columnIndex,
+              value: newValue,
+            }),
+            success: function (response) {
+              console.log("Success:", response);
+            },
+            error: function (xhr, status, error) {
+              console.error("Error:", xhr.responseText);
+            },
+          });
+
+          cell.attr("contenteditable", "false");
+        });
+
+        $("#users-table").on("keydown", ".editable", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            $(this).blur();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

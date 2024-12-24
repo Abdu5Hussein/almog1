@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Two Rows, Two Columns</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+    <style>
+      /*
+      input[type="date"]::-webkit-datetime-edit,
+      input[type="date"]::-webkit-inner-spin-button,
+      input[type="date"]::-webkit-clear-button {
+        color: #ffffff;
+        position: relative;
+      }
+
+      input[type="date"]::-webkit-datetime-edit-year-field {
+        position: absolute !important;
+        border-left: 1px solid #8c8c8c;
+        padding: 2px;
+        padding-left: 5px;
+        color: #000;
+        left: 56px;
+      }
+
+      input[type="date"]::-webkit-datetime-edit-month-field {
+        position: absolute !important;
+        border-left: 1px solid #8c8c8c;
+        padding: 2px;
+        padding-left: 5px;
+        color: #000;
+        left: 26px;
+      }
+
+      input[type="date"]::-webkit-datetime-edit-day-field {
+        position: absolute !important;
+        color: #000;
+        padding: 2px;
+        left: 4px;
+      }*/
+      .centered-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%; /* Full height of the column */
+      }
+      .row-height {
+        height: 150px; /* Adjust row height as needed */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container m-5 mx-3" dir="rtl">
+      <div class="title-container">
+        <h3>تفاصيل اخرى</h3>
+      </div>
+      <!-- First Row -->
+      <div class="row row-height w-full">
+        <!-- First Column -->
+        <div class="col-4 border d-flex centered-text">
+          <p>تاريخ اخر شراء :</p>
+        </div>
+        <!-- Second Column -->
+        <div
+          class="col-6 border d-flex flex-column align-items-center justify-content-center"
+        >
+          <input
+            type="date"
+            class="form-control w-full mb-2"
+            value="{% for x in item %}{{ x.orderlastdate|date:'Y-m-d' }}{% endfor %}"
+            readonly
+            data-date-format="DD MMMM YYYY"
+          />
+          <small class="text-muted">
+            {% if item %} {% for x in item %}
+            <!-- Debugging -->
+            {{ x.ordersource |default:"اسم البايع" }} {% endfor %} {% else %}
+            اسم البايع {% endif %}
+          </small>
+          <small class="text-muted">
+            {% if item %} {% for x in item %}
+            <!-- Debugging -->
+            ({{ x.orderbillno |default:"رقم الفاتورررررررررة" }}) {% endfor %}
+            {% else %} رقم الفاتورة {% endif %}
+          </small>
+        </div>
+      </div>
+
+      <!-- Second Row -->
+      <div class="row row-height">
+        <!-- First Column -->
+        <div class="col-4 border d-flex centered-text">
+          <p>تاريخ اخر بيع :</p>
+        </div>
+        <!-- Second Column -->
+        <div
+          class="col-6 border d-flex flex-column align-items-center justify-content-center"
+        >
+          <input
+            type="date"
+            id="buy-date"
+            class="form-control w-full mb-2"
+            value="{% for x in item %}{{ x.buylastdate|date:'Y-m-d' }}{% endfor %}"
+            readonly
+          />
+          <small class="text-muted">
+            {% if item %} {% for x in item %}
+            <!-- Debugging -->
+            {{ x.buysource|default:"اسم الشاري" }} {% endfor %} {% else %} اسم
+            الشاري {% endif %} </small
+          ><small class="text-muted">
+            {% if item %} {% for x in item %}
+            <!-- Debugging -->
+            ({{ x.buybillno |default:"رقم الفاتورة" }}) {% endfor %} {% else %}
+            رقم الفاتورة {% endif %}
+          </small>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary m-3"
+        onclick="window.close()"
+      >
+        اغلاق
+      </button>
+    </div>
+
+    <!-- Bootstrap JS and Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.4/dist/umd/popper.min.js"></script>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+      /*document.addEventListener("DOMContentLoaded", function () {
+        const dateInput = document.getElementById("buy-date");
+        const orderLastDate =
+          "{% for x in item %}{{ x.orderlastdate|date:'Y-m-d' }}{% endfor %}"; // Get the date from Django template
+        dateInput.value = orderLastDate;
+        console.log(dateInput.value);
+      });*/
+    </script>
+  </body>
+</html>
