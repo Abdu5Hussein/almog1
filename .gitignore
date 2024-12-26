@@ -19,3 +19,4 @@ media/
 
 # Ignore local settings
 local_settings.py
+node_modules
