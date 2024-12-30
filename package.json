@@ -1,5 +1,31 @@
 {
   "devDependencies": {
-    "prettier": "^3.3.3"
-  }
+    "@types/tabulator-tables": "^6.2.3",
+    "css-loader": "^7.1.2",
+    "prettier": "^3.3.3",
+    "style-loader": "^4.0.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "tabulator-tables": "^6.3.0"
+  },
+  "name": "almog1",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --mode development",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abdu5Hussein/almog1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Abdu5Hussein/almog1/issues"
+  },
+  "homepage": "https://github.com/Abdu5Hussein/almog1#readme",
+  "description": ""
 }

@@ -1,0 +1,23 @@
+/* static/css/login.css */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.background-image {
+    background-image: url('../images/background.jpg'); /* Path to your background image */
+    background-size: cover;
+    background-position: center;
+    height: 100%;
+    position: fixed;
+    width: 100%;
+    z-index: -1; /* Behind the login container */
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 20px auto;
+    width: 200px; /* Adjust as needed */
+}

@@ -15,7 +15,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from django.db.models import F, Q  # Import F for field comparison
 from django.utils.timezone import make_aware
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A3  # Change to A3 size for wider pages
 from reportlab.lib.pagesizes import landscape  # Landscape orientation of Tabloid page
@@ -505,7 +505,7 @@ COLUMN_TITLES = {
 
 def ProductsDetails(req):
     
-    company = Companytable.objects.all()
+    company = Companytable.objects.values('fileid', 'companyname')
     measurements = Measurement.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
@@ -909,7 +909,9 @@ def process_excel_and_import(request):
 
 
 # Register the Amiri font
-pdfmetrics.registerFont(TTFont('Amiri', 'static/amiri-font/Amiri-Regular.ttf'))
+from django.conf import settings
+font_path = settings.BASE_DIR / 'staticfiles/Amiri-font/Amiri-Regular.ttf'
+pdfmetrics.registerFont(TTFont('Amiri', str(font_path)))
 
 # Regular expression to detect Arabic text
 ARABIC_CHAR_PATTERN = re.compile(r'[\u0600-\u06FF]')
@@ -1324,27 +1326,42 @@ def get_clients(request):
         data = list(items)  # Convert QuerySet to a list
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)  # Return error details in JSON 
-    
+        return JsonResponse({'error': str(e)}, status=500)          # Return error details in JSON 
+
+from django.core.paginator import Paginator
+from django.core.cache import cache  
 def get_data(request):
     try:
-        # Query the database for all Mainitem entries
+        # Fetch all records
+        print(request.body)
         items = Mainitem.objects.all().values(
             'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname', 
             'itemthird', 'itemsize', 'companyproduct', 'itemvalue', 
             'itemtemp', 'itemplace', 'buyprice', 'memo', 'replaceno', 
             'barcodeno', 'eitemname', 'currtype', 'lessprice', 'pno', 
             'currvalue', 'itemvalueb', 'costprice', 'resvalue', 'orderprice',
-            'levelproduct', 'orderlastdate', 'ordersource', 'orderbillno', 
-            'buylastdate', 'buysource', 'buybillno', 'orgprice', 'orderstop', 
-            'buystop', 'itemtrans', 'itemtype', 'itemperbox', 'cstate'
-        )# List the fields you need
-  
-        
-        data = list(items)  # Convert QuerySet to a list
-        return JsonResponse(data, safe=False)
+            'orderlastdate', 'ordersource', 'orderbillno', 
+            'buylastdate', 'buysource', 'buybillno', 'orgprice'
+        )
+
+        # Pagination parameters from the request
+        page_number = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('size', 20))
+
+        # Create paginator
+        paginator = Paginator(items, page_size)
+        page_obj = paginator.get_page(page_number)
+
+        # Prepare the response
+        response = {
+            "data": list(page_obj),  # Convert the current page items to a list
+            "last_page": paginator.num_pages,  # Total number of pages
+            "total_rows": paginator.count,  # Total number of rows
+            "page_size":page_size,
+        }
+        return JsonResponse(response)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)  # Return error details in JSON
+        return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt  # Disable CSRF validation for this view (use with caution in production)
 def update_itemvalue(request):

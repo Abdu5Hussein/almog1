@@ -688,10 +688,15 @@
           layout: "fitColumns",
           selectable: true,
           rowHeight: 20,
-          pagination: "local", // Enable local pagination
-          paginationSize: 100, // Show 100 records per page
+          pagination:true, //enable pagination
+          paginationMode:"remote", //enable remote pagination
+          paginationSize: 20, // Show 100 records per page
+          paginationInitialPage: 1, // Default page
           paginationSizeSelector: [50, 100, 200], // Page size options
           paginationButtonCount: 5, // Number of visible pagination buttons
+          pageLoaded: function(pageNumber) {
+            console.log("Page loaded: " + pageNumber);
+          },
           movableColumns: true,
           columnHeaderVertAlign: "bottom",
           columnMenu: true, // Enable column menu
@@ -839,15 +844,24 @@
           },
         });
         table.options.tableBuilt();
-
+table.on("pageLoaded", function(pageNumber) {
+    const pageSize = table.getPageSize(); // Get the current page size
+   console.log("page no: ",pageNumber);
+    console.log("page size: ",pageSize); // Fetch data for the new page
+});
         // Use the URL in your fetch request
+        console.time("fetchData"); // Start timer
+        
+
         fetch("api/get-data/")
           .then((response) => response.json())
           .then((data) => {
             console.log("Fetched Data:", data);
 
             // Set data in Tabulator
-            table.setData(data);
+            table.setData(data.data);
+     
+
 
             // After setting data, calculate sums for the required columns
             const itemvalueSum = calculateColumnSum("itemvalue");
@@ -876,28 +890,26 @@
             console.log("#totalorder", totalorder);
             console.log("#totalbuy", totalbuy);
           })
-          .catch((error) => console.error("Error fetching data:", error));
+          .catch((error) => console.error("Error fetching data:", error)).finally(() => {
+            console.timeEnd("fetchData"); // End the timer regardless of success or failure
+          });
 
         // Function to calculate the sum of 'itemvalue' column in Tabulator
         function calculateColumnSum(columnName) {
-          let sum = 0;
-          const rowData = table.getData(); // Fetch row data from Tabulator
+          const rowData = table.getData();  // Fetch row data from Tabulator
 
-          if (Array.isArray(rowData)) {
-            // Ensure rowData is an array
-            rowData.forEach((row) => {
-              if (!isNaN(row[columnName])) {
-                sum += parseFloat(row[columnName]); // Convert to float and add to sum
-              }
-            });
-          } else {
-            console.error(
-              `rowData is not an array or is undefined for column: ${columnName}`
-            );
+          if (!Array.isArray(rowData)) {
+              console.error(`rowData is not an array or is undefined for column: ${columnName}`);
+              return 0;  // Return 0 if rowData is not an array
           }
 
-          return sum;
-        }
+          // Using reduce to sum the values
+          return rowData.reduce((sum, row) => {
+              const value = parseFloat(row[columnName]);
+              return !isNaN(value) ? sum + value : sum;  // Only add to sum if value is a number
+          }, 0);
+      }
+
 
         function calculateProductSum(columnA, columnB) {
           let sum = 0;

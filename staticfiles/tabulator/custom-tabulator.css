@@ -1,0 +1,132 @@
+/* Container for the table */
+#users-table {
+    max-height: 190px; /* Adjust as needed */
+    height: 100%;
+    /*min-height: 200px;  Adjust as needed */
+    overflow: auto; /* Enable scrolling */
+    border: 1px solid #ccc; /* Table-like border */
+    overflow: auto;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .tabulator .tabulator-header {
+    position: sticky;
+    top: 0;
+    z-index: 1; /* Ensure header is above table cells */
+  }
+
+  .tabulator .tabulator-header .tabulator-col .tabulator-col-content {
+    padding: 1px;
+  }
+
+  .tabulator-header,
+  .tabulator-headers,
+  .tabulator-header-contents {
+    height: 100%;
+    padding: 0px;
+  }
+
+  .tabulator-headers {
+    padding-top: 0px;
+  }
+  .tabulator-header,
+  .tabulator-header-contents {
+    height: 60px;
+    padding: 0px;
+  }
+
+  .tabulator-col-content {
+    padding: 0px;
+  }
+
+  /* Tabulator cell and header styles for compact layout */
+  .tabulator .tabulator-cell,
+  .tabulator .tabulator-header {
+    padding: 1px; /* No padding */
+    margin: 0; /* No margin */
+    font-size: 13px; /* Set font size to 13px */
+    line-height: 1; /* Reduce line height for tighter spacing */
+    height: 20px; /* Set cell height */
+    border-bottom: 2px solid #ccc; /* Cell border for table-like appearance */
+  }
+
+  .tabulator-row .tabulator-selectable .tabulator-row-odd {
+    height: 10px;
+  }
+  /* Header row styles */
+  .tabulator .tabulator-header {
+    height: 28px; /* Set header row height slightly higher */
+    background-color: #007bff; /* Header background color (blue) */
+    color: #fff; /* Header text color (white) */
+    font-weight: bold; /* Make header text bold */
+    text-align: right; /* Align text to the left */
+  }
+
+  /* Row styles */
+  .tabulator .tabulator-row {
+    line-height: 20px; /* Reset line-height */
+    height: 20px !important; /* Set row height */
+    margin: 0; /* No margin */
+    padding: 0 !important; /* No padding */
+  }
+  .tabulator .tabulator-cell {
+    height: 20px !important; /* Match cell height */
+    padding: 0 4px; /* Remove any padding */
+    line-height: 20px;
+    margin: 0px; /* Align text within the 20px height */
+  }
+  .tabulator .tabulator-row.tabulator-selectable,
+  .tabulator .tabulator-row.tabulator-selectable.tabulator-row-odd {
+    height: 20px !important; /* Force these specific rows to have 20px height */
+    line-height: 20px !important; /* Ensure text is vertically centered */
+  }
+
+  /* Ensure selectable rows have no more than 24px height */
+  .tabulator .tabulator-row.selectable {
+    height: 20px; /* Keep this consistent with row height */
+  }
+
+  
+
+  .red-row{
+    background-color: red !important;
+  }
+
+  .tabulator .tabulator-row:hover,
+  .tabulator .tabulator-cell:hover {
+    height: 20px !important;
+    line-height: 20px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* Footer container */
+.tabulator .tabulator-footer {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  padding: 2px; /* Minimal padding for a smaller footer */
+  background-color: #f0f0f0;
+  border-top: 1px solid #ccc;
+  font-size: 12px; /* Smaller font for compact appearance */
+  height: 24px; /* Minimal height for footer */
+}
+
+/* Paginator within the footer */
+.tabulator .tabulator-paginator {
+  display: flex !important;
+  justify-content: center;
+  padding: 2px;
+  font-size: 12px;
+  height: 30px;
+}
+.tabulator .tabulator-footer .tabulator-page {
+  margin: 2px;
+  padding: 1px 11px;
+}
+.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placeholder-contents  {
+  font-size: 14px; /* Set to your desired font size */
+  text-align: center;
+  color: #888; /* Optional: Change text color */
+  padding: 20px;
+}

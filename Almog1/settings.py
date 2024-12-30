@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#%+mz*p*)^nanq$a+pm0%m4_pp-v#u!ak!h-8q8dw4tostng@0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['marine.co.ly','www.marine.co.ly', '45.13.59.226','127.0.0.1']
 
@@ -40,6 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "almogOil",
+    'debug_toolbar',
+]
+
+# Add IPs that are allowed to view the toolbar (typically local IP)
+INTERNAL_IPS = [
+    "127.0.0.1",
 ]
 
 MIDDLEWARE = [
@@ -50,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 CSRF_COOKIE_HTTPONLY = False  # Allow access to CSRF token in JavaScript

@@ -1,0 +1,16 @@
+[0;1;31m●[0m gunicorn.service - gunicorn daemon
+     Loaded: loaded (/etc/systemd/system/gunicorn.service; enabled; vendor preset: enabled)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Wed 2024-12-25 23:36:19 CET; 2min 48s ago
+TriggeredBy: [0;1;32m●[0m gunicorn.socket
+   Main PID: 358282 (code=exited, status=1/FAILURE)
+
+Dec 25 23:36:14 vmi2336898.contaboserver.net systemd[1]: Started gunicorn daemon.
+Dec 25 23:36:14 vmi2336898.contaboserver.net gunicorn[358282]: [2024-12-25 23:36:14 +0100] [358282] [INFO] Starting gunicorn 23.0.0
+Dec 25 23:36:14 vmi2336898.contaboserver.net gunicorn[358282]: [2024-12-25 23:36:14 +0100] [358282] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied
+Dec 25 23:36:15 vmi2336898.contaboserver.net gunicorn[358282]: [2024-12-25 23:36:15 +0100] [358282] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied
+Dec 25 23:36:16 vmi2336898.contaboserver.net gunicorn[358282]: [2024-12-25 23:36:16 +0100] [358282] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied
+Dec 25 23:36:17 vmi2336898.contaboserver.net gunicorn[358282]: [2024-12-25 23:36:17 +0100] [358282] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied
+Dec 25 23:36:18 vmi2336898.contaboserver.net gunicorn[358282]: [2024-12-25 23:36:18 +0100] [358282] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied
+Dec 25 23:36:19 vmi2336898.contaboserver.net gunicorn[358282]: [2024-12-25 23:36:19 +0100] [358282] [ERROR] Can't connect to /run/gunicorn.sock
+Dec 25 23:36:19 vmi2336898.contaboserver.net systemd[1]: [0;1;39m[0;1;31m[0;1;39mgunicorn.service: Main process exited, code=exited, status=1/FAILURE[0m
+Dec 25 23:36:19 vmi2336898.contaboserver.net systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mgunicorn.service: Failed with result 'exit-code'.[0m
