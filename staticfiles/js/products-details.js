@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .then((response) => response.json())
     .then((data) => {
       console.log("Fetched Data:", data);
-      table.setData(data.data);
+      agTable.api.setRowData(data.data);
     })
     .catch((error) => console.error("Error fetching data:", error));*/
 
@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize Tabulator
   // Define grid options
   const gridOptions = {
+    rowData: [],
     columnDefs: [
       // Column definitions for your grid
       { headerName: "الرقم الخاص", field: "pno", width: 100, hide: false },
@@ -72,30 +73,44 @@ document.addEventListener("DOMContentLoaded", function () {
       { headerName: "عدد القطع للصندوق", field: "itemperbox", hide: true },
       { headerName: "حالة الصنف", field: "cstate", hide: true }
     ],
-
-    paginationPageSize: 300, // Set default rows per page
-    pagination: true, // Enable pagination
-    paginationPageSizeSelector: [100, 500, 700, 1000], // Page size options
-
+    rowModelType: "infinite",
+    cacheBlockSize: 100,
+    cacheOverflowSize: 2,
+    maxConcurrentDatasourceRequests: 2,
+    infiniteInitialRowCount: 1,
+    maxBlocksInCache: 2,
+    pagination: true,
+    paginationAutoPageSize: true,
+    paginationPageSizeSelector: [100, 300, 500, 700, 1000], // Page size options
     // Set up remote pagination with the API
     datasource: {
-      getRows: function (params) {
-        const { startRow, endRow } = params;
-        const page = Math.floor(startRow / endRow) + 1;
-        const size = endRow - startRow;
+      rowCount: undefined, // behave as infinite scroll
+      getRows(params) {
+        const page = params.startRow / params.endRow; // Calculate the page index based on rows requested
+        const size = params.endRow - params.startRow; // Number of rows requested (page size)
+        const reqUrl = `${url}?startRow=${page}&endRow=${size}`;
+        console.log(reqUrl);
+        console.log("Requesting data from:", reqUrl);
 
-        // Fetch data via your API
-        fetch(`/api/get-data/?page=${page}&size=${size}`)
-          .then(response => response.json())
-          .then(data => {
-            // Call the success callback to load data
-            params.successCallback(data.data, data.total);
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Fetched Data:", data);
+            console.log("params:", params);
+
+            // Provide the grid with the rows
+            params.successCallback(data.rows, data.rowCount); // `data.totalCount` should be the total number of rows available in the backend
+
+            // Log the number of rows fetched
+            console.log("Number of rows fetched:", data.rows.length);
           })
-          .catch(err => {
-            // Call failure callback on error
+          .catch((error) => {
+            console.error("Error fetching data:", error);
+
+            // Inform the grid of a failure
             params.failCallback();
           });
-      }
+      },
     },
 
     // Event handler for row click
@@ -106,7 +121,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Styling rows based on conditions
     getRowStyle: function (params) {
-      const { itemvalue, itemvalueb, buyprice, costprice, itemtemp, orgprice, orderprice } = params.data;
+      const {
+        itemvalue = '',
+        itemvalueb = '',
+        buyprice = 0,
+        costprice = 0,
+        itemtemp = '',
+        orgprice = 0,
+        orderprice = 0,
+      } = params.data || {};
 
       if (itemvalue <= itemtemp) {
         return { backgroundColor: "#ffffe0" }; // Yellow row
@@ -128,8 +151,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-  // Initialize AG-Grid with options
-  new agGrid.Grid(document.getElementById('users-table'), gridOptions);
+  // Get the div where the grid will be placed
+  const gridDiv = document.querySelector('#users-table');
+
+  // Initialize AG-Grid on the div
+  const agTable = new agGrid.createGrid(gridDiv, gridOptions);
 
   // Handle pagination data (received from the API)
   gridOptions.paginationDataReceived = function (paginationData) {
@@ -140,25 +166,50 @@ document.addEventListener("DOMContentLoaded", function () {
 
   //////////////////
   // Function to fetch data based on the current page and page size
-  function fetchData(page, size) {
-    const reqUrl = `${url}?page=${page}&size=${size}`;
-    console.log(reqUrl);
-    fetch(reqUrl)
-      .then(response => response.json())
-      .then(data => {
-        console.log("Fetched Data:", data);
-        console.log("no of Data:", data.data.length);
-        table.setData(data.data); // Set the data in the table
-        table.setPage(page); // Update Tabulator page
-        //table.options.ajaxResponse("/api/get-data/", { page: 1, size: 500 }, data);
+  agTable.refreshInfiniteCache();
+  function setupAgGridWithInfiniteScroll() {
+    console.log("triggered");
 
+    const datasource = {
+      rowCount: undefined, // behave as infinite scroll
+      getRows(params) {
+        const page = params.startRow / params.endRow; // Calculate the page index based on rows requested
+        const size = params.endRow - params.startRow; // Number of rows requested (page size)
+        const reqUrl = `${url}?page=${page}&size=${size}`;
+        console.log(reqUrl);
+        console.log("Requesting data from:", reqUrl);
 
-      })
-      .catch(error => console.error("Error fetching data:", error));
+        fetch(reqUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Fetched Data:", data);
+
+            // Provide the grid with the rows
+            params.successCallback(data.data, data.totalCount); // `data.totalCount` should be the total number of rows available in the backend
+
+            // Log the number of rows fetched
+            console.log("Number of rows fetched:", data.data.length);
+          })
+          .catch((error) => {
+            console.error("Error fetching data:", error);
+
+            // Inform the grid of a failure
+            params.failCallback();
+          });
+      },
+    };
+
+    // Set the datasource to the AG Grid instance
+    agTable.setGridOption("datasource", datasource);
+    //agTable.setDatasource(datasource);
+    console.log("api", agTable.getRenderedNodes());
+    console.log("data", datasource);
+
   }
 
-  //fetchData(currentPage, pageSize);
 
+  //fetchData(currentPage, pageSize);
+  //setupAgGridWithInfiniteScroll();
 
   // Show/Hide dropdown menu on button click
   document.getElementById("toggle-column-menu").addEventListener("click", function () {
@@ -167,15 +218,11 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Column visibility handlers (attach to checkboxes after table initialization)
-  function setupColumnVisibilityHandlers(table) {
+  function setupColumnVisibilityHandlers(gridOptions) {
     document.querySelectorAll('#column-menu input[type="checkbox"]').forEach((checkbox) => {
       checkbox.addEventListener("change", function () {
         const columnField = this.value;
-        if (this.checked) {
-          table.showColumn(columnField); // Show the column
-        } else {
-          table.hideColumn(columnField); // Hide the column
-        }
+        gridOptions.columnApi.setColumnVisible(columnField, this.checked); // Show or hide the column
       });
     });
   }
@@ -206,27 +253,27 @@ document.addEventListener("DOMContentLoaded", function () {
   // Column visibility handlers (attach to checkboxes after table initialization)
 
   ////////////
-
-  table.on("rowSelectionChanged", function () {
-    const selectedRows = table.getSelectedRows();
-    console.log("Selected Rows:", selectedRows); // Log when selection changes
-  });
+  /*
+    agTable.api.addEventListener("rowSelected", function () {
+      const selectedRows = table.getSelectedRows();
+      console.log("Selected Rows:", selectedRows); // Log when selection changes
+    });*/
 
 
   // Prevent default context menu within #users-table div
   $("#users-table").on("contextmenu", function (e) {
     e.preventDefault(); // Prevent default right-click menu on table
   });
-
-  // Handle right-click on row
-  table.on("rowContext", function (e, row) {
-    e.preventDefault();
-    window.currentRow = row; // Save row for later use in performAction
-    const contextMenu = document.getElementById("contextMenu");
-    contextMenu.style.left = `${e.pageX}px`;
-    contextMenu.style.top = `${e.pageY}px`;
-    contextMenu.style.display = "block";
-  });
+  /*
+    // Handle right-click on row
+    agTable.api.addEventListener("rowContext", function (e, row) {
+      e.preventDefault();
+      window.currentRow = row; // Save row for later use in performAction
+      const contextMenu = document.getElementById("contextMenu");
+      contextMenu.style.left = `${e.pageX}px`;
+      contextMenu.style.top = `${e.pageY}px`;
+      contextMenu.style.display = "block";
+    });*/
 
   // Hide custom context menu when clicking outside
   document.addEventListener("click", function (e) {
@@ -235,28 +282,27 @@ document.addEventListener("DOMContentLoaded", function () {
       contextMenu.style.display = "none"; // Hide context menu
     }
   });
-
-  // Perform actions on context menu
-  window.performAction = function (action) {
-    if (!window.currentRow) return;
-
-    const rowData = window.currentRow.getData();
-    switch (action) {
-      case "Edit":
-        alert(`Editing row with ID: ${rowData.fileid}`);
-        break;
-      case "Delete":
-        alert(`Deleting row with ID: ${rowData.fileid}`);
-        break;
-      case "View Details":
-        alert(`Viewing details for row with ID: ${rowData.fileid}`);
-        break;
-      default:
-        console.log("Action not recognized");
-    }
-    document.getElementById("contextMenu").style.display = "none"; // Hide context menu after action
-  };
-
+  /*
+    // Perform actions on context menu
+    window.performAction = function (action) {
+      if (!window.currentRow) return;
+  
+      const rowData = window.currentRow.getData();
+      switch (action) {
+        case "Edit":
+          alert(`Editing row with ID: ${rowData.fileid}`);
+          break;
+        case "Delete":
+          alert(`Deleting row with ID: ${rowData.fileid}`);
+          break;
+        case "View Details":
+          alert(`Viewing details for row with ID: ${rowData.fileid}`);
+          break;
+        default:
+          console.log("Action not recognized");
+      }
+      document.getElementById("contextMenu").style.display = "none"; // Hide context menu after action
+    };*/
 
 
   // Function to get CSRF token
@@ -324,23 +370,15 @@ document.addEventListener("DOMContentLoaded", function () {
         if (response.ok) {
           alert("Record created successfully!");
 
-          // Option 1: Reload the grid data (fetch and update)
-          fetch(url)  // Assuming 'url' is the URL to get the latest data for the table
-            .then((response) => response.json())
-            .then((data) => {
-              table.setData(data);  // Set the new data to the table
-            })
-            .catch((error) => {
-              console.error("Error fetching updated data:", error);
-              console.log(getCSRFToken()); // Check the value of the CSRF token
-
-            });
+          // Refresh the AG Grid datasource to reflect the new data
+          agTable.api.refreshInfiniteCache(); // Reloads data dynamically from the datasource
         } else {
           alert("Error creating record.");
           console.log(getCSRFToken()); // Check the value of the CSRF token
         }
       })
       .catch((error) => console.error("Error:", error));
+
   }
   ////edit function
   document.getElementById("editButton").addEventListener("click", function (event) {
@@ -371,7 +409,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Get the data from the form fields
       const data = {
         csrfmiddlewaretoken: getCSRFToken(), // CSRF token for security
-        fileid: window.currentRow.getData().fileid, // Use fileid or primary key to identify the record
+        fileid: window.currentRow.data.fileid, // Use fileid or primary key to identify the record
         originalno: document.getElementById("original-no").value || "",
         itemmain: selectedItemMainText, // Use the inner text (item-main)
         itemsub: selectedItemSubMainText, // Use the inner text (item-sub-main)
@@ -410,17 +448,12 @@ document.addEventListener("DOMContentLoaded", function () {
           if (response.ok) {
             alert("Record updated successfully!");
 
-            // Option 1: Reload the grid data (fetch and update)
-            fetch(url)  // Assuming 'url' is the URL to get the latest data for the table
-              .then((response) => response.json())
-              .then((data) => {
-                table.setData(data);  // Set the new data to the table
-              })
-              .catch((error) => console.error("Error fetching updated data:", error));
+            /*// Option 1: Update the row directly in AG Grid
+            const updatedRowData = { ...rowData, ...data }; // Merge new data with old data
+            agTable.api.applyTransaction({ update: [updatedRowData] }); // Update the row in AG Grid*/
 
-            // Optionally: Update the row directly in the table if you don't want to reload the entire data
-            const updatedRowData = { ...window.currentRow.getData(), ...data }; // Merge new data with old data
-            window.currentRow.update(updatedRowData); // Update the row in Tabulator with the new data
+            // Option 2: Refresh data from the server (if needed)
+            agTable.api.refreshInfiniteCache(); // For infinite row model
           } else {
             alert("Error updating record.");
           }
@@ -553,32 +586,44 @@ document.addEventListener("DOMContentLoaded", function () {
       return csrfToken;
     }
 
-    fetch("/api/filter-items", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCSRFToken(),  // Include CSRF token here
-      },
-      body: JSON.stringify(filterValues),
-    })
-      .then(response => {
-        // Check if the response is okay (status 2xx)
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json(); // Parse JSON if response is valid
-      })
-      .then(data => {
-        // Update table with filtered data
-        console.log("Filtered data:", data);
+    // Define the datasource with filters applied
+    const datasource = {
+      getRows: function (params) {
+        const startRow = params.startRow;
+        const endRow = params.endRow;
+        const filters = filterValues;
 
-        // Assuming `table` is your Tabulator instance
-        table.replaceData(data); // Replace current table data with the new dataset
-      })
-      .catch(error => {
-        console.error("Error fetching filtered data:", error);
-        // Handle error (possibly display an error message to the user)
-      });
+        // Create the URL with filter parameters
+        const url = `/api/filter-items/?startRow=${startRow}&endRow=${endRow}`;
+
+        // Fetch the data with filters
+        fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken(),  // Include CSRF token here
+          },
+          body: JSON.stringify(filters),
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Pass the filtered data to AG Grid
+            params.successCallback(data.rows, data.totalCount); // Pass rows and total count
+          })
+          .catch(error => {
+            console.error("Error fetching filtered data:", error);
+            params.failCallback(); // Call failCallback if fetch fails
+          });
+      }
+    };
+
+    // Set the new datasource to AG Grid
+    agTable.api.setDatasource(datasource);
   }
 
   // Add event listeners to all filter inputs
@@ -589,39 +634,39 @@ document.addEventListener("DOMContentLoaded", function () {
   filterInputs.forEach((inputId) => {
     document.getElementById(inputId).addEventListener("input", applyFilters);
   });
-
-  // Handle left-click on row to populate input fields
-  table.on("rowClick", function (e, row) {
-    if (e.button === 2) return; // 2 is right-click
-    const rowData = row.getData();
-    console.log(rowData);
-    const fileid = rowData.fileid;// Assuming fileid is stored in the row's data-fileid attribute
-    sessionStorage.setItem('product-id', fileid);
-    sessionStorage.setItem('company-no', rowData.replaceno);
-    sessionStorage.setItem('company-name', rowData.companyproduct);
-
-    fetchItemData(fileid);
-  });
+  /*
+    // Handle left-click on row to populate input fields
+    agTable.api.addEventListener("rowClick", function (e, row) {
+      if (e.button === 2) return; // 2 is right-click
+      const rowData = row.getData();
+      console.log(rowData);
+      const fileid = rowData.fileid;// Assuming fileid is stored in the row's data-fileid attribute
+      sessionStorage.setItem('product-id', fileid);
+      sessionStorage.setItem('company-no', rowData.replaceno);
+      sessionStorage.setItem('company-name', rowData.companyproduct);
+  
+      fetchItemData(fileid);
+    });*/
 
 
   // Attach a click event to the "حذف" button
   document.getElementById("deleteButton").addEventListener("click", function () {
-    if (window.currentRow) {
+    // Check if a row is selected
+    const selectedRow = agTable.api.getSelectedRows()[0]; // Get the first selected row
+    if (selectedRow) {
       // Ask for confirmation before deletion
       if (confirm("هل أنت متأكد أنك تريد حذف هذا الصنف؟")) {
-        // Get the row data to send to the server
-        const rowData = window.currentRow.getData(); // Get the row data (make sure fileid exists)
+        // Get the file ID or primary key from the selected row data
+        const fileId = selectedRow.fileid; // Replace 'fileid' with your actual field name
 
         // Call the function to delete the record from the server
-        deleteRowFromServer(rowData.fileid)
-          .then(success => {
+        deleteRowFromServer(fileId)
+          .then((success) => {
             if (success) {
-              // If deletion was successful, delete the row from Tabulator
-              window.currentRow.delete();
+              // If deletion was successful, remove the row from AG Grid
+              agTable.api.applyTransaction({ remove: [selectedRow] });
 
-              // Hide the context menu if it's open
-              const contextMenu = document.getElementById("contextMenu");
-              contextMenu.style.display = "none";
+              // Optionally clear form inputs if any
               clearForm();
 
               alert("تم حذف الصنف بنجاح.");
@@ -629,7 +674,7 @@ document.addEventListener("DOMContentLoaded", function () {
               alert("حدث خطأ أثناء الحذف.");
             }
           })
-          .catch(error => {
+          .catch((error) => {
             console.error("Error deleting record:", error);
             alert("حدث خطأ في الاتصال بالخادم.");
           });
@@ -638,6 +683,7 @@ document.addEventListener("DOMContentLoaded", function () {
       alert("من فضلك اختر سطرًا للحذف.");
     }
   });
+
 
   // Function to delete row from the server and return success status
   function deleteRowFromServer(fileid) {
@@ -659,20 +705,23 @@ document.addEventListener("DOMContentLoaded", function () {
           if (data.success) {
             resolve(true); // Return success
           } else {
+            console.error("Deletion failed:", data.message || "Unknown error");
             resolve(false); // Return failure
           }
         })
         .catch(error => {
+          console.error("Error during deletion request:", error);
           reject(error); // Reject on error
         });
     });
   }
 
 
-  // Attach a rowClick event to select the row for deletion
-  table.on("rowClick", function (e, row) {
-    window.currentRow = row; // Save the selected row for later use
-  });
+  /*
+    // Attach a rowClick event to select the row for deletion
+    agTable.api.addEventListener("rowClick", function (e, row) {
+      window.currentRow = row; // Save the selected row for later use
+    });*/
 
   // Function to fetch item data and populate input fields
   function fetchItemData(fileid) {
@@ -793,18 +842,24 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("reset-button").addEventListener("click", clearForm);
   document.getElementById("new-record-button").addEventListener("click", createNewRecord);
 
-  function fetchAllData() {
+  function fetchAllData(params) {
     const url = document.getElementById('users-table').getAttribute('data-url');  // Get the URL from the table's data-url attribute
 
     // Use the URL in your fetch request
-    fetch(url)
+    fetch(url + `?startRow=${params.startRow}&endRow=${params.endRow}`)
       .then((response) => response.json())  // Parse the response as JSON
       .then((data) => {
         console.log("Fetched Data:", data);  // Log the fetched data (optional)
-        table.setData(data);  // Update your table with the fetched data
+
+        // Provide the rows and lastRow (number of total rows)
+        params.successCallback(data.rows, data.totalCount);
       })
-      .catch((error) => console.error("Error fetching data:", error));  // Handle errors
+      .catch((error) => {
+        console.error("Error fetching data:", error);  // Handle errors
+        params.failCallback();  // Optionally, call failCallback on error
+      });
   }
+
 
   function clearForm() {
     window.requestAnimationFrame(function () {
@@ -819,11 +874,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-      // Clear any filters applied in the table (Tabulator's clearFilter method)
-      // Clear any applied filters in Tabulator
-      if (table) {
-        table.clearFilter();  // Clear all filters applied in the Tabulator instance
-        fetchAllData();  // Optionally clear the table data or replace with all data
+      // Clear any filters applied in AG Grid
+      if (agTable) {
+        agTable.api.setFilterModel(null);  // Clear any applied filters
+
+        // Optionally, clear the data or fetch fresh data (based on your need)
+        fetchAllData();  // Fetch the full dataset or reset to initial state
       }
     });
   }

@@ -37,9 +37,14 @@
       }
       .row {
         direction: rtl; /* Set the direction of the row to right-to-left */
+            }
+      .item-disabled {
+        pointer-events: none; /* Prevent clicks */
+        opacity: 0.6; /* Reduce visibility */
+        cursor: not-allowed; /* Show not-allowed cursor */
       }
 
-      .form-label,
+            .form-label,
       .form-control {
         direction: ltr; /* Make sure inputs and labels align correctly within the form */
       }
@@ -49,7 +54,18 @@
         justify-content: space-between; /* Distributes space evenly between buttons */
         width: 100%; /* Full width of the parent container */
       }
+      .page-link {
+          text-align: center;
+          padding: 0.1rem 0.75rem;
+          height: 25px;
+          font-size: 15px;
+          color: #212529;
+      }
 
+      .page-link-active {
+          background-color: #0d6efd;         
+          color:rgb(255, 255, 255);
+      }
       .button-row .btn {
         flex: 1; /* Each button takes up equal space */
         margin: 0 5px; /* Optional: Add space between buttons */
@@ -414,6 +430,7 @@
       <div class="title-container mt-1">
         <h3>جدول الاصناف</h3>
       </div>
+      <div class="d-flex justify-content-around">
       <button
         class="btn column-menu-btn .btn-sm border btn-default"
         id="toggle-column-menu"
@@ -421,6 +438,23 @@
       >
         Show/Hide Columns
       </button>
+      <nav aria-label="Page navigation example">
+  <ul class="pagination h-1"> 
+  <p id="page-total" class="page-link item-disabled">total of x pages</p>
+    <li class="page-first"><a class="page-link" href="#">First</a></li>
+    <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
+    <li class="page-item"><a class="page-link " href="#">1</a></li>
+    <li class="page-item"><a class="page-link" href="#">2</a></li>
+    <li class="page-item"><a class="page-link" href="#">3</a></li>
+    <li class="page-next"><a class="page-link" href="#">Next</a></li>
+    <li class="page-last"><a class="page-link" href="#">Last</a></li>
+    <select name="page-size" id="page-size" class="page-link mx-2">
+    <option disabled value="">اختر حجم الصفحة</option>
+    <option value="100">100</option><option value="200">200</option><option value="300">300</option></select>
+  </ul>
+</nav>
+      </div>
+      
       <!-- Dropdown menu for column visibility -->
       <div id="column-menu" class="dropdown" style="display: none">
         {% for column in columns %}
@@ -436,6 +470,7 @@
 
         {% endfor %}
       </div>
+      
       <!-- Table Section -->
       <div class="custom-table mb-1">
         <div
@@ -464,8 +499,8 @@
                   type="text"
                   class="form-control value-fixed"
                   id="totalorder"
-                  placeholder="Enter value"
-                  required
+                  placeholder="0"
+                  readonly
                 />
               </div>
               <div class="mb-1 d-flex align-items-center">
@@ -480,7 +515,7 @@
                   id="itemvalue"
                   readonly
                   disabled
-                  required
+                  placeholder="0"
                 />
               </div>
             </div>
@@ -497,8 +532,8 @@
                   type="text"
                   class="form-control value-fixed"
                   id="totalcost"
-                  placeholder="Enter value"
-                  required
+                  placeholder="0"
+                  readonly
                 />
               </div>
               <div class="mb-1 d-flex align-items-center">
@@ -509,8 +544,8 @@
                   type="text"
                   class="form-control value-fixed"
                   id="tempvalueb"
-                  placeholder="Enter value"
-                  required
+                  placeholder="0"
+                  readonly
                 />
               </div>
             </div>
@@ -527,8 +562,8 @@
                   type="text"
                   class="form-control value-fixed"
                   id="totalbuy"
-                  placeholder="Enter value"
-                  required
+                  placeholder="0"
+                  readonly
                 />
               </div>
               <div class="mb-1 d-flex align-items-center">
@@ -539,8 +574,8 @@
                   type="text"
                   class="form-control value-fixed"
                   id="resvalue"
-                  placeholder="Enter value"
-                  required
+                  placeholder="0"
+                  readonly
                 />
               </div>
             </div>
@@ -643,6 +678,7 @@
 
     <script>
       $(document).ready(function () {
+        let active_url = null;
         document
           .getElementById("clear-btn")
           .addEventListener("click", clearForm);
@@ -690,7 +726,7 @@
           rowHeight: 20,
           pagination:true, //enable pagination
           paginationMode:"remote", //enable remote pagination
-          paginationSize: 20, // Show 100 records per page
+          paginationSize: 100, // Show 100 records per page
           paginationInitialPage: 1, // Default page
           paginationSizeSelector: [50, 100, 200], // Page size options
           paginationButtonCount: 5, // Number of visible pagination buttons
@@ -843,56 +879,56 @@
             });
           },
         });
+
+        fetchDataFromServer({page: 1,size: 100});
+
+
         table.options.tableBuilt();
-table.on("pageLoaded", function(pageNumber) {
-    const pageSize = table.getPageSize(); // Get the current page size
-   console.log("page no: ",pageNumber);
-    console.log("page size: ",pageSize); // Fetch data for the new page
-});
-        // Use the URL in your fetch request
-        console.time("fetchData"); // Start timer
-        
+        table.on("pageLoaded", function(pageNumber) {
+            const pageSize = table.getPageSize(); // Get the current page size
+          console.log("page no: ",pageNumber);
+            console.log("page size: ",pageSize); // Fetch data for the new page
+        });
+        function fetchDataFromServer({page=1,size=20}){          
+              // Use the URL in your fetch request
+              console.time("fetchData"); // Start timer
+              
+              fetch(`api/get-data/?page=${page}&size=${size}`)
+                .then((response) => response.json())
+                .then((data) => {
+                  console.log("Fetched Data:", data);
+                  active_url = "server_Data_No_Filter";
+                  console.log("active_url for pagination:", active_url);
 
-        fetch("api/get-data/")
-          .then((response) => response.json())
-          .then((data) => {
-            console.log("Fetched Data:", data);
-
-            // Set data in Tabulator
-            table.setData(data.data);
-     
+                  // Set data in Tabulator
+                  table.setData(data.data);
+                  updatePagination(data.last_page, data.page_no);
+          
 
 
-            // After setting data, calculate sums for the required columns
-            const itemvalueSum = calculateColumnSum("itemvalue");
-            const tempvaluebSum = calculateColumnSum("itemvalueb");
-            const resvalueSum = calculateColumnSum("resvalue");
+                  // After setting data, calculate sums for the required columns
+                  //const itemvalueSum = calculateColumnSum("itemvalue");
+                  //const tempvaluebSum = calculateColumnSum("itemvalueb");
+                  //const resvalueSum = calculateColumnSum("resvalue");
 
-            const totalcost = calculateProductSum("itemvalue", "costprice");
-            const totalorder = calculateProductSum("itemvalue", "orderprice");
-            const totalbuy = calculateProductSum("itemvalue", "buyprice");
+                  //const totalcost = calculateProductSum("itemvalue", "costprice");
+                  //const totalorder = calculateProductSum("itemvalue", "orderprice");
+                  //const totalbuy = calculateProductSum("itemvalue", "buyprice");
 
-            // Update the respective input fields with calculated sums
-            updateIntegerInput("#itemvalue", itemvalueSum);
+                  // Update the respective input fields with calculated sums
+                  updateIntegerInput("#itemvalue", data.total_itemvalue);
+                  updateIntegerInput("#tempvalueb", data.total_itemvalueb);
+                  updateIntegerInput("#resvalue", data.total_resvalue);
 
-            updateIntegerInput("#tempvalueb", tempvaluebSum);
-            updateIntegerInput("#resvalue", resvalueSum);
+                  updateSumInput("#totalcost", data.total_cost);
+                  updateSumInput("#totalorder", data.total_order);
+                  updateSumInput("#totalbuy", data.total_order);
 
-            updateSumInput("#totalcost", totalcost);
-            updateSumInput("#totalorder", totalorder);
-            updateSumInput("#totalbuy", totalbuy);
-
-            console.log("itemvalueSum", itemvalueSum);
-            console.log("tempvaluebSum", tempvaluebSum);
-            console.log("resvalue", resvalueSum);
-
-            console.log("#totalcost", totalcost.toLocaleString("en-US"));
-            console.log("#totalorder", totalorder);
-            console.log("#totalbuy", totalbuy);
-          })
-          .catch((error) => console.error("Error fetching data:", error)).finally(() => {
-            console.timeEnd("fetchData"); // End the timer regardless of success or failure
-          });
+                })
+                .catch((error) => console.error("Error fetching data:", error)).finally(() => {
+                  console.timeEnd("fetchData"); // End the timer regardless of success or failure
+                });
+      }
 
         // Function to calculate the sum of 'itemvalue' column in Tabulator
         function calculateColumnSum(columnName) {
@@ -935,77 +971,32 @@ table.on("pageLoaded", function(pageNumber) {
 
         // Function to update the input field with the calculated sum
         function updateSumInput(selector, sum) {
-          $(selector).val(
-            sum.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }) + " دل"
-          ); // Display the sum in the input field with two decimal places
+          // Ensure 'sum' is a valid number or default to 0
+          const roundedSum = (isNaN(parseFloat(sum)) ? 0 : parseFloat(sum)).toFixed(2);
+
+          // Format the rounded number with commas
+          const formattedSum = Number(roundedSum).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+
+          // Set the formatted sum with the unit " دل" to the input field
+          $(selector).val(`${formattedSum} دل`);
         }
+
 
         function updateIntegerInput(selector, sum) {
-          $(selector).val(parseInt(sum)); // Display the integer value of sum in the input field
+          // Ensure 'sum' is a valid number or default to 0
+          const formattedSum = parseInt(sum || 0).toLocaleString("en-US"); // Format as an integer with commas
+
+          // Set the formatted integer value to the input field
+          $(selector).val(formattedSum);
         }
 
-        // After setting data, calculate sums for the required columns
-        const itemvalueSum = calculateColumnSum("itemvalue");
-        const tempvaluebSum = calculateColumnSum("itemvalueb");
-        const resvalueSum = calculateColumnSum("resvalue");
-
-        const totalcost = calculateProductSum("itemvalue", "costprice");
-        const totalorder = calculateProductSum("itemvalue", "orderprice");
-        const totalbuy = calculateProductSum("itemvalue", "buyprice");
-
-        // Update the respective input fields with calculated sums
-        updateIntegerInput("#itemvalue", itemvalueSum);
-        updateIntegerInput("#tempvalueb", tempvaluebSum);
-        updateIntegerInput("#resvalue", resvalueSum);
-
-        updateSumInput("#totalcost", totalcost);
-        updateSumInput("#totalorder", totalorder);
-        updateSumInput("#totalbuy", totalbuy);
 
         // Recalculate sums after the table data is loaded or updated
         table.on("dataLoaded", function () {
           console.log("Data loaded into the table");
-
-          // Fetch the latest data from the table
-          const rowData = table.getData();
-
-          if (rowData.length > 0) {
-            // Calculate sums for specific columns
-            const itemvalueSum = calculateColumnSum("itemvalue");
-            const tempvaluebSum = calculateColumnSum("itemvalueb");
-            const resvalueSum = calculateColumnSum("resvalue");
-
-            // Calculate products for specific column pairs
-            const totalcost = calculateProductSum("itemvalue", "costprice");
-            const totalorder = calculateProductSum("itemvalue", "orderprice");
-            const totalbuy = calculateProductSum("itemvalue", "buyprice");
-
-            // Update the respective input fields with the latest calculated sums
-            updateIntegerInput("#itemvalue", itemvalueSum);
-            updateIntegerInput("#tempvalueb", tempvaluebSum);
-            updateIntegerInput("#resvalue", resvalueSum);
-
-            updateSumInput("#totalcost", totalcost);
-            updateSumInput("#totalorder", totalorder);
-            updateSumInput("#totalbuy", totalbuy);
-
-            console.log("#totalcost", totalcost);
-            console.log("#totalorder", totalorder);
-            console.log("#totalbuy", totalbuy);
-          } else {
-            console.warn("No data in table for calculations.");
-            // Optionally, reset the input fields to 0 or empty
-            updateIntegerInput("#itemvalue", 0);
-            updateIntegerInput("#tempvalueb", 0);
-            updateIntegerInput("#resvalue", 0);
-
-            updateSumInput("#totalcost", 0);
-            updateSumInput("#totalorder", 0);
-            updateSumInput("#totalbuy", 0);
-          }
         });
 
         // Optional: If filtering changes the data, you may also use the 'dataFiltered' event
@@ -1013,88 +1004,25 @@ table.on("pageLoaded", function(pageNumber) {
           console.log("Data filtered in the table");
 
           // Fetch the filtered data
-          const filteredData = table.getData();
-
-          if (filteredData.length > 0) {
-            const itemvalueSum = calculateColumnSum("itemvalue");
-            const tempvaluebSum = calculateColumnSum("itemvalueb");
-            const resvalueSum = calculateColumnSum("resvalue");
-
-            const totalcost = calculateProductSum("itemvalue", "costprice");
-            const totalorder = calculateProductSum("itemvalue", "orderprice");
-            const totalbuy = calculateProductSum("itemvalue", "buyprice");
-
-            updateIntegerInput("#itemvalue", itemvalueSum);
-            updateIntegerInput("#tempvalueb", tempvaluebSum);
-            updateIntegerInput("#resvalue", resvalueSum);
-
-            updateSumInput("#totalcost", totalcost);
-            updateSumInput("#totalorder", totalorder);
-            updateSumInput("#totalbuy", totalbuy);
-
-            console.log("#totalcost", totalcost);
-            console.log("#totalorder", totalorder);
-            console.log("#totalbuy", totalbuy);
-          } else {
-            console.warn("No data available for filtered calculations.");
-            updateIntegerInput("#itemvalue", 0);
-            updateIntegerInput("#tempvalueb", 0);
-            updateIntegerInput("#resvalue", 0);
-
-            updateSumInput("#totalcost", 0);
-            updateSumInput("#totalorder", 0);
-            updateSumInput("#totalbuy", 0);
-          }
+         
         });
 
         // You can also add event listeners to handle updates if rows are updated or added
         table.on("rowAdded", function () {
-          // After setting data, calculate sums for the required columns
-          // After setting data, calculate sums for the required columns
-          const itemvalueSum = calculateColumnSum("itemvalue");
-          const tempvaluebSum = calculateColumnSum("itemvalueb");
-          const resvalueSum = calculateColumnSum("resvalue");
-
-          const totalcost = calculateProductSum("itemvalue", "costprice");
-          const totalorder = calculateProductSum("itemvalue", "orderprice");
-          const totalbuy = calculateProductSum("itemvalue", "buyprice");
-
-          // Update the respective input fields with calculated sums
-          updateIntegerInput("#itemvalue", itemvalueSum);
-          updateIntegerInput("#tempvalueb", tempvaluebSum);
-          updateIntegerInput("#resvalue", resvalueSum);
-
-          updateSumInput("#totalcost", totalcost);
-          updateSumInput("#totalorder", totalorder);
-          updateSumInput("#totalbuy", totalbuy);
+          
         });
 
         table.on("rowDeleted", function () {
-          // After setting data, calculate sums for the required columns
-          // After setting data, calculate sums for the required columns
-          const itemvalueSum = calculateColumnSum("itemvalue");
-          const tempvaluebSum = calculateColumnSum("itemvalueb");
-          const resvalueSum = calculateColumnSum("resvalue");
-
-          const totalcost = calculateProductSum("itemvalue", "costprice");
-          const totalorder = calculateProductSum("itemvalue", "orderprice");
-          const totalbuy = calculateProductSum("itemvalue", "buyprice");
-
-          // Update the respective input fields with calculated sums
-          updateIntegerInput("#itemvalue", itemvalueSum);
-          updateIntegerInput("#tempvalueb", tempvaluebSum);
-          updateIntegerInput("#resvalue", resvalueSum);
-
-          updateSumInput("#totalcost", totalcost);
-          updateSumInput("#totalorder", totalorder);
-          updateSumInput("#totalbuy", totalbuy);
+          
         });
 
         function fetchAllData() {
           fetch("api/get-data/")
             .then((response) => response.json()) // Parse the response as JSON
             .then((data) => {
-              console.log("Fetched Data:", data); // Log the fetched data (optional)
+              console.log("Fetched Data:", data);
+              active_url = "server_Data_No_Filter_No_pagination";
+              console.log("active_url for pagination:", active_url); // Log the fetched data (optional)
               table.setData(data); // Update your table with the fetched data
             })
             .catch((error) => console.error("Error fetching data:", error)); // Handle errors
@@ -1119,7 +1047,7 @@ table.on("pageLoaded", function(pageNumber) {
 
             if (table) {
               table.clearFilter(); // Clear all filters applied
-              fetchAllData();
+              fetchDataFromServer({page: 1,size: 100});
               console.log("Filters cleared");
             }
           });
@@ -1186,8 +1114,10 @@ table.on("pageLoaded", function(pageNumber) {
         }
 
         // Combined filter function
-        function applyFilters() {
+        function applyFilters(pageno=1,pagesize=20) {
           console.log("applyFilters called");
+          console.log("pageno: ",pageno);
+          console.log("pagesize: ",pagesize);
 
           // Helper function to get selected text from a dropdown
           function getSelectedText(selectId) {
@@ -1216,6 +1146,8 @@ table.on("pageLoaded", function(pageNumber) {
             source: getSelectedText("source"),
             fromdate: getInputValue("from-date"), // Capture the from-date value
             todate: getInputValue("to-date"), // Capture the to-date value
+            page: pageno === null ? 1 : parseInt(pageno, 10),
+            size: pagesize || 20,
           };
 
           // Log the date values
@@ -1277,6 +1209,7 @@ table.on("pageLoaded", function(pageNumber) {
           })
             .then((response) => {
               if (!response.ok) {
+                console.log("error: ",response.message);
                 throw new Error(
                   `Network error: ${response.status} ${response.statusText}`
                 );
@@ -1285,12 +1218,24 @@ table.on("pageLoaded", function(pageNumber) {
             })
             .then((data) => {
               console.log("Filtered data:", data);
+              active_url = "server_filtered_data";
+              console.log("active_url for pagination:", active_url); 
 
               // Update Tabulator table with the filtered data
-              table.replaceData(data);
+              table.replaceData(data.data);
+              updatePagination(data.last_page, data.page_no);
+
+              updateIntegerInput("#itemvalue", data.total_itemvalue);
+              updateIntegerInput("#tempvalueb", data.total_itemvalueb);
+              updateIntegerInput("#resvalue", data.total_resvalue);
+
+              updateSumInput("#totalcost", data.total_cost);
+              updateSumInput("#totalorder", data.total_order);
+              updateSumInput("#totalbuy", data.total_buy);
             })
             .catch((error) => {
               console.error("Error fetching filtered data:", error);
+              console.log("Error: ", error.message);  // Log the error message from the Error object
               // Display user-friendly error message or notification
             });
         }
@@ -1317,7 +1262,9 @@ table.on("pageLoaded", function(pageNumber) {
         filterInputs.forEach((inputId) => {
           document
             .getElementById(inputId)
-            .addEventListener("input", applyFilters);
+            .addEventListener("input", () => {
+            applyFilters(1);
+        });
         });
         // Show/Hide dropdown menu on button click
         document
@@ -1345,7 +1292,106 @@ table.on("pageLoaded", function(pageNumber) {
               });
             });
         }
+      
+      function updatePagination(lastPage, currentPage) {
+         const pagination = document.querySelector(".pagination");
+          const existingPageLinks = pagination.querySelectorAll(".page-item:not(:first-child):not(:last-child):not(#page-size)");
+          console.log("existingPageLinks: ",existingPageLinks);
+
+          const startPage = Math.max(1, currentPage);
+          const endPage = Math.min(lastPage, startPage + 2);
+          console.log("startPage: ",startPage);
+          console.log("endPage: ",endPage);
+
+          let index = 0; // Track the current index in existing page items
+          for (let i = startPage; i <= endPage; i++) {
+              let pageItem;
+              if (index < existingPageLinks.length) {
+                   console.log("if: done");
+                  // Update an existing item
+                  pageItem = existingPageLinks[index];
+                  pageItem.querySelector(".page-link").innerText = i;
+                  pageItem.querySelector(".page-link").setAttribute("data-page", i);
+              } else {
+                console.log("else: done");
+                  // Add a new item if needed
+                  pageItem = document.createElement("li");
+                  pageItem.className = "page-item";
+                  pageItem.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                  pagination.insertBefore(pageItem, pagination.querySelector("li:last-child"));
+              }
+              pageItem.querySelector(".page-link").classList.toggle("page-link-active", i === currentPage); // Set active class
+              index++;
+              console.log("index: ",index);
+          }
+
+          // Remove any extra items beyond the new range
+          /*while (index < existingPageLinks.length) {
+              pagination.removeChild(existingPageLinks[index]);
+              index++;
+          }*/
+
+          // Update Previous button
+          const previousBtn = document.querySelector(".page-prev");
+          previousBtn.classList.toggle("item-disabled", currentPage === 1);
+          previousBtn.querySelector(".page-link").setAttribute("data-page", currentPage - 1);
+          console.log("previousBtn: ",previousBtn);
+          // Update Next button
+          const nextBtn = document.querySelector(".page-next");
+          nextBtn.classList.toggle("item-disabled", currentPage === endPage);
+          nextBtn.querySelector(".page-link").setAttribute("data-page", currentPage + 1);
+          console.log("nextBtn: ",nextBtn);
+          // Update First button
+          const firstBtn = document.querySelector(".page-first");
+          firstBtn.querySelector(".page-link").setAttribute("data-page", 1);
+          console.log("firstBtn: ",firstBtn);
+          // Update Last button
+          const lastBtn = document.querySelector(".page-last");
+          lastBtn.querySelector(".page-link").setAttribute("data-page", lastPage);
+          console.log("lastBtn: ",lastBtn);
+          //update no of pages paragraph
+          document.getElementById("page-total").innerHTML = "عدد الصفحات: "+ lastPage ;
+      }
+
+
+      // Example usage with API response
+      //const response = { last_page: 10, page_no: 3 }; // Example data
+      //updatePagination(response.last_page, response.page_no);
+
+      // Event listener for page links
+      document.querySelector(".pagination").addEventListener("click", function (event) {
+    const target = event.target;
+    if (target.classList.contains("page-link") && 
+        !target.parentNode.classList.contains("disabled") && 
+        !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
+        event.preventDefault();
+        const selectedPage = parseInt(target.getAttribute("data-page"), 10);
+        const selectedPageSize = document.getElementById("page-size").value;
+        // Fetch data for selected page
+        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+        if(active_url=="server_filtered_data"){
+            applyFilters(selectedPage,selectedPageSize);
+        }else{
+            fetchDataFromServer({page: selectedPage,size: selectedPageSize});
+        }       
+    }
+});
+
+
+      // Event listener for page size change
+      document.querySelector("#page-size").addEventListener("change", function () {
+        const selectedPageSize = this.value;
+        const selectedPage = document.querySelector(".page-link.page-link-active").innerHTML;
+
+        console.log(`Selected page size: ${selectedPageSize}`);
+        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+        if(active_url=="server_filtered_data"){
+            applyFilters(selectedPage,selectedPageSize);
+        }else{
+            fetchDataFromServer({page: selectedPage,size: selectedPageSize});
+        }
       });
+});
     </script>
   </body>
 </html>

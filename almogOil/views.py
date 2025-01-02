@@ -693,9 +693,59 @@ def filter_items(request):
                 
             # Serialize the filtered data
             items_data = list(queryset.values())  # You may want to customize what data is returned here
+            
+            # Initialize totals
+            total_itemvalue = 0
+            total_itemvalueb = 0
+            total_resvalue = 0
+            total_cost = 0
+            total_order = 0
+            total_buy = 0
+
+            # Single loop to calculate all totals
+            for item in items_data:
+                # Convert values to numbers to avoid treating them as strings
+                itemvalue = float(item.get('itemvalue', 0))
+                itemvalueb = float(item.get('itemvalueb', 0))
+                resvalue = float(item.get('resvalue', 0))
+                costprice = float(item.get('costprice', 0))
+                orderprice = float(item.get('orderprice', 0))
+                buyprice = float(item.get('buyprice', 0))
+
+                # Perform calculations
+                total_itemvalue += itemvalue
+                total_itemvalueb += itemvalueb
+                total_resvalue += resvalue
+                total_cost += itemvalue * costprice
+                total_order += itemvalue * orderprice
+                total_buy += itemvalue * buyprice
+            
+            
+            # Pagination parameters from the request
+            page_number = int(filters.get('page') or 1)
+            page_size = int(filters.get('size') or 20)
+
+            # Create paginator
+            paginator = Paginator(items_data, page_size)
+            page_obj = paginator.get_page(page_number)
+
+            # Prepare the response
+            response = {
+                "data": list(page_obj),  # Convert the current page items to a list
+                "last_page": paginator.num_pages,  # Total number of pages
+                "total_rows": paginator.count,  # Total number of rows
+                "page_size":page_size,
+                "page_no":page_number,
+                "total_itemvalue":total_itemvalue,
+                "total_itemvalueb":total_itemvalueb,
+                "total_resvalue":total_resvalue,
+                "total_cost":total_cost,
+                "total_order":total_order,
+                "total_buy":total_buy,
+            }
 
             # Return the filtered data as JSON
-            return JsonResponse(items_data, safe=False)
+            return JsonResponse(response, safe=False)
 
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
@@ -1343,6 +1393,13 @@ def get_data(request):
             'orderlastdate', 'ordersource', 'orderbillno', 
             'buylastdate', 'buysource', 'buybillno', 'orgprice'
         )
+        total_itemvalue = Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
+        total_itemvalueb = Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
+        total_resvalue = Mainitem.objects.aggregate(total=Sum('resvalue'))['total']
+        total_cost = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('costprice')))['total']
+        total_order = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('orderprice')))['total']
+        total_buy = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('buyprice')))['total']
+
 
         # Pagination parameters from the request
         page_number = int(request.GET.get('page', 1))
@@ -1358,6 +1415,13 @@ def get_data(request):
             "last_page": paginator.num_pages,  # Total number of pages
             "total_rows": paginator.count,  # Total number of rows
             "page_size":page_size,
+            "page_no":page_number,
+            "total_itemvalue":total_itemvalue,
+            "total_itemvalueb":total_itemvalueb,
+            "total_resvalue":total_resvalue,
+            "total_cost":total_cost,
+            "total_order":total_order,
+            "total_buy":total_buy,
         }
         return JsonResponse(response)
     except Exception as e:
