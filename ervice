@@ -1,0 +1,17 @@
+[0;1;31m●[0m gunicorn.service - gunicorn daemon
+     Loaded: loaded (/etc/systemd/system/gunicorn.service; enabled; vendor preset: enabled)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Wed 2025-01-08 13:52:18 CET; 2min 4s ago
+TriggeredBy: [0;1;31m●[0m gunicorn.socket
+    Process: 1264242 ExecStart=/home/django/almog1/venv/bin/gunicorn --access-logfile - --workers 3 --bind unix:/run/gunicorn.sock Almog1.wsgi:application [0;1;31m(code=exited, status=1/FAILURE)[0m
+   Main PID: 1264242 (code=exited, status=1/FAILURE)
+
+Jan 08 13:52:12 vmi2336898.contaboserver.net systemd[1]: Started gunicorn daemon.
+Jan 08 13:52:13 vmi2336898.contaboserver.net gunicorn[1264242]: [2025-01-08 13:52:13 +0100] [1264242] [INFO] Starting gunicorn 23.0.0
+Jan 08 13:52:13 vmi2336898.contaboserver.net gunicorn[1264242]: [2025-01-08 13:52:13 +0100] [1264242] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied: '/run/gunicorn.sock'
+Jan 08 13:52:14 vmi2336898.contaboserver.net gunicorn[1264242]: [2025-01-08 13:52:14 +0100] [1264242] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied: '/run/gunicorn.sock'
+Jan 08 13:52:15 vmi2336898.contaboserver.net gunicorn[1264242]: [2025-01-08 13:52:15 +0100] [1264242] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied: '/run/gunicorn.sock'
+Jan 08 13:52:16 vmi2336898.contaboserver.net gunicorn[1264242]: [2025-01-08 13:52:16 +0100] [1264242] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied: '/run/gunicorn.sock'
+Jan 08 13:52:17 vmi2336898.contaboserver.net gunicorn[1264242]: [2025-01-08 13:52:17 +0100] [1264242] [ERROR] connection to /run/gunicorn.sock failed: [Errno 13] Permission denied: '/run/gunicorn.sock'
+Jan 08 13:52:18 vmi2336898.contaboserver.net gunicorn[1264242]: [2025-01-08 13:52:18 +0100] [1264242] [ERROR] Can't connect to /run/gunicorn.sock
+Jan 08 13:52:18 vmi2336898.contaboserver.net systemd[1]: [0;1;39m[0;1;31m[0;1;39mgunicorn.service: Main process exited, code=exited, status=1/FAILURE[0m
+Jan 08 13:52:18 vmi2336898.contaboserver.net systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mgunicorn.service: Failed with result 'exit-code'.[0m
