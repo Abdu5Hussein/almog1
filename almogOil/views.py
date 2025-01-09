@@ -626,12 +626,21 @@ def delete_record(request):
 
     return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
 
+from django.core.cache import cache
+
 @csrf_exempt 
 def filter_items(request):
     if request.method == "POST":
         try:
             # Get the filters from the request body
             filters = json.loads(request.body.decode('utf-8'))  # Decoding bytes and loading JSON
+            cache_key = f"filter_{str(filters)}"
+            cached_data = cache.get(cache_key)
+
+            if cached_data:
+                cached_data["cached_flag"] = True 
+                return JsonResponse(cached_data, safe=False)
+
 
             # Build the query based on the filters
             queryset = Mainitem.objects.all()
@@ -742,7 +751,11 @@ def filter_items(request):
                 "total_cost":total_cost,
                 "total_order":total_order,
                 "total_buy":total_buy,
+                "cached_flag": False,
             }
+
+             # Cache the response for future use
+            cache.set(cache_key, response, timeout=300)  # Cache for 5 minutes
 
             # Return the filtered data as JSON
             return JsonResponse(response, safe=False)

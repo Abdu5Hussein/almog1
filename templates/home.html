@@ -5,7 +5,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard Layout with Collapsible Subpages</title>
+    <title>Almog CO.</title>
     <!-- Bootstrap CSS -->
     <link
       rel="stylesheet"
@@ -19,8 +19,44 @@
       body {
         font-family: Arial, sans-serif;
         height: 100vh;
+        width: 100vw;
         margin-right: 250px;
         background-color: #1c3766;
+      }
+      .navbar-logo {
+          width: 100%; /* Fit the width of the container */
+          height: auto; /* Maintain aspect ratio */
+          object-fit: contain; /* Ensure the logo fits nicely */
+          object-position: center; /* Center the logo in the container */
+          object-position: 0px -33px;
+      }
+      .logo-container {
+        width: 100px; /* Set the desired width */
+        height: 30px; /* Set the desired height */
+        overflow: hidden; /* Crop content outside the container */
+        display: inline-block; /* Keep inline with text */
+      }
+
+      
+      
+      @media (max-width: 768px) {
+        
+        .sidebar{
+          top: 73px !important;
+          right: -300px !important;
+          padding-top: 30px !important;
+          transition: right 0.3s ease !important; /* Animation for sliding in/out */
+        }
+        .besideSideBar{
+        margin-right: 0px !important;
+        }
+        .main-content{
+        padding-right: 0px !important;
+        }
+      }
+      .app-bar .logo h1 {
+        margin: 0;
+        font-size: 20px;
       }
       .full-height {
         height: 100%;
@@ -45,7 +81,7 @@
       .sidebar {
         background-color: #222c3db8;
         color: white;
-        height: 100vh;
+        height: 100%;
         padding: 20px;
         position: fixed;
         right: 0;
@@ -55,6 +91,9 @@
         overflow-y: auto;
         display: flex;
         flex-direction: column;
+      }
+      .sidebar.show {
+        right: 0 !important;
       }
       .sidebar a {
         color: white;
@@ -638,15 +677,232 @@
         transform: translate3d(0px, 0, 0);
         transition-duration: 0ms;
       }
+      .besideSideBar{
+        margin-right: 250px;
+      }
+      .main-content{
+        padding-right: 250px;
+      }
+      .navbar-brand {
+        margin-right: 4rem;
+      }
     </style>
   </head>
   <body>
     <div class="d-flex full-height">
+      
+
+      <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top besideSideBar p-3">
+        <div class="container-fluid">
+          <a class="navbar-brand d-flex justify-content-center align-items-center" href="#"> 
+            <div class="logo-container">
+              <img
+                src="{% static 'images/marine-logo.svg' %}"
+                alt="logo"
+                class="navbar-logo"
+              />
+            </div>Marine Co.</a>
+          <button
+            class="navbar-toggler"
+            type="button"
+            id="sidebar-toggler"
+            aria-label="Toggle sidebar"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+              <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+            </svg>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/home">الصفحة الرئيسية</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">حول الشركة</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="navbarDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  الحساب
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <li><a class="dropdown-item" href="#">معلومات الحساب</a></li>
+                  <li><a class="dropdown-item" href="#">الامان</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#">تسجيل الخروج</a></li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link disabled"
+                  href="#"
+                  tabindex="-1"
+                  aria-disabled="true"
+                  >محمد المق</a
+                >
+              </li>
+            </ul>
+            <form class="d-flex">
+              <input
+                class="form-control me-2"
+                type="search"
+                placeholder="Search"
+                aria-label="Search"
+              />
+              <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Sidebar -->
+          <div id="sidebar" class="sidebar">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>الاصناف</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" id="item-1" href="#">بيانات الاصناف</a>
+                  <a class="nav-link" id="item-2" href="#"
+                    >تقارير الاصناف المحلية</a
+                  >
+                  <a class="nav-link" id="item-3">تقارير الاصناف الخارجية</a>
+                  <a class="nav-link" id="item-4">تعديل الاسعار</a>
+                  <a class="nav-link" id="item-5">تقرير حركة الاصناف</a>
+                  <a class="nav-link" id="item-6">اعادة ترصيد الاصناف</a>
+                  <a class="nav-link" id="item-7">الجرد</a>
+                  <a class="nav-link" id="item-8">التلف والفقد</a>
+                  <a class="nav-link" id="item-9">اماكن التخزين</a>
+                  <a class="nav-link" id="item-10">التسمية الانجليزية</a>
+                  <a class="nav-link" id="item-11">حجز اصناف</a>
+                  <a class="nav-link" id="item-12">اعادة الترصيد</a>
+                  <a class="nav-link" id="item-13">النواقص</a>
+                  <a class="nav-link" id="item-14">اذونات الصرف</a>
+                  <a class="nav-link" id="item-15">اصناف بالملاحظات</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>فواتير شراء محلية</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" id="item-2-1">Subitem</a>
+                  <a class="nav-link" id="item-2-2">Subitem</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>فواتير شراء خارجية</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" id="item-3-1">ادخال فاتورة شراء</a>
+                  <a class="nav-link" id="item-3-2">فواتير الشراء</a>
+                  <a class="nav-link" id="item-3-3">تعديل اسعار البيع</a>
+                  <a class="nav-link" id="item-3-4">تسوية حساب الفواتير</a>
+                  <a class="nav-link" id="item-3-5">ترحيل الاصناف المؤقتة</a>
+                  <a class="nav-link" id="item-3-6">جرد فواتير الشراء</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>ف. البيع المبدئية</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" href="#subitem4-1">Subitem 4-1</a>
+                  <a class="nav-link" href="#subitem4-2">Subitem 4-2</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>فواتير البيع</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" href="#subitem5-1">Subitem 5-1</a>
+                  <a class="nav-link" href="#subitem5-2">Subitem 5-2</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>الترجيعات</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" href="#subitem6-1">Subitem 6-1</a>
+                  <a class="nav-link" href="#subitem6-2">Subitem 6-2</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>العملاء والموردين</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" id="item-7-1">دليل العملاء والموردين</a>
+                  <a class="nav-link" id="item-7-2">تقارير العملاء والموردين</a>
+                  <a class="nav-link" id="item-7-3">تسوية حساب</a>
+                  <a class="nav-link" id="item-7-4">تقارير تسوية حساب</a>
+                  <a class="nav-link" id="item-7-5">تقارير المراجعة</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>الموظفين</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" href="#subitem8-1">Subitem 8-1</a>
+                  <a class="nav-link" href="#subitem8-2">Subitem 8-2</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>الخزينة</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" id="item-9-1">قيود الخزينة</a>
+                  <a class="nav-link" id="item-9-2">تقارير الخزينة</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>الحسابات</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" href="#subitem10-1">Subitem 10-1</a>
+                  <a class="nav-link" href="#subitem10-2">Subitem 10-2</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>المستخدمين</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" href="#subitem11-1">Subitem 11-1</a>
+                  <a class="nav-link" href="#subitem11-2">Subitem 11-2</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link toggle-submenu" href="#"
+                  ><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a
+                >
+                <div class="sub-menu">
+                  <a class="nav-link" href="#subitem12-1">Subitem 12-1</a>
+                  <a class="nav-link" href="#subitem12-2">Subitem 12-2</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+
       <!-- Main Content -->
-      <div class="main-content flex-grow-1">
-        <div
-          class="container-fluid custom-height d-flex justify-content-center align-items-center"
-        >
+      <div class="main-content flex-grow-1 mt-5">
+        <div class="container-fluid custom-height d-flex justify-content-center align-items-center">
           <div class="container rounded-circle image-container">
             <img
               src="{% static 'images/marine-logo.jpg' %}"
@@ -656,450 +912,22 @@
           </div>
         </div>
       </div>
-      <div
-        class="elementor-background-slideshow swiper swiper-fade swiper-initialized swiper-horizontal swiper-pointer-events swiper-rtl swiper-watch-progress"
-        dir="rtl"
-      >
-        <div
-          class="swiper-wrapper"
-          id="swiper-wrapper-c15c7b71065e781c8"
-          aria-live="off"
-          style="transition-duration: 0ms"
-        >
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-prev"
-            data-swiper-slide-index="0"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(0px, 0px, 0px);
-            "
-            role="group"
-            aria-label="1 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/bmw-m4-csl-coupe-2022-grey-111.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-active"
-            data-swiper-slide-index="1"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(1915px, 0px, 0px);
-            "
-            role="group"
-            aria-label="2 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Mercedes-AMG-E-63-S-4MATIC-banner.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-next"
-            data-swiper-slide-index="2"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(3830px, 0px, 0px);
-            "
-            role="group"
-            aria-label="3 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/001-Kia-EV6-GT-Goodwood-1920x1080-1.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
-            data-swiper-slide-index="3"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(5745px, 0px, 0px);
-            "
-            role="group"
-            aria-label="4 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/hyundai-i30-n.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
-            data-swiper-slide-index="4"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(7660px, 0px, 0px);
-            "
-            role="group"
-            aria-label="5 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Artboard-1.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-prev"
-            data-swiper-slide-index="0"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(9575px, 0px, 0px);
-            "
-            role="group"
-            aria-label="1 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/bmw-m4-csl-coupe-2022-grey-111.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-visible swiper-slide-active"
-            data-swiper-slide-index="1"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 1;
-              transform: translate3d(11490px, 0px, 0px);
-            "
-            role="group"
-            aria-label="2 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out elementor-ken-burns--active"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Mercedes-AMG-E-63-S-4MATIC-banner.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-next"
-            data-swiper-slide-index="2"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(13405px, 0px, 0px);
-            "
-            role="group"
-            aria-label="3 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/001-Kia-EV6-GT-Goodwood-1920x1080-1.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide"
-            data-swiper-slide-index="3"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(15320px, 0px, 0px);
-            "
-            role="group"
-            aria-label="4 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/hyundai-i30-n.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide"
-            data-swiper-slide-index="4"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(17235px, 0px, 0px);
-            "
-            role="group"
-            aria-label="5 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Artboard-1.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-prev"
-            data-swiper-slide-index="0"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(19150px, 0px, 0px);
-            "
-            role="group"
-            aria-label="1 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/bmw-m4-csl-coupe-2022-grey-111.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-active"
-            data-swiper-slide-index="1"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(21065px, 0px, 0px);
-            "
-            role="group"
-            aria-label="2 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Mercedes-AMG-E-63-S-4MATIC-banner.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate swiper-slide-duplicate-next"
-            data-swiper-slide-index="2"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(22980px, 0px, 0px);
-            "
-            role="group"
-            aria-label="3 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/001-Kia-EV6-GT-Goodwood-1920x1080-1.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
-            data-swiper-slide-index="3"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(24895px, 0px, 0px);
-            "
-            role="group"
-            aria-label="4 / 5"
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/hyundai-i30-n.jpg&quot;);
-              "
-            ></div>
-          </div>
-          <div
-            class="elementor-background-slideshow__slide swiper-slide swiper-slide-duplicate"
-            data-swiper-slide-index="4"
-            role="group"
-            aria-label="5 / 5"
-            style="
-              width: 1915px;
-              transition-duration: 0ms;
-              opacity: 0;
-              transform: translate3d(26810px, 0px, 0px);
-            "
-          >
-            <div
-              class="elementor-background-slideshow__slide__image elementor-ken-burns elementor-ken-burns--out"
-              style="
-                background-image: url(&quot;https://marin.ly/wp-content/uploads/2024/06/Artboard-1.jpg&quot;);
-              "
-            ></div>
-          </div>
-        </div>
-        <span
-          class="swiper-notification"
-          aria-live="assertive"
-          aria-atomic="true"
-        ></span>
-      </div>
-
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <ul class="nav flex-column">
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>الاصناف</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" id="item-1" href="#">بيانات الاصناف</a>
-              <a class="nav-link" id="item-2" href="#"
-                >تقارير الاصناف المحلية</a
-              >
-              <a class="nav-link" id="item-3">تقارير الاصناف الخارجية</a>
-              <a class="nav-link" id="item-4">تعديل الاسعار</a>
-              <a class="nav-link" id="item-5">تقرير حركة الاصناف</a>
-              <a class="nav-link" id="item-6">اعادة ترصيد الاصناف</a>
-              <a class="nav-link" id="item-7">الجرد</a>
-              <a class="nav-link" id="item-8">التلف والفقد</a>
-              <a class="nav-link" id="item-9">اماكن التخزين</a>
-              <a class="nav-link" id="item-10">التسمية الانجليزية</a>
-              <a class="nav-link" id="item-11">حجز اصناف</a>
-              <a class="nav-link" id="item-12">اعادة الترصيد</a>
-              <a class="nav-link" id="item-13">النواقص</a>
-              <a class="nav-link" id="item-14">اذونات الصرف</a>
-              <a class="nav-link" id="item-15">اصناف بالملاحظات</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>فواتير شراء محلية</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" id="item-2-1">Subitem</a>
-              <a class="nav-link" id="item-2-2">Subitem</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>فواتير شراء خارجية</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" id="item-3-1">ادخال فاتورة شراء</a>
-              <a class="nav-link" id="item-3-2">فواتير الشراء</a>
-              <a class="nav-link" id="item-3-3">تعديل اسعار البيع</a>
-              <a class="nav-link" id="item-3-4">تسوية حساب الفواتير</a>
-              <a class="nav-link" id="item-3-5">ترحيل الاصناف المؤقتة</a>
-              <a class="nav-link" id="item-3-6">جرد فواتير الشراء</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>ف. البيع المبدئية</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" href="#subitem4-1">Subitem 4-1</a>
-              <a class="nav-link" href="#subitem4-2">Subitem 4-2</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>فواتير البيع</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" href="#subitem5-1">Subitem 5-1</a>
-              <a class="nav-link" href="#subitem5-2">Subitem 5-2</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>الترجيعات</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" href="#subitem6-1">Subitem 6-1</a>
-              <a class="nav-link" href="#subitem6-2">Subitem 6-2</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>العملاء والموردين</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" id="item-7-1">دليل العملاء والموردين</a>
-              <a class="nav-link" id="item-7-2">تقارير العملاء والموردين</a>
-              <a class="nav-link" id="item-7-3">تسوية حساب</a>
-              <a class="nav-link" id="item-7-4">تقارير تسوية حساب</a>
-              <a class="nav-link" id="item-7-5">تقارير المراجعة</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>الموظفين</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" href="#subitem8-1">Subitem 8-1</a>
-              <a class="nav-link" href="#subitem8-2">Subitem 8-2</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>الخزينة</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" id="item-9-1">قيود الخزينة</a>
-              <a class="nav-link" id="item-9-2">تقارير الخزينة</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>الحسابات</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" href="#subitem10-1">Subitem 10-1</a>
-              <a class="nav-link" href="#subitem10-2">Subitem 10-2</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>المستخدمين</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" href="#subitem11-1">Subitem 11-1</a>
-              <a class="nav-link" href="#subitem11-2">Subitem 11-2</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link toggle-submenu" href="#"
-              ><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a
-            >
-            <div class="sub-menu">
-              <a class="nav-link" href="#subitem12-1">Subitem 12-1</a>
-              <a class="nav-link" href="#subitem12-2">Subitem 12-2</a>
-            </div>
-          </li>
-        </ul>
-      </div>
     </div>
 
     <!-- Bootstrap Bundle (includes Popper.js) -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
+      const menuToggle = document.getElementById("sidebar-toggler");
+      const sidebar = document.getElementById("sidebar");
+      // Add click event to toggle the nav links on mobile
+      menuToggle.addEventListener("click", function() {
+        console.log("toggle sidebar");
+        console.log(sidebar);
+        sidebar.classList.toggle("show"); // Toggle the 'show' class to display/hide the menu
+      });
+
+
       // Toggle submenus
       document.querySelectorAll(".toggle-submenu").forEach((item) => {
         item.addEventListener("click", (event) => {
