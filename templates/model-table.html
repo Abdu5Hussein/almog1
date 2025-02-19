@@ -36,19 +36,19 @@
           <input type="hidden" name="id" id="modelId" />
 
           <div class="mb-3">
-            <label for="item-main" class="form-label">اسم البيان الرئيسي</label>
+            <label for="item-main" class="form-label">اسم البيان الفرعي</label>
             <select
               id="item-main-filter"
-              name="model-main-type"
+              name="model-sub-type"
               class="form-select"
             >
-              <option value="">اختر بيان رئيسي</option>
-              {% for x in mainType %}
-              <option value="{{ x.fileid }}">{{ x.typename }}</option>
+              <option value="">اختر بيان فرعي</option>
+              {% for x in subType %}
+              <option value="{{ x.fileid }}">{{ x }}</option>
               {% endfor %}
             </select>
 
-            <div class="invalid-feedback">الرجاء اختيار بيان رئيسي.</div>
+            <div class="invalid-feedback">الرجاء اختيار بيان فرعي.</div>
           </div>
 
           <div class="mb-3">
@@ -105,17 +105,17 @@
           <tr>
             <th>#</th>
             <th>اسم الموديل</th>
-            <th>البيان الرئيسي</th>
+            <th>البيان الفرعي</th>
             <!-- MainType column -->
           </tr>
         </thead>
         <tbody>
           {% for x in models %}
-          <tr data-main-type="{{ x.maintype.fileid }}">
+          <tr data-sub-type="{{ x.subtype_fk.fileid }}">
             <!-- Data attribute for MainType ID -->
             <td>{{ x.fileid }}</td>
-            <td>{{ x.sname }}</td>
-            <td>{{ x.maintype.typename }}</td>
+            <td>{{ x.model_name }}</td>
+            <td>{{ x.subtype_fk.subtypename }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -135,7 +135,7 @@
           const rows = document.querySelectorAll("#models-table tbody tr");
 
           rows.forEach(function (row) {
-            const mainTypeId = row.getAttribute("data-main-type");
+            const mainTypeId = row.getAttribute("data-sub-type");
 
             if (selectedValue === "" || selectedValue === mainTypeId) {
               row.style.display = ""; // Show row if it matches

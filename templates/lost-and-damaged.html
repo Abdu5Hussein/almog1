@@ -77,9 +77,7 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
-      .row {
-        margin-bottom: 10px;
-      }
+      
 
       .form-label {
         margin-bottom: 0;
@@ -109,12 +107,19 @@
         padding: 0 20px;
       }
       #users-table {
-        max-height: 184px;
+        max-height: 175px;
+        min-height: 175px;
+        padding: 0px;
       }
       .custom-table {
-        max-height: 184px;
+        max-height: 175px;
+        height:auto;
         overflow-y: hidden;
         margin: 0;
+      }
+      #lost-damaged-table{
+        max-height: 150px;
+        min-height: 150px;
       }
 
       table {
@@ -202,12 +207,47 @@
       .quantity {
         width: 80px;
       }
+
+      .item-disabled {
+        pointer-events: none; /* Prevent clicks */
+        opacity: 0.6; /* Reduce visibility */
+        cursor: not-allowed; /* Show not-allowed cursor */
+      }
+      .page-link {
+          text-align: center;
+          padding: 0.1rem 0.75rem;
+          height: 25px;
+          font-size: 15px;
+          color: #212529;
+      }
+
+      .page-link-active {
+          background-color: #0d6efd;         
+          color:rgb(255, 255, 255);
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <!-- Row 1: Three Columns with Input Fields -->
       <div class="row border p-1 m-0 mb-1">
+        <div class="d-flex justify-content-around">
+          <nav aria-label="Page navigation example">
+            <ul class="pagination h-1"> 
+            <p id="page-total" class="page-link item-disabled">total of x pages</p>
+              <li class="page-first"><a class="page-link" href="#">First</a></li>
+              <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
+              <li class="page-item"><a class="page-link " href="#">1</a></li>
+              <li class="page-item"><a class="page-link" href="#">2</a></li>
+              <li class="page-item"><a class="page-link" href="#">3</a></li>
+              <li class="page-next"><a class="page-link" href="#">Next</a></li>
+              <li class="page-last"><a class="page-link" href="#">Last</a></li>
+              <select name="page-size" id="page-size" class="page-link mx-2">
+              <option disabled value="">اختر حجم الصفحة</option>
+              <option value="100">100</option><option value="200">200</option><option value="300">300</option></select>
+            </ul>
+          </nav>
+        </div>
         <div class="col custom-table">
           <div
             dir="rtl"
@@ -215,6 +255,10 @@
             class="table table-striped table-bordered table-hover"
           ></div>
         </div>
+        <div id="loader-element" class="d-none align-items-center justify-content-center mb-1" style="font-size: 13px; display: none;">
+          <strong>Loading...</strong>
+          <div class="spinner-border ml-auto mx-2" role="status" aria-hidden="true" style="height:1rem; width:1rem; animation-duration: 5s; "></div>
+      </div>
       </div>
 
       <!-- Row 2: Users Table -->
@@ -328,7 +372,7 @@
 
       <!-- Row 3: Four Columns with Buttons -->
       <div class="row">
-        <div class="col-md-6 px-4 input-col">
+        <div class="col px-4 input-col">
           <input
             type="date"
             class="form-control ms-2 mb-1"
@@ -344,7 +388,21 @@
             required
           />
         </div>
-        <div class="col-md-6 input-col">
+        <div class="col input-col">
+          <div class="d-flex align-items-center mb-2">
+            <div class="label-con" Style="width:100px">
+              <label for="chosenProduct" class="form-label">الصنف المختار</label>
+            </div>
+            <input id="chosenProduct" type="text" class="form-control" readonly />
+          </div>
+          <div class="d-flex align-items-center mb-2">
+            <div class="label-con" Style="width:100px">
+              <label for="chosenPno" class="form-label">الرقم الخاص</label>
+            </div>
+            <input id="chosenPno" type="text" class="form-control" readonly/>
+          </div>
+        </div>
+        <div class="col input-col">
           <div class="d-flex align-items-center mb-2">
             <div class="label-con">
               <label for="quantity" class="form-label">الكمية</label>
@@ -362,8 +420,8 @@
       </div>
 
       <!-- Row 4: Users Table Again -->
-      <div class="row mb-2">
-        <div class="col custom-table">
+      <div class="row">
+        <div class="col" style="height: 150px;">
           <div
             dir="rtl"
             id="lost-damaged-table"
@@ -417,7 +475,7 @@
       </div>
 
       <!-- Row 5: Nine Columns with Buttons -->
-      <div class="row">
+      <div class="row my-2">
         <div class="col-2">
           <div class="d-flex align-items-center mb-2">
             <label for="input2" class="form-label">الاجمالي</label>
@@ -470,13 +528,13 @@
           height: "auto", // Adjust height or set a fixed height
           layout: "fitColumns",
           selectable: true,
-          pagination: "local", // Enable local pagination
-          paginationSize: 100, // Show 100 records per page
-          paginationSizeSelector: [50, 100, 200], // Page size options
-          paginationButtonCount: 5, // Number of visible pagination buttons
-          movableColumns: true,
+          //pagination: "local", // Enable local pagination
+          //paginationSize: 100, // Show 100 records per page
+          //paginationSizeSelector: [50, 100, 200], // Page size options
+          //paginationButtonCount: 5, // Number of visible pagination buttons
+          //movableColumns: true,
           columnHeaderVertAlign: "bottom",
-          columnMenu: true, // Enable column menu
+          //columnMenu: true, // Enable column menu
           data: [], // Placeholder, will be loaded dynamically
           columns: [
             // Column definitions
@@ -541,36 +599,11 @@
             { title: "البيان الفرعي", field: "itemsubmain", visible: false },
             { title: "الموديل", field: "itemthird", visible: false },
             { title: "بلد الصنع", field: "itemsize", visible: false },
-            { title: "Date Product", field: "dateproduct", visible: false },
-            { title: "Level Product", field: "levelproduct", visible: false },
             { title: "الرصيد الاحتياطي", field: "itemtemp", visible: false },
-            { title: "تاريخ اخر طلب", field: "orderlastdate", visible: false },
-            { title: "مصدر الطلب", field: "ordersource", visible: false },
-            { title: "رقم فاتورة الطلب", field: "orderbillno", visible: false },
-            { title: "تاريخ اخر شراء", field: "buylastdate", visible: false },
-            { title: "مصدر الشراء", field: "buysource", visible: false },
-            { title: "رقم فاتورة الشراء", field: "buybillno", visible: false },
             { title: "سعر التوريد", field: "orgprice", visible: false },
             { title: "سعر الشراء", field: "orderprice", visible: false },
             { title: "سعر التكلفة", field: "costprice", visible: false },
             { title: "المواصفات", field: "memo", visible: false },
-            { title: "Order Stop", field: "orderstop", visible: false },
-            { title: "Buy Stop", field: "buystop", visible: false },
-            { title: "Item Trans", field: "itemtrans", visible: false },
-            { title: "الرصيد المؤقت", field: "itemvalueb", visible: false },
-            { title: "Item Type", field: "itemtype", visible: false },
-            { title: "رقم الباركود", field: "barcodeno", visible: false },
-            {
-              title: "اسم الصنف بالانجليزي",
-              field: "eitemname",
-              visible: false,
-            },
-            { title: "عملة الشراء", field: "currtype", visible: false },
-            { title: "اقل سعر", field: "lessprice", visible: false },
-            { title: "قيمة العملة", field: "currvalue", visible: false },
-            { title: "الرصيد المحجوز", field: "resvalue", visible: false },
-            { title: "عدد القطع للصندوق", field: "itemperbox", visible: false },
-            { title: "حالة الصنف", field: "cstate", visible: false },
           ],
           placeholder: "No Data Available",
           rowFormatter: function (row) {
@@ -630,18 +663,10 @@
             });
           },
         });
-        fetch("api/get-data/")
-          .then((response) => response.json())
-          .then((data) => {
-            console.log("Fetched Data:", data);
-
-            // Set data in Tabulator
-            table.setData(data);
-          })
-          .catch((error) => console.error("Error fetching data:", error));
 
         // Combined filter function
-        function applyFilters() {
+        function applyFilters(pageno = 1, pagesize = pageSize) {
+          console.time("applyFiltersTime");
           // Helper function to get selected text from a dropdown
           function getSelectedText(selectId) {
             const select = document.getElementById(selectId);
@@ -665,6 +690,8 @@
             itemname: getInputValue("pname-arabic"),
             companyno: getInputValue("company-no"),
             pno: getInputValue("pno"),
+            page: parseInt(pageno, 10) || 1,
+            size: pagesize || 20,
           };
 
           console.log("Filter values:", filterValues);
@@ -677,7 +704,8 @@
             return csrfInput ? csrfInput.value : "";
           }
 
-          // Perform the fetch request
+          console.time("FilterTime");
+
           fetch("/api/filter-items", {
             method: "POST",
             headers: {
@@ -688,21 +716,43 @@
           })
             .then((response) => {
               if (!response.ok) {
-                throw new Error(
-                  `Network error: ${response.status} ${response.statusText}`
-                );
+                throw new Error(`Network error: ${response.status} ${response.statusText}`);
               }
               return response.json();
             })
             .then((data) => {
-              console.log("Filtered data:", data);
+              console.time("tableTime");
+              console.log("response: ",data);
+              console.log("filter data",data.data);
 
-              // Update Tabulator table with the filtered data
-              table.replaceData(data);
+              // Update Tabulator table
+              if (pageno === 1) {
+                table.replaceData(data.data);
+                currentPage = 1;
+              } else {
+                const scrollPosition = tableContainer.scrollTop;
+                table.addData(data.data);
+                tableContainer.scrollTop = scrollPosition;
+              }
+
+              lastPage = data.page_no === data.last_page;
+
+              console.timeEnd("tableTime");
+
+              console.time("PaginationTime");
+              updatePagination(data.last_page, data.page_no);
+              console.timeEnd("PaginationTime");
+
             })
             .catch((error) => {
-              console.error("Error fetching filtered data:", error);
-              // Display user-friendly error message or notification
+              console.error("Error fetching filtered data:", error.message);
+            })
+            .finally(() => {
+              console.timeEnd("FilterTime");
+              console.timeEnd("applyFiltersTime");
+              active_url="server_filtered_data";
+              isLoading = false;
+              hideLoader();
             });
         }
 
@@ -717,10 +767,22 @@
           "company",
         ];
 
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Apply debounce to applyFilters with a 300ms delay
+        const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
         filterInputs.forEach((inputId) => {
           document
             .getElementById(inputId)
-            .addEventListener("input", applyFilters);
+            .addEventListener("input", () => {
+            debouncedApplyFilters();
+        });
         });
         // Handle left-click on row to populate input fields
         table.on("rowClick", function (e, row) {
@@ -728,12 +790,20 @@
           const rowData = row.getData();
           console.log(rowData);
           const fileid = rowData.fileid; // Assuming fileid is stored in the row's data-fileid attribute
-          const itemno = rowData.itemno;
-          const companyno = rowData.replaceno;
-          const company = rowData.companyproduct;
-          const itemname = rowData.itemname;
-          const costprice = rowData.costprice;
-          const pno = rowData.pno;
+          const itemno = rowData.itemno || "لا يوجد";
+          const companyno = rowData.replaceno|| "لا يوجد";
+          const company = rowData.companyproduct|| "لا يوجد";
+          const itemname = rowData.itemname|| "لا يوجد";
+          const costprice = rowData.costprice|| "لا يوجد";
+          const pno = rowData.pno|| "لا يوجد";
+          const itemmain = rowData.itemmain|| "لا يوجد";
+
+          if(!pno || pno==""||pno=="لا يوجد"){
+            alert("خانة الرقم الخاص PNO للصنف فارغة!");
+            return;
+          }
+          document.getElementById("chosenProduct").value = itemname;
+          document.getElementById("chosenPno").value = pno;
 
           sessionStorage.setItem("file-id", fileid);
           sessionStorage.setItem("itemno", itemno);
@@ -742,14 +812,7 @@
           sessionStorage.setItem("itemname", itemname);
           sessionStorage.setItem("costprice", costprice);
           sessionStorage.setItem("pno", pno);
-
-          console.log(fileid);
-          console.log(itemno);
-          console.log(companyno);
-          console.log(company);
-          console.log(itemname);
-          console.log(costprice);
-          console.log(pno);
+          sessionStorage.setItem("itemmain", itemmain);
         });
         const confirmButton = document.getElementById("confirm-btn");
         const quantity = document.getElementById("quantity"); // Input field for the amount to add/subtract
@@ -779,6 +842,9 @@
           const itemname = sessionStorage.getItem("itemname");
           const costprice = sessionStorage.getItem("costprice");
           const pno = sessionStorage.getItem("pno");
+          const itemmain = sessionStorage.getItem("itemmain");
+          const today = new Date();
+          const todaydate = today.toISOString();
 
           // Check if any of the items are null or undefined
           if (
@@ -805,15 +871,7 @@
             }
             return null;
           };
-
-          const csrfToken = getCSRFToken();
-          fetch("/add-lost-damaged", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrfToken,
-            },
-            body: JSON.stringify({
+          const valuesobj= {
               fileid: fileid,
               itemno: itemno,
               companyno: companyno,
@@ -823,12 +881,26 @@
               quantity: amount,
               pno: pno,
               status: status,
-            }),
+              date:todaydate,
+              itemmain:itemmain,
+            };
+            console.log(valuesobj);
+          const csrfToken = getCSRFToken();
+          fetch("/add-lost-damaged", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify(valuesobj),
           })
             .then((response) => response.json())
             .then((data) => {
               if (data.success) {
                 alert("تمت اضافة الفقد/التلف بنجاح");
+                refreshLostTable();
+                table.updateData([{fileid:fileid, itemvalue:data.new_balance}]);
+                clearForm();
               } else {
                 alert("حدث خطأ. error: ", data.message);
               }
@@ -886,7 +958,9 @@
             { title: "المستخدم", field: "user", width: 70, visible: true },
           ],
         });
-        // Use the URL in your fetch request
+        refreshLostTable();
+        function refreshLostTable(){
+          // Use the URL in your fetch request
         fetch("/fetch-lost-damaged-data/")
           .then((response) => response.json())
           .then((data) => {
@@ -900,6 +974,7 @@
             console.log("cost sum:", totalcost);
           })
           .catch((error) => console.error("Error fetching data:", error));
+        }
         // Function to update the input field with the calculated sum
         function updateSumInput(selector, sum) {
           $(selector).val(
@@ -1025,9 +1100,7 @@
             });
 
             if (table) {
-              table.clearFilter(); // Clear all filters applied
-              //fetchAllData();
-              console.log("Filters cleared");
+              fetchDataFromServer({ page: 1, size: pageSize });
             }
             sessionStorage.clear();
           });
@@ -1040,7 +1113,7 @@
           const fileid = rowData.fileid; // Assuming fileid is stored in the row's data-fileid attribute
 
           sessionStorage.setItem("delete-id", fileid);
-
+          alert(`تم اختيار الفقد رقم ${fileid} .. اضغط حذف لحذفه`);
           console.log(fileid);
         });
         document
@@ -1053,8 +1126,8 @@
               return; // Exit the function if any required session storage item is missing
             }
             // Show confirmation dialog
-            const userConfirmed = confirm(
-              "هل انت متاكد من حذف هذا الفقد/التلف؟"
+            const userConfirmed = confirm(              
+              `هل انت متاكد من حذف هذا الفقد/التلف رقم ${delete_id} .. اضغط موافق لحذفه`
             );
             if (!userConfirmed) {
               return; // Exit if user cancels
@@ -1087,6 +1160,7 @@
               .then((data) => {
                 if (data.success) {
                   alert("تم حذف الفقد/التلف بنجاح");
+                  refreshLostTable();
                 } else {
                   alert("حدث خطا اثناء الحذف. error: ", data.message);
                 }
@@ -1155,6 +1229,236 @@
               console.error("Error:", error);
             });
         }
+
+//////////////////////
+  let currentPage = 1; // Tracks the current page
+  let lastPage = false; // Indicates if the last page is reached
+  let isLoading = false; // Prevents multiple fetch calls
+  const pageSize = 100; // Number of rows per page
+  const tableContainer = document.getElementById("users-table");// Table scroll container
+  // Function to fetch and append the next page of data
+  const fetchNextPage = () => {
+    if (!lastPage) {
+      currentPage++;
+      console.log("currentPage : ", currentPage);
+      console.log(`Fetching page ${currentPage}...`);
+      console.log("fetching active url : ", active_url);
+
+      if (active_url == "server_filtered_data") {
+        //console.log("apply filters current page: ",currentPage);
+        applyFilters(currentPage, pageSize);
+      } else {
+        fetchDataFromServer({ page: currentPage, size: pageSize });
+      }
+      //hideLoader();
+    }
+  };
+
+  // Scroll event listener
+  const handleScroll = () => {
+    //console.log("scroll area");
+    const scrollPosition = tableContainer.scrollTop + tableContainer.clientHeight;
+    const scrollThreshold = tableContainer.scrollHeight - 2000; // Adjust threshold as needed
+    console.log("isLoading: ", isLoading);
+    console.log("lastPage: ", lastPage);
+
+    if (scrollPosition >= scrollThreshold && !lastPage && !isLoading) {
+      console.log("scrollPosition: ", scrollPosition);
+      console.log("scrollThreshold: ", scrollThreshold);
+      console.log("scrollHeight: ", tableContainer.scrollHeight);
+      //console.log("lastPage: ",lastPage);
+      //console.log("isLoading: ",isLoading);
+      isLoading = true;
+      showLoader();
+      debounce(fetchNextPage(),200);
+    }
+  };
+  function fetchDataFromServer({ page = 1, size = 100 }) {
+    //console.log("isLoading: ",isLoading);
+    console.time("fetchData"); // Start timer
+
+    fetch(`api/get-data/?page=${page}&size=${size}`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched Data:", data);
+        active_url = "server_Data_No_Filter";
+        console.log("active_url for pagination:", active_url);
+        //console.log("page:", page);
+
+        console.time("tableTime");
+        //console.log("sort status: ", table.getDataCount());
+        if (page === 1) {
+          // For the first page, replace the existing data
+          table.setData(data.data);
+          console.log("data set to the table");
+          //console.log("getDataCount: ", table.getDataCount());
+          currentPage = 1;
+        } else {
+          let scrollPosition = tableContainer.scrollTop; // Save scroll position
+          //let currentData = table.getData();  // Get current table data
+          //let combinedData = currentData.concat(data.data);  // Combine existing data with new data
+          table.addData(data.data,false);
+          tableContainer.scrollTop = scrollPosition;
+          console.log("table top: ",tableContainer.scrollTop);
+          console.log("data added to the table");
+          console.log("scrollPosition: ", scrollPosition);
+        }
+        console.timeEnd("tableTime");
+
+        // Update lastPage flag
+        lastPage = data.page_no == data.last_page ? true : false;
+        console.time("PaginationTime");
+        updatePagination(data.last_page, data.page_no);
+        console.timeEnd("PaginationTime");
+
+
+        return data; // Return data for further processing
+      })
+      .catch((error) => console.error("Error fetching data:", error)).finally(() => {
+        console.timeEnd("fetchData"); // End the timer regardless of success or failure
+        isLoading = false; // Reset loading flag after fetch completes
+        hideLoader();
+      });
+  }
+  // Attach the scroll event listener
+  tableContainer.addEventListener("scroll", handleScroll);
+
+// Debounce function definition
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  // Apply debounce to applyFilters with a 300ms delay
+  //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
+  fetchDataFromServer({ page: 1, size: 100 });
+  
+      function showLoader() {
+        const loader = document.getElementById("loader-element");
+        loader.classList.remove("d-none"); // Show the loader by removing d-none
+        loader.classList.add("d-flex"); // Ensure d-flex is applied for flexbox display
+        //console.log("loader shown");
+      }
+
+      function hideLoader() {
+        const loader = document.getElementById("loader-element");
+              
+        // Set a delay (e.g., 2000ms = 2 seconds)
+        setTimeout(function() {
+          loader.classList.remove("d-flex"); // Remove d-flex
+          loader.classList.add("d-none"); // Hide the loader by adding d-none
+          //console.log("loader hidden after delay");
+        }, 3000); // 2000ms = 2 seconds delay
+      }
+      function updatePagination(lastPage, currentPage) {
+         const pagination = document.querySelector(".pagination");
+          const existingPageLinks = pagination.querySelectorAll(".page-item:not(:first-child):not(:last-child):not(#page-size)");
+          //console.log("existingPageLinks: ",existingPageLinks);
+
+          const startPage = Math.max(1, currentPage);
+          const endPage = Math.min(lastPage, startPage + 2);
+          //console.log("startPage: ",startPage);
+          //console.log("endPage: ",endPage);
+
+          let index = 0; // Track the current index in existing page items
+          for (let i = startPage; i <= endPage; i++) {
+              let pageItem;
+              if (index < existingPageLinks.length) {
+                   //console.log("if: done");
+                  // Update an existing item
+                  pageItem = existingPageLinks[index];
+                  pageItem.querySelector(".page-link").innerText = i;
+                  pageItem.querySelector(".page-link").setAttribute("data-page", i);
+              } else {
+                //console.log("else: done");
+                  // Add a new item if needed
+                  pageItem = document.createElement("li");
+                  pageItem.className = "page-item";
+                  pageItem.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                  pagination.insertBefore(pageItem, pagination.querySelector("li:last-child"));
+              }
+              pageItem.querySelector(".page-link").classList.toggle("page-link-active", i === currentPage); // Set active class
+              index++;
+              //console.log("index: ",index);
+          }
+
+          // Remove any extra items beyond the new range
+          /*while (index < existingPageLinks.length) {
+              pagination.removeChild(existingPageLinks[index]);
+              index++;
+          }*/
+
+          // Update Previous button
+          const previousBtn = document.querySelector(".page-prev");
+          previousBtn.classList.toggle("item-disabled", currentPage === 1);
+          previousBtn.querySelector(".page-link").setAttribute("data-page", currentPage - 1);
+          //console.log("previousBtn: ",previousBtn);
+          // Update Next button
+          const nextBtn = document.querySelector(".page-next");
+          nextBtn.classList.toggle("item-disabled", currentPage === endPage);
+          nextBtn.querySelector(".page-link").setAttribute("data-page", currentPage + 1);
+          //console.log("nextBtn: ",nextBtn);
+          // Update First button
+          const firstBtn = document.querySelector(".page-first");
+          firstBtn.querySelector(".page-link").setAttribute("data-page", 1);
+          //console.log("firstBtn: ",firstBtn);
+          // Update Last button
+          const lastBtn = document.querySelector(".page-last");
+          lastBtn.querySelector(".page-link").setAttribute("data-page", lastPage);
+          //console.log("lastBtn: ",lastBtn);
+          //update no of pages paragraph
+          document.getElementById("page-total").innerHTML = "تم تحميل "+ currentPage + " من اجمالي " + lastPage + " صفحات " ;
+      }
+
+
+      // Example usage with API response
+      //const response = { last_page: 10, page_no: 3 }; // Example data
+      //updatePagination(response.last_page, response.page_no);
+
+      // Event listener for page links
+      document.querySelector(".pagination").addEventListener("click", function (event) {
+        const target = event.target;
+        if (target.classList.contains("page-link") && 
+            !target.parentNode.classList.contains("disabled") && 
+            !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
+            event.preventDefault();
+            const selectedPage = parseInt(target.getAttribute("data-page"), 10);
+            const selectedPageSize = document.getElementById("page-size").value;
+
+            if(lastPage){
+              return 
+            }
+            
+            // Fetch data for selected page
+            console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+            if(active_url=="server_filtered_data"){
+                currentPage = selectedPage;
+                //applyFilters(selectedPage,selectedPageSize);
+            }else{
+                currentPage = selectedPage;
+                fetchDataFromServer({page: selectedPage,size: selectedPageSize});
+            }       
+        }
+     });
+
+
+      // Event listener for page size change
+      document.querySelector("#page-size").addEventListener("change", function () {
+        const selectedPageSize = this.value;
+        const selectedPage = document.querySelector(".page-link.page-link-active").innerHTML;
+
+        //console.log(`Selected page size: ${selectedPageSize}`);
+        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+        if(active_url=="server_filtered_data"){
+           // applyFilters(selectedPage,selectedPageSize);
+        }else{
+            fetchDataFromServer({page: selectedPage,size: selectedPageSize});
+        }
+      });
+      ///////////////////////
       });
     </script>
   </body>

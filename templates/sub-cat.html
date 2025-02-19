@@ -1,21 +1,23 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>جدول البيان الفرعي</title>
+    <title>جدول البيان الفرعيات</title>
     <link
       rel="stylesheet"
       href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
     />
     <style>
       table {
-        width: 100%;
         margin-top: 20px;
       }
       .form-container {
         margin-top: 20px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
       }
       .btn-container {
         margin-top: 10px;
@@ -23,62 +25,61 @@
     </style>
   </head>
   <body>
-    <div class="container p-4">
-      <h2>جدول البيان الفرعي</h2>
-
-      <!-- Data Grid -->
-      <table class="table table-bordered">
-        <thead class="table-dark">
-          <tr>
-            <th>#</th>
-            <th>اسم البيان</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for x in subType %}
-          <tr>
-            <td>{{ x.fileid }}</td>
-            <td>{{ x.subtypename }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="3" class="text-center">No data available</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="container py-4">
+      <h2 class="mb-4 text-center">جدول البيان الفرعي</h2>
 
       <!-- Form Container -->
       <div class="form-container">
-        <h4>ادارة البيان الفرعي</h4>
-        <form method="post">
+        <h4 class="mb-3">إدارة البيان الفرعي</h4>
+        <form method="post" class="needs-validation" novalidate>
           {% csrf_token %}
-          <input type="hidden" name="id" id="measurementId" />
-          <div class="form-group">
-            <label for="inputName">اسم البيان</label>
-            <input
-              type="text"
-              class="form-control mt-1"
-              name="name"
-              id="inputName"
-              placeholder="Enter name"
-            />
+          <input type="hidden" name="id" id="sub_typeId" />
+
+          <div class="mb-3">
+            <label for="item-main" class="form-label">اسم البيان الرئيسي</label>
+            <select
+              id="item-main-filter"
+              name="sub_type-main-type"
+              class="form-select"
+            >
+              <option value="">اختر بيان رئيسي</option>
+              {% for x in main_types %}
+              <option value="{{ x.fileid }}">{{ x.typename }}</option>
+              {% endfor %}
+            </select>
+
+            <div class="invalid-feedback">الرجاء اختيار بيان رئيسي.</div>
           </div>
 
-          <div class="btn-container">
+          <div class="mb-3">
+            <label for="sub_type-name" class="form-label">اسم البيان الفرعي</label>
+            <input
+              type="text"
+              name="sub_type-name"
+              id="sub_type-name"
+              class="form-control"
+              placeholder="ادخل اسم البيان الفرعي"
+              required
+            />
+            <div class="invalid-feedback">الرجاء إدخال اسم البيان الفرعي.</div>
+          </div>
+
+          <div class="btn-container d-flex justify-content-start gap-2">
             <button
               type="submit"
               name="action"
               value="add"
               class="btn btn-success"
+              id="add-button"
             >
-              اضافة
+              إضافة
             </button>
             <button
               type="submit"
               name="action"
               value="edit"
               class="btn btn-primary"
+              id="edit-button"
             >
               تعديل
             </button>
@@ -87,25 +88,112 @@
               name="action"
               value="delete"
               class="btn btn-danger"
+              id="delete-button"
             >
               حذف
             </button>
           </div>
         </form>
       </div>
+
+      <!-- Data Grid -->
+      <table
+        id="sub_types-table"
+        class="table table-bordered table-hover text-center"
+      >
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>اسم البيان الفرعي</th>
+            <th>البيان الرئيسي</th>
+            <!-- MainType column -->
+          </tr>
+        </thead>
+        <tbody>
+          {% for x in subtypes %}
+          <tr data-main-type="{{ x.maintype.fileid }}">
+            <!-- Data attribute for MainType ID -->
+            <td>{{ x.fileid }}</td>
+            <td>{{ x.subtypename }}</td>
+            <td>{{ x.maintype_fk.typename }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
-    <!-- Bootstrap JS (optional) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Custom Script -->
     <script>
-      // Handle row click to pre-fill the form for editing
-      document.querySelectorAll("table tbody tr").forEach((row) => {
-        row.addEventListener("click", () => {
-          document.getElementById("measurementId").value =
-            row.cells[0].innerText;
-          document.getElementById("inputName").value = row.cells[1].innerText;
+      // JavaScript to filter the table based on selected MainType
+      document
+        .getElementById("item-main-filter")
+        .addEventListener("change", function () {
+          const selectedValue = this.value;
+          const rows = document.querySelectorAll("#sub_types-table tbody tr");
+
+          rows.forEach(function (row) {
+            const mainTypeId = row.getAttribute("data-main-type");
+
+            if (selectedValue === "" || selectedValue === mainTypeId) {
+              row.style.display = ""; // Show row if it matches
+            } else {
+              row.style.display = "none"; // Hide row if it doesn't match
+            }
+          });
         });
+      // Form validation
+      (function () {
+        "use strict";
+        const forms = document.querySelectorAll(".needs-validation");
+        Array.from(forms).forEach((form) => {
+          form.addEventListener(
+            "submit",
+            function (event) {
+              if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+              form.classList.add("was-validated");
+            },
+            false
+          );
+        });
+      })();
+
+      //////
+      document.querySelectorAll("tr").forEach((row) => {
+        row.addEventListener("click", function () {
+          const id = this.children[0].innerText; // Assuming the first column is the ID
+          const name = this.children[1].innerText; // Assuming the second column is the name
+
+          document.getElementById("sub_typeId").value = id;
+          document.getElementById("sub_type-name").value = name;
+        });
+      });
+
+      // Select the form elements and buttons
+      const itemMainFilter = document.getElementById("item-main-filter");
+      const addButton = document.getElementById("add-button");
+      const editButton = document.getElementById("edit-button");
+      const deleteButton = document.getElementById("delete-button");
+
+      // Set up event listeners for the buttons
+      addButton.addEventListener("click", function () {
+        // Make the item-main-filter required when adding
+        itemMainFilter.setAttribute("required", "true");
+      });
+
+      editButton.addEventListener("click", function () {
+        // Remove the required attribute for editing
+        itemMainFilter.removeAttribute("required");
+      });
+
+      deleteButton.addEventListener("click", function () {
+        // Remove the required attribute for deleting
+        itemMainFilter.removeAttribute("required");
       });
     </script>
   </body>

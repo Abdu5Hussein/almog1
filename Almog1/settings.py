@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#%+mz*p*)^nanq$a+pm0%m4_pp-v#u!ak!h-8q8dw4tostng@0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['marine.co.ly','www.marine.co.ly', '45.13.59.226','127.0.0.1']
 
@@ -59,12 +59,40 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "almogOil",
     'debug_toolbar',
+    'rest_framework',
+    "corsheaders",
 ]
+
+# Configure JWT settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Adjust as needed
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,  # Rotate refresh tokens
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist the old refresh token
+}
 
 # Add IPs that are allowed to view the toolbar (typically local IP)
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    #"http://localhost:8000",  # Adjust based on your frontend domain
+    #"http://your-frontend-domain.com",
+    "http://45.13.59.226",
+    "https://45.13.59.226",
+    "http://localhost:8000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,12 +103,14 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 CSRF_COOKIE_HTTPONLY = False  # Allow access to CSRF token in JavaScript
 
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
+    'http://45.13.59.226',
     'http://localhost:8000',  # In case you're using localhost
 ]
 

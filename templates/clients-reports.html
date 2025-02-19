@@ -466,6 +466,23 @@
         font-size: 12px;
         padding: 5px;
       }
+      .item-disabled {
+        pointer-events: none; /* Prevent clicks */
+        opacity: 0.6; /* Reduce visibility */
+        cursor: not-allowed; /* Show not-allowed cursor */
+      }
+      .page-link {
+          text-align: center;
+          padding: 0.1rem 0.75rem;
+          height: 25px;
+          font-size: 15px;
+          color: #212529;
+      }
+
+      .page-link-active {
+          background-color: #0d6efd;         
+          color:rgb(255, 255, 255);
+      }
     </style>
   </head>
   <body>
@@ -587,6 +604,23 @@
           </div>
         </form>
       </div>
+      <div class="d-flex justify-content-around">
+        <nav aria-label="Page navigation example">
+          <ul class="pagination h-1"> 
+            <p id="page-total" class="page-link item-disabled">total of x pages</p>
+            <li class="page-first"><a class="page-link" href="#">First</a></li>
+            <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
+            <li class="page-item"><a class="page-link " href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-next"><a class="page-link" href="#">Next</a></li>
+            <li class="page-last"><a class="page-link" href="#">Last</a></li>
+            <select name="page-size" id="page-size" class="page-link mx-2">
+            <option disabled value="">اختر حجم الصفحة</option>
+            <option value="100">100</option><option value="200">200</option><option value="300">300</option></select>
+          </ul>
+        </nav>
+      </div>
       <!-- Table Section -->
       <div class="custom-table mb-1">
         <div
@@ -595,6 +629,10 @@
           data-url="{% url 'get_data' %}"
           class="table table-striped table-bordered table-hover"
         ></div>
+      </div>
+      <div id="loader-element" class="d-none align-items-center justify-content-center mb-1" style="font-size: 13px; display: none;">
+        <strong>Loading...</strong>
+        <div class="spinner-border ml-auto mx-2" role="status" aria-hidden="true" style="height:1rem; width:1rem; animation-duration: 5s; "></div>
       </div>
       <!-- Modal -->
       <div
@@ -676,13 +714,7 @@
           height: "auto", // Adjust height or set a fixed height
           layout: "fitColumns",
           selectable: true,
-          pagination: "local", // Enable local pagination
-          paginationSize: 100, // Show 100 records per page
-          paginationSizeSelector: [50, 100, 200], // Page size options
-          paginationButtonCount: 5, // Number of visible pagination buttons
-          movableColumns: true,
           columnHeaderVertAlign: "bottom",
-          columnMenu: true, // Enable column menu
           data: [], // Placeholder, will be loaded dynamically
           columns: [
             {
@@ -722,42 +754,6 @@
               width: 100,
             },
             {
-              title: "Loan Period",
-              field: "loan_period",
-              sorter: "number",
-              visible: false,
-            },
-            {
-              title: "Address",
-              field: "address",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Email",
-              field: "email",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Website",
-              field: "website",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Phone",
-              field: "phone",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Mobile",
-              field: "mobile",
-              sorter: "string",
-              visible: false,
-            },
-            {
               title: "اخر دفعة",
               field: "last_transaction",
               sorter: "string",
@@ -778,56 +774,6 @@
               visible: false,
               width: 100,
             },
-            {
-              title: "Last Transaction Details",
-              field: "last_transaction_details",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Currency",
-              field: "accountcurr",
-              sorter: "string",
-              visible: false,
-            },
-            { title: "Type", field: "type", sorter: "string", visible: false },
-
-            {
-              title: "Loan Day",
-              field: "loan_day",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Subtype",
-              field: "subtype",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Client Stop",
-              field: "client_stop",
-              formatter: "tickCross",
-              visible: false,
-            },
-            {
-              title: "Currency Flag",
-              field: "curr_flag",
-              formatter: "tickCross",
-              visible: false,
-            },
-            {
-              title: "Permissions",
-              field: "permissions",
-              sorter: "string",
-              visible: false,
-            },
-            {
-              title: "Other",
-              field: "other",
-              sorter: "string",
-              visible: false,
-            },
           ],
           placeholder: "No Data Available",
           rowFormatter: function (row) {
@@ -844,15 +790,53 @@
           },
         });
 
-        fetch("api/get-all-clients")
-          .then((response) => response.json())
-          .then((data) => {
-            console.log("Fetched Data:", data);
+        refreshTable();
 
-            // Set data in Tabulator
-            table.setData(data);
-          })
-          .catch((error) => console.error("Error fetching data:", error));
+        function refreshTable({ page = 1, size = 100 } = {}){
+            console.time("fetchData"); // Start timer
+            fetch(`api/get-all-clients?page=${page}&size=${size}`)
+            .then((response) => response.json())
+            .then((data) => {
+                console.log("Fetched Data:", data);
+                active_url = "server_Data_No_Filter";
+                console.log("active_url for pagination:", active_url);
+                //console.log("page:", page);
+
+                console.time("tableTime");
+                //console.log("sort status: ", table.getDataCount());
+                if (page === 1) {
+                  // For the first page, replace the existing data
+                  table.setData(data.data);
+                  console.log("data set to the table");
+                  //console.log("getDataCount: ", table.getDataCount());
+                  currentPage = 1;
+                } else {
+                  let scrollPosition = tableContainer.scrollTop; // Save scroll position
+                  //let currentData = table.getData();  // Get current table data
+                  //let combinedData = currentData.concat(data.data);  // Combine existing data with new data
+                  table.addData(data.data);
+                  tableContainer.scrollTop = scrollPosition;
+                  console.log("data added to the table");
+                  //console.log("getDataCount: ", table.getDataCount());
+                }
+                console.timeEnd("tableTime");
+
+                // Update lastPage flag
+                lastPage = data.page_no == data.last_page ? true : false;
+                console.time("PaginationTime");
+                updatePagination(data.last_page, data.page_no);
+                console.timeEnd("PaginationTime");
+
+
+                return data; // Return data for further processing
+              })
+              .catch((error) => console.error("Error fetching data:", error)).finally(() => {
+                console.timeEnd("fetchData"); // End the timer regardless of success or failure
+                isLoading = false; // Reset loading flag after fetch completes
+                hideLoader();
+              });
+        }
+
         let childWindows = [];
 
         function openWindow(url) {
@@ -923,7 +907,7 @@
           const url = "account-statements";
           const fullUrl = `${url}?id=${id}`;
           openWindow(fullUrl);
-          populateInputFields(rowData);
+          //populateInputFields(rowData);
           console.log("Clicked id:", id);
         });
         function populateInputFields(data) {
@@ -1076,12 +1060,18 @@
           // Optionally reset dropdowns
           const selects = document.querySelectorAll("select");
           selects.forEach((select) => {
-            select.selectedIndex = 0; // Reset to first option
+            if(select.id!=="page-size"){
+              select.selectedIndex = 0; // Reset to first option
+            } 
           });
+
+          refreshTable();
         }
 
-        function applyFilters() {
-          // Helper functions remain the same
+
+        function applyFilters(pageno = 1, pagesize = pageSize) {
+          console.time("applyFiltersTime");
+          // Helper function to get selected text from a dropdown
           function getSelectedText(selectId) {
             const select = document.getElementById(selectId);
             return select && select.selectedIndex !== 0
@@ -1089,11 +1079,11 @@
               : "";
           }
 
+          // Helper function to get trimmed and lowercased input value
           function getInputValue(inputId) {
             const input = document.getElementById(inputId);
             return input ? input.value.trim().toLowerCase() : "";
           }
-
           function getSelectedRadioValue(name) {
             const selectedRadio = document.querySelector(
               `input[name="${name}"]:checked`
@@ -1101,6 +1091,7 @@
             return selectedRadio ? selectedRadio.id : null;
           }
 
+          // Capture filter values dynamically
           const filterValues = {
             id: getInputValue("cno"),
             name: getInputValue("cname-arabic"),
@@ -1111,39 +1102,28 @@
             todate: getInputValue("to-date"),
             subtype: getSelectedText("sub-type"),
             filter: getSelectedRadioValue("filter"), // Radio buttons
+            page: parseInt(pageno, 10) || 1,
+            size: pagesize || 100,
           };
 
-          // Remove empty filters
-          const activeFilters = Object.fromEntries(
-            Object.entries(filterValues).filter(
-              ([key, value]) => value !== null && value !== ""
-            )
-          );
+          console.log("Filter values:", filterValues);
 
-          console.log("Active filter values:", activeFilters);
-
-          // Check if no filters are active
-          if (Object.keys(activeFilters).length === 0) {
-            console.log("No active filters; fetching all data...");
-            // Handle fetching all data here (send empty filters or default request)
-            activeFilters.filter = "all"; // Example: Set to "all" for default behavior
-          }
-
-          // Get CSRF token
+          // Function to get CSRF token
           function getCSRFToken() {
             const csrfInput = document.querySelector(
               "[name=csrfmiddlewaretoken]"
             );
             return csrfInput ? csrfInput.value : "";
           }
-
+          console.time("FilterTime");
+          // Perform the fetch request
           fetch("api/filter-all-clients", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
             },
-            body: JSON.stringify(activeFilters),
+            body: JSON.stringify(filterValues),
           })
             .then((response) => {
               if (!response.ok) {
@@ -1154,11 +1134,37 @@
               return response.json();
             })
             .then((data) => {
-              console.log("Filtered data:", data);
-              table.replaceData(data); // Update Tabulator table
+              console.time("tableTime");
+              console.log("response: ",data);
+              console.log("filter data",data.data);
+
+              // Update Tabulator table
+              if (pageno === 1) {
+                table.setData(data.data);
+                currentPage = 1;
+              } else {
+                const scrollPosition = tableContainer.scrollTop;
+                table.addData(data.data);
+                tableContainer.scrollTop = scrollPosition;
+              }
+
+              lastPage = data.page_no === data.last_page;
+
+              console.timeEnd("tableTime");
+
+              console.time("PaginationTime");
+              updatePagination(data.last_page, data.page_no);
+              console.timeEnd("PaginationTime");
             })
             .catch((error) => {
-              console.error("Error fetching filtered data:", error);
+              console.error("Error fetching filtered data:", error.message);
+            })
+            .finally(() => {
+              console.timeEnd("FilterTime");
+              console.timeEnd("applyFiltersTime");
+              active_url="server_filtered_data";
+              isLoading = false;
+              hideLoader();
             });
         }
 
@@ -1174,10 +1180,23 @@
           "creditor",
         ];
 
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Apply debounce to applyFilters with a 300ms delay
+        const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
+
         filterInputs.forEach((inputId) => {
           document
             .getElementById(inputId)
-            .addEventListener("input", applyFilters);
+            .addEventListener("input", () => {
+            debouncedApplyFilters();
+        });
         });
         function exportToExcel() {
           table.download("xlsx", "table_data.xlsx"); // 'xlsx' is the file format
@@ -1280,7 +1299,194 @@
               table.hideColumn("paid_total");
             }
           });
+
+                /////////// 
+
+  let currentPage = 1; // Tracks the current page
+  let lastPage = false; // Indicates if the last page is reached
+  let isLoading = false; // Prevents multiple fetch calls
+  const pageSize = 100; // Number of rows per page
+  const tableContainer = document.getElementById("users-table");// Table scroll container
+  // Function to fetch and append the next page of data
+  const fetchNextPage = () => {
+    if (!lastPage) {
+      currentPage++;
+      console.log(`Fetching page ${currentPage}...`);
+      console.log("fetching active url : ", active_url);
+
+      if (active_url == "server_filtered_data") {
+        //console.log("apply filters current page: ",currentPage);
+        //applyFilters(currentPage, pageSize);
+      } else {
+        refreshTable({ page: currentPage, size: pageSize });
+      }
+      //hideLoader();
+    }
+  };
+
+  // Scroll event listener
+  const handleScroll = () => {
+    //console.log("scroll area");
+    const scrollPosition = tableContainer.scrollTop + tableContainer.clientHeight;
+    const scrollThreshold = tableContainer.scrollHeight - 2000; // Adjust threshold as needed
+    console.log("isLoading: ", isLoading);
+    console.log("lastPage: ", lastPage);
+
+    if (scrollPosition >= scrollThreshold && !lastPage && !isLoading) {
+      console.log("scrollPosition: ", scrollPosition);
+      console.log("scrollThreshold: ", scrollThreshold);
+      console.log("scrollHeight: ", tableContainer.scrollHeight);
+      //console.log("lastPage: ",lastPage);
+      //console.log("isLoading: ",isLoading);
+      isLoading = true;
+      showLoader();
+      fetchNextPage();
+    }
+  };
+ 
+  // Attach the scroll event listener
+  tableContainer.addEventListener("scroll", handleScroll);
+
+// Debounce function definition
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  // Apply debounce to applyFilters with a 300ms delay
+  //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
+  refreshTable({ page: 1, size: 100 });
+  
+      function showLoader() {
+        const loader = document.getElementById("loader-element");
+        loader.classList.remove("d-none"); // Show the loader by removing d-none
+        loader.classList.add("d-flex"); // Ensure d-flex is applied for flexbox display
+        //console.log("loader shown");
+      }
+
+      function hideLoader() {
+        const loader = document.getElementById("loader-element");
+              
+        // Set a delay (e.g., 2000ms = 2 seconds)
+        setTimeout(function() {
+          loader.classList.remove("d-flex"); // Remove d-flex
+          loader.classList.add("d-none"); // Hide the loader by adding d-none
+          //console.log("loader hidden after delay");
+        }, 3000); // 2000ms = 2 seconds delay
+      }
+      function updatePagination(lastPage, currentPage) {
+         const pagination = document.querySelector(".pagination");
+          const existingPageLinks = pagination.querySelectorAll(".page-item:not(:first-child):not(:last-child):not(#page-size)");
+          //console.log("existingPageLinks: ",existingPageLinks);
+
+          const startPage = Math.max(1, currentPage);
+          const endPage = Math.min(lastPage, startPage + 2);
+          //console.log("startPage: ",startPage);
+          //console.log("endPage: ",endPage);
+
+          let index = 0; // Track the current index in existing page items
+          for (let i = startPage; i <= endPage; i++) {
+              let pageItem;
+              if (index < existingPageLinks.length) {
+                   //console.log("if: done");
+                  // Update an existing item
+                  pageItem = existingPageLinks[index];
+                  pageItem.querySelector(".page-link").innerText = i;
+                  pageItem.querySelector(".page-link").setAttribute("data-page", i);
+              } else {
+                //console.log("else: done");
+                  // Add a new item if needed
+                  pageItem = document.createElement("li");
+                  pageItem.className = "page-item";
+                  pageItem.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                  pagination.insertBefore(pageItem, pagination.querySelector("li:last-child"));
+              }
+              pageItem.querySelector(".page-link").classList.toggle("page-link-active", i === currentPage); // Set active class
+              index++;
+              //console.log("index: ",index);
+          }
+
+          // Remove any extra items beyond the new range
+          /*while (index < existingPageLinks.length) {
+              pagination.removeChild(existingPageLinks[index]);
+              index++;
+          }*/
+
+          // Update Previous button
+          const previousBtn = document.querySelector(".page-prev");
+          previousBtn.classList.toggle("item-disabled", currentPage === 1);
+          previousBtn.querySelector(".page-link").setAttribute("data-page", currentPage - 1);
+          //console.log("previousBtn: ",previousBtn);
+          // Update Next button
+          const nextBtn = document.querySelector(".page-next");
+          nextBtn.classList.toggle("item-disabled", currentPage === endPage);
+          nextBtn.querySelector(".page-link").setAttribute("data-page", currentPage + 1);
+          //console.log("nextBtn: ",nextBtn);
+          // Update First button
+          const firstBtn = document.querySelector(".page-first");
+          firstBtn.querySelector(".page-link").setAttribute("data-page", 1);
+          //console.log("firstBtn: ",firstBtn);
+          // Update Last button
+          const lastBtn = document.querySelector(".page-last");
+          lastBtn.querySelector(".page-link").setAttribute("data-page", lastPage);
+          //console.log("lastBtn: ",lastBtn);
+          //update no of pages paragraph
+          document.getElementById("page-total").innerHTML = "تم تحميل "+ currentPage + " من اجمالي " + lastPage + " صفحات " ;
+      }
+
+
+      // Example usage with API response
+      //const response = { last_page: 10, page_no: 3 }; // Example data
+      //updatePagination(response.last_page, response.page_no);
+
+      // Event listener for page links
+      document.querySelector(".pagination").addEventListener("click", function (event) {
+        const target = event.target;
+        if (target.classList.contains("page-link") && 
+            !target.parentNode.classList.contains("disabled") && 
+            !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
+            event.preventDefault();
+            const selectedPage = parseInt(target.getAttribute("data-page"), 10);
+            const selectedPageSize = document.getElementById("page-size").value;
+
+            if(lastPage){
+              return 
+            }
+            
+            // Fetch data for selected page
+            console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+            if(active_url=="server_filtered_data"){
+                currentPage = selectedPage;
+                //applyFilters(selectedPage,selectedPageSize);
+            }else{
+                currentPage = selectedPage;
+                refreshTable({page: selectedPage,size: selectedPageSize});
+            }       
+        }
+     });
+
+
+      // Event listener for page size change
+      document.querySelector("#page-size").addEventListener("change", function () {
+        const selectedPageSize = this.value;
+        const selectedPage = document.querySelector(".page-link.page-link-active").innerHTML;
+
+        //console.log(`Selected page size: ${selectedPageSize}`);
+        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+        if(active_url=="server_filtered_data"){
+           // applyFilters(selectedPage,selectedPageSize);
+        }else{
+            refreshTable({page: selectedPage,size: selectedPageSize});
+        }
+      });
+        ///////////////////
       });
     </script>
   </body>
 </html>
+
+          
+         

@@ -233,6 +233,7 @@
         overflow-y: hidden;
       }
       #cost-table {
+        overflow-y: auto;
         max-height: 200px;
         min-height: 200px;
       }
@@ -652,9 +653,9 @@
         </div>
         <div class="row py-1">
           <div class="input-group mb-1">
-            <div class="width-80 d-flex align-items-center">
+            <div class="width-170 d-flex align-items-center">
               <label for="storage-balance" class="form-label"
-                >اجمالي التكلفة بالليبي</label
+                >اجمالي الفاتورة بعد ح. التكلفة بالليبي</label
               >
             </div>
             <input
@@ -673,8 +674,8 @@
           <button type="button" class="btn btn-primary m-1" id="add-btn">
             جديد
           </button>
-          <button type="button" class="btn btn-primary m-1">تعديل</button
-          ><button type="button" class="btn btn-primary m-1">حذف</button
+          <button type="button" class="btn btn-primary m-1" id="edit_btn">تعديل</button
+          ><button type="button" class="btn btn-primary m-1" id="delete_btn">حذف</button
           ><button type="button" class="btn btn-primary m-1">طباعة</button
           ><button type="button" class="btn btn-primary m-1" id="cost-btn">
             ح. التكلفة
@@ -717,7 +718,7 @@
           { title: "القيمة بالعملة", field: "cost_price", width: 90 },
           { title: "سعر التحويل", field: "exchange_rate", width: 90 },
           { title: "القيمة بالليبي", field: "dinar_cost_price", width: 190 },
-          { title: "الفاتورة", field: "invoice_no", width: 90 },
+          { title: "الفاتورة", field: "invoice_no", width: 90 ,visible:false},
         ],
         placeholder: "No Data Available",
         rowFormatter: function (row) {
@@ -736,6 +737,78 @@
       const invoice = document.getElementById("invoice").value;
 
       if (invoice) {
+        refreshCostsTable(invoice);
+        refreshItemsTable(invoice);
+      }
+
+      cost_table.on("rowClick", function (e, row) {
+          console.log("Row clicked after data update:", row.getData());
+          const autoid = row.getData().autoid;
+          alert("تم اختيار الصنف رقم : " + autoid + "يمكنك الان حذف او تعديل الصنف ");
+          sessionStorage.setItem("session_autoid",autoid);
+        });
+      function removeCommas(value) {
+          return parseFloat(value.replace(/,/g, ''));
+      }
+      function deleteRecord(autoid) {
+      // Confirm before sending the delete request
+      const confirmDelete = confirm("هل أنت متأكد أنك تريد حذف السجل رقم: " + autoid);
+      
+      if (confirmDelete) {
+          // Send a DELETE request to the Django backend
+          fetch(`/delete-buyinvoice-cost/${autoid}/`, {
+              method: 'DELETE',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': getCsrfToken() // Include CSRF token if using Django
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  alert("تم حذف السجل بنجاح.");
+                  refreshCostsTable(invoice);
+              } else {
+                  alert("فشل الحذف. الرجاء المحاولة لاحقًا.");
+              }
+          })
+          .catch(error => {
+              console.error('Error deleting record:', error);
+              alert("حدث خطأ أثناء الحذف.");
+          });
+        }
+      }
+
+      // Helper function to get the CSRF token from the document (if using Django)
+      function getCsrfToken() {
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+          return csrfToken;
+      }
+
+      const delete_btn = document.getElementById("delete_btn");
+      delete_btn.addEventListener("click",function () {
+        const id = sessionStorage.getItem("session_autoid");
+        console.log("delete id",id);
+        deleteRecord(id);
+      })
+
+      const edit_btn = document.getElementById("edit_btn");
+      edit_btn.addEventListener("click",function () {
+        const id = sessionStorage.getItem("session_autoid");
+        console.log("edit_id",id);
+      })
+
+      function refreshItemsTable(invoice){
+        fetch(`fetch-buy-invoice-items?id=${invoice}`)
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Fetched Data:", data);
+            items_table.setData(data);
+            refresh_teble_calc();
+            calculateCostSum("cost_unit_price","quantity");
+          });
+      }
+      function refreshCostsTable(invoice){
         fetch(`fetch-costs?id=${invoice}`)
           .then((response) => response.json())
           .then((data) => {
@@ -743,15 +816,28 @@
             cost_table.setData(data);
             refresh_teble_calc();
           });
-
-        fetch(`fetch-buy-invoice-items?id=${invoice}`)
-          .then((response) => response.json())
-          .then((data) => {
-            console.log("Fetched Data:", data);
-            items_table.setData(data);
-            refresh_teble_calc();
-          });
       }
+      function calculateProductSum(columnA, columnB) {
+          let sum = 0;
+          const rowData = table.getData(); // Fetch row data from Tabulator
+
+          if (Array.isArray(rowData)) {
+            // Ensure rowData is an array
+            rowData.forEach((row) => {
+              if (!isNaN(row[columnA]) && !isNaN(row[columnB])) {
+                const product =
+                  parseFloat(row[columnA]) * parseFloat(row[columnB]);
+                sum += product; // Add the product to the sum
+              }
+            });
+          } else {
+            console.error(
+              `rowData is not an array or is undefined for columns: ${columnA}, ${columnB}`
+            );
+          }
+
+          return sum;
+        }
       function calculateColumnSum(columnName) {
         let sum = 0;
         const rowData = cost_table.getData(); // Fetch row data from Tabulator
@@ -771,13 +857,37 @@
 
         return parseFloat(sum);
       }
+      function formatNumber(number) {
+          // Ensure the number is parsed as a float and then format it
+          return parseFloat(number).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+      }
+      function calculateCostSum(columnA, columnB) {
+        let sum = 0;
+          const rowData = items_table.getData(); // Fetch row data from Tabulator
+
+          if (Array.isArray(rowData)) {
+            // Ensure rowData is an array
+            rowData.forEach((row) => {
+              if (!isNaN(row[columnA]) && !isNaN(row[columnB])) {
+                const product =
+                  parseFloat(row[columnA]) * parseFloat(row[columnB]);
+                sum += product; // Add the product to the sum
+              }
+            });
+          } else {
+            console.error(
+              `rowData is not an array or is undefined for columns: ${columnA}, ${columnB}`
+            );
+          }
+        document.getElementById("item-cost-total").value = formatNumber(sum) + " دل " ;
+
+        return parseFloat(sum);
+      }
       refresh_teble_calc();
       function refresh_teble_calc() {
-        document.getElementById("cost-total").value =
-          calculateColumnSum("cost_price").toFixed(2);
+        document.getElementById("cost-total").value = formatNumber(calculateColumnSum("cost_price"));
 
-        document.getElementById("cost-dinar").value =
-          calculateColumnSum("dinar_cost_price").toFixed(2);
+        document.getElementById("cost-dinar").value = formatNumber(calculateColumnSum("dinar_cost_price")) + " دل "; 
       }
       const items_table = new Tabulator("#item-cost-table", {
         index: "fileid", // Use "fileid" as the unique row identifier
@@ -819,8 +929,8 @@
         .addEventListener("change", function () {
           const cost_price = document.getElementById("cost-price").value;
           const rate = document.getElementById("exchange_rate").value;
-          document.getElementById("cost-price-dinar").value =
-            (parseFloat(cost_price) * parseFloat(rate)).toFixed(2) + " دل ";
+          document.getElementById("cost-price-dinar").value = 
+            formatNumber((parseFloat(cost_price) * parseFloat(rate))) + " دل ";
         });
 
       document.getElementById("add-btn").addEventListener("click", function () {
@@ -849,6 +959,7 @@
           .then((result) => {
             console.log(result);
             alert("تمت اضافة بيان التكلفة");
+            refreshCostsTable(invoice);
           })
           .catch((error) => {
             console.error("Error:", error);
@@ -889,6 +1000,7 @@
             invoice_total: invoice_total,
             invoice: invoice,
           };
+          console.log(data);
 
           fetch(`calculate-cost`, {
             method: "POST",
@@ -901,6 +1013,8 @@
             .then((result) => {
               console.log(result);
               alert("تم تحديث سعر التكلفة");
+              console.log("تم تحديث سعر التكلفة للفاتولرة رقم : ",invoice);
+              refreshItemsTable(invoice);
             })
             .catch((error) => {
               console.error("Error:", error);

@@ -97,9 +97,10 @@ aria-hidden="true"
                 {% for image in images %}
                 <tr>
                   <td>
-                    {% if image.image %}
+                    {% if image.image_obj %}
+                    {{ image.image_obj.url }}
                     <img
-                      src="{{ image.image.url }}"
+                      src="{{ image.image_obj }}"
                       alt="Product Image"
                       class="img-fluid"
                       width="100"

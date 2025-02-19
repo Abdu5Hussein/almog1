@@ -948,7 +948,9 @@
             console.log("table built");
           },
         });
-        fetch("api/get-all-storage")
+        refreshTable();
+       function refreshTable(){
+         fetch("api/get-all-storage")
           .then((response) => response.json())
           .then((data) => {
             console.log("Fetched Data:", data);
@@ -957,6 +959,7 @@
             table.setData(data);
           })
           .catch((error) => console.error("Error fetching data:", error));
+       }
         table.on("rowClick", function (e, row) {
           console.log("Row clicked after data update:", row.getData());
           const id = row.getData().storageid; // Get pno of the clicked row
@@ -1255,6 +1258,7 @@
             .then((response) => {
               if (response.ok) {
                 alert("Record created successfully!");
+                refreshTable();
               } else {
                 alert("Error creating record.");
                 console.log(getCSRFToken()); // Check the value of the CSRF token
@@ -1298,17 +1302,7 @@
             .then((response) => {
               if (response.ok) {
                 alert("Record deleted successfully!");
-
-                /*// Option 1: Reload the grid data (fetch and update)
-                      fetch(url) // Assuming 'url' is the URL to get the latest data for the table
-                        .then((response) => response.json())
-                        .then((data) => {
-                          table.setData(data); // Set the new data to the table
-                        })
-                        .catch((error) => {
-                          console.error("Error fetching updated data:", error);
-                          console.log(getCSRFToken()); // Check the value of the CSRF token
-                        });*/
+                refreshTable();
               } else {
                 alert("Error deleting record.");
                 console.log(getCSRFToken()); // Check the value of the CSRF token

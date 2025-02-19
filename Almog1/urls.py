@@ -20,13 +20,19 @@ from django.conf.urls.static import static
 
 from django.contrib import admin
 from django.urls import path
-from almogOil.views import BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage
+from almogOil.views import cancel_sell_invoice,Sell_invoice_create_item, create_sell_invoice, deliver_sell_invoice, fetch_sell_invoice_items, fetch_sellinvoices, filter_sellinvoices, get_sellinvoice_no, prepare_sell_invoice, sell_invoice_add_items, sell_invoice_management,sell_invoice_add_invoice, sell_invoice_prepare_report,sell_invoice_search_storage,buy_invoice_add_items,filter_buyinvoices,fetch_buyinvoices,Buyinvoice_management,delete_buyinvoice_cost, BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, sell_invoice_storage_management, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage, validate_sell_invoice
 import almogOil.views
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
+import rest_framework
+from almogOil import api_views
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api-auth/', include('rest_framework.urls')),
     path('test/', TestView, name='test'),
     path('users',UsersView , name='users'),
     path('add-user/', AddUserView, name='add_user'),
@@ -111,4 +117,35 @@ urlpatterns = [
     path("confirm_temp_invoice",confirm_temp_invoice,name="confirm_temp_invoice"),
     path("buy-invoice_edit-prices",buyInvoice_edit_prices,name="buyInvoice_edit_prices"),
     path("check_items",check_items,name="check_items"),
+    path('delete-buyinvoice-cost/<int:autoid>/', delete_buyinvoice_cost, name='delete_buyinvoice_cost'),
+    path("b_invoice_management",Buyinvoice_management,name="b_invoice_management"),
+    path('fetch-buyinvoices', fetch_buyinvoices, name='fetch_buyinvoices'),
+    path('filter_buyinvoices', filter_buyinvoices, name='filter_buyinvoices'),
+    path('buy_invoice_add_items', buy_invoice_add_items, name='buy_invoice_add_items'),
+    path('sell_invoice_search_storage', sell_invoice_search_storage, name='sell_invoice_search_storage'),
+    path('sell_invoice_add_invoice', sell_invoice_add_invoice, name='sell_invoice_add_invoice'),
+    path('sell_invoice_management', sell_invoice_management, name='sell_invoice_management'),
+    path('api/create-sell-invoice-record', create_sell_invoice, name='create_sell_invoice'),
+    path('get-last-sellinvoice-id',get_sellinvoice_no,name='get-last-sell-invoice'),
+    path('sell_invoice_add_items',sell_invoice_add_items,name='sell_invoice_add_items'),
+    path('sell_invoice_create_item',Sell_invoice_create_item,name='sell_invoice_create_item'),
+    path("fetch-sell-invoice-items",fetch_sell_invoice_items,name="fetch-buy-invoice-items"),
+    path('fetch-sellinvoices', fetch_sellinvoices, name='fetch_sellinvoices'),
+    path('filter-sellinvoices', filter_sellinvoices, name='filter_sellinvoices'),
+    path('sell_invoice_storage_report', sell_invoice_prepare_report, name='sell_invoice_prepare_report'),
+    path('sell_invoice_storage_manage', sell_invoice_storage_management, name='sell_invoice_storage_management'),
+    path('prepare_sell_invoice', prepare_sell_invoice, name='prepare_sell_invoice'),
+    path('validate_sell_invoice', validate_sell_invoice, name='validate_sell_invoice'),
+    path('deliver_sell_invoice', deliver_sell_invoice, name='deliver_sell_invoice'),
+    path('cancel_sell_invoice', cancel_sell_invoice, name='cancel_sell_invoice'),
+
+    path('process-login', api_views.sign_in, name='login-process'),
+
+    path('api/get/tokken', TokenObtainPairView.as_view(), name='get_tokken'),
+    path('api/get/tokken/refresh', TokenRefreshView.as_view(), name='refresh_tokken'),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
+
+# Ensure static files are served in development mode
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

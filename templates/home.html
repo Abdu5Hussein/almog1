@@ -77,6 +77,8 @@
         width: inherit;
         height: 100%;
         object-fit: cover;
+        pointer-events: none;
+        user-select: none;
       }
       .sidebar {
         background-color: #222c3db8;
@@ -747,7 +749,7 @@
                   href="#"
                   tabindex="-1"
                   aria-disabled="true"
-                  >محمد المق</a
+                  >{{ request.session.name|default:"المستخدم!" }}</a
                 >
               </li>
             </ul>
@@ -827,8 +829,11 @@
                   ><i class="fas fa-chevron-down"></i>فواتير البيع</a
                 >
                 <div class="sub-menu">
-                  <a class="nav-link" href="#subitem5-1">Subitem 5-1</a>
-                  <a class="nav-link" href="#subitem5-2">Subitem 5-2</a>
+                  <a class="nav-link" id="item-5-1">ادخال فاتورة بيع</a>
+                  <a class="nav-link" id="item-5-2">فواتير البيع</a>
+                  <a class="nav-link" id="item-5-3">تسوية حساب الفواتير</a>
+                  <a class="nav-link" id="item-5-4">بحث باصناف المخزن</a>
+                  <a class="nav-link" id="item-5-5">تقارير التحضير</a>
                 </div>
               </li>
               <li class="nav-item">
@@ -1083,6 +1088,13 @@
           height: 700,
         },
         {
+          id: "item-3-2",
+          url: "/b_invoice_management",
+          name: "b_invoice_management",
+          width: 1100,
+          height: 700,
+        },
+        {
           id: "item-3-3",
           url: "/buy-invoice_edit-prices",
           name: "buy-invoice_edit-prices",
@@ -1093,6 +1105,34 @@
           id: "item-3-5",
           url: "/temp_confirm",
           name: "temp_confirm",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-5-1",
+          url: "/sell_invoice_add_invoice",
+          name: "sell_invoice_add_invoice",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-5-2",
+          url: "/sell_invoice_management",
+          name: "sell_invoice_management",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-5-4",
+          url: "/sell_invoice_search_storage",
+          name: "sell_invoice_search_storage",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-5-5",
+          url: "/sell_invoice_storage_report",
+          name: "sell_invoice_storage_report",
           width: 1100,
           height: 700,
         },

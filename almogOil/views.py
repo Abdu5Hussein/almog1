@@ -1,4 +1,4 @@
-import datetime
+#import datetime
 from decimal import Decimal
 import json
 import os
@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from .models import AllClientsTable, AllSourcesTable, BalanceAndTransactions, BuyInvoiceItems, BuyInvoiceTable, Clients, LostAndDamaged, Modeltable,Imagetable, Mainitem,Measurement,Maintypetable, Sections, StorageTransactions, SubSections,Subtypetable,Companytable,Manufaccountrytable,Oemtable, buyInvoice_costs, clientTypes, cost_types, currency
+from .models import EmployeesTable,AllClientsTable, Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
@@ -37,6 +37,12 @@ from django.db.models import Sum, F
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import F, IntegerField
 from django.db.models.functions import Cast
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.cache import cache  
+from rest_framework.response import Response
+from .serializers import MainitemSerializer
+from rest_framework.decorators import api_view
+from django.contrib.auth.models import User
 
 # Define your custom User model or replace it with appropriate logic
 # from .models import YourCustomUserModel  # Update this line to use your new model if needed
@@ -52,8 +58,8 @@ def LogInView(request):
 
 def StorageManagement(req):
     Clients= AllClientsTable.objects.all()
-    sections = Sections.objects.all()
-    subSections = SubSections.objects.all()
+    sections = Sectionstable.objects.all()
+    subSections = Subsectionstable.objects.all()
     context = {
         'clients': Clients,
         'sections': sections,
@@ -63,8 +69,8 @@ def StorageManagement(req):
 
 def StorageReports(req):
     Clients= AllClientsTable.objects.all()
-    sections = Sections.objects.all()
-    subSections = SubSections.objects.all()
+    sections = Sectionstable.objects.all()
+    subSections = Subsectionstable.objects.all()
     context = {
         'clients': Clients,
         'sections': sections,
@@ -74,7 +80,7 @@ def StorageReports(req):
 
 def get_subsections(request):
     section_id = request.GET.get('section_id')  # Get selected section ID from request
-    subsections = SubSections.objects.filter(sectionid_id=section_id).values('autoid', 'subsection')
+    subsections = Subsectionstable.objects.filter(sectionid_id=section_id).values('autoid', 'subsection')
     return JsonResponse(list(subsections), safe=False)  # Return JSON response
 
 def TestView(request):
@@ -129,12 +135,13 @@ def UsersView(request):
 
 def BuyInvoicesAdd(request):
     sources = AllSourcesTable.objects.all().values('clientid','name')
-    Currency = currency.objects.all()
+    Currency = CurrenciesTable.objects.all() 
     context ={
         'sources':sources,
         'currency': Currency
     }
     return render(request,'add-buy-invoice.html',context)
+    
 from django.utils.dateparse import parse_date
 @csrf_exempt
 def create_buy_invoice(request):
@@ -157,8 +164,8 @@ def create_buy_invoice(request):
         temp_flag = data.get("temp_flag", False)
         multi_source_flag = data.get("multi_source_flag", False)
         source = AllSourcesTable.objects.get(clientid=source_id)
-        # Create a new record in the BuyInvoiceTable model
-        invoice = BuyInvoiceTable.objects.create(
+        # Create a new record in the Buyinvoicetable model
+        invoice = Buyinvoicetable.objects.create(
             invoice_no=invoice_autoid,
             original_no=org_invoice_id,
             source=source.name,
@@ -204,7 +211,7 @@ def ImageView(request):
 
         if image and product_id:
             # Create a new Imagetable object
-            Imagetable.objects.create(productid=product_id, image=image)
+            Imagetable.objects.create(productid=product_id, image=image, image_obj=image)
             # Redirect to the same view with the product_id in the query string
             return HttpResponseRedirect(f"{reverse('images')}?product_id={product_id}")
 
@@ -212,19 +219,19 @@ def ImageView(request):
     return render(request, 'image-table.html', {'images': images})
 
 def ModelView(request):
-    main_types = Maintypetable.objects.all()
-    models = Modeltable.objects.select_related('maintype').all()
+    sub_types = Subtypetable.objects.all()
+    models = Modeltable.objects.select_related('subtype_fk').all()
 
     if request.method == 'POST':
         action = request.POST.get('action')
         model_id = request.POST.get('id')
         model_name = request.POST.get('model-name')
-        main_type_id = request.POST.get('model-main-type')
+        sub_type_id = request.POST.get('model-sub-type')
 
         if action == 'add':
-            if model_name and main_type_id:
-                main_type = get_object_or_404(Maintypetable, fileid=main_type_id)
-                Modeltable.objects.create(sname=model_name, maintype=main_type)
+            if model_name and sub_type_id:
+                sub_type = get_object_or_404(Subtypetable, fileid=sub_type_id)
+                Modeltable.objects.create(model_name=model_name, subtype_fk=sub_type)
                 messages.success(request, "Model added successfully!")
             else:
                 messages.error(request, "All fields are required.")
@@ -232,7 +239,7 @@ def ModelView(request):
         elif action == 'edit':
             if model_id and model_name:
                 model = get_object_or_404(Modeltable, fileid=model_id)
-                model.sname = model_name
+                model.model_name = model_name
                 model.save()
                 messages.success(request, "Model updated successfully!")
             else:
@@ -249,7 +256,7 @@ def ModelView(request):
         return redirect('models')
 
     return render(request, 'model-table.html', {
-        'mainType': main_types,
+        'subType': sub_types,
         'models': models,
     })  
 
@@ -257,8 +264,8 @@ def HomeView(request):
     return render(request, 'home.html')
 
 def SectionAndSubSection(request):
-    sections = Sections.objects.all()
-    subSections = SubSections.objects.all()
+    sections = Sectionstable.objects.all()
+    subSections = Subsectionstable.objects.all()
 
     # Handle POST requests for both sections and subsections
     if request.method == "POST":
@@ -271,13 +278,13 @@ def SectionAndSubSection(request):
             
             
             if action == "add" and section_name:
-                Sections.objects.create(section=section_name)
+                Sectionstable.objects.create(section=section_name)
             elif action == "edit" and section_id and section_name:
-                section = Sections.objects.get(autoid=section_id)
+                section = Sectionstable.objects.get(autoid=section_id)
                 section.section = section_name
                 section.save()
             elif action == "delete" and section_id:
-                Sections.objects.filter(autoid=section_id).delete()
+                Sectionstable.objects.filter(autoid=section_id).delete()
 
         # Handle Subsection actions
         elif "subsection" in request.POST:
@@ -286,15 +293,15 @@ def SectionAndSubSection(request):
             section_fk = request.POST.get("key")
             
             if action == "add" and subsection_name:
-                section_instance = Sections.objects.get(autoid=section_fk)  # Assuming autoid is the primary key field
+                section_instance = Sectionstable.objects.get(autoid=section_fk)  # Assuming autoid is the primary key field
 
-                SubSections.objects.create(subsection=subsection_name,sectionid=section_instance)
+                Subsectionstable.objects.create(subsection=subsection_name,sectionid=section_instance)
             elif action == "edit" and subsection_id and subsection_name:
-                subsection = SubSections.objects.get(autoid=subsection_id)
+                subsection = Subsectionstable.objects.get(autoid=subsection_id)
                 subsection.subsection = subsection_name
                 subsection.save()
             elif action == "delete" and subsection_id:
-                SubSections.objects.filter(autoid=subsection_id).delete()
+                Subsectionstable.objects.filter(autoid=subsection_id).delete()
 
         # Redirect to the same page after action
         return redirect('sections-and-subsections')  # Replace with the actual URL name
@@ -347,41 +354,52 @@ def MainCat(request):
     return render(request, 'main-cat.html', context)
 
 def SubCat(request):
+    main_types = Maintypetable.objects.all()
+    subtypes = Subtypetable.objects.select_related('maintype_fk').all()
+
     if request.method == 'POST':
         action = request.POST.get('action')
-        name = request.POST.get('name')
-        sub_id = request.POST.get('id')  # Get the ID from the form
+        sub_type_id = request.POST.get('id')
+        sub_type_name = request.POST.get('sub_type-name')
+        main_type_id = request.POST.get('sub_type-main-type')
 
         try:
             if action == 'add':
-                Subtypetable.objects.create(subtypename=name)
-            elif action == 'edit' and sub_id:
-                # Correctly fetch the object using `objects.get`
-                subtypetable = Subtypetable.objects.get(fileid=sub_id)
-                subtypetable.subtypename = name  # Update the typename field
-                subtypetable.save()
-            elif action == 'delete' and sub_id:
-                # Correctly fetch the object and delete it
-                subtypetable = Subtypetable.objects.get(fileid=sub_id)
-                subtypetable.delete()
-            else:
-                # Handle invalid action or missing data
-                raise ValueError("Invalid action or missing ID.")
+                if sub_type_name and main_type_id:
+                    main_type = get_object_or_404(Maintypetable, fileid=int(main_type_id))
+                    Subtypetable.objects.create(subtypename=sub_type_name, maintype_fk=main_type)
+                    messages.success(request, "Subtype added successfully!")
+                else:
+                    messages.error(request, "All fields are required.")
 
-        except Subtypetable.DoesNotExist:
-            # Handle the case where the object with the given ID does not exist
-            messages.error(request, "The specified measurement does not exist.")
+            elif action == 'edit':
+                if sub_type_id and sub_type_name:
+                    sub_type = get_object_or_404(Subtypetable, fileid=int(sub_type_id))
+                    sub_type.subtypename = sub_type_name
+                    sub_type.save()
+                    messages.success(request, "Subtype updated successfully!")
+                else:
+                    messages.error(request, "All fields are required.")
+
+            elif action == 'delete':
+                if sub_type_id:
+                    sub_type = get_object_or_404(Subtypetable, fileid=int(sub_type_id))
+                    sub_type.delete()
+                    messages.success(request, "Subtype deleted successfully!")
+                else:
+                    messages.error(request, "Model ID is required.")
+
         except Exception as e:
-            # Handle other unexpected errors
             messages.error(request, f"An error occurred: {e}")
 
-        return redirect('subtype')
+        return redirect(request.path)  # Redirects to the same page after processing
 
-    subType = Subtypetable.objects.all()
-    context = {
-        'subType': subType,
-    }
-    return render(request, 'sub-cat.html', context)
+    return render(request, 'sub-cat.html', {
+        'main_types': main_types,  # Fixed variable name for template consistency
+        'subtypes': subtypes,
+    })
+
+
 def manage_companies(request):
     if request.method == 'POST':
         action = request.POST.get('action')  # Get action: add, edit, delete
@@ -449,18 +467,19 @@ def Measurements(request):
         measurement_id = request.POST.get('id')
 
         if action == 'add':
-            Measurement.objects.create(name=name)
+            MeasurementsTable.objects.create(name=name)
         elif action == 'edit' and measurement_id:
-            measurement = Measurement.objects.get(id=measurement_id)
+            measurement = MeasurementsTable.objects.get(id=measurement_id)
             measurement.name = name
             measurement.save()
         elif action == 'delete' and measurement_id:
-            Measurement.objects.get(id=measurement_id).delete()
+            MeasurementsTable.objects.get(id=measurement_id).delete()
 
         return redirect('measurements')
 
-    measurements = Measurement.objects.all()
+    measurements = MeasurementsTable.objects.all()
     return render(request, 'measurements.html', {'measurements': measurements})
+
 COLUMN_TITLES = {
     "fileid": "رقم الملف",
     "itemno": "الرقم الاصلي",
@@ -504,28 +523,26 @@ COLUMN_TITLES = {
 } 
 
 def ProductsDetails(req):
-    
     company = Companytable.objects.values('fileid', 'companyname')
-    measurements = Measurement.objects.all()
+    measurements = MeasurementsTable.objects.all()
+    engines = enginesTable.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
     countries = Manufaccountrytable.objects.all()
     models = Modeltable.objects.all()
     columns = [field.name for field in Mainitem._meta.fields]
     column_visibility = {
-    'pno':True,
-    'companyproduct':True,
-    'replaceno':True,
-    'itemno':True,
-    'itemname':True,
-    'itemvalue':True,
-    'buyprice':True,
-    'itemplace':True,
-    
-}
-    
-
+        'pno':True,
+        'companyproduct':True,
+        'replaceno':True,
+        'itemno':True,
+        'itemname':True,
+        'itemvalue':True,
+        'buyprice':True,
+        'itemplace':True,
+    }
     print(columns)  # Debugging to check the contents of columns
+
     context = {        
         'company': company,
         'columns': columns,
@@ -533,6 +550,7 @@ def ProductsDetails(req):
         'measurements': measurements,
         'mainType': mainType,
         'subType':subType,
+        'engines':engines,
         'countries':countries,
         'models':models,
         'column_titles': COLUMN_TITLES,
@@ -548,7 +566,7 @@ def filter_clients(request):
             return JsonResponse({'error': 'Missing pno parameter'}, status=400)
         
         # Filter Clients based on 'pno'
-        clients = Clients.objects.filter(pno=pno).values(
+        clients = Clientstable.objects.filter(pno=pno).values(
             'fileid', 'itemno', 'maintype','itemname','currentbalance','date','clientname','billno','description', 'clientbalance','pno'
         )
         
@@ -559,44 +577,76 @@ def filter_clients(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
+@csrf_exempt
 def OemNumbers(req):
-    company_name = req.GET.get('company_name')
-    company_no = req.GET.get('company_no')
-    oem = Oemtable.objects.filter(cname=company_name, cno=company_no)
+    if req.method == 'GET':
+        company_name = req.session.get('oem_company_name')
+        company_no = req.session.get('oem_company_no')
+        fileid = req.session.get('oem_file_id')
+        oemstring = Mainitem.objects.get(fileid=fileid, replaceno=company_no).oem_numbers
+        oem_numbers = oemstring.split(';') if oemstring else []
+
+        context = {
+            'oem': oem_numbers,
+            'company_name': company_name,
+            "fileid":fileid,
+            'company_no': company_no,
+        }
+        return render(req, 'oem-table.html', context)
     # Handle form submission for Add, Edit, or Delete actions
-    if req.method == 'POST':
+    elif req.method == 'POST' and req.POST.get('action'):
+        
         action = req.POST.get('action')
         company_name = req.POST.get('company-name')
         company_no = req.POST.get('company-no')
         oem_no = req.POST.get('oem-no')
         file_id = req.POST.get('id')
 
-        if action == 'add':
+        if action == 'add' and file_id and oem_no:
             # Add a new record
-            Oemtable.objects.create(cname=company_name, cno=company_no, oemno=oem_no)
-        elif action == 'edit' and file_id:
-            # Edit an existing record
+            record = Mainitem.objects.get(fileid=file_id)
+            if record.oem_numbers:
+                record.oem_numbers += f";{oem_no}"
+            else:
+                record.oem_numbers = oem_no  # In case it's the first OEM number
+            record.save()
+
+        elif action == 'edit' and file_id and oem_no:
+            # Edit an existing OEM number (replace the old one with the new one)
             try:
-                oem_record = Oemtable.objects.get(fileid=file_id)
-                oem_record.cname = company_name
-                oem_record.cno = company_no
-                oem_record.oemno = oem_no
-                oem_record.save()
-            except Oemtable.DoesNotExist:
-                pass
-        elif action == 'delete' and file_id:
-            # Delete an existing record
-            try:
-                oem_record = Oemtable.objects.get(fileid=file_id)
-                oem_record.delete()
-            except Oemtable.DoesNotExist:
+                record = Mainitem.objects.get(fileid=file_id)
+                # Split the oem_numbers into a list, replace the old oem_no, and rejoin
+                oem_list = record.oem_numbers.split(';')
+                if oem_no in oem_list:
+                    oem_list[oem_list.index(oem_no)] = oem_no  # Modify the OEM number if needed
+                record.oem_numbers = ';'.join(oem_list)
+                record.save()
+            except Mainitem.DoesNotExist:
                 pass
 
+        elif action == 'delete' and file_id and oem_no:
+            # Delete a specific OEM number from the oem_numbers string
+            try:
+                record = Mainitem.objects.get(fileid=file_id)
+                # Split the oem_numbers into a list and remove the specified oem_no
+                oem_list = record.oem_numbers.split(';')
+                if oem_no in oem_list:
+                    oem_list.remove(oem_no)
+                    record.oem_numbers = ';'.join(oem_list)
+                    record.save()
+            except Mainitem.DoesNotExist:
+                pass
         # Redirect to the same page to reflect the changes
-        return redirect(f'/oem/?company_name={company_name}&company_no={company_no}')  # Assuming the name of the view is 'oem_numbers'
-    context = {'oem': oem}
-    return render(req, 'oem-table.html', context)
+        return redirect('/oem/')
+    else:
+        data = json.loads(req.body)
+
+        req.session['oem_file_id'] = data.get('fileid')
+        req.session['oem_company_name'] = data.get('company')
+        req.session['oem_company_no'] = data.get('companyno') 
+
+        return redirect('/oem/')
+    
 
 @csrf_exempt
 def delete_record(request):
@@ -628,7 +678,7 @@ def delete_record(request):
 
 from django.core.cache import cache
 
-@csrf_exempt 
+@csrf_exempt
 def filter_items(request):
     if request.method == "POST":
         try:
@@ -641,68 +691,67 @@ def filter_items(request):
                 cached_data["cached_flag"] = True 
                 return JsonResponse(cached_data, safe=False)
 
+            # Initialize the base Q object for filtering
+            filters_q = Q()
 
             # Build the query based on the filters
-            queryset = Mainitem.objects.all()
-
             if filters.get('itemno'):
-                queryset = queryset.filter(itemno__icontains=filters['itemno'])
+                filters_q &= Q(itemno__icontains=filters['itemno'])
             if filters.get('itemmain'):
-                queryset = queryset.filter(itemmain__icontains=filters['itemmain'])
+                filters_q &= Q(itemmain__icontains=filters['itemmain'])
             if filters.get('itemsubmain'):
-                queryset = queryset.filter(itemsubmain__icontains=filters['itemsubmain'])
+                filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
             if filters.get('companyproduct'):
-                queryset = queryset.filter(companyproduct__icontains=filters['companyproduct'])
+                filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
             if filters.get('itemname'):
-                queryset = queryset.filter(itemname__icontains=filters['itemname'])
+                filters_q &= Q(itemname__icontains=filters['itemname'])
             if filters.get('eitemname'):
-                queryset = queryset.filter(eitemname__icontains=filters['eitemname'])
+                filters_q &= Q(eitemname__icontains=filters['eitemname'])
             if filters.get('companyno'):
-                queryset = queryset.filter(replaceno__icontains=filters['companyno'])
+                filters_q &= Q(replaceno__icontains=filters['companyno'])
             if filters.get('pno'):
-                queryset = queryset.filter(pno__icontains=filters['pno'])
+                filters_q &= Q(pno__icontains=filters['pno'])
             if filters.get('source'):
-                queryset = queryset.filter(ordersource__icontains=filters['source'])
+                filters_q &= Q(ordersource__icontains=filters['source'])
             if filters.get('model'):
-                queryset = queryset.filter(itemthird__icontains=filters['model'])
+                filters_q &= Q(itemthird__icontains=filters['model'])
             if filters.get('country'):
-                queryset = queryset.filter(itemsize__icontains=filters['country']) 
+                filters_q &= Q(itemsize__icontains=filters['country'])
+            if filters.get('oem'):
+                filters_q &= Q(oem_numbers__icontains=filters['oem'])    
 
-             # Apply the checkbox filters
+            # Apply the checkbox filters using Q objects
             if filters.get('itemvalue') == "0":
-                queryset = queryset.filter(itemvalue=0)
+                filters_q &= Q(itemvalue=0)
             if filters.get('itemvalue') == ">0":
-                queryset = queryset.filter(itemvalue__gt=0)
+                filters_q &= Q(itemvalue__gt=0)
             if filters.get('resvalue') == ">0":
-                queryset = queryset.filter(resvalue__gt=0)  
+                filters_q &= Q(resvalue__gt=0)
             if filters.get('itemvalue_itemtemp') == "lte":
-                queryset = queryset.filter(itemvalue__lte=F('itemtemp'))  # Compare fields  
-                               
-              # Apply date range filter on `orderlastdate`
-            
+                filters_q &= Q(itemvalue__lte=F('itemtemp'))  # Compare fields
+
+            # Apply date range filter on `orderlastdate`
             fromdate = filters.get('fromdate', '').strip()
             todate = filters.get('todate', '').strip()
-            
-            #print(f'from date {fromdate} to date {todate}')
 
             if fromdate and todate:
                 try:
                     # Parse dates
-                    #print(f'from date inner {fromdate} to date {todate}')
-                    # Parse fromdate and todate
                     from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
                     to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
 
-                    print(f"Filtering from {from_date_obj} to {to_date_obj}")   
-                                    
                     # Apply date range filter
-                    queryset = queryset.filter(orderlastdate__range=[from_date_obj, to_date_obj])
+                    filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
+
                 except ValueError:
                     return JsonResponse({'error': 'Invalid date format'}, status=400)
-                
+
+            # Now filter the queryset using the combined Q object
+            queryset = Mainitem.objects.filter(filters_q).values('pno','fileid','itemplace','itemmain', 'itemname', 'companyproduct','itemno','pno','replaceno','itemvalue','buyprice','itemperbox','resvalue','oem_numbers').order_by('itemname')
+
             # Serialize the filtered data
-            items_data = list(queryset.values())  # You may want to customize what data is returned here
-            
+            items_data = list(queryset)  # Customize the fields to return as needed
+
             # Initialize totals
             total_itemvalue = 0
             total_itemvalueb = 0
@@ -714,12 +763,12 @@ def filter_items(request):
             # Single loop to calculate all totals
             for item in items_data:
                 # Convert values to numbers to avoid treating them as strings
-                itemvalue = float(item.get('itemvalue', 0))
-                itemvalueb = float(item.get('itemvalueb', 0))
-                resvalue = float(item.get('resvalue', 0))
-                costprice = float(item.get('costprice', 0))
-                orderprice = float(item.get('orderprice', 0))
-                buyprice = float(item.get('buyprice', 0))
+                itemvalue = float(item.get('itemvalue', 0) or 0)
+                itemvalueb = float(item.get('itemvalueb', 0) or 0)
+                resvalue = float(item.get('resvalue', 0) or 0)
+                costprice = float(item.get('costprice', 0) or 0)
+                orderprice = float(item.get('orderprice', 0) or 0)
+                buyprice = float(item.get('buyprice', 0) or 0)
 
                 # Perform calculations
                 total_itemvalue += itemvalue
@@ -729,7 +778,23 @@ def filter_items(request):
                 total_order += itemvalue * orderprice
                 total_buy += itemvalue * buyprice
             
-            
+            fullTable = filters.get('fullTable') 
+            if fullTable:
+                # Prepare the response
+                response = {
+                    "data": list(items_data),  # Convert the current page items to a list
+                    "fullTable":True,
+                    "last_page": 1,  # Total number of pages
+                    "total_rows": queryset.count(),  # Total number of rows
+                    "page_no": 1,
+                    "total_itemvalue":total_itemvalue,
+                    "total_itemvalueb":total_itemvalueb,
+                    "total_resvalue":total_resvalue,
+                    "total_cost":total_cost,
+                    "total_order":total_order,
+                    "total_buy":total_buy,
+                }
+                return JsonResponse(response)
             # Pagination parameters from the request
             page_number = int(filters.get('page') or 1)
             page_size = int(filters.get('size') or 20)
@@ -743,18 +808,18 @@ def filter_items(request):
                 "data": list(page_obj),  # Convert the current page items to a list
                 "last_page": paginator.num_pages,  # Total number of pages
                 "total_rows": paginator.count,  # Total number of rows
-                "page_size":page_size,
-                "page_no":page_number,
-                "total_itemvalue":total_itemvalue,
-                "total_itemvalueb":total_itemvalueb,
-                "total_resvalue":total_resvalue,
-                "total_cost":total_cost,
-                "total_order":total_order,
-                "total_buy":total_buy,
+                "page_size": page_size,
+                "page_no": page_number,
+                "total_itemvalue": total_itemvalue,
+                "total_itemvalueb": total_itemvalueb,
+                "total_resvalue": total_resvalue,
+                "total_cost": total_cost,
+                "total_order": total_order,
+                "total_buy": total_buy,
                 "cached_flag": False,
             }
 
-             # Cache the response for future use
+            # Cache the response for future use
             cache.set(cache_key, response, timeout=300)  # Cache for 5 minutes
 
             # Return the filtered data as JSON
@@ -774,7 +839,7 @@ def filter_clients_input(request):
             filters = json.loads(request.body.decode('utf-8'))  # Decoding bytes and loading JSON
 
             # Build the query based on the filters
-            queryset = Clients.objects.all()
+            queryset = Clientstable.objects.all()
 
             # Check if any filters are applied
             filters_applied = False
@@ -1177,45 +1242,23 @@ def StoragePlaces(request):
     }
     return render(request,'storage-placing.html',context)
 
+
+@api_view(['GET'])
 def get_item_data(request, fileid):
     try:
         # Retrieve the record from the database
         item = Mainitem.objects.get(fileid=fileid)
 
-        # Prepare the data to send back
-        data = {
-            "fileid": item.fileid,
-            "itemno": item.itemno,
-            "itemmain": item.itemmain,
-            "itemsubmain": item.itemsubmain,
-            "itemname": item.itemname,
-            "eitemname": item.eitemname,
-            "companyproduct": item.companyproduct,
-            "replaceno": item.replaceno,
-            "pno": item.pno,
-            "barcodeno": item.barcodeno,
-            "memo": item.memo,
-            "itemsize": item.itemsize,
-            "itemperbox": item.itemperbox,
-            "itemthird": item.itemthird,
-            "itemvalue": item.itemvalue,
-            "itemtemp": item.itemtemp,
-            "itemvalueb": item.itemvalueb,
-            "reservedvalue": item.resvalue,
-            "itemplace": item.itemplace,
-            "orgprice": item.orgprice,
-            "orderprice": item.orderprice,
-            "costprice": item.costprice,
-            "buyprice": item.buyprice,
-            "lessprice": item.lessprice
-        }
+        # Serialize the item data
+        serializer = MainitemSerializer(item)
 
-        return JsonResponse(data)
-
-    except Mainitem.DoesNotExist:
-        return JsonResponse({"error": "Item not found"}, status=404)
+        # Return the serialized data
+        return Response(serializer.data)
     
-
+    except Mainitem.DoesNotExist:
+        return Response({"error": "Item not found"}, status=404)
+    
+@csrf_exempt
 def edit_main_item(request):
     if request.method == 'PATCH':
         try:
@@ -1223,30 +1266,35 @@ def edit_main_item(request):
             fileid = data.get('fileid')
             item = Mainitem.objects.get(fileid=fileid)
             
-            # Update the model fields with the new data
-            item.itemno  = data.get('originalno', item.itemno)
-            item.itemmain = data.get('itemmain', item.itemmain)
-            item.itemsubmain  = data.get('itemsub', item.itemsubmain)
-            item.itemname = data.get('pnamearabic', item.itemname)
-            item.eitemname = data.get('pnameenglish', item.eitemname)
-            item.companyproduct = data.get('company', item.companyproduct)
-            item.replaceno = data.get('companyno', item.replaceno)
-            item.pno = data.get('pno', item.pno)
-            item.barcodeno = data.get('barcode', item.barcodeno)
-            item.memo = data.get('description', item.memo)
-            item.itemsize = data.get('country', item.itemsize)
-            item.itemperbox  = data.get('pieces4box', item.itemperbox)
-            item.itemthird = data.get('model', item.itemthird)
-            item.itemvalue = data.get('storage', item.itemvalue)
-            item.itemtemp = data.get('backup', item.itemtemp)
-            item.itemvalueb = data.get('temp', item.itemvalueb)
-            item.resvalue = data.get('reserved', item.resvalue)
-            item.itemplace = data.get('location', item.itemplace)
-            item.orgprice = data.get('originprice', item.orgprice)
-            item.orderprice = data.get('buyprice', item.orderprice)
-            item.costprice = data.get('expensesprice', item.costprice)
-            item.buyprice = data.get('sellprice', item.buyprice)
-            item.lessprice = data.get('lessprice', item.lessprice)
+            # Function to safely update a field
+            def safe_update(field_name, new_value):
+                if new_value not in [None, ""]:
+                    setattr(item, field_name, new_value)
+            
+            # Update the model fields with the new data if not empty
+            safe_update('itemno', data.get('originalno'))
+            safe_update('itemmain', data.get('itemmain'))
+            safe_update('itemsubmain', data.get('itemsub'))
+            safe_update('itemname', data.get('pnamearabic'))
+            safe_update('eitemname', data.get('pnameenglish'))
+            safe_update('companyproduct', data.get('company'))
+            safe_update('replaceno', data.get('companyno'))
+            safe_update('pno', data.get('pno'))
+            safe_update('barcodeno', data.get('barcode'))
+            safe_update('memo', data.get('description'))
+            safe_update('itemsize', data.get('country'))
+            safe_update('itemperbox', data.get('pieces4box'))
+            safe_update('itemthird', data.get('model'))
+            safe_update('itemvalue', data.get('storage'))
+            safe_update('itemtemp', data.get('backup'))
+            safe_update('itemvalueb', data.get('temp'))
+            safe_update('resvalue', data.get('reserved'))
+            safe_update('itemplace', data.get('location'))
+            safe_update('orgprice', data.get('originprice'))
+            safe_update('orderprice', data.get('buyprice'))
+            safe_update('costprice', data.get('expensesprice'))
+            safe_update('buyprice', data.get('sellprice'))
+            safe_update('lessprice', data.get('lessprice'))
             # Continue updating other fields...
 
             item.save()  # Save the updated record
@@ -1258,6 +1306,7 @@ def edit_main_item(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
+@csrf_exempt
 def create_main_item(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -1294,6 +1343,20 @@ def create_main_item(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
+def safe_int(value, default=0):
+    """Safely convert a value to an integer, or return the default if conversion fails."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+def safe_float(value, default=0.0):
+    """Safely convert a value to a float, or return the default if conversion fails."""
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+    
 @csrf_exempt  # Only if necessary for your use case
 def UpdateUserView(request):
     if request.method == 'POST':
@@ -1382,17 +1445,15 @@ def ProductsMovementReport(req):
 def get_clients(request):
     try:
         # Query the database for all Mainitem entries
-        items = Clients.objects.all().values(
+        items = Clientstable.objects.all().values(
             'fileid', 'itemno', 'maintype','itemname','currentbalance','date','clientname','billno','description', 'clientbalance','pno'
         )# List the fields you need
- 
         data = list(items)  # Convert QuerySet to a list
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)          # Return error details in JSON 
 
-from django.core.paginator import Paginator
-from django.core.cache import cache  
+
 def get_data(request):
     try:
         # Fetch all records
@@ -1404,8 +1465,9 @@ def get_data(request):
             'barcodeno', 'eitemname', 'currtype', 'lessprice', 'pno', 
             'currvalue', 'itemvalueb', 'costprice', 'resvalue', 'orderprice',
             'orderlastdate', 'ordersource', 'orderbillno', 
-            'buylastdate', 'buysource', 'buybillno', 'orgprice'
-        )
+            'buylastdate', 'buysource', 'buybillno', 'orgprice','itemperbox','oem_numbers'
+        ).order_by('itemname')
+
         total_itemvalue = Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
         total_itemvalueb = Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
         total_resvalue = Mainitem.objects.aggregate(total=Sum('resvalue'))['total']
@@ -1413,6 +1475,20 @@ def get_data(request):
         total_order = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('orderprice')))['total']
         total_buy = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('buyprice')))['total']
 
+        fullTable = request.GET.get('fullTable', None)
+        if fullTable:
+            # Prepare the response
+            response = {
+                "data": list(items),  # Convert the current page items to a list
+                "fullTable":True,
+                "total_itemvalue":total_itemvalue,
+                "total_itemvalueb":total_itemvalueb,
+                "total_resvalue":total_resvalue,
+                "total_cost":total_cost,
+                "total_order":total_order,
+                "total_buy":total_buy,
+            }
+            return JsonResponse(response)
 
         # Pagination parameters from the request
         page_number = int(request.GET.get('page', 1))
@@ -1448,13 +1524,28 @@ def update_itemvalue(request):
             data = json.loads(request.body)
             fileid = data.get('fileid')
             new_itemvalue = data.get('newItemValue')
+            old_itemvalue = 0
 
             # Find the item using the fileid
             item = Mainitem.objects.get(fileid=fileid)
-            
+            old_itemvalue = item.itemvalue
             # Update the item value
             item.itemvalue = new_itemvalue
             item.save()
+
+            movement_Record = Clientstable.objects.create(
+                itemno=item.itemno,
+                itemname=item.itemname,
+                maintype=item.itemmain,
+                currentbalance=item.itemvalue,
+                date=datetime.now(),
+                clientname="اعادة ترصيد",
+                #billno="",
+                description="اعادة ترصيد للصنف",
+                clientbalance=int(new_itemvalue-old_itemvalue) or 0,
+                pno_instance=item,
+                pno=item.pno
+            )
 
             # Return a successful response
             return JsonResponse({'success': True, 'message': 'Item value updated successfully.'})
@@ -1504,7 +1595,7 @@ def ProductsBalance(req):
     return render(req, 'products-balance.html', context)
 
 def ClientsManagement(request):
-    types = clientTypes.objects.all().values('fileid', 'tname')
+    types = Clienttypestable.objects.all().values('fileid', 'tname')
     context = {
         'types': list(types),
     }
@@ -1530,10 +1621,10 @@ def delete_lost_damaged(request):
 
             # Attempt to delete the record
             try:
-                record = LostAndDamaged.objects.get(fileid=fileid)
+                record = LostAndDamagedTable.objects.get(fileid=fileid)
                 record.delete()
                 return JsonResponse({'success': True, 'message': 'Record deleted successfully.'})
-            except LostAndDamaged.DoesNotExist:
+            except LostAndDamagedTable.DoesNotExist:
                 return JsonResponse({'success': False, 'message': f'Record with fileid {fileid} does not exist.'}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'message': 'Invalid JSON data.'}, status=400)
@@ -1548,7 +1639,7 @@ def filter_lost_damaged(request):
             filters = json.loads(request.body.decode('utf-8'))  # Decoding bytes and loading JSON
 
             # Build the query based on the filters
-            queryset = LostAndDamaged.objects.all()
+            queryset = LostAndDamagedTable.objects.all()
             
             fromdate = filters.get('fromdate', '').strip()
             todate = filters.get('todate', '').strip()
@@ -1581,7 +1672,7 @@ def fetch_lost_damaged_data(request):
     if request.method == "GET":
         # Fetch all data from the model
         data = list(
-            LostAndDamaged.objects.all().values(
+            LostAndDamagedTable.objects.all().values(
                 "fileid",
                 "date",
                 "itemno",
@@ -1601,7 +1692,7 @@ def fetch_lost_damaged_data(request):
 import json
 import logging
 from django.http import JsonResponse
-from .models import LostAndDamaged
+from .models import LostAndDamagedTable
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -1624,6 +1715,8 @@ def add_lost_damaged(request):
             quantity = data.get('quantity')
             pno_id = data.get('pno')  # Note that we expect an ID, not the instance itself
             status = data.get('status')
+            date = data.get('date')
+            itemmain = data.get('itemmain')
 
             # Validate required fields
             if not all([itemno, companyno, company, itemname, costprice, quantity, pno_id, status]):
@@ -1635,14 +1728,16 @@ def add_lost_damaged(request):
             # Attempt to fetch the Mainitem instance for the provided pno_id
             try:
                 pno_instance = Mainitem.objects.get(pno=pno_id)
+                pno_instance.itemvalue -= int(data.get('quantity',0)) or 0
+                pno_instance.save()
             except Mainitem.DoesNotExist:
-                error_message = f'Mainitem with id {pno_id} does not exist.'
+                error_message = f'Mainitem with pno id {pno_id} does not exist.'
                 logger.error(error_message)
                 print(error_message)
                 return JsonResponse({'success': False, 'message': error_message}, status=404)
 
-            # Save the record in the LostAndDamaged model
-            lost_damaged_record = LostAndDamaged.objects.create(
+            # Save the record in the LostAndDamagedTable model
+            lost_damaged_record = LostAndDamagedTable.objects.create(
                 itemno=itemno,
                 companyno=companyno,
                 company=company,
@@ -1651,14 +1746,29 @@ def add_lost_damaged(request):
                 quantity=quantity,
                 pno=pno_instance,  # Use the Mainitem instance, not the ID
                 pno_value=pno_instance.pno,  # Save the actual pno value
-                status=status
+                status=status,
+                date=date
+            )
+
+            movement_Record = Clientstable.objects.create(
+                itemno=itemno,
+                itemname=itemname,
+                maintype=itemmain,
+                currentbalance=pno_instance.itemvalue,
+                date=date,
+                clientname=status,
+                #billno="",
+                description="فقد او تلف للصنف",
+                clientbalance=int(data.get('quantity',0)) or 0,
+                pno_instance=pno_instance,
+                pno=pno_instance.pno
             )
 
             success_message = 'Record added successfully.'
             logger.info(success_message)
             print(success_message)
 
-            return JsonResponse({'success': True, 'message': success_message})
+            return JsonResponse({'success': True, 'message': success_message,"new_balance":pno_instance.itemvalue})
 
         except json.JSONDecodeError as e:
             error_message = f'Invalid JSON format: {e}'
@@ -1690,7 +1800,7 @@ def LostDamaged(req):
     return render(req, 'lost-and-damaged.html', context)
 
 def ClientsReports(req):
-    types = clientTypes.objects.all()
+    types = Clienttypestable.objects.all()
     context = {
        'types':types,
     }
@@ -1737,7 +1847,7 @@ def get_all_clients(request):
             clientid = item['clientid']
             
             # Calculate balance from TransactionsHistoryTable
-            balance_data = BalanceAndTransactions.objects.filter(client_id_id=clientid).aggregate(
+            balance_data = TransactionsHistoryTable.objects.filter(client_id_id=clientid).aggregate(
                 total_debt=Sum('debt'),
                 total_credit=Sum('credit')
             )
@@ -1747,7 +1857,7 @@ def get_all_clients(request):
             balance = round(total_credit - total_debt, 2)  # Ensure two decimal digits
             
             # Fetch total credit for specific client_id and where details = "دفعة على حساب"
-            specific_credit_data = BalanceAndTransactions.objects.filter(
+            specific_credit_data = TransactionsHistoryTable.objects.filter(
                 client_id_id=clientid, details="دفعة على حساب" 
             ).aggregate(total_specific_credit=Sum('credit'))
 
@@ -1757,39 +1867,75 @@ def get_all_clients(request):
             item['balance'] = balance
             item['paid_total'] = total_specific_credit  # Add the total specific credit
             data.append(item)
-            
+        # Pagination parameters from the request
+        page_number = int(request.GET.get('page', None) or 1)
+        page_size = int(request.GET.get('size', None) or 100)
 
-        return JsonResponse(data, safe=False)
+        # Create paginator
+        paginator = Paginator(data, page_size)
+        page_obj = paginator.get_page(page_number)
+
+        # Prepare the response
+        response = {
+            "data": list(page_obj),  # Convert the current page items to a list
+            "last_page": paginator.num_pages,  # Total number of pages
+            "total_rows": paginator.count,  # Total number of rows
+            "page_size": page_size,
+            "page_no": page_number,
+        }    
+
+        return JsonResponse(response, safe=False)
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)  # Return error details in JSON
 
+from django.core.exceptions import ValidationError
+
+@csrf_exempt
 def create_client_record(request):
     if request.method == 'POST':
         data = json.loads(request.body)
 
         # Create a new MainItem instance
         new_item = AllClientsTable(
-            name=data.get('client_name'),
-            address=data.get('address'),
-            email=data.get('email'),
-            website=data.get('website'),
-            phone=data.get('phone'),
-            mobile=data.get('mobile'),
-            last_transaction=data.get('last_transaction'),
-            accountcurr=data.get('currency'),
-            type=data.get('account_type'),
-            category=data.get('sub_category'),
-            loan_period=int(data.get('limit', 0)) if data.get('limit') and data.get('limit').isdigit() else None,
-            loan_limit = float(data.get('limit_value')) if data.get('limit_value') else None,
-            loan_day=data.get('installments'),
-            subtype=data.get('types'),
-            client_stop = True if data.get('client_stop') in ['on', '1', True] else False,
-            curr_flag=bool(int(data.get('curr_flag', 0))),
-            permissions=data.get('permissions'),
-            other=data.get('other'),
+            name=data.get('client_name', '').strip() or None,  # Ensure name is not empty
+            address=data.get('address', '').strip() or None,
+            email=data.get('email', '').strip() or None,
+            website=data.get('website', '').strip() or None,
+            phone=data.get('phone', '').strip() or None,
+            mobile=data.get('mobile', '').strip() or None,
+            last_transaction_amount=data.get('last_transaction', '0').strip() or '0',  # Default to '0' if missing
+            accountcurr=data.get('currency', '').strip() or None,
+            type=data.get('account_type', '').strip() or None,
+            category=data.get('sub_category', '').strip() or None,
+            loan_period=int(data.get('limit', '0')) if str(data.get('limit', '0')).isdigit() else None,
+            loan_limit=float(data.get('limit_value', '0.0')) if data.get('limit_value') else None,
+            loan_day=data.get('installments') or None,
+            subtype=data.get('types', '').strip() or None,
+            client_stop=True if str(data.get('client_stop', '0')).lower() in ['on', '1', 'true'] else False,
+            curr_flag=bool(int(data.get('curr_flag', '0'))) if str(data.get('curr_flag', '0')).isdigit() else False,
+            permissions=data.get('permissions', '').strip() or None,
+            other=data.get('other', '').strip() or None,
+            username=data.get('phone'),
+            password="mypassword"
         )
-        new_item.save()
+        if new_item:
+            user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password="mypassword")
+
+            # Validate before saving
+            try:
+                user.full_clean()  # Ensure the object is valid before saving
+                user.save()
+            except ValidationError as e:
+                return JsonResponse({'status': 'error', 'message': f'Validation Error: {e.message_dict}'})
+
+        # Validate before saving
+        try:
+            new_item.full_clean()  # Ensure the object is valid before saving
+            new_item.save()
+        except ValidationError as e:
+            return JsonResponse({'status': 'error', 'message': f'Validation Error: {e.message_dict}'})
+
 
         return JsonResponse({'status': 'success', 'message': 'Record created successfully!'})
 
@@ -1869,7 +2015,7 @@ def delete_client_record(request):
 
 from django.http import JsonResponse
 import json
-from datetime import datetime, timedelta
+#from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
 from django.db.models import Sum
 
@@ -1893,7 +2039,7 @@ def filter_all_clients(request):
             if filters.get("mobile"):
                 queryset = queryset.filter(mobile__icontains=filters["mobile"])
             if filters.get("subtype"):
-                queryset = queryset.filter(subtype__icontains=filters["subtype"])
+                queryset = queryset.filter(category__icontains=filters["subtype"])
 
             # Date range filter
             fromdate = filters.get('fromdate', '').strip()
@@ -1906,7 +2052,7 @@ def filter_all_clients(request):
                     to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
 
                     # Apply date range filter
-                    #queryset = queryset.filter(last_transaction__range=[from_date_obj, to_date_obj])
+                    queryset = queryset.filter(last_transaction__range=[from_date_obj, to_date_obj])
                 except ValueError:
                     return JsonResponse({'error': 'Invalid date format'}, status=400)
 
@@ -1914,7 +2060,7 @@ def filter_all_clients(request):
             clients_data = []
             for client in queryset:
                 client_id = client.clientid
-                balance_data = BalanceAndTransactions.objects.filter(client_id_id=client_id).aggregate(
+                balance_data = TransactionsHistoryTable.objects.filter(client_id_id=client_id).aggregate(
                     total_debt=Sum("debt"),
                     total_credit=Sum("credit"),
                 )
@@ -1932,12 +2078,12 @@ def filter_all_clients(request):
                     continue  # Skip if balance is not positive
                 if fromdate and todate:
                     # Fetch total credit for specific client_id and where details = "دفعة على حساب"
-                    specific_credit_data = BalanceAndTransactions.objects.filter(
+                    specific_credit_data = TransactionsHistoryTable.objects.filter(
                         client_id_id=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
                     ).aggregate(total_specific_credit=Sum('credit'))
                 else:
                     # Fetch total credit for specific client_id and where details = "دفعة على حساب"
-                    specific_credit_data = BalanceAndTransactions.objects.filter(
+                    specific_credit_data = TransactionsHistoryTable.objects.filter(
                         client_id_id=client_id, details="دفعة على حساب"
                     ).aggregate(total_specific_credit=Sum('credit'))
 
@@ -1961,8 +2107,25 @@ def filter_all_clients(request):
                         "paid_total": total_specific_credit,
                     }
                 )
+            
             print(clients_data)
-            return JsonResponse(clients_data, safe=False)
+            # Pagination parameters from the request
+            page_number = int(filters.get("page") or 1)
+            page_size = int(filters.get("size") or 100)
+
+            # Create paginator
+            paginator = Paginator(clients_data, page_size)
+            page_obj = paginator.get_page(page_number)
+
+            # Prepare the response
+            response = {
+                "data": list(page_obj),  # Convert the current page items to a list
+                "last_page": paginator.num_pages,  # Total number of pages
+                "total_rows": paginator.count,  # Total number of rows
+                "page_size": page_size,
+                "page_no": page_number,
+            }    
+            return JsonResponse(response, safe=False)
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
@@ -1979,7 +2142,7 @@ def create_storage_record(request):
      
             transaction_date = make_aware(datetime.strptime(data.get("transaction_date"), '%Y-%m-%d'))
 
-            new_record = StorageTransactions(
+            new_record = StorageTransactionsTable(
                 reciept_no=data.get("reciept_no", ""),
                 transaction_date=transaction_date,
                 amount=data.get("amount"),
@@ -2008,15 +2171,15 @@ def create_storage_record(request):
                 client_id = client.clientid
 
             last_balance = (
-                BalanceAndTransactions.objects.filter(client_id_id=client_id)
+                TransactionsHistoryTable.objects.filter(client_id_id=client_id)
                 .order_by("-registration_date")
                 .first()
             )
             last_balance_amount = last_balance.current_balance if last_balance else 0
             updated_balance =  round(last_balance_amount + data.get("amount"), 2)
 
-            # Create a new `BalanceAndTransactions` record
-            account_statement = BalanceAndTransactions(
+            # Create a new `TransactionsHistoryTable` record
+            account_statement = TransactionsHistoryTable(
                 credit=float(data.get("amount")),
                 debt=0.0,
                 transaction=data.get("section"),
@@ -2039,7 +2202,7 @@ def delete_storage_record(request):
         try:
             data = json.loads(request.body)
             storage_id = data.get("storage_id")
-            record = get_object_or_404(StorageTransactions, storageid=storage_id)
+            record = get_object_or_404(StorageTransactionsTable, storageid=storage_id)
             record.delete()
             return JsonResponse({"message": "Record deleted successfully!"}, status=200)
         except Exception as e:
@@ -2049,7 +2212,7 @@ def delete_storage_record(request):
 def get_all_storage(request):
     try:
         # Query the database for all Mainitem entries
-        items = StorageTransactions.objects.all().values(
+        items = StorageTransactionsTable.objects.all().values(
             'storageid', 'account_type', 'transaction','transaction_date'
             ,'reciept_no','place','section','subsection','person', 'amount'
             ,'issued_for','payment','done_by','bank','check_no','daily_status'
@@ -2067,7 +2230,7 @@ def filter_all_storage(request):
             filters = json.loads(request.body.decode("utf-8"))  # Decode JSON payload
             print(filters)
             # Default query
-            queryset = StorageTransactions.objects.all()
+            queryset = StorageTransactionsTable.objects.all()
 
             # Apply filters
             if filters.get("id"):
@@ -2119,7 +2282,7 @@ def filter_all_storage(request):
 
 def account_statement(request):
     client_id = request.GET['id']
-    records = BalanceAndTransactions.objects.filter(client_id_id=client_id)
+    records = TransactionsHistoryTable.objects.filter(client_id_id=client_id)
     client = AllClientsTable.objects.get(clientid=client_id)
     context = {
         'records':records,
@@ -2133,7 +2296,7 @@ def get_last_reciept_no(request):
 
     if transaction_type in ['ايداع', 'صرف']:
         # Cast `reciept_no` to an integer for proper ordering
-        last_transaction = StorageTransactions.objects.annotate(
+        last_transaction = StorageTransactionsTable.objects.annotate(
             reciept_no_int=Cast('reciept_no', IntegerField())
         ).filter(
             transaction=transaction_type
@@ -2148,7 +2311,7 @@ def get_last_reciept_no(request):
 def get_buyinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by autoid in descending order
-        last_invoice = BuyInvoiceTable.objects.order_by('-invoice_no').first()
+        last_invoice = Buyinvoicetable.objects.order_by('-invoice_no').first()
         if last_invoice:
             response_data = {'autoid': last_invoice.invoice_no}
         else:
@@ -2164,8 +2327,8 @@ def get_buyinvoice_no(request):
 def get_account_statement(request):
     client_id = request.GET['id']
     try:
-         # Query BalanceAndTransactions with selected fields
-        items = BalanceAndTransactions.objects.filter(client_id_id=client_id).values(
+         # Query TransactionsHistoryTable with selected fields
+        items = TransactionsHistoryTable.objects.filter(client_id_id=client_id).values(
             'autoid',
             'transaction',
             'debt',
@@ -2203,6 +2366,7 @@ def BuyInvoiceItemsView(request):
         "data":json_data
         }
     return render(request,'add-invoice-items.html',context) 
+# buy invoice
 @csrf_exempt
 def fetch_invoice_items(request):
     if request.method == "GET":
@@ -2214,7 +2378,7 @@ def fetch_invoice_items(request):
 
         # Fetch all data from the model
         items = list(
-            BuyInvoiceItems.objects.filter(invoice_no2= invoice_no).values(
+            BuyInvoiceItemsTable.objects.filter(invoice_no2= invoice_no).values(
                 "autoid",
                 "invoice_no",
                 "item_no",
@@ -2232,10 +2396,11 @@ def fetch_invoice_items(request):
                 "current_less_price",
                 "place",
                 "cost_unit_price",
+                "cost_total_price",
             )
         )
         if not items:
-            return JsonResponse({"message": "No items found for the given invoice number."}, status=404)
+            return JsonResponse([], safe=False)
 
         return JsonResponse(items, safe=False)
     else:
@@ -2274,25 +2439,28 @@ def cost_management(request):
 
         try:
             # Attempt to retrieve the invoice from the database
-            invoice = BuyInvoiceTable.objects.get(invoice_no=invoice_no)
+            invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
 
-        except BuyInvoiceTable.DoesNotExist:
+        except Buyinvoicetable.DoesNotExist:
             return JsonResponse({"success": False, "message": "Invoice not found in the database"}, status=404)
         
-        dinar_total = Decimal(invoice.amount)*Decimal(invoice.exchange_rate)
-        costs = cost_types.objects.all()
+        org_total = Decimal(invoice.amount)/Decimal(invoice.exchange_rate)
+        costs = CostTypesTable.objects.all()
         context = {
             "invoice_no": invoice_no,
-            "org_total": round(invoice.amount, 2),
+            "dinar_total": format_number(invoice.amount),
             "rate": round(invoice.exchange_rate,2),
             "currency":invoice.currency,
-            "dinar_total": round(dinar_total,2),
+            "org_total": format_number(org_total),
             "costs": costs,
         }
         
         return render(request, "cost-management.html", context)
 
     return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
+
+def format_number(number):
+    return f"{number:,.2f}"
 
 @csrf_exempt  # Exempt CSRF validation for the API endpoint (use with caution, better to handle CSRF properly in production)
 def create_cost_record(request):
@@ -2308,13 +2476,13 @@ def create_cost_record(request):
             rate = data.get("rate")
             dinar = data.get("dinar")
             
-            invoice_obj = BuyInvoiceTable.objects.get(invoice_no=invoice)
+            invoice_obj = Buyinvoicetable.objects.get(invoice_no=invoice)
             # Validate the data
             if not invoice or not type or not cost or not rate or not dinar:
                 return JsonResponse({"success": False, "message": "All fields are required."}, status=400)
 
             # Create a new record in the CostType model
-            cost_record = buyInvoice_costs.objects.create(
+            cost_record = BuyinvoiceCosts.objects.create(
                 invoice=invoice_obj,
                 cost_for=type,
                 cost_price=cost,
@@ -2344,7 +2512,7 @@ def fetch_costs(request):
 
         # Fetch all data from the model
         items = list(
-            buyInvoice_costs.objects.filter(invoice_no= invoice_no).values(
+            BuyinvoiceCosts.objects.filter(invoice_no= invoice_no).values(
                 "autoid",
                 "invoice_no",
                 "cost_for",
@@ -2355,13 +2523,24 @@ def fetch_costs(request):
             )
         )
         if not items:
-            return JsonResponse({"message": "No items found for the given invoice number."}, status=404)
+           items = []
+           return JsonResponse(items, safe=False)
 
         return JsonResponse(items, safe=False)
     else:
         return JsonResponse({"error": "Invalid HTTP method."}, status=405)
 
-
+@csrf_exempt
+def delete_buyinvoice_cost(request, autoid):
+    if request.method == 'DELETE':
+        try:
+            # Find and delete the record with the given autoid
+            record = BuyinvoiceCosts.objects.get(autoid=autoid)
+            record.delete()
+            return JsonResponse({'status': 'success', 'message': 'Record deleted successfully!'})
+        except BuyinvoiceCosts.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Record not found!'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
 
 def payment_installments(request):
@@ -2375,8 +2554,8 @@ def calculate_cost(request):
             # Parse the incoming JSON data
             data = json.loads(request.body)
 
-            cost_total = data.get("cost_total")
-            invoice_total = data.get("invoice_total")
+            cost_total = data.get("cost_total").replace(',', '')
+            invoice_total = data.get("invoice_total").replace(',', '')
             invoice_id = data.get("invoice")
 
             # Validate the data
@@ -2388,12 +2567,12 @@ def calculate_cost(request):
 
             # Get the invoice object
             try:
-                invoice = BuyInvoiceTable.objects.get(invoice_no=invoice_id)
-            except BuyInvoiceTable.DoesNotExist:
+                invoice = Buyinvoicetable.objects.get(invoice_no=invoice_id)
+            except Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"success": False, "message": "Invoice not found."}, status=404)
 
             # Update the items associated with the invoice
-            items = BuyInvoiceItems.objects.filter(invoice_no2=invoice_id)
+            items = BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_id)
             for item in items:
                 # Update the costprice based on the load percentage
                 item.current_cost_price = item.dinar_unit_price * (1 + load_percentage)
@@ -2420,7 +2599,7 @@ def get_invoice_items(request):
         if not invoice_id:
             return JsonResponse({"error":"Invoice id is required"},status=400)
 
-        items = BuyInvoiceItems.objects.filter(invoice_no = invoice_id)
+        items = BuyInvoiceItemsTable.objects.filter(invoice_no = invoice_id)
         if not items:
             return JsonResponse({"error":"Invoice does not exist"},status=400) 
         response_data = list(items.values())
@@ -2503,7 +2682,7 @@ def manage_buy_invoice(request):
     currency = request.session.get('currency')
     rate = request.session.get('rate')
 
-    item = BuyInvoiceItems.objects.get(autoid=auto_id)
+    item = BuyInvoiceItemsTable.objects.get(autoid=auto_id)
 
     context = {
         'auto_id': auto_id,
@@ -2527,13 +2706,13 @@ def delete_buy_invoice_item(request):
                 return JsonResponse({"success": False, "message": "Missing item ID"}, status=400)
 
             # Try to delete the item from the database
-            item = BuyInvoiceItems.objects.get(autoid=item_id)  # Adjust the query based on your model
+            item = BuyInvoiceItemsTable.objects.get(autoid=item_id)  # Adjust the query based on your model
             item.delete()
 
             # Return success response
             return JsonResponse({"success": True, "message": "Item deleted successfully!"}, status=200)
 
-        except BuyInvoiceItems.DoesNotExist:
+        except BuyInvoiceItemsTable.DoesNotExist:
             # Item not found
             return JsonResponse({"success": False, "message": "Item not found"}, status=404)
         except Exception as e:
@@ -2557,16 +2736,16 @@ def update_buyinvoiceitem(request):
 
            
             # Find the item to update (you can use an ID or another identifier)
-            item = BuyInvoiceItems.objects.get(autoid=id)
+            item = BuyInvoiceItemsTable.objects.get(autoid=id)
 
               # Get the related invoice
             try:
-                invoice = BuyInvoiceTable.objects.get(invoice_no=invoice_no)
+                invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
                 invoice.amount -= item.dinar_total_price
                 invoice.amount += order * quantity
 
                 invoice.save()
-            except BuyInvoiceTable.DoesNotExist:
+            except Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"error": "Invoice not found"}, status=404)
             
             # Update the item with new values
@@ -2579,7 +2758,7 @@ def update_buyinvoiceitem(request):
 
             return JsonResponse({"success": True, "message": "Item updated successfully"})
 
-        except BuyInvoiceItems.DoesNotExist:
+        except BuyInvoiceItemsTable.DoesNotExist:
             return JsonResponse({"success": False, "message": "Item not found"})
         except Exception as e:
             return JsonResponse({"success": False, "message": str(e)})
@@ -2623,9 +2802,9 @@ def buyInvoice_excell(request):
 
         try:
             # Attempt to retrieve the invoice from the database
-            invoice = BuyInvoiceTable.objects.get(invoice_no=invoice_no)
+            invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
 
-        except BuyInvoiceTable.DoesNotExist:
+        except Buyinvoicetable.DoesNotExist:
             return JsonResponse({"success": False, "message": "Invoice not found in the database"}, status=404)
         
         context = {
@@ -2639,8 +2818,8 @@ def buyInvoice_excell(request):
 import logging
 
 logger = logging.getLogger(__name__)
-import json
-import datetime
+#import json
+#import datetime
 
 def excel_date_to_datetime(serial):
     return datetime.datetime(1900, 1, 1) + datetime.timedelta(days=serial - 2)
@@ -2667,15 +2846,15 @@ def process_buyInvoice_excel(request):
 
             try:
                 # Attempt to retrieve the invoice from the database
-                invoice = BuyInvoiceTable.objects.get(invoice_no=invoice_no)
-            except BuyInvoiceTable.DoesNotExist:
+                invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
+            except Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"status": "error", "message": "Invoice not found in the database."}, status=404)
 
             # Process the data and insert it into the database
             records = []
             for item in data:
                 try:
-                    records.append(BuyInvoiceItems(
+                    records.append(BuyInvoiceItemsTable(
                         invoice_no2=invoice_no,
                         invoice_no=invoice,
                         item_no=item.get("الرقم الاصلي", None),
@@ -2736,7 +2915,7 @@ def process_buyInvoice_excel(request):
                     continue
 
             # Bulk create records in the database
-            BuyInvoiceItems.objects.bulk_create(records)
+            BuyInvoiceItemsTable.objects.bulk_create(records)
             logger.debug(f"Successfully inserted {len(records)} records from Tabulator data.")
             return JsonResponse({"status": "success", "message": "Tabulator data imported successfully."})
 
@@ -2781,7 +2960,7 @@ def check_items(request):
         return JsonResponse({"status": "error", "message": "Invalid request method."}, status=405)
     
 def temp_confirm(request):
-    invoices = BuyInvoiceTable.objects.filter(temp_flag=1)
+    invoices = Buyinvoicetable.objects.filter(temp_flag=1)
     context={
         "invoices":invoices,
     }
@@ -2801,9 +2980,9 @@ def process_temp_confirm(request):
             
             try:
                 # Fetch invoice items for the given invoice number
-                invoice_items = BuyInvoiceItems.objects.filter(invoice_no=invoice_no)
-            except BuyInvoiceItems.DoesNotExist:
-                return JsonResponse({'status': 'error', 'message': 'Invoice not found in the BuyInvoiceTable.'}, status=404)
+                invoice_items = BuyInvoiceItemsTable.objects.filter(invoice_no=invoice_no)
+            except BuyInvoiceItemsTable.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Invoice not found in the Buyinvoicetable.'}, status=404)
             
             # Serialize the invoice items (convert them to a list of dictionaries)
             items_data = []
@@ -2821,9 +3000,9 @@ def process_temp_confirm(request):
                     'org_unit_price':item.org_unit_price,
                 })
 
-            # Fetch the invoice details from the BuyInvoiceTable
+            # Fetch the invoice details from the Buyinvoicetable
             try:
-                invoice = BuyInvoiceTable.objects.get(autoid=invoice_no)
+                invoice = Buyinvoicetable.objects.get(autoid=invoice_no)
                 
                 # Prepare invoice details for response
                 invoice_details = {
@@ -2836,8 +3015,8 @@ def process_temp_confirm(request):
 
                 return JsonResponse({'status': 'success', 'message': 'Invoice details fetched successfully.', 'data': invoice_details})
 
-            except BuyInvoiceTable.DoesNotExist:
-                return JsonResponse({'status': 'error', 'message': 'Invoice not found in the BuyInvoiceTable.'}, status=404)
+            except Buyinvoicetable.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Invoice not found in the Buyinvoicetable.'}, status=404)
 
         except ValueError:
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
@@ -2882,6 +3061,20 @@ def confirm_temp_invoice(request):
                     main.itemno = item['item_no']
                     main.save()
 
+                    movement_Record = Clientstable.objects.create(
+                        itemno=main.itemno,
+                        itemname=main.itemname,
+                        maintype=main.itemmain,
+                        currentbalance=main.itemvalue,
+                        date=datetime.now(),
+                        clientname="فاتورة شراء",
+                        billno=invoice_no,
+                        description="ترحيل فاتورة شراء",
+                        clientbalance=int(item['quantity'] or 0),
+                        pno_instance=main,
+                        pno=main.pno
+                    )
+
                     print(f"new data: {main.itemname} {main.itemvalue} {main.orderprice} {main.costprice} {main.orgprice} {main.itemno}")
                     success_count += 1
 
@@ -2896,12 +3089,12 @@ def confirm_temp_invoice(request):
                         'message': f'Error processing item: {str(e)}'
                     })
 
-            # Process BuyInvoiceTable update
+            # Process Buyinvoicetable update
             try:
-                invoice = BuyInvoiceTable.objects.get(autoid=invoice_no)
+                invoice = Buyinvoicetable.objects.get(autoid=invoice_no)
                 invoice.temp_flag = 0
                 invoice.save()
-            except BuyInvoiceTable.DoesNotExist:
+            except Buyinvoicetable.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Invoice not found.'}, status=404)
 
             # Consolidate response
@@ -2946,10 +3139,10 @@ def BuyInvoiceItemCreateView(request):
 
             # Get the related invoice
             try:
-                invoice = BuyInvoiceTable.objects.get(invoice_no=data.get("invoice_id"))
+                invoice = Buyinvoicetable.objects.get(invoice_no=data.get("invoice_id"))
                 invoice.amount += (Decimal(data.get("orderprice") or 0) * Decimal(data.get("itemvalue") or 0))
                 invoice.save()
-            except BuyInvoiceTable.DoesNotExist:
+            except Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"error": "Invoice not found"}, status=404)
             
             try:
@@ -2958,35 +3151,42 @@ def BuyInvoiceItemCreateView(request):
             except Mainitem.DoesNotExist:
                 return JsonResponse({"error": "product not found"}, status=404)
             
-            # Create a new BuyInvoiceItems instance
-            item = BuyInvoiceItems.objects.create(
+            # Create a new BuyInvoiceItemsTable instance
+            item = BuyInvoiceItemsTable.objects.create(
                 invoice_no=invoice,
                 invoice_no2=data.get("invoice_id"),
                 item_no=data.get("itemno"),
                 pno=data.get("pno"),
-                main_cat= data.get("main_cat"),
+                main_cat=data.get("main_cat"),
                 sub_cat=submain,
                 name=data.get("itemname"),
                 company=data.get("companyproduct"),
                 company_no=data.get("replaceno"),
-                quantity=int(data.get("itemvalue") or 0),  # Use `or 0` to handle None
+                quantity=int(data.get("itemvalue") or 0),  # Handle None or invalid strings
                 currency=data.get("currency"),
-                exchange_rate=float(data.get("rate") or 0),  # Use `or 0` to handle None
+                exchange_rate=float(data.get("rate") or 0) if data.get("rate") not in [None, '', 'null'] else 0,  # Handle 'null'
                 date=data.get("date"),
                 place=data.get("itemplace"),
                 buysource=data.get("source"),
-                org_unit_price=float(data.get("orgprice") or 0),  # Use `or 0` to handle None
-                org_total_price=(float(data.get("orgprice") or 0) * int(data.get("itemvalue") or 0)),  # Handle None
-                dinar_unit_price=float(data.get("orderprice") or 0),  # Use `or 0` to handle None
-                dinar_total_price=(float(data.get("orderprice") or 0) * int(data.get("itemvalue") or 0)),  # Handle None
-                prev_quantity=int(data.get("prev_quantity") or 0),  # Use `or 0` to handle None
-                prev_cost_price=float(data.get("prev_cost_price") or 0),  # Use `or 0` to handle None
-                prev_buy_price=float(data.get("prev_buy_price") or 0),  # Use `or 0` to handle None
-                prev_less_price=float(data.get("prev_less_price") or 0),  # Use `or 0` to handle None
-                current_quantity=int(data.get("prev_quantity") or 0) + int(data.get("itemvalue") or 0),  # Handle None
-                current_buy_price=float(data.get("buyprice") or 0),  # Use `or 0` to handle None
-                current_less_price=float(data.get("lessprice") or 0), 
+                org_unit_price=float(data.get("orgprice") or 0) if data.get("orgprice") not in [None, '', 'null'] else 0,
+                org_total_price=(
+                    float(data.get("orgprice") or 0) if data.get("orgprice") not in [None, '', 'null'] else 0
+                ) * (int(data.get("itemvalue") or 0)),
+                dinar_unit_price=float(data.get("orderprice") or 0) if data.get("orderprice") not in [None, '', 'null'] else 0,
+                dinar_total_price=(
+                    float(data.get("orderprice") or 0) if data.get("orderprice") not in [None, '', 'null'] else 0
+                ) * (int(data.get("itemvalue") or 0)),
+                prev_quantity=int(data.get("prev_quantity") or 0),
+                prev_cost_price=float(data.get("prev_cost_price") or 0) if data.get("prev_cost_price") not in [None, '', 'null'] else 0,
+                prev_buy_price=float(data.get("prev_buy_price") or 0) if data.get("prev_buy_price") not in [None, '', 'null'] else 0,
+                prev_less_price=float(data.get("prev_less_price") or 0) if data.get("prev_less_price") not in [None, '', 'null'] else 0,
+                current_quantity=int(data.get("prev_quantity") or 0) + int(data.get("itemvalue") or 0),
+                current_buy_price=float(data.get("buyprice") or 0) if data.get("buyprice") not in [None, '', 'null'] else 0,
+                current_less_price=float(data.get("lessprice") or 0) if data.get("lessprice") not in [None, '', 'null'] else 0,
             )
+
+            
+
             confirm_message = "not confirmed"
             if(data.get("isTemp")==0):
                 main = Mainitem.objects.get(replaceno=data.get("replaceno"))
@@ -3000,6 +3200,20 @@ def BuyInvoiceItemCreateView(request):
                 main.save()
                 confirm_message = "confirmed"
                 print(f"new data: {main.orgprice} / {main.lessprice} /{main.itemvalue} /{main.itemtemp} /{main.itemplace} /{main.buyprice} /")
+
+                movement_Record = Clientstable.objects.create(
+                itemno=main.itemno,
+                itemname=main.itemname,
+                maintype=main.itemmain,
+                currentbalance=main.itemvalue,
+                date=datetime.now(),
+                clientname="فاتورة شراء",
+                billno=data.get("invoice_id"),
+                description="فاتورة شراء",
+                clientbalance=int(data.get("itemvalue") or 0) or 0,
+                pno_instance=main,
+                pno=main.pno
+                )
             # Return success response
             return JsonResponse({"message": "Item created successfully", "item_id": item.autoid,"confirm_status":confirm_message}, status=201)
 
@@ -3010,3 +3224,758 @@ def BuyInvoiceItemCreateView(request):
             return JsonResponse({"error": str(e)}, status=500)
     else:
         return JsonResponse({"error": "Invalid HTTP method. Use POST."}, status=405)
+
+
+def Buyinvoice_management(request):
+    #records = Buyinvoicetable.objects.all().values()
+    #total_amount = Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    #json_data = json.dumps(list(records), default=str)
+    sources = AllSourcesTable.objects.all().values('clientid','name')
+    context = {
+        "sources":sources,
+        #"data":json_data,
+        #"total_amount":total_amount,
+    }
+    return render(request,"buy-invoice-reports.html",context)     
+
+def fetch_buyinvoices(request):
+    # Fetch all records from Buyinvoicetable
+    records = Buyinvoicetable.objects.all().values()
+    total_amount = Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    page_number = int(request.GET.get('page', 1)) #int(filters.get("page") or 1)
+    page_size = int(request.GET.get('size', 100)) #int(filters.get("size") or 100)
+
+    # Create paginator
+    paginator = Paginator(records, page_size)
+    page_obj = paginator.get_page(page_number)
+
+    # Prepare the response
+    response = {
+        "data": list(page_obj),  # Convert the current page items to a list
+        "last_page": paginator.num_pages,  # Total number of pages
+        "total_rows": paginator.count,  # Total number of rows
+        "page_size": page_size,
+        "page_no": page_number,
+        "total_amount":format_number(total_amount),
+    }    
+    return JsonResponse(response, safe=False)
+
+@csrf_exempt
+def filter_buyinvoices(request):
+    if request.method == "POST":
+        try:
+            # Get the filters from the request body
+            filters = json.loads(request.body.decode('utf-8'))  # Decoding bytes and loading JSON
+            cache_key = f"filter_{str(filters)}"
+            cached_data = cache.get(cache_key)
+
+            if cached_data:
+                cached_data["cached_flag"] = True 
+                return JsonResponse(cached_data, safe=False)
+
+            # Initialize the base Q object for filtering
+            filters_q = Q()
+
+            # Build the query based on the filters
+            if filters.get('invoice_no'):
+                filters_q &= Q(invoice_no__icontains=filters['invoice_no'])
+           
+            if filters.get('source'):
+                filters_q &= Q(source__icontains=filters['source'])
+            
+
+            # Apply date range filter on `orderlastdate`
+            fromdate = filters.get('fromdate', '').strip()
+            todate = filters.get('todate', '').strip()
+
+            if fromdate and todate:
+                try:
+                    # Parse dates
+                    from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                    to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+
+                    # Apply date range filter
+                    filters_q &= Q(invoice_date__range=[from_date_obj, to_date_obj])
+
+                except ValueError:
+                    return JsonResponse({'error': 'Invalid date format'}, status=400)
+
+            # Now filter the queryset using the combined Q object
+            queryset = Buyinvoicetable.objects.filter(filters_q).values()
+
+            # Serialize the filtered data
+            items_data = list(queryset)  # Customize the fields to return as needed
+            
+            # Pagination parameters from the request
+            page_number = int(filters.get('page') or 1)
+            page_size = int(filters.get('size') or 20)
+
+            # Create paginator
+            paginator = Paginator(items_data, page_size)
+            page_obj = paginator.get_page(page_number)
+
+            total_amount = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
+
+            # Prepare the response
+            response = {
+                "data": list(page_obj),  # Convert the current page items to a list
+                "last_page": paginator.num_pages,  # Total number of pages
+                "total_rows": paginator.count,  # Total number of rows
+                "page_size": page_size,
+                "page_no": page_number,
+                "cached_flag": False,
+                "total_amount":format_number(total_amount),
+            }
+
+            # Cache the response for future use
+            cache.set(cache_key, response, timeout=300)  # Cache for 5 minutes
+
+            # Return the filtered data as JSON
+            return JsonResponse(response, safe=False)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+
+def buy_invoice_add_items(request):
+    if request.method == "POST":
+        data = json.loads(request.body.decode("utf-8"))
+        invoice_id = data.get("id")
+        request.session['invoice_id'] = invoice_id
+        return redirect('/buy_invoice_add_items')
+    
+    invoice_id = request.session.get('invoice_id')
+    try:
+        invoice = Buyinvoicetable.objects.get(autoid=invoice_id)
+        invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else ''
+        arrive_date = invoice.arrive_date.strftime('%Y-%m-%d') if invoice.arrive_date else ''
+        ready_date = invoice.ready_date.strftime('%Y-%m-%d') if invoice.ready_date else ''
+
+    except Buyinvoicetable.DoesNotExist:
+        invoice = None
+        invoice_date = None
+        arrive_date = None
+        ready_date = None
+
+        
+    context = {
+        "invoice":invoice,
+        "invoice_id":invoice_id,
+        "invoice_date":invoice_date,
+        "arrive_date":arrive_date,
+        "ready_date":ready_date,
+    }
+    return render(request,'buy-invoice-add-items.html',context)
+
+def sell_invoice_search_storage(request):
+    company = Companytable.objects.all()
+    mainType = Maintypetable.objects.all()
+    subType = Subtypetable.objects.all()
+    countries = Manufaccountrytable.objects.all()
+    context = {
+        "company":company,
+        "mainType":mainType,
+        "subType":subType,
+        "countries":countries,
+    }
+    return render(request,'sell_invoice_search_products.html',context)
+
+def sell_invoice_add_invoice(request):
+    Clients= AllClientsTable.objects.all().values()
+    context = {
+        "clients":Clients,
+    }
+    return render(request,'sell_invoice_add_invoice.html',context)   
+
+def sell_invoice_management(request):
+    clients =AllClientsTable.objects.all().values('clientid','name')
+    client_types = Clienttypestable.objects.all()
+    context = {
+        "clients":clients,
+        "types":client_types,
+    }
+    return render(request,'sell_invoice_management.html',context)  
+
+@csrf_exempt
+def create_sell_invoice(request):
+    if request.method == "POST":
+        try:
+            # Parse the incoming JSON data
+            data = json.loads(request.body)
+
+            client = None
+            balance_data = {"total_debt": Decimal("0.0000"), "total_credit": Decimal("0.0000")}
+            
+            try:
+                if data.get("client").isdigit():  # If it's a number, fetch by clientid
+                    client = AllClientsTable.objects.get(clientid=data.get("client"))
+                else:  # Otherwise, fetch by name
+                    client = AllClientsTable.objects.get(name=data.get("client"))
+                balance_data = TransactionsHistoryTable.objects.filter(client_id_id=client).aggregate(
+                    total_debt=Sum('debt'),
+                    total_credit=Sum('credit')
+                )  # Aggregates the debt and credit for the client
+            except AllClientsTable.DoesNotExist:
+                client = None
+            except TransactionsHistoryTable.DoesNotExist:
+                balance_data = {"total_debt": Decimal("0.0000"), "total_credit": Decimal("0.0000")}
+
+            # Extract individual values from balance_data
+            total_debt = balance_data.get('total_debt', Decimal('0.0000')) or 0
+            total_credit = balance_data.get('total_credit', Decimal('0.0000')) or 0
+            client_balance = total_credit - total_debt  # Calculate the balance   
+
+            last_recipt_response = json.loads(get_sellinvoice_no(request).content)  # Get response data
+            last_recipt_no = last_recipt_response.get("autoid")
+            next_recipt_no = int(last_recipt_no) + 1
+
+            # Create the SellInvoice record
+            sell_invoice = SellinvoiceTable.objects.create(
+                invoice_no=next_recipt_no,
+                client=client.clientid,
+                client_name=client.name if client else None, 
+                client_rate=client.category if client else None,
+                client_category=client.subtype if client else None,
+                client_limit=client.loan_limit if client else 0,
+                client_balance=client_balance,
+                invoice_date=data.get("invoice_date"),
+                invoice_status="لم تحضر",
+                payment_status=data.get("payment_status"),
+                for_who=data.get("for_who"),
+                date_time=datetime.now(),
+                price_status="",
+            )
+
+            # Return a success response
+            return JsonResponse({"success": True, "message": "Sell invoice created successfully!", "invoice_no": sell_invoice.invoice_no, "client_balance": sell_invoice.client_balance})
+
+        except Exception as e:
+            # Handle any errors
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    # Handle invalid request methods
+    return JsonResponse({"success": False, "error": "Invalid HTTP method. Only POST is allowed."}, status=405)
+
+
+def sell_invoice_add_items(request):
+    if request.method == "POST":
+        try:
+            # Parse the JSON data sent by the frontend 
+            data = json.loads(request.body)
+            print(data)
+            invoice = data.get("invoice")
+           
+
+            # Validate data
+            if not invoice:
+                return JsonResponse({"success": False, "message": "Missing required fields"}, status=400)
+
+            # Store data in session
+            request.session['add_items_invoice'] = invoice
+
+            # Redirect to the target page
+            return HttpResponseRedirect('/sell_invoice_add_items')
+
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "message": "Invalid JSON format"}, status=400)
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+    invoice = request.session.get('add_items_invoice')
+    context = {
+        "invoice":invoice,
+    }
+    return render(request,'sell_invoice_add_items.html',context)
+
+def get_sellinvoice_no(request):
+    try:
+        # Get the last autoid by ordering the table by autoid in descending order
+        last_invoice = SellinvoiceTable.objects.order_by('-invoice_no').first()
+        if last_invoice:
+            response_data = {'autoid': last_invoice.invoice_no}
+        else:
+            # Handle the case where the table is empty
+            response_data = {'autoid': 0, 'message': 'No invoices found'}
+    except Exception as e:
+        # Handle unexpected errors
+        response_data = {'error': str(e)}
+    
+    return JsonResponse(response_data)
+
+@csrf_exempt
+def Sell_invoice_create_item(request):
+    if request.method == "POST":
+        try:
+            # Parse the JSON data
+            data = json.loads(request.body)
+            print(data)
+
+            # Validate required fields
+            required_fields = ["pno", "fileid", "invoice_id", "itemvalue", "sellprice"]
+            missing_fields = [field for field in required_fields if field not in data or not data[field]]
+            if missing_fields:
+                return JsonResponse(
+                    {"error": f"Missing required fields: {', '.join(missing_fields)}"},
+                    status=400
+                )
+
+            # Get the related invoice
+            try:
+                invoice = SellinvoiceTable.objects.get(invoice_no=data.get("invoice_id"))
+                invoice.amount += (
+                    Decimal(data.get("sellprice") or 0) * Decimal(data.get("itemvalue") or 0)
+                )
+                invoice.save()
+            except SellinvoiceTable.DoesNotExist:
+                return JsonResponse({"error": "Invoice not found"}, status=404)
+
+            # Get the related product
+            try:
+                product = Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
+            except Mainitem.DoesNotExist:
+                return JsonResponse({"error": "Product not found"}, status=404)
+
+            # Check if sufficient quantity exists
+            item_value = int(data.get("itemvalue") or 0)
+            if product.itemvalue < item_value:
+                return JsonResponse({"error": "Insufficient product quantity"}, status=400)
+
+            # Create a new SellInvoiceItemsTable instance
+            sell_price = Decimal(data.get("sellprice") or 0)
+            item = SellInvoiceItemsTable.objects.create(
+                invoice_instance=invoice,
+                invoice_no=data.get("invoice_id"),
+                item_no=product.itemno,
+                pno=data.get("pno"),
+                main_cat=product.itemmain,
+                sub_cat=product.itemsubmain,
+                name=product.itemname,
+                company=product.companyproduct,
+                company_no=product.replaceno,
+                quantity=item_value,
+                date=datetime.now(),
+                place=product.itemplace,
+                dinar_unit_price=sell_price,
+                dinar_total_price=sell_price * item_value,
+                prev_quantity=product.itemvalue,
+                current_quantity=product.itemvalue - item_value,
+            )
+
+            # Update the product quantity
+            product.itemvalue -= item_value
+            product.save()
+
+            # Record the movement
+            Clientstable.objects.create(
+                itemno=product.itemno,
+                itemname=product.itemname,
+                maintype=product.itemmain,
+                currentbalance=product.itemvalue,
+                date=datetime.now(),
+                clientname="فاتورة بيع",
+                billno=data.get("invoice_id"),
+                description="فاتورة بيع",
+                clientbalance=item_value,
+                pno_instance=product,
+                pno=product.pno,
+            )
+            #test later
+            client_object = AllClientsTable.objects.get(clientid=invoice.client)
+            StorageTransactionsTable.objects.create(
+                reciept_no=f"ف.ب : {data.get('invoice_id')}",
+                transaction_date=datetime.now(),
+                amount=sell_price * item_value,
+                issued_for="فاتورة بيع",
+                note=f" شراء بضائع - ر.خ : {data.get('pno')}",
+                account_type="عميل",
+                transaction=f" شراء بضائع - ر.خ : {data.get('pno')}",
+                place="مارين",
+                section="مبيعات",
+                subsection="مبيعات",
+                person=client_object.name or "",
+                payment= "نقدا" if invoice.payment_status == "نقدي" else "اجل",
+                daily_status =False,
+            )
+
+            last_balance = (
+                TransactionsHistoryTable.objects.filter(client_id_id=invoice.client)
+                .order_by("-registration_date")
+                .first()
+            )
+            last_balance_amount = last_balance.current_balance if last_balance else 0
+            updated_balance =  round(last_balance_amount - (sell_price * item_value), 2)
+
+            account_statement = TransactionsHistoryTable.objects.create(
+                credit=0.0,
+                debt=float(sell_price * item_value),
+                transaction=f" شراء بضائع - ر.خ : {data.get('pno')}",
+                details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
+                registration_date=datetime.now(),
+                current_balance=updated_balance,  # Updated balance
+                client_id_id=invoice.client,  # Client ID
+            )
+
+            if invoice.payment_status == "نقدي":
+                TransactionsHistoryTable.objects.create(
+                credit=float(sell_price * item_value),
+                debt=0.0,
+                transaction=f"دفع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
+                details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
+                registration_date=datetime.now(),
+                current_balance=round(last_balance_amount, 2),  # Updated balance
+                client_id_id=invoice.client,  # Client ID
+                )
+
+            # Return success response
+            return JsonResponse(
+                {"message": "Item created successfully", "item_id": item.autoid, "confirm_status": "confirmed"},
+                status=201,
+            )
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+    else:
+        return JsonResponse({"error": "Invalid HTTP method. Use POST."}, status=405)
+    
+
+@csrf_exempt
+def fetch_sell_invoice_items(request):
+    if request.method == "GET":
+        invoice_no = request.GET.get("id")
+
+        if not invoice_no:
+            return JsonResponse({"error": "Invoice number is required."}, status=400)
+
+
+        # Fetch all data from the model
+        items = list(
+            SellInvoiceItemsTable.objects.filter(invoice_no= invoice_no).values()  
+        )
+        if not items:
+            return JsonResponse([], safe=False)
+
+        return JsonResponse(items, safe=False)
+    else:
+        return JsonResponse({"error": "Invalid HTTP method."}, status=405)    
+
+
+from django.utils.timezone import now
+def fetch_sellinvoices(request):
+    try:
+        today = now().date()
+        # Fetch all sell invoice records
+        records = SellinvoiceTable.objects.filter(invoice_date__date=today).values()
+
+        # Aggregate total, cash, and loan amounts in a single query for efficiency
+        aggregates = SellinvoiceTable.objects.aggregate(
+            total_amount=Sum('amount'),
+            cash_amount=Sum('amount', filter=Q(payment_status="نقدي")),
+            loan_amount=Sum('amount', filter=Q(payment_status="اجل")),
+            total_discount=Sum('discount'),
+            total_returned=Sum('returned')
+        )
+
+        total_amount = aggregates["total_amount"] or 0
+        cash_amount = aggregates["cash_amount"] or 0
+        loan_amount = aggregates["loan_amount"] or 0
+        total_discount = aggregates["total_discount"] or 0
+        total_returned = aggregates["total_returned"] or 0
+
+        # Get pagination parameters with defaults
+        page_number = request.GET.get("page", 1)
+        page_size = request.GET.get("size", 100)
+
+        try:
+            page_number = int(page_number)
+            page_size = int(page_size)
+        except ValueError:
+            return JsonResponse({"error": "Invalid page or size parameter"}, status=400)
+
+        # Paginate the records
+        paginator = Paginator(records, page_size)
+        
+        try:
+            page_obj = paginator.page(page_number)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+
+        # Prepare and return the response
+        return JsonResponse({
+            "data": list(page_obj),  # Convert the current page items to a list
+            "last_page": paginator.num_pages,  # Total number of pages
+            "total_rows": paginator.count,  # Total number of rows
+            "page_size": page_size,
+            "page_no": page_number,
+            "total_amount": format_number(total_amount),
+            "cash_amount": format_number(cash_amount),
+            "loan_amount": format_number(loan_amount),
+            "total_discount": format_number(total_discount),
+            "total_returned": format_number(total_returned),
+        }, safe=False)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+from django.core.serializers import serialize
+
+@csrf_exempt
+def filter_sellinvoices(request):
+    if request.method == "POST":
+        try:
+            # Get the filters from the request body
+            filters = json.loads(request.body.decode('utf-8'))
+            cache_key = f"sell_invoice_filter_{str(filters)}"
+            cached_data = cache.get(cache_key)
+
+            if cached_data:
+                cached_data["cached_flag"] = True
+                return JsonResponse(cached_data, safe=False)
+
+            # Initialize the base Q object for filtering
+            filters_q = Q()
+
+            # Apply filters based on request data
+            if filters.get('client'):
+                filters_q &= Q(client_name__icontains=filters['client'])
+            if filters.get('client_rate'):
+                filters_q &= Q(client_rate__icontains=filters['client_rate'])
+            if filters.get('invoice_no'):
+                filters_q &= Q(invoice_no__icontains=filters['invoice_no'])
+            if filters.get('for_who'):
+                filters_q &= Q(for_who__icontains=filters['for_who'])
+            if filters.get('payment_status'):
+                filters_q &= Q(payment_status__icontains=filters['payment_status'])
+            if filters.get('price_status'):
+                filters_q &= Q(price_status__icontains=filters['price_status'])
+            if filters.get('invoice_status'):
+                filters_q &= Q(invoice_status__icontains=filters['invoice_status'])    
+    
+
+            # Date range filter on `invoice_date`
+            fromdate = filters.get('fromdate', '').strip()
+            todate = filters.get('todate', '').strip()
+
+            if fromdate and todate:
+                try:
+                    from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                    to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                    filters_q &= Q(invoice_date__range=[from_date_obj, to_date_obj])
+                except ValueError:
+                    return JsonResponse({'error': 'Invalid date format'}, status=400)
+
+            # Filter queryset
+            invoices_qs = SellinvoiceTable.objects.filter(filters_q).values().order_by("-invoice_date")
+
+            # Aggregate total amounts
+            totals = invoices_qs.aggregate(
+                total_amount=Sum('amount', default=0),
+                cash_amount=Sum('amount', filter=Q(payment_status="نقدي"), default=0),
+                loan_amount=Sum('amount', filter=Q(payment_status="اجل"), default=0),
+                total_discount=Sum('discount', default=0),
+                total_returned=Sum('returned', default=0)
+            )
+
+      
+            # Pagination
+            page_number = int(filters.get('page') or 1)
+            page_size = int(filters.get('size') or 20)
+            paginator = Paginator(invoices_qs, page_size)
+            page_obj = paginator.get_page(page_number)
+
+
+            # Prepare the response
+            response = {
+                "data": list(page_obj),  # Serialized invoices
+                "last_page": paginator.num_pages,  # Total number of pages
+                "total_rows": paginator.count,  # Total number of rows
+                "page_size": page_size,
+                "page_no": page_number,
+                "cached_flag": False,
+                "total_amount": format_number(Decimal(totals["total_amount"])),
+                "cash_amount": format_number(Decimal(totals["cash_amount"])),
+                "loan_amount": format_number(Decimal(totals["loan_amount"])),
+                "total_discount": format_number(Decimal(totals["total_discount"])),
+                "total_returned": format_number(Decimal(totals["total_returned"])),
+            }
+
+            # Cache response for 5 minutes
+            cache.set(cache_key, response, timeout=300)
+
+            return JsonResponse(response, safe=False)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+def sell_invoice_prepare_report(request):
+    client = AllClientsTable.objects.all().values("clientid","name")
+    context = {
+        "clients":client,
+    }
+    return render(request,'sell_invoice_prepare_report.html',context)
+
+def sell_invoice_storage_management(request):
+    id = request.GET.get("inv")
+    invoice = SellinvoiceTable.objects.get(invoice_no=id)
+    employees =  EmployeesTable.objects.filter(active=True).values('employee_id','name')
+    context = {
+        "employees": employees,
+        "invoice_no": invoice.invoice_no,
+        "invoice_client": invoice.client_name,
+        "invoice_status": invoice.invoice_status,
+        "preparer_name": invoice.preparer_name or "",
+        "preparer_note": invoice.preparer_note  or "",
+        "quantity": invoice.quantity  or 0,
+        "reviewer_name": invoice.reviewer_name  or "",
+        "place": invoice.place  or "",
+        "biller_name": invoice.biller_name  or "",
+        "delivered_date": invoice.delivered_date.strftime("%Y-%m-%d") if invoice.delivered_date else "",
+        "delivered_quantity": invoice.delivered_quantity  or 0,
+        "deliverer_name": invoice.deliverer_name  or "",
+        "office": invoice.office  or "",
+        "bill_no": invoice.office_no  or "",
+        "sent_by": invoice.sent_by  or "",
+        "final_note": invoice.notes  or "",
+    }
+    return render(request,'sell_invoice_storage_management.html',context)    
+
+@csrf_exempt
+def prepare_sell_invoice(request):
+    if request.method == "POST":
+        try:
+            # Get the data from the request body
+            data = json.loads(request.body.decode('utf-8'))
+            name = data.get('name')  
+            note = data.get('note')
+            invoice_id = data.get('invoice_id')
+
+            # Get the invoice object
+            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+
+            # Update invoice fields
+            invoice.preparer_name = name
+            invoice.preparer_note = note
+            invoice.invoice_status = "جاري التحضير"
+
+            # Save the updated invoice
+            invoice.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Invoice updated successfully'})
+        except invoice.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Invoice not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)    
+@csrf_exempt
+def validate_sell_invoice(request):
+    if request.method == "POST":
+        try:
+            # Get the data from the request body
+            data = json.loads(request.body.decode('utf-8'))
+            reviewer = data.get('reviewer')  
+            place = data.get('place')
+            invoice_no = data.get('invoice_id')
+            size = data.get('size')
+            final_note = data.get('final_note')
+
+            # Get the invoice object
+            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)
+
+           # Update invoice fields
+            invoice.reviewer_name = reviewer
+            invoice.place = place
+            invoice.quantity = size
+            invoice.notes = final_note
+            invoice.invoice_status = "روجعت"
+
+            # Save the updated invoice
+            invoice.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Invoice updated successfully'})
+        except invoice.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Invoice not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)    
+            
+@csrf_exempt
+def deliver_sell_invoice(request):
+    if request.method == "POST":
+        try:
+            # Get the data from the request body
+            data = json.loads(request.body.decode('utf-8'))
+            biller = data.get('biller')  
+            sent = data.get('sent')
+            office = data.get('office')
+            size = data.get('size')
+            deliverer = data.get('deliverer')
+            deliverer_date = data.get('deliverer_date',None)
+            invoice_id = data.get('invoice_id')
+            bill = data.get('bill')
+            status = data.get('status')
+            final_note = data.get('final_note')
+
+            # Get the invoice object
+            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+
+           # Update invoice fields
+            invoice.biller_name = biller
+            invoice.notes = final_note
+            invoice.sent_by = sent
+            invoice.office = office
+            invoice.delivered_quantity = size
+            invoice.deliverer_name = deliverer
+            invoice.delivered_date = deliverer_date or None
+            invoice.office_no = bill
+            invoice.invoice_status = status
+
+            # Save the updated invoice
+            invoice.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Invoice updated successfully'})
+        except invoice.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Invoice not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)    
+
+@csrf_exempt            
+def cancel_sell_invoice(request):
+    if request.method == "POST":
+        try:
+            # Get the data from the request body
+            data = json.loads(request.body.decode('utf-8'))
+            invoice_no = data.get('invoice_id')
+
+            # Get the invoice object
+            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)
+
+           # Update invoice fields
+            invoice.reviewer_name = None
+            invoice.place = None
+            invoice.quantity = 0
+            invoice.preparer_name = None
+            invoice.preparer_note = None
+            invoice.biller_name = None
+            invoice.sent_by = None
+            invoice.office = None
+            invoice.delivered_quantity = 0
+            invoice.deliverer_name = None
+            invoice.delivered_date = None
+            invoice.office_no = None
+            invoice.notes = None
+            invoice.invoice_status = "لم تحضر"
+
+            # Save the updated invoice
+            invoice.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Invoice cancelled successfully'})
+        except invoice.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Invoice not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)    

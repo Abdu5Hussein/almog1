@@ -21,40 +21,51 @@
         <div class="col-md-4">
           <div class="card shadow">
             <div class="card-body">
-              <img
-                src="{% static 'images/almog-palestine-logo.jpg' %}"
-                alt="Logo"
-                class="logo mb-4"
-              />
+              <div id="img-container" class="img-container">
+                <img
+                  src="{% static 'images/almog-palestine-logo.jpg' %}"
+                  alt="Logo"
+                  class="logo mb-4"
+                  style="position: relative; top: -35px;"
+                />
+              </div>  
               <h1 class="text-center">Login</h1>
 
               {% if messages %} {% for message in messages %}
               <div class="alert alert-danger">{{ message }}</div>
               {% endfor %} {% endif %}
 
-              <form method="post">
+              <form method="post" id="login-form">
                 {% csrf_token %}
-                <div class="mb-3">
+                <div class="mb-2">
                   <label for="username" class="form-label">Username</label>
                   <input
                     type="text"
                     class="form-control"
                     id="username"
                     name="username"
-                    placeholder="Enter your username"
+                    placeholder="Enter your username: user1"
                     required
                   />
                 </div>
-                <div class="mb-3">
+                <div class="mb-2">
                   <label for="password" class="form-label">Password</label>
                   <input
                     type="password"
                     class="form-control"
                     id="password"
                     name="password"
-                    placeholder="Enter your password"
+                    placeholder="Enter your password: password1"
                     required
                   />
+                </div>
+                <div class="mb-2">
+                  <label for="username" class="form-label">Role</label>
+                  <select name="role" id="role" class="form-control">
+                    <option value="client">عميل</option>
+                    <option value="source">مصدر</option>
+                    <option value="employee">موظف</option>
+                  </select>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
                   Login
@@ -69,5 +80,62 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.min.js' %}"></script>
-  </body>
+  
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("login-form").addEventListener("submit", async function (event) {
+          event.preventDefault(); // Prevent default form submission
+
+          const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
+          // Get form values
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+          const role = document.getElementById("role").value;
+
+          // Prepare the request payload
+          const payload = {
+            username: username,
+            password: password,
+            role: role
+          };
+          console.log(payload);
+          try {
+            // Send POST request
+            const response = await fetch("http://45.13.59.226/process-login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-CSRFToken": csrfToken,
+              },
+              body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+              // Redirect to dashboard on success
+              window.location.href = "/home"; // Change to your actual dashboard route
+            } else {
+              // Show error message
+              showError(result.message || "Login failed. Please try again.");
+            }
+          } catch (error) {
+            showError("An error occurred. Please check your internet connection.");
+          }
+        });
+
+        function showError(message) {
+          const alertBox = document.createElement("div");
+          alertBox.className = "alert alert-danger";
+          alertBox.textContent = message;
+          const formContainer = document.querySelector(".card-body");
+          formContainer.insertBefore(alertBox, formContainer.firstChild);
+
+          // Remove the error message after 5 seconds
+          setTimeout(() => alertBox.remove(), 5000);
+        }
+      });
+  </script>
+</body>
 </html>

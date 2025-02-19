@@ -31,19 +31,13 @@
       <table class="table table-bordered table-hover">
         <thead class="table-dark">
           <tr>
-            <th>#</th>
-            <th>اسم الشركة</th>
-            <th>رقم الشركة</th>
             <th>رقم OEM</th>
           </tr>
         </thead>
         <tbody>
           {% for x in oem %}
           <tr>
-            <td>{{ x.fileid }}</td>
-            <td>{{ x.cname }}</td>
-            <td>{{ x.cno }}</td>
-            <td>{{ x.oemno }}</td>
+            <td>{{ x }}</td>
           </tr>
           {% empty %}
           <tr>
@@ -58,7 +52,7 @@
         <h4>ادارة الارقام</h4>
         <form method="post">
           {% csrf_token %}
-          <input type="hidden" name="id" id="FileId" />
+          <input type="hidden" name="id" id="FileId"  value="{{ fileid }}" />
           <div class="mb-3">
             <label for="inputName" class="form-label">اسم الشركة</label>
             <input
@@ -66,6 +60,7 @@
               class="form-control"
               name="company-name"
               id="company-name"
+              value="{{ company_name }}"
               readonly
               required
             />
@@ -78,6 +73,7 @@
               class="form-control"
               name="company-no"
               id="company-no"
+              value="{{ company_no }}"
               readonly
               required
             />
@@ -103,14 +99,14 @@
             >
               اضافة
             </button>
-            <button
+            <!-- <button
               type="submit"
               name="action"
               value="edit"
               class="btn btn-primary me-2"
             >
               تعديل
-            </button>
+            </button> -->
             <button
               type="submit"
               name="action"
@@ -127,27 +123,11 @@
     <!-- Bootstrap JS (optional) -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        // Get the current URL's query string
-        const urlParams = new URLSearchParams(window.location.search);
-
-        // Retrieve specific parameters
-        const companyName = urlParams.get("company_name");
-        const companyNo = urlParams.get("company_no");
-
-        // Check and populate input fields if values are available
-        if (companyName) {
-          document.getElementById("company-name").value = companyName;
-        }
-        if (companyNo) {
-          document.getElementById("company-no").value = companyNo;
-        }
-      });
+      
       // Handle row click to pre-fill the form for editing
       document.querySelectorAll("table tbody tr").forEach((row) => {
         row.addEventListener("click", () => {
-          document.getElementById("FileId").value = row.cells[0].innerText;
-          document.getElementById("oem-no").value = row.cells[3].innerText;
+          document.getElementById("oem-no").value = row.cells[0].innerText;
         });
       });
 

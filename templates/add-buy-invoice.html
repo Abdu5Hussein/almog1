@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>بيانات العملاء</title>
+    <title>ادخال فاتورة شراء</title>
     <!-- Bootstrap CSS -->
     <link
       href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
@@ -641,6 +641,14 @@
               >
                 اعداد الفاتورة
               </button>
+              <button
+                class="btn btn-primary w-100 mt-1"
+                id="addProductsButton"
+                type="button"
+                style="display: none;"
+              >
+                اضافة اصناف
+              </button>
             </div>
           </div>
         </form>
@@ -933,7 +941,8 @@
           { title: "مكان التخزين", field: "place", width: 90 },
           { title: "اجمالي س التوريد", field: "org_total_price", width: 90 },
 
-          { title: "اجمالي س بالدينار", field: "dinar_total_price", width: 90 },
+          { title: "اجمالي ش بالدينار", field: "dinar_total_price", width: 90 },
+          { title: "اجمالي ت بالدينار", field: "cost_total_price", width: 90 },
 
           {
             title: "رقم الفاتورة",
@@ -1217,6 +1226,64 @@
             console.log("Form is invalid");
           }
         });
+
+        document.getElementById("addProductsButton").addEventListener("click", function(){
+          tempcheck = document.getElementById("temp-flag");
+          const source = getSelectedText("source");
+          const invoice = getInputValue("invoice-autoid");
+          const date = getInputValue("invoice-date");
+          const currency = getSelectedText("currency");
+          const rate = getInputValue("currency-rate");
+          const temp = tempcheck.checked ? 1 : 0;
+
+
+            // Form is valid, proceed with submission
+            event.preventDefault();
+            const data = {
+              source: source,
+              invoice: invoice,
+              date: date,
+              currency: currency,
+              rate: rate,
+              temp: temp,
+            };
+
+            // Make a POST request to the server
+            fetch("/process-add-invoice", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),
+              },
+              body: JSON.stringify(data),
+            })
+              .then((response) => {
+                // Check if the response is a redirect (3xx status code)
+                if (response.redirected) {
+                  // Open the new URL in a new window/tab
+                  openWindow(response.url);
+                  return;
+                }
+
+                // If the response is JSON, handle it accordingly
+                return response.json();
+              })
+              .then((data) => {
+                if (data) {
+                  console.log("Response from server:", data);
+                  if (data.success) {
+                    console.log("Invoice sent successfully!");
+                  } else {
+                    console.log("Error updating invoice:", data.message);
+                  }
+                }
+              })
+              .catch((error) => {
+                console.error("Error during fetch:", error);
+                alert("An error occurred: " + error.message);
+              });
+          
+        });
       // Helper function to get the value of an input field by ID
       function getInputValue(id) {
         const element = document.getElementById(id);
@@ -1267,12 +1334,18 @@
             console.log("Invoice items:", items);
             table.replaceData(items); // Add the row data to second_table
             let totalPrice = calculateColumnSum("dinar_total_price"); // Get the column sum
+            let totalcost = isNaN(calculateColumnSum("cost_total_price")) ? 0 : calculateColumnSum("cost_total_price");
+            let netcost = totalcost==0 ? 0 : totalcost - totalPrice;
             let roundedPrice = parseFloat(totalPrice).toFixed(2);
             document.getElementById("total").value = roundedPrice + " دل ";
-            document.getElementById("expenses").value = roundedPrice;
-
+            document.getElementById("expenses").value =  parseFloat(netcost).toFixed(2) + " دل";
             document.getElementById("org-price").value =
               calculateColumnSum("org_total_price").toFixed(2);
+             let netTotal = totalPrice + netcost; 
+            document.getElementById("net-total").value = parseFloat(netTotal).toFixed(2) + " دل "; 
+            const paidValue = parseFloat(document.getElementById("paid").value);
+            let remainingValue = isNaN(paidValue)? netTotal: netTotal - paidValue;
+            document.getElementById("remaining").value = parseFloat(remainingValue).toFixed(2) + " دل ";
             // Handle the fetched items, e.g., display them in the UI
           } else {
             console.log("No items fetched or an error occurred.");
@@ -1334,6 +1407,7 @@
               document.getElementById("pay-btn").disabled = false;
               document.getElementById("save-btn").disabled = false;
               document.getElementById("excell-btn").disabled = false;
+              document.getElementById("addProductsButton").style.display = "block";
               return true; // Return true if the response is successful
             } else {
               alert("Error creating record.");
@@ -1442,6 +1516,62 @@
               alert("An error occurred: " + error.message);
             });
         });
+
+        document
+          .getElementById("export-btn-excel")
+          .addEventListener("click", exportToExcel);
+        document
+          .getElementById("export-btn-pdf")
+          .addEventListener("click", exportToPDF);
+        function exportToExcel() {
+          table.download("xlsx", "lost&damaged_data.xlsx"); // 'xlsx' is the file format
+        }
+
+        function exportToPDF() {
+          // Get visible column field names
+          let visibleColumns = table
+            .getColumns() // Retrieve column components
+            .filter((col) => col.isVisible()) // Check if the column is visible
+            .map((col) => col.getField()); // Get the field names of visible columns
+
+          // Filter table data based on visible columns
+          let tableData = table.getData().map((row) => {
+            // Create a new object with only visible fields
+            return visibleColumns.reduce((filteredRow, field) => {
+              filteredRow[field] = row[field]; // Copy value of visible field
+              return filteredRow;
+            }, {});
+          });
+
+          // Now `filteredData` contains only the visible columns from tableData
+          console.log(tableData);
+
+          // Sending the data to Django backend using fetch
+          fetch("/generate-pdf/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              data: tableData,
+            }), // Send table data
+          })
+            .then((response) => response.blob())
+            .then((blob) => {
+              // Check if blob is a valid PDF
+              const file = new Blob([blob], { type: "application/pdf" });
+              const fileURL = URL.createObjectURL(file);
+
+              // Open the PDF in a new window or download it
+              const link = document.createElement("a");
+              link.href = fileURL;
+              link.download = "lost&damaged_data.pdf";
+              link.click();
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        }
     </script>
   </body>
 </html>
