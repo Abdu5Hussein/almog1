@@ -45,6 +45,10 @@ from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
 from django.utils import timezone
 from .models import SupportMessage
+from .serializers import SupportMessageSerializer
+from rest_framework.response import Response
+from rest_framework import generics
+
 
 
 # Define your custom User model or replace it with appropriate logic
@@ -4003,6 +4007,7 @@ def get_mainItem_last_pno(request):
 
     return JsonResponse(response_data)
 
+# API for support messages (Support team views all messages)
 class SupportMessageListView(generics.ListAPIView):
     queryset = SupportMessage.objects.all().order_by('-timestamp')
     serializer_class = SupportMessageSerializer
