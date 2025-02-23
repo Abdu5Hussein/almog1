@@ -8,6 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import json
 from django.core.exceptions import FieldError
 from . import models  # Adjust this import to match your project structure
+from . import serializers
 
 @api_view(["POST"])
 def sign_in(request):
@@ -103,3 +104,26 @@ def sign_in(request):
 
     except Exception as e:
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(["GET"])
+def get_dropboxes(request):
+    model = models.Modeltable.objects.all()
+    serialized_model = serializers.ModelSerializer(model, many=True)
+
+    engines = models.enginesTable.objects.all()
+    serialized_engines = serializers.EngineSerializer(engines, many=True)
+
+    main = models.Maintypetable.objects.all()
+    serialized_main = serializers.MainTypeSerializer(main, many=True)
+
+    sub = models.Subtypetable.objects.all()
+    serialized_sub = serializers.SubTypeSerializer(sub, many=True)
+
+    return Response({
+        'models':serialized_model.data,
+        'engines': serialized_engines.data,
+        'sub_types': serialized_sub.data,
+        'main_types': serialized_main.data,
+        })

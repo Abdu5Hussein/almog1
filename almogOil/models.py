@@ -32,6 +32,7 @@ class AllClientsTable(models.Model):
     other = models.CharField(max_length=400, db_collation='Arabic_CI_AS', blank=True, null=True)
     last_transaction_details = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
     last_transaction_amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    geo_location = models.CharField(max_length=200, blank=True, null=True)
     # New fields
     username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
     password = models.CharField(max_length=255,null=False)  # This will store the hashed password
@@ -47,7 +48,7 @@ class AllClientsTable(models.Model):
     def check_password(self, raw_password):
         """Checks if the given raw password matches the stored hash."""
         from django.contrib.auth.hashers import check_password
-        return check_password(raw_password, self.password)     
+        return check_password(raw_password, self.password)
 
 
 class AllSourcesTable(models.Model):
@@ -88,7 +89,7 @@ class AllSourcesTable(models.Model):
     def check_password(self, raw_password):
         """Checks if the given raw password matches the stored hash."""
         from django.contrib.auth.hashers import check_password
-        return check_password(raw_password, self.password)     
+        return check_password(raw_password, self.password)
 
 
 class Blancetable(models.Model):
@@ -178,7 +179,7 @@ class SellinvoiceTable(models.Model):
 
     def __str__(self):
         return f"Invoice {self.autoid}"
-    
+
     class Meta:
         managed = True
         db_table = 'SellInvoiceTable'
@@ -196,8 +197,8 @@ class Clientstable(models.Model):
     description = models.CharField(db_column='description', max_length=25, blank=True, null=True)  # Field name made lowercase.
     clientbalance = models.IntegerField(db_column='clientbalance', blank=True, null=True)  # Field name made lowercase.
     pno = models.CharField(db_column='pno', max_length=50, blank=True, null=True)
-    
-    
+
+
     class Meta:
         managed = True
         db_table = 'ClientsTable'
@@ -290,23 +291,23 @@ class Mainitem(models.Model):
         db_table = 'MainItem'
         indexes = [
             models.Index(
-                fields=['itemno'], 
+                fields=['itemno'],
                 name='MainItem_ItemNo_266fc6_idx'
             ),
             models.Index(
-                fields=['itemname'], 
+                fields=['itemname'],
                 name='MainItem_ItemNam_150b8b_idx'
             ),
             models.Index(
-                fields=['itemmain'], 
+                fields=['itemmain'],
                 name='MainItem_ItemMai_d36971_idx'
             ),
             models.Index(
-                fields=['itemsubmain'], 
+                fields=['itemsubmain'],
                 name='MainItem_ItemSub_3ccf4b_idx'
             ),
             models.Index(
-                fields=['companyproduct'], 
+                fields=['companyproduct'],
                 name='MainItem_Company_355d09_idx'
             ),
             # Index with 'itemmain' and additional included columns
@@ -314,21 +315,21 @@ class Mainitem(models.Model):
                 fields=['itemmain'],
                 name='MainItem_partial_with_includes',
                 include=[
-                    'fileid', 'itemno', 'itemsubmain', 'itemname', 
-                    'itemthird', 'itemsize', 'companyproduct', 'itemvalue', 
-                    'itemtemp', 'itemplace', 'buyprice', 'memo', 'replaceno', 
-                    'barcodeno', 'eitemname', 'currtype', 'lessprice', 'pno', 
+                    'fileid', 'itemno', 'itemsubmain', 'itemname',
+                    'itemthird', 'itemsize', 'companyproduct', 'itemvalue',
+                    'itemtemp', 'itemplace', 'buyprice', 'memo', 'replaceno',
+                    'barcodeno', 'eitemname', 'currtype', 'lessprice', 'pno',
                     'currvalue', 'itemvalueb', 'costprice', 'resvalue', 'orderprice',
-                    'orderlastdate', 'ordersource', 'orderbillno', 
+                    'orderlastdate', 'ordersource', 'orderbillno',
                     'buylastdate', 'buysource', 'buybillno', 'orgprice'
                 ]
-            ), 
+            ),
             models.Index(
-                fields=['replaceno'], 
+                fields=['replaceno'],
                 name='MainItem_replaceno_1_idx'
             ),
             models.Index(
-                fields=['itemmain', 'itemname'], 
+                fields=['itemmain', 'itemname'],
                 name='itemmain_itemname_idx'
             ),
             models.Index(fields=['itemmain', 'itemname', 'companyproduct'], name='idx_main_name_company'),
@@ -620,7 +621,7 @@ class Maintypetable(models.Model):
         managed = False
         db_table = 'mainTypeTable'
     def __str__(self):
-        return str(self.fileid) + " | " + (self.typename if self.typename else "Unnamed Subtype")    
+        return str(self.fileid) + " | " + (self.typename if self.typename else "Unnamed Subtype")
 
 
 class Manufaccountrytable(models.Model):
@@ -650,7 +651,7 @@ class Modeltable(models.Model):
         db_table = 'modelTable'
     def __str__(self):
         return str(self.fileid) + " | " + str(self.subtype_fk.subtypename) + " - " + (self.model_name if self.model_name else "Unnamed model")
-    
+
 
 class Productnametable(models.Model):
     fileid = models.BigAutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
@@ -717,8 +718,8 @@ class SellInvoiceItemsTable(models.Model):
     quantity_unit = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     date = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
     place = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
-    dinar_unit_price = models.DecimalField(max_digits=19, decimal_places=4, default=0) 
-    dinar_total_price = models.DecimalField(max_digits=19, decimal_places=4, default=0) 
+    dinar_unit_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    dinar_total_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     note = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
     e_name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     prev_quantity = models.IntegerField(blank=True, null=True)
@@ -727,9 +728,9 @@ class SellInvoiceItemsTable(models.Model):
     invoice_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     main_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
     sub_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
-    paid = models.DecimalField(max_digits=19, decimal_places=4, default=0) 
-    remaining = models.DecimalField(max_digits=19, decimal_places=4, default=0)  
-    returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)  
+    paid = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    remaining = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
 
     class Meta:
         managed = True
@@ -767,4 +768,4 @@ class EmployeesTable(models.Model):
     def check_password(self, raw_password):
         """Checks if the given raw password matches the stored hash."""
         from django.contrib.auth.hashers import check_password
-        return check_password(raw_password, self.password)    
+        return check_password(raw_password, self.password)

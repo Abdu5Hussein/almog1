@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from . import models 
+from . import models
 
 class MainitemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,4 +25,25 @@ class UsersSerializer(serializers.ModelSerializer):
 class SourcesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AllSourcesTable
-        fields = "__all__"        
+        fields = "__all__"
+
+class SubTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Subtypetable
+        fields = "__all__"
+
+
+class MainTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Maintypetable
+        fields = "__all__"
+
+class ModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Modeltable
+        fields = "__all__"
+
+class EngineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.enginesTable
+        fields = "__all__"

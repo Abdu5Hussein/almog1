@@ -18,6 +18,7 @@ new_env/
 media/
 
 logs/
+almog1.log
 
 # Ignore local settings
 local_settings.py

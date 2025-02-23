@@ -31,7 +31,7 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
       rel="stylesheet"
     />
-    
+
 
     <style>
       .choices {
@@ -44,9 +44,9 @@
         display: inline-block;
         margin: 0 -4px 0 8px;
         padding: 0px !important;
-        margin:0px !important; 
-        width: 14px !important;
-        height: 14px !important;
+        margin:0px !important;
+        width: 12px !important;
+        height: 12px !important;
         opacity: .75;
         border-radius: 30px !important;
         border: none;
@@ -507,7 +507,7 @@
       }
 
       .page-link-active {
-          background-color: #0d6efd;         
+          background-color: #0d6efd;
           color:rgb(255, 255, 255);
       }
       .item-disabled {
@@ -520,7 +520,7 @@
 
   <body>
     <div class="container">
-      
+
       <!-- Dropdown menu for column visibility -->
       <div id="column-menu" class="dropdown" style="display: none">
         {% for column in columns %}
@@ -529,7 +529,7 @@
           <input
             type="checkbox"
             value="{{ column }}"
-            
+
             {% if column_visibility|get:column %}
             checked
             {% endif %}
@@ -554,7 +554,7 @@
         Show/Hide Columns
       </button>
       <nav aria-label="Page navigation example">
-        <ul class="pagination h-1"> 
+        <ul class="pagination h-1">
         <div class="border d-flex align-items-center justify-content-between gap-2 px-1"><input type="checkbox" name="fullTable" id="fullTable"><p>الكل</p></div>
         <p id="page-total" class="page-link item-disabled">total of x pages</p>
           <li class="page-first"><a class="page-link" href="#">First</a></li>
@@ -722,11 +722,12 @@
                   id="item-sub-main"
                   class="form-select-with-icon"
                   placeholder="Enter value"
+                  multiple
                   required
                 >
-                  <option value="" selected>اختر بيان فرعي</option>
+                  <!-- <option value="" selected>اختر بيان فرعي</option> -->
                   {% for x in subType %}
-                  <option value="{{ x.fileid }}" data-main-type="{{ x.maintype_fk.fileid }}">{{ x.subtypename }}</option>
+                  <option value="{{ x.subtypename }}" data-main-type="{{ x.maintype_fk.typename }}">{{ x.subtypename }}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -839,13 +840,14 @@
                   id="model"
                   class="form-select-with-icon"
                   placeholder="اختر موديل"
+                  multiple
                   required
                 >
-                  <option value="" selected>اختر موديل</option>
+                  <!-- <option value="" selected>اختر موديل</option> -->
                   {% for x in models %}
                   <option
-                    value="{{ x.fileid }}"
-                    data-sub-type="{{ x.subtype_fk.fileid }}"
+                    value="{{ x.model_name }}"
+                    data-sub-type="{{ x.subtype_fk.subtypename }}"
                   >
                     {{ x.model_name }}
                   </option>

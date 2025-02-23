@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
     rowHeight: 20,
     movableColumns: true,
     columnHeaderVertAlign: "bottom",
-    columnMenu: true, // Enable column menu    
+    columnMenu: true, // Enable column menu
     data: [], // Placeholder, will be loaded dynamically
     columns: [
       // Column definitions
@@ -291,11 +291,11 @@ document.addEventListener("DOMContentLoaded", function () {
       itemmain: true, // Add more columns as needed
       itemvalue: true,
     };
-  
+
     // Loop through all checkboxes in the column menu
     document.querySelectorAll('#column-menu input[type="checkbox"]').forEach((checkbox) => {
       const columnField = checkbox.value; // Get the field from the checkbox value
-  
+
       // Check if the columnField exists in visibleColumns and its value is true
       if (visibleColumns[columnField]) {
         table.showColumn(columnField); // Show the column
@@ -395,7 +395,7 @@ document.addEventListener("DOMContentLoaded", function () {
       csrfmiddlewaretoken: getCSRFToken(),
       originalno: document.getElementById("original-no")?.value || "",
       itemmain: getChoicesText(main_choices),
-      itemsub: getSelectedText(filterElements.itemsubmain),
+      itemsub: getChoicesText(sub_choices),
       pnamearabic: document.getElementById("pname-arabic")?.value || "",
       pnameenglish: document.getElementById("pname-english")?.value || "",
       company: getSelectedText(filterElements.companyproduct),
@@ -405,7 +405,7 @@ document.addEventListener("DOMContentLoaded", function () {
       description: document.getElementById("description")?.value || "",
       country: getSelectedText(filterElements.country),
       pieces4box: document.getElementById("pieces-per-box")?.value || 0,
-      model: getSelectedText(filterElements.model),
+      model: getChoicesText(model_choices),
       storage: document.getElementById("storage-balance")?.value || 0,
       backup: document.getElementById("backup-balance")?.value || 0,
       temp: document.getElementById("temp-balance")?.value || 0,
@@ -469,8 +469,8 @@ document.addEventListener("DOMContentLoaded", function () {
         csrfmiddlewaretoken: getCSRFToken(), // CSRF token for security
         fileid: window.currentRow.getData().fileid, // Use fileid or primary key to identify the record
         originalno: document.getElementById("original-no").value || "",
-        itemmain: selectedItemMainText, // Use the inner text (item-main)
-        itemsub: selectedItemSubMainText, // Use the inner text (item-sub-main)
+        itemmain: getChoicesText(main_choices), // Use the inner text (item-main)
+        itemsub: getChoicesText(sub_choices), // Use the inner text (item-sub-main)
         pnamearabic: document.getElementById("pname-arabic").value || "",
         pnameenglish: document.getElementById("pname-english").value || "",
         company: selectedCompanyText, // Use the inner text (company)
@@ -480,7 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
         description: document.getElementById("description").value || "",
         country: selectedCountryName, // Use the inner text (country name)
         pieces4box: document.getElementById("pieces-per-box").value || 0,
-        model: selectedModelText || "",
+        model: getChoicesText(model_choices),
         storage: document.getElementById("storage-balance").value || 0,
         backup: document.getElementById("backup-balance").value || 0,
         temp: document.getElementById("temp-balance").value || 0,
@@ -576,49 +576,83 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   //show model select items for selected maintype
   // Get the select elements
-  const subTypeSelect = document.getElementById("item-sub-main");
-  const mainTypeSelect = document.getElementById("item-main");
-  const modelSelect = document.getElementById("model");
+  // const subTypeSelect = document.getElementById("item-sub-main");
+  // const mainTypeSelect = document.getElementById("item-main");
+  // const modelSelect = document.getElementById("model");
 
-  // Event listener for mainType select change
-  mainTypeSelect.addEventListener("change", function () {
-    const selectedMainType = mainTypeSelect.value;
+  // const getChoicesText = (element) =>
+  //   element ? element.getValue(true).join("; ") : "";
 
-    // Loop through all model options and hide those that don't match the selected maintype
-    Array.from(subTypeSelect.options).forEach(option => {
-      const Sub_MainType = option.getAttribute("data-main-type");
+  // // Event listener for mainType select change
+  // mainTypeSelect.addEventListener("change", function () {
+  //   const selectedMainType = getChoicesText(main_choices);
 
-      if (selectedMainType === "" || Sub_MainType === selectedMainType) {
-        option.style.display = "block";  // Show option if it matches
-      } else {
-        option.style.display = "none";   // Hide option if it doesn't match
-      }
-    });
+  //   // Loop through all model options and hide those that don't match the selected maintype
+  //   Array.from(subTypeSelect.options).forEach(option => {
+  //     const Sub_MainType = option.getAttribute("data-main-type");
 
-    // Optionally, clear the model selection if no matching models
-    if (!Array.from(subTypeSelect.options).some(option => option.style.display === "block")) {
-      subTypeSelect.value = "";
-    }
+  //     if (selectedMainType === "" || Sub_MainType === selectedMainType) {
+  //       option.style.display = "block";  // Show option if it matches
+  //     } else {
+  //       option.style.display = "none";   // Hide option if it doesn't match
+  //     }
+  //   });
+
+  //   // Optionally, clear the model selection if no matching models
+  //   if (!Array.from(subTypeSelect.options).some(option => option.style.display === "block")) {
+  //     subTypeSelect.value = "";
+  //   }
+  // });
+
+  // subTypeSelect.addEventListener("change", function () {
+  //   const selectedSubType = getChoicesText(sub_choices);
+
+  //   // Loop through all model options and hide those that don't match the selected maintype
+  //   Array.from(modelSelect.options).forEach(option => {
+  //     const model_subType = option.getAttribute("data-sub-type");
+
+  //     if (selectedSubType === "" || model_subType === selectedSubType) {
+  //       option.style.display = "block";  // Show option if it matches
+  //     } else {
+  //       option.style.display = "none";   // Hide option if it doesn't match
+  //     }
+  //   });
+
+  //   // Optionally, clear the model selection if no matching models
+  //   if (!Array.from(modelSelect.options).some(option => option.style.display === "block")) {
+  //     modelSelect.value = "";
+  //   }
+  // });
+
+
+
+  // Function to filter choices based on selected value
+  const filterChoices = (selectElement, choicesInstance, attribute, selectedValue) => {
+    const filteredOptions = Array.from(selectElement.options)
+      .filter(option => !selectedValue || option.getAttribute(attribute) === selectedValue)
+      .map(option => ({ value: option.value, label: option.text }));
+
+    choicesInstance.clearChoices();
+    choicesInstance.setChoices(filteredOptions, "value", "label", true);
+  };
+
+  // Event listener for mainType selection
+  document.getElementById("item-main").addEventListener("change", function () {
+    const selectedMainType = main_choices.getValue(true).join("; ");
+
+    // Filter sub-main based on main selection
+    filterChoices(document.getElementById("item-sub-main"), sub_choices, "data-main-type", selectedMainType);
+
+    // Clear model dropdown when main changes
+    model_choices.clearChoices();
   });
 
-  subTypeSelect.addEventListener("change", function () {
-    const selectedSubType = subTypeSelect.value;
+  // Event listener for subType selection
+  document.getElementById("item-sub-main").addEventListener("change", function () {
+    const selectedSubType = sub_choices.getValue(true).join("; ");
 
-    // Loop through all model options and hide those that don't match the selected maintype
-    Array.from(modelSelect.options).forEach(option => {
-      const model_subType = option.getAttribute("data-sub-type");
-
-      if (selectedSubType === "" || model_subType === selectedSubType) {
-        option.style.display = "block";  // Show option if it matches
-      } else {
-        option.style.display = "none";   // Hide option if it doesn't match
-      }
-    });
-
-    // Optionally, clear the model selection if no matching models
-    if (!Array.from(modelSelect.options).some(option => option.style.display === "block")) {
-      modelSelect.value = "";
-    }
+    // Filter models based on sub-main selection
+    filterChoices(document.getElementById("model"), model_choices, "data-sub-type", selectedSubType);
   });
 
   document.getElementById("images-btn").addEventListener("click", function (event) {
@@ -1324,6 +1358,22 @@ editableCells.forEach((cell) => {
 });
 
 const main_choices = new Choices("#item-main", {
+  removeItemButton: true,
+  searchEnabled: true,
+  placeholder: true, // Enable placeholder behavior
+  placeholderValue: "اختر بيان", // Custom placeholder text
+  noResultsText: "لا يوجد نتائج" // Custom message when no results match search
+});
+
+const sub_choices = new Choices("#item-sub-main", {
+  removeItemButton: true,
+  searchEnabled: true,
+  placeholder: true, // Enable placeholder behavior
+  placeholderValue: "اختر بيان", // Custom placeholder text
+  noResultsText: "لا يوجد نتائج" // Custom message when no results match search
+});
+
+const model_choices = new Choices("#model", {
   removeItemButton: true,
   searchEnabled: true,
   placeholder: true, // Enable placeholder behavior
