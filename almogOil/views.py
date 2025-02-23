@@ -43,6 +43,9 @@ from rest_framework.response import Response
 from .serializers import MainitemSerializer
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
+from django.utils import timezone
+from .models import SupportMessage
+
 
 # Define your custom User model or replace it with appropriate logic
 # from .models import YourCustomUserModel  # Update this line to use your new model if needed
@@ -3999,3 +4002,29 @@ def get_mainItem_last_pno(request):
         response_data = {'error': str(e)}
 
     return JsonResponse(response_data)
+
+class SupportMessageListView(generics.ListAPIView):
+    queryset = SupportMessage.objects.all().order_by('-timestamp')
+    serializer_class = SupportMessageSerializer
+
+# API to allow clients to send messages from Flutter
+class SupportMessageCreateView(generics.CreateAPIView):
+    serializer_class = SupportMessageSerializer
+
+# API for support to respond to a message
+@api_view(['POST'])
+def send_response(request, message_id):
+    try:
+        message = SupportMessage.objects.get(id=message_id)
+        response_text = request.data.get('response')
+        message.support_response = response_text
+        message.responded_at = timezone.now()
+        message.save()
+        return Response({"message": "Response sent successfully."})
+    except SupportMessage.DoesNotExist:
+        return Response({"error": "Message not found."}, status=404)
+
+# Web view for support dashboard
+def support_dashboard(request):
+    messages = SupportMessage.objects.all().order_by('-timestamp')
+    return render(request, 'support_dashboard.html', {'messages': messages})
