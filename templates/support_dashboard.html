@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #messages {
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        select {
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Support Dashboard</h1>
+
+    <!-- Client Selection -->
+    <form method="get" action="{% url 'support-dashboard' %}">
+        <label for="client_id">Select Client:</label>
+        <select name="client_id" id="client_id" onchange="this.form.submit()">
+            <option value="">-- Choose a Client --</option>
+            {% for client in clients %}
+                <option value="{{ client.clientid }}" {% if client == selected_client %}selected{% endif %}>{{ client.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if selected_client %}
+        <h2>Messages with {{ selected_client.name }}</h2>
+
+        <!-- Display Messages -->
+        <div id="messages">
+            {% for message in messages %}
+                <p><strong>{{ message.sender }}:</strong> {{ message.message }} <br><small>{{ message.timestamp }}</small></p>
+            {% endfor %}
+        </div>
+
+        <!-- Send New Message -->
+        <div>
+            <h3>Send Message</h3>
+            <textarea id="message" rows="4" cols="50"></textarea><br>
+            <button id="sendMessage" onclick="sendMessage()">Send</button>
+        </div>
+
+    {% else %}
+        <p>Select a client to view messages.</p>
+    {% endif %}
+
+    <script>
+        function sendMessage() {
+            const message = document.getElementById('message').value;
+            const clientId = "{{ selected_client.clientid }}";
+
+            $.post("{% url 'send-message' %}", {
+                'client_id': clientId,
+                'message': message,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            }, function(response) {
+                if(response.status) {
+                    alert(response.status);
+                    location.reload();  // Reload the page to show the new message
+                } else {
+                    alert(response.error);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

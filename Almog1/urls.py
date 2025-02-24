@@ -20,14 +20,13 @@ from django.conf.urls.static import static
 
 from django.contrib import admin
 from django.urls import path
-from almogOil.views import cancel_sell_invoice,Sell_invoice_create_item, create_sell_invoice, deliver_sell_invoice, fetch_sell_invoice_items, fetch_sellinvoices, filter_sellinvoices, get_mainItem_last_pno, get_sellinvoice_no, prepare_sell_invoice, sell_invoice_add_items, sell_invoice_management,sell_invoice_add_invoice, sell_invoice_prepare_report,sell_invoice_search_storage,buy_invoice_add_items,filter_buyinvoices,fetch_buyinvoices,Buyinvoice_management,delete_buyinvoice_cost, BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, sell_invoice_storage_management, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage, validate_sell_invoice
+from almogOil.views import cancel_sell_invoice,Sell_invoice_create_item,SendMessageView, GetChatMessagesView, MarkMessageAsReadView, create_sell_invoice, deliver_sell_invoice, fetch_sell_invoice_items, fetch_sellinvoices, filter_sellinvoices, get_mainItem_last_pno, get_sellinvoice_no, prepare_sell_invoice, sell_invoice_add_items, sell_invoice_management,sell_invoice_add_invoice, sell_invoice_prepare_report,sell_invoice_search_storage,buy_invoice_add_items,filter_buyinvoices,fetch_buyinvoices,Buyinvoice_management,delete_buyinvoice_cost, BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, sell_invoice_storage_management, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage, validate_sell_invoice
 import almogOil.views
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
 from almogOil import api_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
 
 
 urlpatterns = [
@@ -145,6 +144,10 @@ urlpatterns = [
 
     path('api/get/tokken', TokenObtainPairView.as_view(), name='get_tokken'),
     path('api/get/tokken/refresh', TokenRefreshView.as_view(), name='refresh_tokken'),
+    path('send-message/', SendMessageView.as_view(), name='send-message'),
+    path('get-messages/', GetChatMessagesView.as_view(), name='get-messages'),
+    path('mark-read/<int:pk>/', MarkMessageAsReadView.as_view(), name='mark-message-as-read'),
+    path('history/<int:id>/invoices/', api_views.GetClientInvoices, name='get-client-invoices'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

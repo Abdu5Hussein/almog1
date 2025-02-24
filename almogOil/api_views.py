@@ -9,6 +9,18 @@ import json
 from django.core.exceptions import FieldError
 from . import models  # Adjust this import to match your project structure
 from . import serializers
+from django.shortcuts import render, redirect, get_object_or_404
+from rest_framework import generics
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+
+
 
 @api_view(["POST"])
 def sign_in(request):
@@ -127,3 +139,21 @@ def get_dropboxes(request):
         'sub_types': serialized_sub.data,
         'main_types': serialized_main.data,
         })
+
+@api_view(['GET'])
+def GetClientInvoices(request, id):
+    # Filter invoices based on the client ID
+    str_id = str(id)
+    invoices = models.SellinvoiceTable.objects.filter(client=str_id)
+
+    if not invoices.exists():
+        return Response({'error': 'No invoices found for the provided client ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Serialize the invoices
+    serializer = serializers.SellInvoiceSerializer(invoices, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)  # Return the serialized data
+
+#####################
+
+# API to list all support messages (for the support team)

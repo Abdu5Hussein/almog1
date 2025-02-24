@@ -1,7 +1,7 @@
 # serializers.py
 from rest_framework import serializers
 from . import models
-from .models import SupportMessage
+from .models import ChatMessage
 
 class MainitemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,17 +49,16 @@ class EngineSerializer(serializers.ModelSerializer):
         model = models.enginesTable
         fields = "__all__"
 
-        class ClientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AllClientsTable
-        fields = ['id', 'username', 'email']
 
-class SupportMessageSerializer(serializers.ModelSerializer):
-    client = ClientSerializer(read_only=True)  # Display client details in response
-    client_id = serializers.PrimaryKeyRelatedField(
-        queryset=AllClientsTable.objects.all(), write_only=True, source='client'
-    )
+class ChatMessageSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)
+    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
 
     class Meta:
-        model = SupportMessage
-        fields = ['id', 'client', 'client_id', 'message', 'timestamp', 'support_response', 'responded_at']
+        model = ChatMessage
+        fields = ['id', 'sender', 'receiver', 'sender_username', 'receiver_username', 'message', 'timestamp', 'is_read']
+
+class SellInvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SellinvoiceTable
+        fields = "__all__"

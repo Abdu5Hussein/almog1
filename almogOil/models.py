@@ -7,8 +7,8 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 from django.contrib.auth.hashers import make_password
-
-
+from django.utils import timezone
+from django.utils.timezone import now
 
 class AllClientsTable(models.Model):
     clientid = models.AutoField(primary_key=True)
@@ -770,12 +770,16 @@ class EmployeesTable(models.Model):
         from django.contrib.auth.hashers import check_password
         return check_password(raw_password, self.password)
 
-class SupportMessage(models.Model):
-    client = models.ForeignKey('AllClientsTable', on_delete=models.CASCADE, related_name='messages')
+class ChatMessage(models.Model):
+    sender = models.ForeignKey('AllClientsTable', on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey('AllClientsTable', on_delete=models.CASCADE, related_name='received_messages')
     message = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    support_response = models.TextField(blank=True, null=True)
-    responded_at = models.DateTimeField(blank=True, null=True)
+    timestamp = models.DateTimeField(default=now)  # ❌ Incorrect usage
+
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['timestamp']
 
     def __str__(self):
-        return f"Message from {self.client.username} at {self.timestamp}"
+        return f"Message from {self.sender.username} to {self.receiver.username}"

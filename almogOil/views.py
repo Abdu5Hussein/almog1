@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from .models import EmployeesTable,AllClientsTable, Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
+from .models import  EmployeesTable,AllClientsTable, Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
@@ -44,10 +44,13 @@ from .serializers import MainitemSerializer
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .models import SupportMessage
-from .serializers import SupportMessageSerializer
+from .serializers import ChatMessageSerializer
 from rest_framework.response import Response
 from rest_framework import generics
+from rest_framework import status
+from rest_framework.views import APIView
+from .models import ChatMessage
+
 
 
 
@@ -4007,29 +4010,47 @@ def get_mainItem_last_pno(request):
 
     return JsonResponse(response_data)
 
-# API for support messages (Support team views all messages)
-class SupportMessageListView(generics.ListAPIView):
-    queryset = SupportMessage.objects.all().order_by('-timestamp')
-    serializer_class = SupportMessageSerializer
+class SendMessageView(generics.CreateAPIView):
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
 
-# API to allow clients to send messages from Flutter
-class SupportMessageCreateView(generics.CreateAPIView):
-    serializer_class = SupportMessageSerializer
+    def create(self, request, *args, **kwargs):
 
-# API for support to respond to a message
-@api_view(['POST'])
-def send_response(request, message_id):
-    try:
-        message = SupportMessage.objects.get(id=message_id)
-        response_text = request.data.get('response')
-        message.support_response = response_text
-        message.responded_at = timezone.now()
+     sender_id = request.data.get('sender')
+     receiver_id = request.data.get('receiver')
+     message_text = request.data.get('message')
+
+     if not sender_id or not receiver_id:
+        return Response({"error": "Sender and Receiver IDs are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+     try:
+        sender_id = int(sender_id)
+        receiver_id = int(receiver_id)
+     except ValueError:
+        return Response({"error": "Invalid sender or receiver ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+     sender = get_object_or_404(AllClientsTable, clientid=sender_id)
+     receiver = get_object_or_404(AllClientsTable, clientid=receiver_id)
+
+     chat_message = ChatMessage.objects.create(sender=sender, receiver=receiver, message=message_text)
+     serializer = self.get_serializer(chat_message)
+
+     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class GetChatMessagesView(generics.ListAPIView):
+    serializer_class = ChatMessageSerializer
+
+    def get_queryset(self):
+     sender_id = self.request.query_params.get('sender')
+     receiver_id = self.request.query_params.get('receiver')
+     return ChatMessage.objects.filter(sender__clientid=sender_id, receiver__clientid=receiver_id) | ChatMessage.objects.filter(sender__clientid=receiver_id, receiver__clientid=sender_id)
+
+class MarkMessageAsReadView(generics.UpdateAPIView):
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+
+    def update(self, request, *args, **kwargs):
+        message = self.get_object()
+        message.is_read = True
         message.save()
-        return Response({"message": "Response sent successfully."})
-    except SupportMessage.DoesNotExist:
-        return Response({"error": "Message not found."}, status=404)
-
-# Web view for support dashboard
-def support_dashboard(request):
-    messages = SupportMessage.objects.all().order_by('-timestamp')
-    return render(request, 'support_dashboard.html', {'messages': messages})
+        return Response({"message": "Message marked as read"}, status=status.HTTP_200_OK)
