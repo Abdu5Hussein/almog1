@@ -54,32 +54,13 @@ from rest_framework.exceptions import NotFound
 from django.http import JsonResponse
 from firebase_admin import messaging
 import firebase_admin
-<<<<<<< HEAD
-from firebase_admin import credentials, messaging
-from django.http import JsonResponse
-import os
-import firebase_admin
-from firebase_admin import credentials, auth
-
-# Check if Firebase is initialized
-if not firebase_admin._apps:
-    cred = credentials.Certificate("/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-367f5e9e17.json")
-    firebase_admin.initialize_app(cred)
-
-try:
-    user = auth.get_user_by_email("test@example.com")  # Replace with an actual Firebase user email
-    print(f"Firebase Auth Working! User UID: {user.uid}")
-except Exception as e:
-    print(f"Firebase Error: {e}")
-
-def send_firebase_notification(request):
-    """Send notification using Firebase."""
-=======
 from firebase_admin import credentials
 
-# Initialize Firebase Admin SDK (already done)
-cred = credentials.Certificate('/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-865ea2a63a.json')
-firebase_admin.initialize_app(cred)
+try:
+    cred = credentials.Certificate('/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-865ea2a63a.json')
+    firebase_admin.initialize_app(cred)
+except FileNotFoundError:
+    print("Warning: Firebase credentials file not found. Skipping Firebase initialization.")
 
 def send_firebase_notification(token, title, body):
     """Send a Firebase Cloud Messaging notification."""
@@ -91,7 +72,6 @@ def send_firebase_notification(token, title, body):
         token=token,
     )
 
->>>>>>> parent of ffc75ac... new update 2
     try:
         # Simulate sending a notification
         response = messaging.send(message)
@@ -1347,6 +1327,7 @@ def edit_main_item(request):
             safe_update('itemmain', data.get('itemmain'))
             safe_update('itemsubmain', data.get('itemsub'))
             safe_update('itemname', data.get('pnamearabic'))
+            safe_update('short_name', data.get('shortname'))
             safe_update('eitemname', data.get('pnameenglish'))
             safe_update('companyproduct', data.get('company'))
             safe_update('replaceno', data.get('companyno'))
@@ -1393,6 +1374,7 @@ def create_main_item(request):
                 itemsubmain=data.get('itemsub') or None,
                 itemname=data.get('pnamearabic'),
                 eitemname=data.get('pnameenglish') or None,
+                short_name=data.get('shortname') or None,
                 companyproduct=data.get('company') or None,
                 replaceno=data.get('companyno') or None,
                 pno=next_pno_no,
