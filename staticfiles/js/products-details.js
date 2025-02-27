@@ -1,6 +1,25 @@
 console.log("Script Loaded");
 
 document.addEventListener("DOMContentLoaded", function () {
+  function EmptyRequiredFields() {
+    const fields = [
+      //document.getElementById('pno'),
+      document.getElementById('pname-arabic'),
+      document.getElementById('company'),
+      document.getElementById('company-no'),
+      document.getElementById('item-main'),
+      //document.getElementById('storage-balance'),
+      document.getElementById('origin-price'),
+    ]
+    for (let i = 0; i < fields.length; i++) {
+      // Check if the field is empty
+      if (!fields[i].value.trim()) {
+        return true; // Return true if any field is empty
+      }
+    }
+    return false; // Return false if all fields are not empty
+  }
+
   const csrfToken = $("meta[name='csrf-token']").attr("content");
   if (csrfToken) {
     console.log("token exist");
@@ -369,54 +388,57 @@ document.addEventListener("DOMContentLoaded", function () {
     return document.querySelector("[name=csrfmiddlewaretoken]").value;
   }
   function createNewRecord() {
-    const getValue = (element) => (element ? element.value.trim().toLowerCase() : "");
-    const getSelectedText = (element) =>
-      element && element.selectedIndex !== 0
+    const getValueById = (id) => {
+      const element = document.getElementById(id);
+      return element ? element.value.trim() : "";
+    };
+
+    const getSelectedTextById = (id) => {
+      const element = document.getElementById(id);
+      return element && element.selectedIndex !== 0
         ? element.options[element.selectedIndex].text
         : "";
-    const getChoicesText = (element) =>
-      element ? element.getValue(true).join("; ") : "";
-
-    const filterElements = {
-      itemno: document.getElementById("original-no"),
-      itemmain: document.getElementById("item-main"),
-      itemsubmain: document.getElementById("item-sub-main"),
-      companyproduct: document.getElementById("company"),
-      itemname: document.getElementById("pname-arabic"),
-      companyno: document.getElementById("company-no"),
-      eitemname: document.getElementById("pname-english"),
-      pno: document.getElementById("pno"),
-      country: document.getElementById("country"),
-      model: document.getElementById("model"),
     };
+
+    const getChoicesTextById = (id) => {
+      const element = document.getElementById(id);
+      return element ? element.getValue(true).join("; ") : "";
+    };
+
+    if (EmptyRequiredFields()) {
+      alert('! الرجاء ملئ الحقول المطلوبة !')
+      return
+    }
 
     // Data object with correct CSRF token retrieval
     const data = {
       csrfmiddlewaretoken: getCSRFToken(),
-      originalno: document.getElementById("original-no")?.value || "",
-      itemmain: getChoicesText(main_choices),
-      itemsub: getChoicesText(sub_choices),
-      pnamearabic: document.getElementById("pname-arabic")?.value || "",
-      pnameenglish: document.getElementById("pname-english")?.value || "",
-      company: getSelectedText(filterElements.companyproduct),
-      companyno: document.getElementById("company-no")?.value || "",
-      pno: document.getElementById("pno")?.value || "",
-      barcode: document.getElementById("barcode-no")?.value || "",
-      description: document.getElementById("description")?.value || "",
-      country: getSelectedText(filterElements.country),
-      pieces4box: document.getElementById("pieces-per-box")?.value || 0,
-      model: getChoicesText(model_choices),
-      storage: document.getElementById("storage-balance")?.value || 0,
-      backup: document.getElementById("backup-balance")?.value || 0,
-      temp: document.getElementById("temp-balance")?.value || 0,
-      reserved: document.getElementById("reserved-balance")?.value || 0,
-      location: document.getElementById("location")?.value || "",
-      originprice: document.getElementById("origin-price")?.value || 0,
-      buyprice: document.getElementById("buy-price")?.value || 0,
-      expensesprice: document.getElementById("expenses-price")?.value || 0,
-      sellprice: document.getElementById("sell-price")?.value || 0,
-      lessprice: document.getElementById("less-price")?.value || 0,
+      originalno: getValueById("original-no") || "",
+      itemmain: getSelectedTextById("item-main") || "",
+      itemsub: getSelectedTextById("item-sub-main") || "",
+      pnamearabic: getValueById("pname-arabic") || "",
+      pnameenglish: getValueById("pname-english") || "",
+      company: getSelectedTextById("company"),
+      companyno: getValueById("company-no") || "",
+      pno: getValueById("pno") || "",
+      barcode: getValueById("barcode-no") || "",
+      description: getValueById("description") || "",
+      country: getSelectedTextById("country") || "",
+      pieces4box: getValueById("pieces-per-box") || 0,
+      model: getSelectedTextById("model") || "",
+      storage: getValueById("storage-balance") || 0,
+      backup: getValueById("backup-balance") || 0,
+      temp: getValueById("temp-balance") || 0,
+      reserved: getValueById("reserved-balance") || 0,
+      location: getValueById("location") || "",
+      originprice: getValueById("origin-price") || 0,
+      buyprice: getValueById("buy-price") || 0,
+      expensesprice: getValueById("expenses-price") || 0,
+      sellprice: getValueById("sell-price") || 0,
+      lessprice: getValueById("less-price") || 0,
     };
+
+    console.log(data);
 
     fetch("/create_main_item/", {
       method: "POST",
@@ -438,79 +460,75 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((error) => console.error("Error:", error));
   }
+
+  const getValueById = (id) => {
+    const element = document.getElementById(id);
+    return element ? element.value.trim() : "";
+  };
+
+  const getSelectedTextById = (id) => {
+    const element = document.getElementById(id);
+    return element && element.selectedIndex !== 0
+      ? element.options[element.selectedIndex].text
+      : "";
+  };
+
+  const getChoicesTextById = (id) => {
+    const element = document.getElementById(id);
+    return element ? element.getValue(true).join("; ") : "";
+  };
+
   ////edit function
   document.getElementById("editButton").addEventListener("click", function (event) {
-    event.preventDefault();  // Prevent form submission
+    event.preventDefault(); // Prevent form submission
 
-    // Get selected country, skip if index is 0 (reset value)
-    const countrySelect = document.getElementById("countries");
-    const selectedCountryName = countrySelect.selectedIndex !== 0 ? countrySelect.options[countrySelect.selectedIndex].text : "";
-
-    // Get selected item-main, skip if index is 0 (reset value)
-    const itemMainSelect = document.getElementById("item-main");
-    const selectedItemMainText = itemMainSelect.selectedIndex !== 0 ? itemMainSelect.options[itemMainSelect.selectedIndex].text : "";
-
-    // Get selected item-sub-main, skip if index is 0 (reset value)
-    const itemSubMainSelect = document.getElementById("item-sub-main");
-    const selectedItemSubMainText = itemSubMainSelect.selectedIndex !== 0 ? itemSubMainSelect.options[itemSubMainSelect.selectedIndex].text : "";
-
-    // Get selected company, skip if index is 0 (reset value)
-    const companySelect = document.getElementById("company");
-    const selectedCompanyText = companySelect.selectedIndex !== 0 ? companySelect.options[companySelect.selectedIndex].text : "";
-
-    // Get selected company, skip if index is 0 (reset value)
-    const modelSelect = document.getElementById("model");
-    const selectedModelText = modelSelect.selectedIndex !== 0 ? modelSelect.options[modelSelect.selectedIndex].text : "";
-
-    // Assuming window.currentRow holds the selected row that needs to be edited
     if (window.currentRow) {
-      // Get the data from the form fields
+      // Get the data from the form fields using helper functions
       const data = {
-        csrfmiddlewaretoken: getCSRFToken(), // CSRF token for security
-        fileid: window.currentRow.getData().fileid, // Use fileid or primary key to identify the record
-        originalno: document.getElementById("original-no").value || "",
-        itemmain: getChoicesText(main_choices), // Use the inner text (item-main)
-        itemsub: getChoicesText(sub_choices), // Use the inner text (item-sub-main)
-        pnamearabic: document.getElementById("pname-arabic").value || "",
-        pnameenglish: document.getElementById("pname-english").value || "",
-        company: selectedCompanyText, // Use the inner text (company)
-        companyno: document.getElementById("company-no").value || "",
-        pno: document.getElementById("pno").value || "",
-        barcode: document.getElementById("barcode-no").value || "",
-        description: document.getElementById("description").value || "",
-        country: selectedCountryName, // Use the inner text (country name)
-        pieces4box: document.getElementById("pieces-per-box").value || 0,
-        model: getChoicesText(model_choices),
-        storage: document.getElementById("storage-balance").value || 0,
-        backup: document.getElementById("backup-balance").value || 0,
-        temp: document.getElementById("temp-balance").value || 0,
-        reserved: document.getElementById("reserved-balance").value || 0,
-        location: document.getElementById("location").value || "",
-        originprice: document.getElementById("origin-price").value || 0,
-        buyprice: document.getElementById("buy-price").value || 0,
-        expensesprice: document.getElementById("expenses-price").value || 0,
-        sellprice: document.getElementById("sell-price").value || 0,
-        lessprice: document.getElementById("less-price").value || 0,
+        csrfmiddlewaretoken: getCSRFToken(),
+        fileid: window.currentRow.getData().fileid,
+        originalno: getValueById("original-no"),
+        itemmain: getSelectedTextById("item-main"),
+        itemsub: getSelectedTextById("item-sub-main"),
+        pnamearabic: getValueById("pname-arabic"),
+        pnameenglish: getValueById("pname-english"),
+        company: getSelectedTextById("company"),
+        companyno: getValueById("company-no"),
+        pno: getValueById("pno"),
+        barcode: getValueById("barcode-no"),
+        description: getValueById("description"),
+        country: getSelectedTextById("countries"),
+        pieces4box: getValueById("pieces-per-box") || 0,
+        model: getSelectedTextById("model"),
+        storage: getValueById("storage-balance") || 0,
+        backup: getValueById("backup-balance") || 0,
+        temp: getValueById("temp-balance") || 0,
+        reserved: getValueById("reserved-balance") || 0,
+        location: getValueById("location"),
+        originprice: getValueById("origin-price") || 0,
+        buyprice: getValueById("buy-price") || 0,
+        expensesprice: getValueById("expenses-price") || 0,
+        sellprice: getValueById("sell-price") || 0,
+        lessprice: getValueById("less-price") || 0,
       };
 
-      // Send the data to the server via a PUT or PATCH request
+      // Send the data to the server via a PATCH request
       fetch("/edit_main_item/", {
-        method: "PATCH",  // Use PATCH for partial update or PUT for full update
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": getCSRFToken(), // CSRF token for security
+          "X-CSRFToken": getCSRFToken(),
         },
-        body: JSON.stringify(data), // Send the data as JSON
+        body: JSON.stringify(data),
       })
         .then((response) => {
           if (response.ok) {
             alert("Record updated successfully!");
-
             fetchDataFromServer({ page: 1, size: pageSize });
 
-            // Optionally: Update the row directly in the table if you don't want to reload the entire data
-            const updatedRowData = { ...window.currentRow.getData(), ...data }; // Merge new data with old data
-            window.currentRow.update(updatedRowData); // Update the row in Tabulator with the new data
+            // Optionally update the row directly in Tabulator
+            const updatedRowData = { ...window.currentRow.getData(), ...data };
+            window.currentRow.update(updatedRowData);
           } else {
             alert("Error updating record.");
           }
@@ -520,6 +538,7 @@ document.addEventListener("DOMContentLoaded", function () {
       alert("من فضلك اختر سطرًا لتعديله.");
     }
   });
+
 
   document.getElementById("oem-btn").addEventListener("click", function (event) {
     // Retrieve `sessionStorage` data
@@ -574,86 +593,61 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
   });
-  //show model select items for selected maintype
-  // Get the select elements
-  // const subTypeSelect = document.getElementById("item-sub-main");
-  // const mainTypeSelect = document.getElementById("item-main");
-  // const modelSelect = document.getElementById("model");
 
-  // const getChoicesText = (element) =>
-  //   element ? element.getValue(true).join("; ") : "";
 
-  // // Event listener for mainType select change
-  // mainTypeSelect.addEventListener("change", function () {
-  //   const selectedMainType = getChoicesText(main_choices);
+  /////////////
+  // document.getElementById("item-main").addEventListener("change", function () {
+  //   const selectedMainType = this.value.trim(); // Get selected value
+  //   const subMainSelect = document.getElementById("item-sub-main");
 
-  //   // Loop through all model options and hide those that don't match the selected maintype
-  //   Array.from(subTypeSelect.options).forEach(option => {
-  //     const Sub_MainType = option.getAttribute("data-main-type");
-
-  //     if (selectedMainType === "" || Sub_MainType === selectedMainType) {
-  //       option.style.display = "block";  // Show option if it matches
+  //   // Show only options where data-main-type matches selected item-main
+  //   Array.from(subMainSelect.options).forEach(option => {
+  //     if (option.value === "") {
+  //       option.hidden = false; // Keep default option visible
+  //       option.selected = true; // Reset selection
   //     } else {
-  //       option.style.display = "none";   // Hide option if it doesn't match
+  //       option.hidden = option.getAttribute("data-main-type") !== selectedMainType;
   //     }
   //   });
 
-  //   // Optionally, clear the model selection if no matching models
-  //   if (!Array.from(subTypeSelect.options).some(option => option.style.display === "block")) {
-  //     subTypeSelect.value = "";
-  //   }
-  // });
-
-  // subTypeSelect.addEventListener("change", function () {
-  //   const selectedSubType = getChoicesText(sub_choices);
-
-  //   // Loop through all model options and hide those that don't match the selected maintype
-  //   Array.from(modelSelect.options).forEach(option => {
-  //     const model_subType = option.getAttribute("data-sub-type");
-
-  //     if (selectedSubType === "" || model_subType === selectedSubType) {
-  //       option.style.display = "block";  // Show option if it matches
-  //     } else {
-  //       option.style.display = "none";   // Hide option if it doesn't match
-  //     }
-  //   });
-
-  //   // Optionally, clear the model selection if no matching models
-  //   if (!Array.from(modelSelect.options).some(option => option.style.display === "block")) {
-  //     modelSelect.value = "";
-  //   }
+  //   // Reset model selection when item-main changes
+  //   document.getElementById("model").innerHTML = '<option value="" selected>اختر موديل</option>';
   // });
 
 
+  const itemMainSelect = document.getElementById("item-main");
+  const itemSubMainSelect = document.getElementById("item-sub-main");
+  const modelSelect = document.getElementById("model");
 
-  // Function to filter choices based on selected value
-  const filterChoices = (selectElement, choicesInstance, attribute, selectedValue) => {
-    const filteredOptions = Array.from(selectElement.options)
-      .filter(option => !selectedValue || option.getAttribute(attribute) === selectedValue)
-      .map(option => ({ value: option.value, label: option.text }));
-
-    choicesInstance.clearChoices();
-    choicesInstance.setChoices(filteredOptions, "value", "label", true);
+  // Function to filter options based on a data attribute
+  const filterOptions = (selectElement, attribute, selectedValue) => {
+    Array.from(selectElement.options).forEach(option => {
+      if (option.value === "") {
+        option.hidden = false; // Keep default option visible
+        option.selected = true; // Reset selection
+      } else {
+        option.hidden = option.getAttribute(attribute) !== selectedValue;
+      }
+    });
   };
 
-  // Event listener for mainType selection
-  document.getElementById("item-main").addEventListener("change", function () {
-    const selectedMainType = main_choices.getValue(true).join("; ");
+  // Event listener for item-main selection
+  itemMainSelect.addEventListener("change", function () {
+    const selectedMainType = this.value.trim();
+    filterOptions(itemSubMainSelect, "data-main-type", selectedMainType);
 
-    // Filter sub-main based on main selection
-    filterChoices(document.getElementById("item-sub-main"), sub_choices, "data-main-type", selectedMainType);
-
-    // Clear model dropdown when main changes
-    model_choices.clearChoices();
+    // Reset model options when item-main changes
+    //modelSelect.innerHTML = '<option value="" selected>اختر موديل</option>';
   });
 
-  // Event listener for subType selection
-  document.getElementById("item-sub-main").addEventListener("change", function () {
-    const selectedSubType = sub_choices.getValue(true).join("; ");
-
-    // Filter models based on sub-main selection
-    filterChoices(document.getElementById("model"), model_choices, "data-sub-type", selectedSubType);
+  // Event listener for item-sub-main selection
+  itemSubMainSelect.addEventListener("change", function () {
+    const selectedSubType = this.value.trim();
+    filterOptions(modelSelect, "data-sub-type", selectedSubType);
   });
+
+  //////////////
+
 
   document.getElementById("images-btn").addEventListener("click", function (event) {
     // Retrieve `sessionStorage` data
@@ -728,7 +722,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const filterValues = {
       itemno: getValue(filterElements.itemno),
-      itemmain: getChoicesText(main_choices),
+      itemmain: getSelectedText(filterElements.itemmain),
       itemsubmain: getSelectedText(filterElements.itemsubmain),
       companyproduct: getSelectedText(filterElements.companyproduct),
       itemname: getValue(filterElements.itemname),
@@ -844,6 +838,7 @@ document.addEventListener("DOMContentLoaded", function () {
     sessionStorage.setItem('product-id', fileid);
     sessionStorage.setItem('company-no', rowData.replaceno);
     sessionStorage.setItem('company-name', rowData.companyproduct);
+    sessionStorage.setItem('pno', rowData.pno);
 
     fetchItemData(fileid);
   });
@@ -1357,26 +1352,35 @@ editableCells.forEach((cell) => {
   });
 });
 
-const main_choices = new Choices("#item-main", {
-  removeItemButton: true,
-  searchEnabled: true,
-  placeholder: true, // Enable placeholder behavior
-  placeholderValue: "اختر بيان", // Custom placeholder text
-  noResultsText: "لا يوجد نتائج" // Custom message when no results match search
+document.getElementById('add-main-btn').addEventListener('click', function () {
+  const itemId = sessionStorage.getItem('pno');
+  if (!itemId) {
+    alert("الرجاء اختيار صنف برقم خاص");
+    return
+  }
+  openWindow(`http://45.13.59.226/item/${itemId}/add-more-categories`);
 });
 
-const sub_choices = new Choices("#item-sub-main", {
-  removeItemButton: true,
-  searchEnabled: true,
-  placeholder: true, // Enable placeholder behavior
-  placeholderValue: "اختر بيان", // Custom placeholder text
-  noResultsText: "لا يوجد نتائج" // Custom message when no results match search
-});
+// const main_choices = new Choices("#item-main", {
+//   removeItemButton: true,
+//   searchEnabled: true,
+//   placeholder: true, // Enable placeholder behavior
+//   placeholderValue: "اختر بيان", // Custom placeholder text
+//   noResultsText: "لا يوجد نتائج" // Custom message when no results match search
+// });
 
-const model_choices = new Choices("#model", {
-  removeItemButton: true,
-  searchEnabled: true,
-  placeholder: true, // Enable placeholder behavior
-  placeholderValue: "اختر بيان", // Custom placeholder text
-  noResultsText: "لا يوجد نتائج" // Custom message when no results match search
-});
+// const sub_choices = new Choices("#item-sub-main", {
+//   removeItemButton: true,
+//   searchEnabled: true,
+//   placeholder: true, // Enable placeholder behavior
+//   placeholderValue: "اختر بيان", // Custom placeholder text
+//   noResultsText: "لا يوجد نتائج" // Custom message when no results match search
+// });
+
+// const model_choices = new Choices("#model", {
+//   removeItemButton: true,
+//   searchEnabled: true,
+//   placeholder: true, // Enable placeholder behavior
+//   placeholderValue: "اختر بيان", // Custom placeholder text
+//   noResultsText: "لا يوجد نتائج" // Custom message when no results match search
+// });

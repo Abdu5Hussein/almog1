@@ -1,7 +1,7 @@
 # serializers.py
 from rest_framework import serializers
 from . import models
-from .models import ChatMessage
+from .models import ChatMessage, SupportChatMessageSys, SupportChatConversation, AllClientsTable, Feedback,EmployeesTable
 
 class MainitemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,6 +58,55 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         model = ChatMessage
         fields = ['id', 'sender', 'receiver', 'sender_username', 'receiver_username', 'message', 'timestamp', 'is_read']
 
+
+class SupportChatMessageSysSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username')
+    conversation_id = serializers.IntegerField(source='conversation.conversation_id')
+
+    class Meta:
+        model = SupportChatMessageSys
+        fields = ['message_id', 'conversation_id', 'sender_username', 'sender_type', 'message', 'timestamp', 'is_read']
+
+
+class SupportChatConversationSerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(source='client.username')
+    support_agent_name = serializers.CharField(source='support_agent.username')
+    messages = SupportChatMessageSysSerializer(many=True)
+
+    class Meta:
+        model = SupportChatConversation
+        fields = ['conversation_id', 'client_name', 'support_agent_name', 'messages']
+
+
+
+class SupportChatMessageSysSerializer1(serializers.ModelSerializer):
+    class Meta:
+        model = SupportChatMessageSys
+        fields = ('message_id', 'sender', 'sender_type', 'message', 'timestamp')
+
+class SupportChatConversationSerializer1(serializers.ModelSerializer):
+    client = serializers.StringRelatedField()  # Display the username
+    support_agent = serializers.StringRelatedField()  # Display the username
+    messages = SupportChatMessageSysSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SupportChatConversation
+        fields = ('conversation_id', 'client', 'support_agent', 'created_at', 'updated_at', 'messages')
+
+
+class AllClientsTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AllClientsTable
+        fields = ['clientid', 'username', 'email', 'name', 'address', 'phone', 'mobile', 'last_transaction', 'accountcurr']
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    sender = serializers.StringRelatedField()  # Display client name
+    employee_response = serializers.CharField(required=False)  # Employee response is optional initially
+
+    class Meta:
+        model = Feedback
+        fields = ['id', 'sender', 'feedback_text', 'created_at', 'employee_response', 'is_resolved', 'response_at']
+    
 class SellInvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SellinvoiceTable

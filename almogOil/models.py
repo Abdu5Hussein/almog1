@@ -783,3 +783,86 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.receiver.username}"
+    
+
+
+class SupportChatConversation(models.Model):
+    """
+    Represents a conversation between a client and a support agent.
+    Both sides are represented by the AllClientsTable.
+    """
+    conversation_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(
+        'AllClientsTable',
+        on_delete=models.CASCADE,
+        related_name='client_conversations'
+    )
+    support_agent = models.ForeignKey(
+        'AllClientsTable',
+        on_delete=models.CASCADE,
+        related_name='support_conversations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'support_chat_conversation'
+        unique_together = (('client', 'support_agent'),)
+
+    def __str__(self):
+        return f"Conversation: {self.client.username} & {self.support_agent.username}"
+
+
+class SupportChatMessageSys(models.Model):
+    """
+    Stores individual messages within a support chat conversation.
+    """
+    message_id = models.AutoField(primary_key=True)
+    conversation = models.ForeignKey(
+        SupportChatConversation,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    sender = models.ForeignKey(
+        'AllClientsTable',
+        on_delete=models.CASCADE,
+        related_name='sent_support_messages'
+    )
+    # sender_type explicitly marks whether the sender is a 'client' or 'support'
+    sender_type = models.CharField(
+        max_length=10,
+        choices=(('client', 'Client'), ('support', 'Support')),
+        default='client'
+    )
+    message = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'support_chat_message_sys'
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.sender.username} ({self.sender_type}) at {self.timestamp}"
+
+
+class Feedback(models.Model):
+    sender = models.ForeignKey(AllClientsTable, related_name="sent_feedback", on_delete=models.CASCADE)
+    feedback_text = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+    is_resolved = models.BooleanField(default=False)
+    parent_feedback = models.ForeignKey('self', related_name='replies', null=True, blank=True, on_delete=models.SET_NULL)
+    employee_response = models.TextField(blank=True, null=True)  # Added for employee to respond to feedback
+    response_at = models.DateTimeField(null=True, blank=True)  # The time the employee responded
+
+    def __str__(self):
+        return f"Feedback from {self.sender.name} to {self.receiver.name} at {self.created_at}"
+    
+class FeedbackMessage(models.Model):
+    feedback = models.ForeignKey(Feedback, on_delete=models.CASCADE, related_name="messages")
+    sender_type = models.CharField(max_length=10, choices=[('client', 'Client'), ('employee', 'Employee')])
+    message_text = models.TextField()
+    sent_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Message in Feedback {self.feedback.id}"    

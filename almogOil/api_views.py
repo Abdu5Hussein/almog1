@@ -19,6 +19,12 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from .models import SupportChatConversation,SellinvoiceTable, SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
+from .serializers import SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
+from rest_framework.exceptions import NotFound
+from django.utils.timezone import now
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 
@@ -157,3 +163,363 @@ def GetClientInvoices(request, id):
 #####################
 
 # API to list all support messages (for the support team)
+
+
+
+@api_view(['GET'])
+def support_conversations(request):
+    if request.method == 'GET':
+        conversations = SupportChatConversation.objects.all()
+        serializer = SupportChatConversationSerializer1(conversations, many=True)
+        return Response({'conversations': serializer.data})
+
+# Get Messages in a Conversation
+@api_view(['GET'])
+def get_conversation_messages(request, conversation_id):
+    if request.method == 'GET':
+        try:
+            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
+            messages = SupportChatMessageSys.objects.filter(conversation=conversation)
+            serializer = SupportChatMessageSysSerializer1(messages, many=True)
+            return Response({'messages': serializer.data})
+        except SupportChatConversation.DoesNotExist:
+            return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+# Create a New Message in a Conversation
+@api_view(['POST'])
+@api_view(['POST'])
+def send_message(request, conversation_id=None):
+    if request.method == 'POST':
+        message_text = request.data.get('message')
+        sender_type = request.data.get('sender_type')  # Always 'client' in this case
+
+        # Check if message is not empty
+        if not message_text:
+            return Response({'error': 'Message cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate sender type, it must be 'client'
+        if sender_type != 'client':
+            return Response({'error': 'Sender must be a client'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # If conversation_id is provided, fetch the existing conversation
+        if conversation_id:
+            try:
+                conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
+            except SupportChatConversation.DoesNotExist:
+                return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # If no conversation_id, create a new conversation (assuming client sends message)
+            client_id = request.data.get('client_id')  # Expect client_id in the request if no conversation_id
+            try:
+                client = AllClientsTable.objects.get(clientid=client_id)
+                # Create a new conversation without support agent
+                conversation = SupportChatConversation.objects.create(
+                    client=client,
+                    support_agent=None  # No support agent in this conversation
+                )
+            except AllClientsTable.DoesNotExist:
+                return Response({'error': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create the message
+        message = SupportChatMessageSys.objects.create(
+            conversation=conversation,
+            sender=conversation.client,  # Only the client is sending the message
+            sender_type='client',  # 'client' is the sender type
+            message=message_text,
+            timestamp=timezone.now(),
+            is_read=False
+        )
+
+        message_serializer = SupportChatMessageSysSerializer1(message)
+
+        return Response({
+            'message': 'Message sent successfully',
+            'message_data': message_serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def get_all_clients1(request):
+    if request.method == 'GET':
+        clients = AllClientsTable.objects.all()
+        serializer = AllClientsTableSerializer(clients, many=True)
+        return Response({'clients': serializer.data})
+
+@api_view(['POST'])
+def start_conversation(request, client_id):
+    if request.method == 'POST':
+        try:
+            # Get the client
+            client = AllClientsTable.objects.get(clientid=client_id)
+
+            # Check if there's already an existing conversation with the client
+            existing_conversation = SupportChatConversation.objects.filter(client=client)
+            if existing_conversation.exists():
+                return Response({'error': 'Conversation already exists with this client'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create a new conversation with the support agent (request.user)
+            conversation = SupportChatConversation.objects.create(
+                client=client,
+                support_agent=request.user
+            )
+
+            # Now, send the first message to start the conversation
+            first_message = request.data.get('message')
+            if not first_message:
+                return Response({'error': 'Message is required to start a conversation'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create the first message in the conversation
+            message = SupportChatMessageSys.objects.create(
+                conversation=conversation,
+                sender=request.user,  # Assuming the support agent is the sender
+                sender_type='support',  # Type 'support' for the agent
+                message=first_message,
+                timestamp=timezone.now(),
+                is_read=False
+            )
+
+            message_serializer = SupportChatMessageSysSerializer1(message)
+
+            return Response({
+                'message': 'Conversation started successfully',
+                'message_data': message_serializer.data
+            }, status=status.HTTP_201_CREATED)
+
+        except AllClientsTable.DoesNotExist:
+            return Response({'error': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+@api_view(['POST'])
+def send_feedback(request):
+    client_id = request.data.get('client_id')
+    feedback_text = request.data.get('feedback_text')
+
+    # Validate input
+    if not client_id:
+        return Response({"error": "Client ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if not feedback_text:
+        return Response({"error": "Feedback text is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Get the client by client_id from the AllClientsTable model
+    try:
+        client = AllClientsTable.objects.get(clientid=client_id)  # Query by clientid, not id
+    except AllClientsTable.DoesNotExist:
+        return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Create the feedback entry
+    feedback = Feedback(sender=client, feedback_text=feedback_text)
+    feedback.save()
+
+    # Return the created feedback data in response
+    return Response(FeedbackSerializer(feedback).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def respond_to_feedback(request, client_id):
+    if request.method == 'POST':
+        try:
+            client = AllClientsTable.objects.get(id=client_id)
+            feedback = Feedback.objects.filter(sender=client).last()  # Get latest feedback
+        except (AllClientsTable.DoesNotExist, Feedback.DoesNotExist):
+            return JsonResponse({"error": "Client or Feedback not found."}, status=404)
+
+        # Parse JSON request body
+        try:
+            data = json.loads(request.body)
+            response_text = data.get("response_text", "").strip()
+        except json.JSONDecodeError:
+            response_text = request.POST.get("response_text", "").strip()
+
+        if not response_text:
+            return JsonResponse({"error": "Response text is required."}, status=400)
+
+        # Save the response
+        feedback.employee_response = response_text
+        feedback.is_resolved = True
+        feedback.response_at = timezone.now()
+        feedback.save()
+
+        return JsonResponse({"message": "Response saved successfully.", "response_text": response_text}, status=200)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def update_invoice_status(request, invoice_no):
+    """Update invoice status and set delivered_date if status is 'تم التوصيل'."""
+    try:
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)  # Direct get()
+    except SellinvoiceTable.DoesNotExist:
+        return Response({"error": "Invoice not found."}, status=404)
+
+    new_status = request.data.get("invoice_status")
+
+    if new_status in ["جاري التوصيل", "تم التوصيل"]:
+        invoice.invoice_status = new_status
+        if new_status == "تم التوصيل":
+            invoice.delivered_date = now()  # Set the current timestamp
+        invoice.save()
+        send_invoice_notification(invoice, new_status)
+        return Response({"message": "Status updated successfully."})
+
+    return Response({"error": "Invalid status."}, status=400)
+
+@csrf_exempt
+@api_view(['GET'])
+def get_delivery_invoices(request):
+    """Fetch all invoices with status 'حضرت'."""
+    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت")
+    serializer = SellInvoiceSerializer(invoices, many=True)
+    return Response(serializer.data)
+
+
+
+@api_view(['GET', 'POST'])
+def UpdateItemsItemmainApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        itemmain_list = item.itemmain.split(";") if item.itemmain else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in itemmain_list:
+                itemmain_list.append(value)
+                item.itemmain = ";".join(itemmain_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in itemmain_list:
+                itemmain_list.remove(value)
+                item.itemmain = ";".join(itemmain_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        itemmain = s_data['itemmain']
+        return Response({'itemmain': itemmain}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def UpdateItemsSubmainApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        itemsub_list = item.itemsubmain.split(";") if item.itemsubmain else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in itemsub_list:
+                itemsub_list.append(value)
+                item.itemsubmain = ";".join(itemsub_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in itemsub_list:
+                itemsub_list.remove(value)
+                item.itemsubmain = ";".join(itemsub_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        itemsubmain = s_data['itemsubmain']
+        return Response({'itemsub': itemsubmain}, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'POST'])
+def UpdateItemsModelApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        model_list = item.itemthird.split(";") if item.itemthird else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in model_list:
+                model_list.append(value)
+                item.itemthird = ";".join(model_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in model_list:
+                model_list.remove(value)
+                item.itemthird = ";".join(model_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        itemthird = s_data['itemthird']
+        return Response({'models': itemthird}, status=status.HTTP_200_OK)
+
+
+def send_invoice_notification(invoice, status_message):
+    """Send a notification when invoice status changes."""
+    channel_layer = get_channel_layer()
+
+    # Group send to 'notifications' channel group
+    async_to_sync(channel_layer.group_send)(
+        "notifications",  # The name of the WebSocket group
+        {
+            "type": "send_notification",  # This corresponds to a function in your consumer to handle the message
+            "message": f"Invoice {invoice.invoice_no} status changed to {status_message}",
+            "invoice_id": invoice.invoice_no,
+            "new_status": status_message
+        }
+    )

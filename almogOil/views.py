@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from .models import  EmployeesTable,AllClientsTable, Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
+from .models import  EmployeesTable,AllClientsTable,SupportChatConversation, FeedbackMessage,Feedback,SupportChatMessageSys,  Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
@@ -40,7 +40,7 @@ from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.cache import cache
 from rest_framework.response import Response
-from .serializers import MainitemSerializer
+from .serializers import MainitemSerializer, SupportChatMessageSysSerializer, SupportChatConversationSerializer,SupportChatConversationSerializer1,FeedbackSerializer
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -50,8 +50,47 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
 from .models import ChatMessage
+from rest_framework.exceptions import NotFound
+from django.http import JsonResponse
+from firebase_admin import messaging
+import firebase_admin
+from firebase_admin import credentials
 
+# Initialize Firebase Admin SDK (already done)
+cred = credentials.Certificate('/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-865ea2a63a.json')
+firebase_admin.initialize_app(cred)
 
+def send_firebase_notification(token, title, body):
+    """Send a Firebase Cloud Messaging notification."""
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=title,
+            body=body,
+        ),
+        token=token,
+    )
+
+    try:
+        # Simulate sending a notification
+        response = messaging.send(message)
+        return response
+    except Exception as e:
+        raise Exception(f"Error sending message: {str(e)}")
+
+def send_notification(request):
+    """Test sending notification with a dummy FCM token."""
+    # Use a dummy token for testing
+    dummy_token = "dummy_fcm_token_for_testing"
+
+    title = "Test Notification"
+    body = "This is a test notification sent from Django."
+
+    try:
+        # Call the function to send the notification
+        response = send_firebase_notification(dummy_token, title, body)
+        return JsonResponse({"message": "Test notification sent successfully!", "response": response})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 # Define your custom User model or replace it with appropriate logic
@@ -1322,35 +1361,35 @@ def create_main_item(request):
         data = json.loads(request.body)
 
         last_pno_response = json.loads(get_mainItem_last_pno(request).content)  # Get response data
-        last_pno_no = last_pno_response.get("autoid")
+        last_pno_no = last_pno_response.get("pno")
         next_pno_no = int(last_pno_no) + 1
 
         # Create a new MainItem instance
         new_item = Mainitem(
-            itemno=data.get('originalno'),
-            itemmain=data.get('itemmain'),
-            itemsubmain=data.get('itemsub'),
-            itemname=data.get('pnamearabic'),
-            eitemname=data.get('pnameenglish'),
-            companyproduct=data.get('company'),
-            replaceno=data.get('companyno'),
-            pno=next_pno_no,
-            barcodeno=data.get('barcode'),
-            memo=data.get('description'),
-            itemplace=data.get('location'),
-            itemsize=data.get('country'),
-            itemperbox=int(data.get('pieces4box', 0)),
-            itemthird=data.get('model'),
-            itemvalue=int(data.get('storage', 0)),
-            itemtemp=int(data.get('backup', 0)),
-            itemvalueb=int(data.get('temp', 0)),
-            resvalue=int(data.get('reserved', 0)),
-            orgprice=float(data.get('originprice', 0)),
-            orderprice=float(data.get('buyprice', 0)),
-            costprice=float(data.get('expensesprice', 0)),
-            buyprice=float(data.get('sellprice', 0)),
-            lessprice=float(data.get('lessprice', 0)),
-        )
+                itemno=data.get('originalno') or None,
+                itemmain=data.get('itemmain') or None,
+                itemsubmain=data.get('itemsub') or None,
+                itemname=data.get('pnamearabic'),
+                eitemname=data.get('pnameenglish') or None,
+                companyproduct=data.get('company') or None,
+                replaceno=data.get('companyno') or None,
+                pno=next_pno_no,
+                barcodeno=data.get('barcode') or None,
+                memo=data.get('description') or None,
+                itemplace=data.get('location') or None,
+                itemsize=data.get('country') or None,
+                itemperbox=int(data.get('pieces4box', 0) or 0),
+                itemthird=data.get('model') or None,
+                itemvalue=int(data.get('storage', 0) or 0),
+                itemtemp=int(data.get('backup', 0) or 0),
+                itemvalueb=int(data.get('temp', 0) or 0),
+                resvalue=int(data.get('reserved', 0) or 0),
+                orgprice=float(data.get('originprice', 0) or 0),
+                orderprice=float(data.get('buyprice', 0) or 0),
+                costprice=float(data.get('expensesprice', 0) or 0),
+                buyprice=float(data.get('sellprice', 0) or 0),
+                lessprice=float(data.get('lessprice', 0) or 0),
+            )
         new_item.save()
 
         return JsonResponse({'status': 'success', 'message': 'Record created successfully!'})
@@ -4054,3 +4093,291 @@ class MarkMessageAsReadView(generics.UpdateAPIView):
         message.is_read = True
         message.save()
         return Response({"message": "Message marked as read"}, status=status.HTTP_200_OK)
+
+
+class SupportChatMessageView(APIView):
+    def post(self, request, *args, **kwargs):
+        conversation_id = request.data.get('conversation_id')
+        sender_id = request.data.get('sender_id')
+        sender_type = request.data.get('sender_type')
+        message = request.data.get('message')
+
+        try:
+            sender = AllClientsTable.objects.get(clientid=sender_id)
+            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
+        except AllClientsTable.DoesNotExist:
+            return Response({'error': 'Sender not found'}, status=status.HTTP_404_NOT_FOUND)
+        except SupportChatConversation.DoesNotExist:
+            return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create new message
+        new_message = SupportChatMessageSys(
+            conversation=conversation,
+            sender=sender,
+            sender_type=sender_type,
+            message=message,
+        )
+        new_message.save()
+
+        # Return the newly created message
+        serializer = SupportChatMessageSysSerializer(new_message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get(self, request, *args, **kwargs):
+        conversation_id = request.query_params.get('conversation_id')
+        try:
+            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
+        except SupportChatConversation.DoesNotExist:
+            return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        messages = SupportChatMessageSys.objects.filter(conversation=conversation).order_by('timestamp')
+        serializer = SupportChatMessageSysSerializer(messages, many=True)
+        return Response(serializer.data)
+
+@api_view(['POST'])
+def create_conversation(request):
+    client_id = request.data.get('client_id')
+    support_agent_id = request.data.get('support_agent_id')
+
+    try:
+        client = AllClientsTable.objects.get(clientid=client_id)
+        support_agent = AllClientsTable.objects.get(clientid=support_agent_id)
+    except AllClientsTable.DoesNotExist:
+        return Response({'error': 'Client or Support Agent not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    conversation = SupportChatConversation(client=client, support_agent=support_agent)
+    conversation.save()
+    return Response({'conversation_id': conversation.conversation_id}, status=status.HTTP_201_CREATED)
+
+
+def support_dashboard(request):
+    # Fetch all clients
+    clients = AllClientsTable.objects.all()
+
+    # Prepare a list of conversations for each client
+    clients_with_conversations = []
+    for client in clients:
+        # Get conversations associated with each client
+        conversations = SupportChatConversation.objects.filter(client=client)
+        conversations_serializer = SupportChatConversationSerializer1(conversations, many=True)
+
+        # Add conversations to each client
+        clients_with_conversations.append({
+            'client': client,
+            'conversations': conversations_serializer.data
+        })
+
+    return render(request, 'support_dashboard.html', {'clients_with_conversations': clients_with_conversations})
+
+
+
+def support_dashboard(request):
+    # Fetch all feedbacks
+    feedbacks = Feedback.objects.all()  # Get all feedback records from the database
+
+    # Pass the feedbacks to the template context
+    return render(request, 'support_dashboard.html', {'feedbacks': feedbacks})
+
+def fetch_all_feedback(request):
+    """Fetch all feedback and group them by client ID."""
+    feedbacks = Feedback.objects.select_related('sender').all()
+
+    grouped_feedback = {}
+
+    for feedback in feedbacks:
+        client_id = feedback.sender.clientid  # Assuming sender is linked to AllClientsTable
+        if client_id not in grouped_feedback:
+            grouped_feedback[client_id] = {
+                "client_name": feedback.sender.name,
+                "feedbacks": []
+            }
+
+        grouped_feedback[client_id]["feedbacks"].append({
+            "id": feedback.id,
+            "feedback_text": feedback.feedback_text,
+            "employee_response": feedback.employee_response,
+            "is_resolved": feedback.is_resolved,
+            "response_at": feedback.response_at.strftime("%Y-%m-%d %H:%M") if feedback.response_at else None
+        })
+
+    return JsonResponse(grouped_feedback, safe=False)
+
+
+@csrf_exempt
+def fetch_all_feedback(request):
+    """Fetch all feedbacks and their messages grouped by client ID."""
+    feedbacks = Feedback.objects.select_related('sender').prefetch_related('messages').all()
+
+    grouped_feedback = {}
+
+    for feedback in feedbacks:
+        client_id = feedback.sender.clientid
+        if client_id not in grouped_feedback:
+            grouped_feedback[client_id] = {
+                "client_name": feedback.sender.name,
+                "feedbacks": []
+            }
+
+        messages = [
+            {
+                "id": message.id,
+                "sender_type": message.sender_type,
+                "message_text": message.message_text,
+                "sent_at": message.sent_at.strftime("%Y-%m-%d %H:%M")
+            }
+            for message in feedback.messages.all()
+        ]
+
+        grouped_feedback[client_id]["feedbacks"].append({
+            "id": feedback.id,
+            "feedback_text": feedback.feedback_text,
+            "messages": messages,
+            "created_at": feedback.created_at.strftime("%Y-%m-%d %H:%M"),
+            "is_resolved": feedback.is_resolved  # Include the is_resolved field
+        })
+
+    return JsonResponse(grouped_feedback, safe=False)
+
+
+@csrf_exempt
+def add_message_to_feedback(request, feedback_id):
+    """Allow clients and employees to send multiple messages in a feedback thread."""
+    try:
+        feedback = Feedback.objects.get(id=feedback_id)
+    except Feedback.DoesNotExist:
+        return JsonResponse({"error": "Feedback not found."}, status=404)
+
+    data = json.loads(request.body)
+    message_text = data.get("message_text")
+    sender_type = data.get("sender_type")  # Can be "client" or "employee"
+
+    if not message_text:
+        return JsonResponse({"error": "Message text is required."}, status=400)
+    if sender_type not in ["client", "employee"]:
+        return JsonResponse({"error": "Invalid sender type."}, status=400)
+
+    message = FeedbackMessage.objects.create(
+        feedback=feedback,
+        sender_type=sender_type,
+        message_text=message_text,
+        sent_at=timezone.now()
+    )
+
+    return JsonResponse({
+        "id": message.id,
+        "message_text": message.message_text,
+        "sender_type": message.sender_type,
+        "sent_at": message.sent_at.strftime("%Y-%m-%d %H:%M")
+    }, status=201)
+
+@csrf_exempt
+def close_feedback(request, feedback_id):
+    """Close a feedback thread (mark as resolved)."""
+    try:
+        feedback = Feedback.objects.get(id=feedback_id)
+    except Feedback.DoesNotExist:
+        return JsonResponse({"error": "Feedback not found."}, status=404)
+
+    # Check if the session role is "employee"
+    if request.session.get("role") == "employee":
+        feedback.is_resolved = True  # Mark as resolved
+        feedback.resolved_at = timezone.now()
+        feedback.save()
+        return JsonResponse({"message": "Feedback closed successfully."}, status=200)
+    else:
+        return JsonResponse({"error": "Only employees can close feedback."}, status=403)
+
+
+@csrf_exempt
+def delete_feedback(request, feedback_id):
+    """Delete a feedback thread."""
+    try:
+        feedback = Feedback.objects.get(id=feedback_id)
+    except Feedback.DoesNotExist:
+        return JsonResponse({"error": "Feedback not found."}, status=404)
+
+    # Check if the session role is "employee"
+    if request.session.get("role") == "employee":
+        feedback.delete()
+        return JsonResponse({"message": "Feedback deleted successfully."}, status=200)
+    else:
+        return JsonResponse({"error": "Only employees can delete feedback."}, status=403)
+@csrf_exempt
+def feedback_by_user_id(request):
+    # Get the clientid from query parameters
+    clientid = request.GET.get('clientid')
+
+    if not clientid:
+        return JsonResponse({"detail": "Client ID is required."}, status=400)
+
+    # Try to fetch the client
+    try:
+        client = AllClientsTable.objects.get(clientid=clientid)
+    except AllClientsTable.DoesNotExist:
+        return JsonResponse({"detail": "Client not found."}, status=404)
+
+    # Fetch feedback for this client
+    feedbacks = Feedback.objects.filter(sender=client)
+
+    # If no feedback is found, return an empty list
+    if not feedbacks:
+        return JsonResponse([])
+
+    # Prepare the feedback data
+    feedback_data = []
+    for feedback in feedbacks:
+        feedback_data.append({
+            "id": feedback.id,
+            "sender": feedback.sender.name,  # Assuming `sender.name` is the client name
+            "feedback_text": feedback.feedback_text,
+            "created_at": feedback.created_at.isoformat(),
+            "employee_response": feedback.employee_response,
+            "is_resolved": feedback.is_resolved,
+            "response_at": feedback.response_at.isoformat() if feedback.response_at else None
+        })
+
+    return JsonResponse(feedback_data, safe=False)
+
+@csrf_exempt
+def fetch_feedback_messages(request, feedback_id):
+    feedback_messages = FeedbackMessage.objects.filter(feedback_id=feedback_id).order_by('sent_at')
+
+    messages_data = [
+        {
+            "id": msg.id,
+            "sender_type": msg.sender_type,
+            "message_text": msg.message_text,
+            "sent_at": msg.sent_at.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        for msg in feedback_messages
+    ]
+
+    return JsonResponse({"feedback_id": feedback_id, "messages": messages_data}, safe=False)
+
+
+
+def addMoreCatView(request,id):
+    item = Mainitem.objects.get(pno=id)
+
+    mains = item.itemmain.split(';') if item.itemmain else []
+    subs = item.itemsubmain.split(';') if item.itemsubmain else []
+    models = item.itemthird.split(';') if item.itemthird else []
+
+    main_select = Maintypetable.objects.all().values()
+    sub_select = Subtypetable.objects.all().values()
+    model_select = Modeltable.objects.all().values()
+
+    context = {
+        'mains':mains,
+        'subs':subs,
+        'models':models,
+
+        'main_select':main_select,
+        'sub_select':sub_select,
+        'model_select':model_select,
+    }
+    #return JsonResponse(context)
+    return render(request,'add-more-cat.html',context)
+
+def notifications_page(request):
+    return render(request, 'notifications.html')

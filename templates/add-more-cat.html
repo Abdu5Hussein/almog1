@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جدول البيان الرئيسي</title>
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+    <style>
+      table {
+        width: 100%;
+        margin-top: 20px;
+      }
+      .form-container {
+        margin-top: 20px;
+      }
+      .btn-container {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row flex-row-reverse p-3 text-center">
+        <div class="col">
+
+            <!-- Form Container -->
+            <div class="form-container">
+                <h4 class='mb-3'>ادارة البيان الرئيسي</h4>
+                <form method="post">
+                {% csrf_token %}
+                <div class="form-group mb-3">
+                    <label for="inputName" class='mb-2'>اسم البيان الرئيسي</label>
+                    <select name="maintype" class="form-control text-center" id="maintype">
+                        {% for x in main_select %}
+                        <option value="{{ x.typename }}">{{ x.typename }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="btn-container">
+                    <button
+                    type="button"
+                    name="action"
+                    value="add"
+                    class="btn btn-success"
+                    id="btn-main-add"
+                    >
+                    اضافة
+                    </button>
+
+                    <button
+                    type="button"
+                    name="action"
+                    value="delete"
+                    class="btn btn-danger"
+                    id="btn-main-remove"
+                    >
+                    حذف
+                    </button>
+                </div>
+                </form>
+            </div>
+
+            <!-- Data Grid -->
+            <table class="table table-bordered">
+                <thead class="table-dark">
+                <tr>
+                    <th>اسم البيان</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for x in mains %}
+                <tr data-main-type="{{ x }}">
+                    <!-- Data attribute for MainType ID -->
+                    <td>{{ x }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">No data available</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="col">
+
+            <!-- Form Container -->
+            <div class="form-container">
+                <h4 class="mb-3">إدارة البيان الفرعي</h4>
+                <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="sub_type-name" class="form-label">اسم البيان الفرعي</label>
+                    <select name="subtype" class="form-control text-center" id="subtype">
+                        {% for x in sub_select %}
+                        <option value="{{ x.subtypename }}">{{ x.subtypename }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback">الرجاء إدخال اسم البيان الفرعي.</div>
+                </div>
+
+                <div class="btn-container d-flex justify-content-start gap-2">
+                    <button
+                    type="button"
+                    name="action"
+                    value="add"
+                    class="btn btn-success"
+                    id="btn-sub-add"
+                    >
+                    إضافة
+                    </button>
+
+                    <button
+                    type="button"
+                    name="action"
+                    value="delete"
+                    class="btn btn-danger"
+                    id="btn-sub-remove"
+                    >
+                    حذف
+                    </button>
+                </div>
+                </form>
+            </div>
+
+            <!-- Data Grid -->
+            <table
+                id="sub_types-table"
+                class="table table-bordered table-hover text-center"
+            >
+                <thead class="table-dark">
+                <tr>
+                    <th>اسم البيان الفرعي</th>
+                    <!-- MainType column -->
+                </tr>
+                </thead>
+                <tbody>
+                {% for x in subs %}
+                <tr data-main-type="{{ x }}">
+                    <!-- Data attribute for MainType ID -->
+                    <td>{{ x }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+        <div class="col">
+
+            <!-- Form Container -->
+            <div class="form-container">
+                <h4 class="mb-3">إدارة سنة الصنع</h4>
+                <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+
+                <div class="mb-3">
+                    <label for="model-name" class="form-label">اسم الموديل</label>
+                    <select name="model" class="form-control text-center" id="model">
+                        {% for x in model_select %}
+                        <option value="{{ x.model_name }}">{{ x.model_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback">الرجاء إدخال اسم الموديل.</div>
+                </div>
+
+                <div class="btn-container d-flex justify-content-start gap-2">
+                    <button
+                    type="button"
+                    name="action"
+                    value="add"
+                    class="btn btn-success"
+                    id="btn-model-add"
+                    >
+                    إضافة
+                    </button>
+
+                    <button
+                    type="button"
+                    name="action"
+                    value="delete"
+                    class="btn btn-danger"
+                    id="btn-model-remove"
+                    >
+                    حذف
+                    </button>
+                </div>
+                </form>
+            </div>
+
+            <!-- Data Grid -->
+            <table
+                id="models-table"
+                class="table table-bordered table-hover text-center"
+            >
+                <thead class="table-dark">
+                <tr>
+                    <th>اسم الموديل</th>
+                    <!-- MainType column -->
+                </tr>
+                </thead>
+                <tbody>
+                {% for x in models %}
+                <tr data-main-type="{{ x }}">
+                    <!-- Data attribute for MainType ID -->
+                    <td>{{ x }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (optional) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+    function getCSRFToken() {
+        const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]");
+        return csrfInput ? csrfInput.value : "";
+      }
+
+    function updateValues(action, value, field) {
+        function getItemIdFromUrl() {
+        const urlPath = window.location.pathname; // Get the full path
+        const segments = urlPath.split('/'); // Split by '/' to get segments
+        const itemId = segments[segments.length - 2]; // Assuming itemId is the second last segment
+        return itemId;
+        }
+
+        // Usage
+        const itemId = getItemIdFromUrl();
+        if(!itemId){
+            alert("no item id was provided");
+            return
+        }
+        const body = {
+            'action': action,
+            'value': value
+        };
+
+        fetch(`http://45.13.59.226/item/${itemId}/update-${field}/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify(body),
+        })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then((data) => {
+            alert("! تم تحديث البيان !"); // Assuming your API returns a message
+            location.reload();
+            // Optionally, you can also update the UI here with the new values
+        })
+        .catch((error) => {
+            console.error("Error updating main item:", error.message);
+            alert("An error occurred: " + error.message); // Show user-friendly error
+        });
+    }
+
+    document.getElementById('btn-main-add').addEventListener('click',function(){
+        const value = document.getElementById('maintype').value;
+        updateValues('add',value,'main');
+    });
+    document.getElementById('btn-main-remove').addEventListener('click',function(){
+        const value = document.getElementById('maintype').value;
+        updateValues('remove',value,'main');
+    });
+
+
+    document.getElementById('btn-sub-add').addEventListener('click',function(){
+        const value = document.getElementById('subtype').value;
+        updateValues('add',value,'sub');
+    });
+    document.getElementById('btn-sub-remove').addEventListener('click',function(){
+        const value = document.getElementById('subtype').value;
+        updateValues('remove',value,'sub');
+    });
+
+
+    document.getElementById('btn-model-add').addEventListener('click',function(){
+        const value = document.getElementById('model').value;
+        updateValues('add',value,'model');
+    });
+    document.getElementById('btn-model-remove').addEventListener('click',function(){
+        const value = document.getElementById('model').value;
+        updateValues('remove',value,'model');
+    });
+
+    </script>
+  </body>
+</html>

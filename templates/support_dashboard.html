@@ -1,95 +1,390 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl"> <!-- Set lang to 'ar' for Arabic and dir to 'rtl' -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Dashboard</title>
+    <title>لوحة تحكم الدعم</title> <!-- Arabic title -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            background-color: #f4f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        #messages {
-            max-width: 600px;
+        .container {
+            margin-top: 40px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2rem;
+            color: #343a40;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 8px;
             margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            background-color: #fff;
+            transition: all 0.3s ease;
         }
 
-        textarea {
-            width: 100%;
-            padding: 10px;
+        .card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            font-size: 1.2rem;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 20px;
+            color: #555;
+        }
+
+        .badge {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+
+        .badge-open {
+            background-color: #ff6347;
+            color: white;
+        }
+
+        .badge-closed {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .feedback-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .feedback-item h5 {
             margin-bottom: 10px;
+            color: #343a40;
         }
 
-        button {
+        .feedback-message {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        .feedback-message-time {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .input-group {
+            margin-top: 15px;
+        }
+
+        .input-group .form-control {
+            border-radius: 20px;
+        }
+
+        .input-group-append .btn {
+            border-radius: 20px;
+            background-color: #007bff;
+            color: white;
+        }
+
+        .feedback-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .feedback-footer .btn {
+            border-radius: 8px;
+        }
+
+        .notification {
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        .refresh-button {
+            position: fixed;
+            top: 10px;
+            left: 10px; /* Move button to the left in RTL */
             padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .refresh-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Add a nice rounded border to the feedback section */
+        .feedback-item .collapse {
+            margin-top: 10px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+
+        /* Style for feedback toggle button */
+        .toggle-feedback-btn {
+            background-color: #007bff;
+            color: white;
+            border-radius: 25px;
+            padding: 5px 15px;
+            border: none;
             cursor: pointer;
+            margin-left: 10px;
         }
 
-        select {
-            padding: 10px;
-            margin-bottom: 10px;
+        .toggle-feedback-btn:hover {
+            background-color: #0056b3;
         }
 
-        form {
-            margin-bottom: 20px;
+        .header-buttons {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
         }
+
+        .header-buttons .btn {
+            margin-right: 10px;
+        }
+
     </style>
 </head>
 <body>
-    <h1>Support Dashboard</h1>
 
-    <!-- Client Selection -->
-    <form method="get" action="{% url 'support-dashboard' %}">
-        <label for="client_id">Select Client:</label>
-        <select name="client_id" id="client_id" onchange="this.form.submit()">
-            <option value="">-- Choose a Client --</option>
-            {% for client in clients %}
-                <option value="{{ client.clientid }}" {% if client == selected_client %}selected{% endif %}>{{ client.name }}</option>
-            {% endfor %}
-        </select>
-    </form>
+<div class="container">
+    <h2>لوحة تحكم الدعم</h2> <!-- Arabic heading -->
 
-    {% if selected_client %}
-        <h2>Messages with {{ selected_client.name }}</h2>
+    <div id="feedback-container">
+        <!-- Feedback threads will be loaded here -->
+    </div>
 
-        <!-- Display Messages -->
-        <div id="messages">
-            {% for message in messages %}
-                <p><strong>{{ message.sender }}:</strong> {{ message.message }} <br><small>{{ message.timestamp }}</small></p>
-            {% endfor %}
-        </div>
+    <button class="refresh-button">تحديث الملاحظات</button> <!-- Arabic button text -->
+</div>
 
-        <!-- Send New Message -->
-        <div>
-            <h3>Send Message</h3>
-            <textarea id="message" rows="4" cols="50"></textarea><br>
-            <button id="sendMessage" onclick="sendMessage()">Send</button>
-        </div>
+<script>
+    $(document).ready(function() {
+        // Function to load feedbacks
+        function loadFeedbacks() {
+            $.get("/fetch_all_feedback/", function(data) {
+                let feedbackContainer = $("#feedback-container");
+                feedbackContainer.empty(); // Clear the previous content
 
-    {% else %}
-        <p>Select a client to view messages.</p>
-    {% endif %}
+                let openFeedbackNotification = false;
 
-    <script>
-        function sendMessage() {
-            const message = document.getElementById('message').value;
-            const clientId = "{{ selected_client.clientid }}";
+                $.each(data, function(clientId, clientData) {
+                    let clientName = clientData.client_name;
+                    let feedbacks = clientData.feedbacks;
+                    let openFeedbackCount = feedbacks.filter(feedback => !feedback.is_resolved).length;
 
-            $.post("{% url 'send-message' %}", {
-                'client_id': clientId,
-                'message': message,
-                'csrfmiddlewaretoken': '{{ csrf_token }}'
-            }, function(response) {
-                if(response.status) {
-                    alert(response.status);
-                    location.reload();  // Reload the page to show the new message
-                } else {
-                    alert(response.error);
+                    let clientHtml = `
+                        <div class="card">
+                            <div class="card-header">
+    <div>
+        <h4>${clientName} (Client ID: ${clientId})</h4>
+        <small>${feedbacks.length} ملاحظات</small> <!-- Arabic text for 'Feedbacks' -->
+    </div>
+    <div class="header-buttons">
+        ${openFeedbackCount > 0 ? 
+            `<span class="badge badge-open">ملاحظات مفتوحة (${openFeedbackCount})</span>` 
+            : ''}
+        <!-- Only the icon for toggling feedback -->
+        <button class="toggle-feedback-btn" data-toggle="collapse" data-target="#feedback-client-${clientId}" aria-expanded="false" aria-controls="feedback-client-${clientId}">
+            <i class="fas fa-caret-down"></i>
+        </button>
+    </div>
+</div>
+
+                            <div class="card-body">
+                                <div id="feedback-client-${clientId}" class="collapse">
+                    `;
+
+                    // Loop through feedbacks
+                    $.each(feedbacks, function(index, feedback) {
+                        let isResolved = feedback.is_resolved;
+                        let resolvedBadge = isResolved ? '<span class="badge badge-closed">مغلق</span>' : '<span class="badge badge-open">مفتوح</span>';
+
+                        let feedbackHtml = `
+                            <div class="feedback-item">
+                                <h5>ملاحظات: ${feedback.feedback_text} (${feedback.created_at}) ${resolvedBadge}</h5> <!-- Arabic text for 'Feedback' -->
+                                <button class="btn btn-info toggle-feedback-btn" data-toggle="collapse" data-target="#feedback-details-${clientId}-${feedback.id}" aria-expanded="false" aria-controls="feedback-details-${clientId}-${feedback.id}">
+                                    <i class="fas fa-caret-down"></i> عرض التفاصيل
+                                </button> <!-- Arabic text for 'Toggle Feedback Details' -->
+                                <div id="feedback-details-${clientId}-${feedback.id}" class="collapse">
+                                    <ul class="list-group" id="messages-${feedback.id}">
+                        `;
+
+                        $.each(feedback.messages, function(i, message) {
+                            let sender = message.sender_type === "client" ? "عميل" : "موظف"; // Arabic text for 'Client' and 'Employee'
+                            let senderClass = message.sender_type === "client" ? "text-primary" : "text-success";
+                            feedbackHtml += `
+                                <li class="list-group-item ${senderClass}">
+                                    <strong>${sender}:</strong> ${message.message_text}
+                                    <small class="text-muted feedback-message-time">(${message.sent_at})</small>
+                                </li>
+                            `;
+                        });
+
+                        feedbackHtml += `
+                                    </ul>
+                                    ${!isResolved ? 
+                                        `<form class="response-form mt-3" data-feedback-id="${feedback.id}">
+                                            <div class="input-group">
+                                                <input type="text" name="message_text" class="form-control" placeholder="أدخل ردك..." required> <!-- Arabic placeholder -->
+                                                <div class="input-group-append">
+                                                    <button type="submit" class="btn">إرسال</button> <!-- Arabic text for 'Send' -->
+                                                </div>
+                                            </div>
+                                        </form>`
+                                     : ''}
+                                    <div class="feedback-footer">
+                                        ${!isResolved ? `<button class="btn btn-warning" onclick="closeFeedback(${feedback.id})">إغلاق الملاحظة</button>` : ''} <!-- Arabic text for 'Close Feedback' -->
+                                        <button class="btn btn-danger" onclick="deleteFeedback(${feedback.id})">حذف الملاحظة</button> <!-- Arabic text for 'Delete Feedback' -->
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        clientHtml += feedbackHtml;
+                    });
+
+                    clientHtml += `
+                            </div>
+                        </div>
+                    </div>
+                    `;
+
+                    feedbackContainer.append(clientHtml);
+
+                    // Check if there's any open feedback and play notification
+                    if (openFeedbackCount > 0) {
+                        openFeedbackNotification = true;
+                    }
+                });
+
+                // Play sound notification every 10 seconds if there's open feedback
+                if (openFeedbackNotification) {
+                    setInterval(function() {
+                        new Audio('https://www.soundjay.com/button/beep-07.wav').play();
+                    }, 10000); // Play every 10 seconds
                 }
             });
         }
-    </script>
+
+        // Initial load
+        loadFeedbacks();
+
+        // Refresh button click
+        $(".refresh-button").on("click", function() {
+            loadFeedbacks(); // Reload the feedbacks
+        });
+
+        // Refresh every minute
+        setInterval(function() {
+            loadFeedbacks();
+        }, 60000); // Refresh every minute
+
+        // Handle employee response submission
+        $(document).on("submit", ".response-form", function(e) {
+            e.preventDefault();
+
+            let feedbackId = $(this).data("feedback-id");
+            let messageText = $(this).find("input[name='message_text']").val();
+            let form = $(this);
+
+            $.ajax({
+                url: `/add_message_to_feedback/${feedbackId}/`,
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    message_text: messageText,
+                    sender_type: "employee"
+                }),
+                success: function(data) {
+                    $("#messages-" + feedbackId).append(
+                        `<li class="list-group-item text-success">
+                            <strong>موظف:</strong> ${messageText} <!-- Arabic text for 'Employee' -->
+                            <small class="text-muted feedback-message-time">(${data.sent_at})</small>
+                        </li>`
+                    );
+                    form.find("input[name='message_text']").val(""); // Clear input
+                },
+                error: function(xhr) {
+                    alert("خطأ: " + xhr.responseJSON.error); 
+                }
+            });
+        });
+    });
+
+    // Close Feedback
+    function closeFeedback(feedbackId) {
+    $.ajax({
+        url: `/close_feedback/${feedbackId}/`,
+        type: "POST",
+        success: function(response) {
+            alert(response.message);
+            
+            // Update the badge status in the UI
+            let feedbackThread = $(`#messages-${feedbackId}`).closest('.feedback-item');
+            feedbackThread.find("h5 span.badge").removeClass("badge-open").addClass("badge-closed").text("مغلق");
+
+            // Disable the response form
+            feedbackThread.find(".response-form").remove();
+            
+            // Remove the "Close Feedback" button
+            feedbackThread.find("button.btn-warning").remove();
+        },
+        error: function(xhr) {
+            alert("خطأ: " + xhr.responseJSON.error); 
+        }  // This was missing
+    });
+}
+
+
+    // Delete Feedback
+    function deleteFeedback(feedbackId) {
+        if (confirm("هل أنت متأكد أنك تريد حذف هذه الملاحظة؟ هذه العملية لا يمكن التراجع عنها.")) { 
+            $.ajax({
+                url: `/delete_feedback/${feedbackId}/`,
+                type: "POST",
+                success: function(response) {
+                    alert(response.message);
+                    // Remove the feedback from the UI
+                    $(`#feedback-details-${feedbackId}`).closest('.feedback-item').remove();
+                },
+                error: function(xhr) {
+                    alert("خطأ: " + xhr.responseJSON.error); 
+                }
+            });
+        }
+    }
+</script>
 
 </body>
 </html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Notifications</title>
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getMessaging, onMessage } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjuNQh4ngpz2uwoKz_w61RWNOvzhK7TW0",
+            authDomain: "almogoilerpsys.firebaseapp.com",
+            projectId: "almogoilerpsys",
+            storageBucket: "almogoilerpsys.firebasestorage.app",
+            messagingSenderId: "171081702881",
+            appId: "1:171081702881:web:cc547924a1915e289ec6a0",
+            measurementId: "G-556M2N842R"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+
+        // Request permission for notifications
+        function requestPermission() {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    console.log("Notification permission granted.");
+                } else {
+                    console.log("Notification permission denied.");
+                }
+            });
+        }
+
+        // Receive messages when the page is open
+        onMessage(messaging, (payload) => {
+            console.log("Message received: ", payload);
+            const notificationDiv = document.getElementById("notifications");
+            const message = document.createElement("p");
+            message.innerText = `New Notification: ${payload.notification.title} - ${payload.notification.body}`;
+            notificationDiv.appendChild(message);
+        });
+
+        // Request permission when the page loads
+        document.addEventListener("DOMContentLoaded", requestPermission);
+    </script>
+</head>
+<body>
+    <h2>Firebase Notifications</h2>
+    <p>Waiting for notifications...</p>
+    <div id="notifications"></div>
+</body>
+</html>
