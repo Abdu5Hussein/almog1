@@ -52,33 +52,65 @@ from rest_framework.views import APIView
 from .models import ChatMessage
 from rest_framework.exceptions import NotFound
 from django.http import JsonResponse
+from firebase_admin import messaging
 import firebase_admin
+<<<<<<< HEAD
 from firebase_admin import credentials, messaging
 from django.http import JsonResponse
 import os
+import firebase_admin
+from firebase_admin import credentials, auth
 
-# Initialize Firebase Admin SDK
-firebase_key_path = os.getenv('FIREBASE_KEY_PATH', "/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-865ea2a63a.json")
+# Check if Firebase is initialized
 if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_key_path)
+    cred = credentials.Certificate("/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-367f5e9e17.json")
     firebase_admin.initialize_app(cred)
+
+try:
+    user = auth.get_user_by_email("test@example.com")  # Replace with an actual Firebase user email
+    print(f"Firebase Auth Working! User UID: {user.uid}")
+except Exception as e:
+    print(f"Firebase Error: {e}")
 
 def send_firebase_notification(request):
     """Send notification using Firebase."""
+=======
+from firebase_admin import credentials
+
+# Initialize Firebase Admin SDK (already done)
+cred = credentials.Certificate('/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-865ea2a63a.json')
+firebase_admin.initialize_app(cred)
+
+def send_firebase_notification(token, title, body):
+    """Send a Firebase Cloud Messaging notification."""
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=title,
+            body=body,
+        ),
+        token=token,
+    )
+
+>>>>>>> parent of ffc75ac... new update 2
     try:
-        # Message payload
-        message = messaging.Message(
-            notification=messaging.Notification(
-                title="New Invoice Update",
-                body="Your invoice status has been updated."
-            ),
-            topic="general",  # You can use a token here instead of topic
-        )
-
-        # Send notification
+        # Simulate sending a notification
         response = messaging.send(message)
-        return JsonResponse({"message": "Notification sent successfully!", "response": response})
+        return response
+    except Exception as e:
+        raise Exception(f"Error sending message: {str(e)}")
 
+def send_notification(request):
+    """Test sending notification with a dummy FCM token."""
+    # Use a dummy token for testing
+    dummy_token = "dummy_fcm_token_for_testing"
+
+    title = "Test Notification"
+    body = "This is a test notification sent from Django."
+
+    try:
+        # Call the function to send the notification
+        response = send_firebase_notification(dummy_token, title, body)
+        return JsonResponse({"message": "Test notification sent successfully!", "response": response})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
@@ -1356,30 +1388,30 @@ def create_main_item(request):
 
         # Create a new MainItem instance
         new_item = Mainitem(
-            itemno=data.get('originalno'),
-            itemmain=data.get('itemmain'),
-            itemsubmain=data.get('itemsub'),
-            itemname=data.get('pnamearabic'),
-            eitemname=data.get('pnameenglish'),
-            companyproduct=data.get('company'),
-            replaceno=data.get('companyno'),
-            pno=next_pno_no,
-            barcodeno=data.get('barcode'),
-            memo=data.get('description'),
-            itemplace=data.get('location'),
-            itemsize=data.get('country'),
-            itemperbox=int(data.get('pieces4box', 0)),
-            itemthird=data.get('model'),
-            itemvalue=int(data.get('storage', 0)),
-            itemtemp=int(data.get('backup', 0)),
-            itemvalueb=int(data.get('temp', 0)),
-            resvalue=int(data.get('reserved', 0)),
-            orgprice=float(data.get('originprice', 0)),
-            orderprice=float(data.get('buyprice', 0)),
-            costprice=float(data.get('expensesprice', 0)),
-            buyprice=float(data.get('sellprice', 0)),
-            lessprice=float(data.get('lessprice', 0)),
-        )
+                itemno=data.get('originalno') or None,
+                itemmain=data.get('itemmain') or None,
+                itemsubmain=data.get('itemsub') or None,
+                itemname=data.get('pnamearabic'),
+                eitemname=data.get('pnameenglish') or None,
+                companyproduct=data.get('company') or None,
+                replaceno=data.get('companyno') or None,
+                pno=next_pno_no,
+                barcodeno=data.get('barcode') or None,
+                memo=data.get('description') or None,
+                itemplace=data.get('location') or None,
+                itemsize=data.get('country') or None,
+                itemperbox=int(data.get('pieces4box', 0) or 0),
+                itemthird=data.get('model') or None,
+                itemvalue=int(data.get('storage', 0) or 0),
+                itemtemp=int(data.get('backup', 0) or 0),
+                itemvalueb=int(data.get('temp', 0) or 0),
+                resvalue=int(data.get('reserved', 0) or 0),
+                orgprice=float(data.get('originprice', 0) or 0),
+                orderprice=float(data.get('buyprice', 0) or 0),
+                costprice=float(data.get('expensesprice', 0) or 0),
+                buyprice=float(data.get('sellprice', 0) or 0),
+                lessprice=float(data.get('lessprice', 0) or 0),
+            )
         new_item.save()
 
         return JsonResponse({'status': 'success', 'message': 'Record created successfully!'})

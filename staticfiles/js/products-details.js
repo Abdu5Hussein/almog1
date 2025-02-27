@@ -482,6 +482,11 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("editButton").addEventListener("click", function (event) {
     event.preventDefault(); // Prevent form submission
 
+    // if (EmptyRequiredFields()) {
+    //   alert('! الرجاء ملئ الحقول المطلوبة !')
+    //   return
+    // }
+
     if (window.currentRow) {
       // Get the data from the form fields using helper functions
       const data = {
