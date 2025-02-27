@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firebase Notifications</title>
+    
+    <!-- Firebase SDK -->
     <script type="module">
         // Import Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-        import { getMessaging, onMessage } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging.js";
+        import { getMessaging, onMessage, getToken } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging.js";
 
-        // Your Firebase configuration
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDjuNQh4ngpz2uwoKz_w61RWNOvzhK7TW0",
             authDomain: "almogoilerpsys.firebaseapp.com",
             projectId: "almogoilerpsys",
-            storageBucket: "almogoilerpsys.firebasestorage.app",
+            storageBucket: "almogoilerpsys.appspot.com",
             messagingSenderId: "171081702881",
             appId: "1:171081702881:web:cc547924a1915e289ec6a0",
             measurementId: "G-556M2N842R"
@@ -29,28 +31,77 @@
             Notification.requestPermission().then(permission => {
                 if (permission === "granted") {
                     console.log("Notification permission granted.");
+                    getFCMToken();
                 } else {
                     console.log("Notification permission denied.");
                 }
             });
         }
 
-        // Receive messages when the page is open
+        // Get FCM token and display it
+        function getFCMToken() {
+            getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY_HERE" })
+                .then((currentToken) => {
+                    if (currentToken) {
+                        console.log("FCM Token:", currentToken);
+                        document.getElementById("fcmToken").innerText = currentToken;
+                    } else {
+                        console.log("No FCM token available.");
+                    }
+                })
+                .catch((err) => {
+                    console.log("Error retrieving token:", err);
+                });
+        }
+
+        // Listen for incoming messages
         onMessage(messaging, (payload) => {
-            console.log("Message received: ", payload);
+            console.log("Message received:", payload);
             const notificationDiv = document.getElementById("notifications");
             const message = document.createElement("p");
-            message.innerText = `New Notification: ${payload.notification.title} - ${payload.notification.body}`;
+            message.innerText = `📢 ${payload.notification.title}: ${payload.notification.body}`;
             notificationDiv.appendChild(message);
         });
 
         // Request permission when the page loads
         document.addEventListener("DOMContentLoaded", requestPermission);
     </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #notifications {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            background: #f9f9f9;
+        }
+        p {
+            padding: 5px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Firebase Notifications</h2>
+
+    <h2>📲 Firebase Notifications</h2>
     <p>Waiting for notifications...</p>
-    <div id="notifications"></div>
+
+    <div>
+        <strong>FCM Token:</strong>
+        <p id="fcmToken">Fetching...</p>
+    </div>
+
+    <div id="notifications">
+        <h3>🔔 Notifications:</h3>
+    </div>
+
 </body>
 </html>
