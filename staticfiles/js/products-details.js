@@ -436,6 +436,7 @@ document.addEventListener("DOMContentLoaded", function () {
       expensesprice: getValueById("expenses-price") || 0,
       sellprice: getValueById("sell-price") || 0,
       lessprice: getValueById("less-price") || 0,
+      shortname: getValueById("short-name") || null,
     };
 
     console.log(data);
@@ -509,12 +510,13 @@ document.addEventListener("DOMContentLoaded", function () {
         backup: getValueById("backup-balance") || 0,
         temp: getValueById("temp-balance") || 0,
         reserved: getValueById("reserved-balance") || 0,
-        location: getValueById("location"),
+        location: getValueById("location") || "",
         originprice: getValueById("origin-price") || 0,
         buyprice: getValueById("buy-price") || 0,
         expensesprice: getValueById("expenses-price") || 0,
         sellprice: getValueById("sell-price") || 0,
         lessprice: getValueById("less-price") || 0,
+        shortname: getValueById("short-name") || null,
       };
 
       // Send the data to the server via a PATCH request
@@ -1039,6 +1041,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("expenses-price").placeholder = data.costprice || "0";
     document.getElementById("sell-price").placeholder = data.buyprice || "0";
     document.getElementById("less-price").placeholder = data.lessprice || "0";
+    document.getElementById("short-name").placeholder = data.short_name || "";
   }
 
 

@@ -6,12 +6,13 @@ from .models import ChatMessage, SupportChatMessageSys, SupportChatConversation,
 class MainitemSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Mainitem
-        fields = [
-            'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname', 'eitemname', 'companyproduct',
-            'replaceno', 'pno', 'barcodeno', 'memo', 'itemsize', 'itemperbox', 'itemthird', 'itemvalue',
-            'itemtemp', 'itemvalueb', 'resvalue', 'itemplace', 'orgprice', 'orderprice', 'costprice',
-            'buyprice', 'lessprice'
-        ]
+        fields = '__all__'
+        # fields = [
+        #     'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname', 'eitemname', 'companyproduct',
+        #     'replaceno', 'pno', 'barcodeno', 'memo', 'itemsize', 'itemperbox', 'itemthird', 'itemvalue',
+        #     'itemtemp', 'itemvalueb', 'resvalue', 'itemplace', 'orgprice', 'orderprice', 'costprice',
+        #     'buyprice', 'lessprice',#'shortname',
+        # ]
 
 class EmployeesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -106,7 +107,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feedback
         fields = ['id', 'sender', 'feedback_text', 'created_at', 'employee_response', 'is_resolved', 'response_at']
-    
+
 class SellInvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SellinvoiceTable

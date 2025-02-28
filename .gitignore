@@ -23,3 +23,5 @@ almog1.log
 # Ignore local settings
 local_settings.py
 node_modules
+.json
+almogoilerpsys-firebase-adminsdk-*.json

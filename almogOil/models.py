@@ -176,6 +176,7 @@ class SellinvoiceTable(models.Model):
     sent_by = models.CharField(max_length=1000, blank=True, null=True)
     office = models.CharField(max_length=1000, blank=True, null=True)
     office_no = models.CharField(max_length=100, blank=True, null=True)
+    mobile = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Invoice {self.autoid}"
@@ -249,6 +250,7 @@ class Mainitem(models.Model):
     itemmain = models.CharField(db_column='ItemMain', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemsubmain = models.CharField(db_column='ItemSubMain', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemname = models.CharField(db_column='ItemName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    short_name = models.CharField(db_column='ShortName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemthird = models.CharField(db_column='ItemThird', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemsize = models.CharField(db_column='ItemSize', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     companyproduct = models.CharField(db_column='CompanyProduct', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
@@ -278,7 +280,7 @@ class Mainitem(models.Model):
     eitemname = models.CharField(db_column='EItemName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     currtype = models.CharField(db_column='CurrType', max_length=5, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     lessprice = models.DecimalField(db_column='LessPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
-    pno = models.CharField(db_column='PNo', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    pno = models.IntegerField(db_column='PNo', blank=False, null=False, unique=True)  # Field name made lowercase.
     currvalue = models.DecimalField(db_column='CurrValue', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
     resvalue = models.IntegerField(db_column='resValue', blank=True, null=True)  # Field name made lowercase.
     itemperbox = models.IntegerField(db_column='ItemPerbox', blank=True, null=True)  # Field name made lowercase.
@@ -783,7 +785,7 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.receiver.username}"
-    
+
 
 
 class SupportChatConversation(models.Model):
@@ -857,7 +859,7 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"Feedback from {self.sender.name} to {self.receiver.name} at {self.created_at}"
-    
+
 class FeedbackMessage(models.Model):
     feedback = models.ForeignKey(Feedback, on_delete=models.CASCADE, related_name="messages")
     sender_type = models.CharField(max_length=10, choices=[('client', 'Client'), ('employee', 'Employee')])
@@ -865,4 +867,4 @@ class FeedbackMessage(models.Model):
     sent_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"Message in Feedback {self.feedback.id}"    
+        return f"Message in Feedback {self.feedback.id}"

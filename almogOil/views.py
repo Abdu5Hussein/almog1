@@ -1319,7 +1319,7 @@ def edit_main_item(request):
 
             # Function to safely update a field
             def safe_update(field_name, new_value):
-                if new_value not in [None, ""]:
+                if new_value not in [None, "",0,"0"]:
                     setattr(item, field_name, new_value)
 
             # Update the model fields with the new data if not empty
@@ -1522,7 +1522,7 @@ def get_data(request):
             'barcodeno', 'eitemname', 'currtype', 'lessprice', 'pno',
             'currvalue', 'itemvalueb', 'costprice', 'resvalue', 'orderprice',
             'orderlastdate', 'ordersource', 'orderbillno',
-            'buylastdate', 'buysource', 'buybillno', 'orgprice','itemperbox','oem_numbers'
+            'buylastdate', 'buysource', 'buybillno', 'orgprice','itemperbox','oem_numbers','short_name'
         ).order_by('itemname')
 
         total_itemvalue = Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
@@ -3578,21 +3578,22 @@ def Sell_invoice_create_item(request):
                     status=400
                 )
 
-            # Get the related invoice
-            try:
-                invoice = SellinvoiceTable.objects.get(invoice_no=data.get("invoice_id"))
-                invoice.amount += (
-                    Decimal(data.get("sellprice") or 0) * Decimal(data.get("itemvalue") or 0)
-                )
-                invoice.save()
-            except SellinvoiceTable.DoesNotExist:
-                return JsonResponse({"error": "Invoice not found"}, status=404)
-
             # Get the related product
             try:
                 product = Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
             except Mainitem.DoesNotExist:
                 return JsonResponse({"error": "Product not found"}, status=404)
+
+            # Get the related invoice
+            try:
+                invoice = SellinvoiceTable.objects.get(invoice_no=data.get("invoice_id"))
+                invoice.amount += (
+                    Decimal(product.buyprice or 0) * Decimal(data.get("itemvalue") or 0)
+                )
+                invoice.save()
+            except SellinvoiceTable.DoesNotExist:
+                return JsonResponse({"error": "Invoice not found"}, status=404)
+
 
             # Check if sufficient quantity exists
             item_value = int(data.get("itemvalue") or 0)
@@ -3600,7 +3601,7 @@ def Sell_invoice_create_item(request):
                 return JsonResponse({"error": "Insufficient product quantity"}, status=400)
 
             # Create a new SellInvoiceItemsTable instance
-            sell_price = Decimal(data.get("sellprice") or 0)
+            sell_price = Decimal(product.buyprice or 0)
             item = SellInvoiceItemsTable.objects.create(
                 invoice_instance=invoice,
                 invoice_no=data.get("invoice_id"),
@@ -3682,6 +3683,17 @@ def Sell_invoice_create_item(request):
                 details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
                 registration_date=datetime.now(),
                 current_balance=round(last_balance_amount, 2),  # Updated balance
+                client_id_id=invoice.client,  # Client ID
+                )
+
+            if invoice.mobile == True:
+                TransactionsHistoryTable.objects.create(
+                credit=float(sell_price * item_value)*0.10,
+                debt=0.0,
+                transaction=f"نسبة بيع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
+                details=f"نسبة بيع 10% مقابل بضاتع - فاتورة رقم {data.get('invoice_id')}",
+                registration_date=datetime.now(),
+                current_balance=round(last_balance_amount, 2) + (float(sell_price * item_value)*0.10),  # Updated balance
                 client_id_id=invoice.client,  # Client ID
                 )
 
