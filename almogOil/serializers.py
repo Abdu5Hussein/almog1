@@ -2,6 +2,9 @@
 from rest_framework import serializers
 from . import models
 from .models import ChatMessage, SupportChatMessageSys, SupportChatConversation, AllClientsTable, Feedback,EmployeesTable
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
 class MainitemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -125,3 +128,8 @@ class ReturnPermissionItemsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.return_permission_items
         fields = "__all__"  # Include all fields
+
+class EnginesTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.enginesTable
+        fields = ['fileid', 'engine_name', 'maintype_str', 'subtype_str']

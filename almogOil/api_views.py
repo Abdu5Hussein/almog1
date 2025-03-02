@@ -27,6 +27,7 @@ from django.utils.timezone import now
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.dispatch import receiver
+from rest_framework.decorators import action
 
 
 @api_view(["POST"])
@@ -687,3 +688,8 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         # Serialize and return the created object
         serializer = self.get_serializer(returned_item_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class EnginesTableViewSet(viewsets.ModelViewSet):
+    queryset = models.enginesTable.objects.all()
+    serializer_class = serializers.EnginesTableSerializer

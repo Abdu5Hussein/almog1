@@ -69,7 +69,7 @@ firebase_admin.initialize_app(cred)
 def send_push_notification(title, body, token):
     """
     Send push notification to a specific device using Firebase Cloud Messaging.
-    
+
     :param title: The title of the notification.
     :param body: The body of the notification.
     :param token: The device token of the user you want to send the notification to.
@@ -84,14 +84,14 @@ def send_push_notification(title, body, token):
             ),
             token=token,  # Token of the device you want to send the notification to
         )
-        
+
         # Send the message
         response = messaging.send(message)
         return response
     except Exception as e:
         print(f"Error sending notification: {e}")
         return None
-    
+
 
 
 def notify_user(request):
@@ -116,8 +116,8 @@ def notify_user(request):
             return JsonResponse({"success": "Notification sent successfully", "response": response})
         else:
             return JsonResponse({"error": "Failed to send notification"}, status=500)
-    
-    return JsonResponse({"error": "Invalid request method"}, status=405)    
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 def LogInView(request):
     if request.method == 'POST':
@@ -4378,6 +4378,17 @@ def feedback_by_user_id(request):
     return JsonResponse(feedback_data, safe=False)
 
 @csrf_exempt
+def feedback_details(request, feedback_id):
+    # Get the feedback object
+    feedback = get_object_or_404(Feedback, id=feedback_id)
+
+    # Access the client (sender) from the feedback model
+    client = feedback.sender  # This is the related AllClientsTable object
+
+    # If you want to pass any other data, you can add here
+    return render(request, 'feedback_details.html', {'feedback': feedback, 'client': client})
+
+@csrf_exempt
 def fetch_feedback_messages(request, feedback_id):
     feedback_messages = FeedbackMessage.objects.filter(feedback_id=feedback_id).order_by('sent_at')
 
@@ -4443,4 +4454,13 @@ def return_items_report_view(request):
     return render(request, 'return-permission-report.html',context)
 
 
+def engines_view(request):
+    engines = enginesTable.objects.values('fileid', 'engine_name','subtype_str','maintype_str')
+    subtypes =   Subtypetable.objects.all().values()
+    maintypes =   Maintypetable.objects.all().values()
 
+    return render(request, 'engines-table.html', {
+        'engines': engines,
+        'subType': subtypes,
+        'mainType': maintypes,
+    })

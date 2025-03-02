@@ -1,0 +1,273 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جدول المحركات</title>
+    <link rel="stylesheet" href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}" />
+    <style>
+      table {
+        margin-top: 20px;
+      }
+      .form-container {
+        margin-top: 20px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .btn-container {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4">
+      <h2 class="mb-4 text-center">جدول المحركات</h2>
+
+      <!-- Form Container -->
+      <div class="form-container">
+        <h4 class="mb-3">إدارة المحركات</h4>
+        <form id="engine-form" method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="id" id="engineId" />
+          <div class="mb-3">
+            <label for="item-main" class="form-label">اسم البيان الرئيسي</label>
+            <select id="item-main" name="item-main" class="form-select" multiple>
+              <option value="" disabled>اختر بيان رئيسي</option>
+              {% for x in mainType %}
+              <option value="{{ x.typename }}">{{ x.typename }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">الرجاء اختيار بيان رئيسي.</div>
+          </div>
+          <div class="mb-3">
+            <label for="item-sub" class="form-label">اسم البيان الفرعي</label>
+            <select id="item-sub" name="item-sub" class="form-select" multiple>
+              <option value="" disabled>اختر بيان فرعي</option>
+              {% for x in subType %}
+              <option value="{{ x.subtypename }}">{{ x.subtypename }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">الرجاء اختيار بيان فرعي.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="engine-name" class="form-label">اسم المحرك</label>
+            <input type="text" name="engine-name" id="engine-name" class="form-control" placeholder="ادخل اسم المحرك" required />
+            <div class="invalid-feedback">الرجاء إدخال اسم المحرك.</div>
+          </div>
+
+          <div class="btn-container d-flex justify-content-start gap-2">
+            <button type="button" class="btn btn-success" id="add-button">
+              إضافة
+            </button>
+            <button type="button" name="action" value="edit" class="btn btn-primary" id="edit-button">
+              تعديل
+            </button>
+            <button type="button" name="action" value="delete" class="btn btn-danger" id="delete-button">
+              حذف
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Data Grid -->
+      <table id="models-table" class="table table-bordered table-hover text-center">
+        <thead class="table-dark">
+          <tr>
+            <th>اسم المحرك</th>
+            <th>البيان الرئيسي</th>
+            <th>البيان الفرعي</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for x in engines %}
+          <tr data-id="{{ x.fileid }}">
+            <td>{{ x.engine_name }}</td>
+            <td>{{ x.maintype_str }}</td>
+            <td>{{ x.subtype_str }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Custom Script -->
+    <script>
+
+
+        function addEngine() {
+            const data = {
+                "engine_name": document.getElementById("engine-name").value,
+                "maintype_str": Array.from(document.getElementById("item-main").selectedOptions)
+                                    .map(option => option.value)
+                                    .join(';'),
+                "subtype_str": Array.from(document.getElementById("item-sub").selectedOptions)
+                                    .map(option => option.value)
+                                    .join(';'),
+            }
+            console.log(data);
+
+            fetch('/engines/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),  // Stringify the data here
+            })
+            .then(response => {
+                if (response.ok || response.status === 201) {
+                    return response.json(); // If successful or created, parse the response
+                } else {
+                    throw new Error('Failed to create engine'); // Throw an error for any other status
+                }
+            })
+            .then(data => {
+                console.log(data);
+                alert('تمت العملية بنجاح!'); // Show success message if the operation is successful
+            })
+            .catch(error => {
+                alert('حدث خطأ، حاول مرة أخرى.'); // Show error message if something goes wrong
+            }).finally(()=>{
+                location.reload();
+            });
+        }
+
+        function editEngine() {
+            const data = {
+                "engine_name": document.getElementById("engine-name").value,
+                "maintype_str": Array.from(document.getElementById("item-main").selectedOptions)
+                                    .map(option => option.value)
+                                    .join(';'),
+                "subtype_str": Array.from(document.getElementById("item-sub").selectedOptions)
+                                    .map(option => option.value)
+                                    .join(';'),
+            }
+            console.log(data);
+
+            fetch('/engines/', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),  // Stringify the data here
+            })
+            .then(response => {
+                if (response.ok || response.status === 201) {
+                    return response.json(); // If successful or created, parse the response
+                } else {
+                    throw new Error('Failed to update engine'); // Throw an error for any other status
+                }
+            })
+            .then(data => {
+                console.log(data);
+                alert('تم التعديل بنجاح!'); // Show success message if the operation is successful
+            })
+            .catch(error => {
+                alert('حدث خطأ، حاول مرة أخرى.'); // Show error message if something goes wrong
+            }).finally(()=>{
+                location.reload();
+            });
+        }
+
+        function editEngine() {
+            const data = {
+                "engine_name": document.getElementById("engine-name").value,
+                "maintype_str": Array.from(document.getElementById("item-main").selectedOptions)
+                                    .map(option => option.value)
+                                    .join(';'),
+                "subtype_str": Array.from(document.getElementById("item-sub").selectedOptions)
+                                    .map(option => option.value)
+                                    .join(';'),
+            }
+            console.log(data);
+            const id = document.getElementById("engineId").value;
+            fetch(`/engines/${id}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),  // Stringify the data here
+            })
+            .then(response => {
+                if (response.ok || response.status === 201) {
+                    return response.json(); // If successful or created, parse the response
+                } else {
+                    throw new Error('Failed to update engine'); // Throw an error for any other status
+                }
+            })
+            .then(data => {
+                console.log(data);
+                alert('تم التعديل بنجاح!'); // Show success message if the operation is successful
+            })
+            .catch(error => {
+                alert('حدث خطأ، حاول مرة أخرى.'); // Show error message if something goes wrong
+            }).finally(()=>{
+                location.reload();
+            });
+        }
+
+        function deleteEngine() {
+            const idInput = document.getElementById("engineId");
+            const id = idInput.value;
+            const name = idInput.getAttribute("data-name");
+
+            const result = confirm("هل أنت متأكد أنك تريد حذف هذا العنصر؟" + "  " + name);
+
+            if (!result) {
+               return
+            }
+
+            fetch(`/engines/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                //body: JSON.stringify(data),  // Stringify the data here
+            })
+            .then(response => {
+                if (response.status === 204) {
+                    alert('تم الحذف بنجاح!'); // Show success message for status 204 (No Content)
+                } else {
+                    throw new Error('Failed to delete engine'); // Throw error for any other status
+                }
+            })
+            .catch(error => {
+                alert('حدث خطأ، حاول مرة أخرى.'); // Show error message if something goes wrong
+            })
+            .finally(() => {
+                location.reload(); // Reload the page after the operation
+            });
+        }
+
+
+    // Add event listener for rows
+    document.querySelectorAll("tbody tr").forEach((row) => {
+        row.addEventListener("click", function() {
+            // Get the data-id from the clicked row
+            const engineId = this.getAttribute("data-id");
+            const engineName = this.cells[0].innerText;
+
+            // Set the engineId input's value to the clicked row's id
+            const engineIdInput = document.getElementById("engineId");
+            const engineNameInput = document.getElementById("engine-name");
+            engineIdInput.value = engineId;
+            engineNameInput.value = engineName;
+
+            // Add the data-id attribute to the engineId input
+            engineIdInput.setAttribute("data-name", engineName);
+            console.log("id:",engineIdInput.value);
+            console.log("name:",engineName);
+        });
+    });
+
+        document.getElementById("add-button").addEventListener('click', () => addEngine());
+        document.getElementById("edit-button").addEventListener('click', () => editEngine());
+        document.getElementById("delete-button").addEventListener('click', () => deleteEngine());
+    </script>
+  </body>
+</html>

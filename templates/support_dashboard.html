@@ -233,9 +233,13 @@
                         let feedbackHtml = `
                             <div class="feedback-item">
                                 <h5>ملاحظات: ${feedback.feedback_text} (${feedback.created_at}) ${resolvedBadge}</h5> <!-- Arabic text for 'Feedback' -->
-                                <button class="btn btn-info toggle-feedback-btn" data-toggle="collapse" data-target="#feedback-details-${clientId}-${feedback.id}" aria-expanded="false" aria-controls="feedback-details-${clientId}-${feedback.id}">
-                                    <i class="fas fa-caret-down"></i> عرض التفاصيل
-                                </button> <!-- Arabic text for 'Toggle Feedback Details' -->
+                                <!-- Inside feedbackHtml generation -->
+
+<!-- Replace this button with a link -->
+<a href="/feedback_details/{{ feedback.id }}/" class="btn btn-info toggle-feedback-btn">
+    <i class="fas fa-caret-down"></i> عرض التفاصيل
+</a>
+ <!-- Arabic text for 'Toggle Feedback Details' -->
                                 <div id="feedback-details-${clientId}-${feedback.id}" class="collapse">
                                     <ul class="list-group" id="messages-${feedback.id}">
                         `;
@@ -308,7 +312,7 @@
         // Refresh every minute
         setInterval(function() {
             loadFeedbacks();
-        }, 6000); // Refresh every minute
+        }, 600000); // Refresh every minute
 
         // Handle employee response submission
         $(document).on("submit", ".response-form", function(e) {
@@ -388,3 +392,4 @@
 
 </body>
 </html>
+
