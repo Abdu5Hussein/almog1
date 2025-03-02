@@ -65,7 +65,7 @@
             </div>
 
             <!-- Data Grid -->
-            <table class="table table-bordered">
+            <table class="table table-bordered" id='main-table'>
                 <thead class="table-dark">
                 <tr>
                     <th>اسم البيان</th>
@@ -131,7 +131,7 @@
 
             <!-- Data Grid -->
             <table
-                id="sub_types-table"
+                id="sub-table"
                 class="table table-bordered table-hover text-center"
             >
                 <thead class="table-dark">
@@ -227,10 +227,10 @@
 
                 <div class="mb-3">
                     <label for="engine-name" class="form-label">اسم المحرك</label>
-                    <select name="engine" class="form-control text-center" id="model">
-                        {% comment %} {% for x in engine_select %}
+                    <select name="engine" class="form-control text-center" id="engine">
+                        {% for x in engine_select %}
                         <option value="{{ x.engine_name }}">{{ x.engine_name }}</option>
-                        {% endfor %} {% endcomment %}
+                        {% endfor %}
                     </select>
                     <div class="invalid-feedback">الرجاء إدخال اسم المحرك.</div>
                 </div>
@@ -271,12 +271,12 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% comment %} {% for x in engines %}
+                {% for x in engines %}
                 <tr data-main-type="{{ x }}">
                     <!-- Data attribute for  ID -->
                     <td>{{ x }}</td>
                 </tr>
-                {% endfor %} {% endcomment %}
+                {% endfor %}
                 </tbody>
             </table>
 
@@ -365,6 +365,140 @@
         updateValues('remove',value,'model');
     });
 
+    document.getElementById('btn-engine-add').addEventListener('click',function(){
+        const value = document.getElementById('engine').value;
+        updateValues('add',value,'engine');
+    });
+    document.getElementById('btn-engine-remove').addEventListener('click',function(){
+        const value = document.getElementById('engine').value;
+        updateValues('remove',value,'engine');
+    });
+
+    // Select table and dropdown
+const engines_table = document.getElementById("engines-table");
+const engine_select = document.getElementById("engine");
+
+const models_table = document.getElementById("models-table");
+const model_select = document.getElementById("model");
+
+const main_table = document.getElementById("main-table");
+const main_select = document.getElementById("maintype");
+
+const sub_table = document.getElementById("sub-table");
+const sub_select = document.getElementById("subtype");
+
+// Add event listener to the table
+engines_table.addEventListener("click", function(event) {
+    // Check if a table cell (td) was clicked
+    if (event.target && event.target.nodeName === "TD") {
+        // Get the text content of the clicked cell
+        const clickedValue = event.target.textContent.trim();
+
+        // Check if the value exists in the select options
+        let optionExists = false;
+        for (let option of engine_select.options) {
+            if (option.value === clickedValue) {
+                optionExists = true;
+                break;
+            }
+        }
+
+        // If the value doesn't exist, add it to the options
+        if (!optionExists) {
+            const newOption = document.createElement("option");
+            newOption.value = clickedValue;
+            newOption.textContent = clickedValue;
+            engine_select.appendChild(newOption);
+        }
+
+        // Set the select value to the clicked cell value
+        engine_select.value = clickedValue;
+    }
+});
+
+models_table.addEventListener("click", function(event) {
+    // Check if a table cell (td) was clicked
+    if (event.target && event.target.nodeName === "TD") {
+        // Get the text content of the clicked cell
+        const clickedValue = event.target.textContent.trim();
+
+        // Check if the value exists in the select options
+        let optionExists = false;
+        for (let option of engine_select.options) {
+            if (option.value === clickedValue) {
+                optionExists = true;
+                break;
+            }
+        }
+
+        // If the value doesn't exist, add it to the options
+        if (!optionExists) {
+            const newOption = document.createElement("option");
+            newOption.value = clickedValue;
+            newOption.textContent = clickedValue;
+            engine_select.appendChild(newOption);
+        }
+
+        // Set the select value to the clicked cell value
+        model_select.value = clickedValue;
+    }
+});
+
+sub_table.addEventListener("click", function(event) {
+    // Check if a table cell (td) was clicked
+    if (event.target && event.target.nodeName === "TD") {
+        // Get the text content of the clicked cell
+        const clickedValue = event.target.textContent.trim();
+
+        // Check if the value exists in the select options
+        let optionExists = false;
+        for (let option of engine_select.options) {
+            if (option.value === clickedValue) {
+                optionExists = true;
+                break;
+            }
+        }
+
+        // If the value doesn't exist, add it to the options
+        if (!optionExists) {
+            const newOption = document.createElement("option");
+            newOption.value = clickedValue;
+            newOption.textContent = clickedValue;
+            engine_select.appendChild(newOption);
+        }
+
+        // Set the select value to the clicked cell value
+        sub_select.value = clickedValue;
+    }
+});
+
+main_table.addEventListener("click", function(event) {
+    // Check if a table cell (td) was clicked
+    if (event.target && event.target.nodeName === "TD") {
+        // Get the text content of the clicked cell
+        const clickedValue = event.target.textContent.trim();
+
+        // Check if the value exists in the select options
+        let optionExists = false;
+        for (let option of engine_select.options) {
+            if (option.value === clickedValue) {
+                optionExists = true;
+                break;
+            }
+        }
+
+        // If the value doesn't exist, add it to the options
+        if (!optionExists) {
+            const newOption = document.createElement("option");
+            newOption.value = clickedValue;
+            newOption.textContent = clickedValue;
+            engine_select.appendChild(newOption);
+        }
+
+        // Set the select value to the clicked cell value
+        main_select.value = clickedValue;
+    }
+});
     </script>
   </body>
 </html>

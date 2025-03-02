@@ -52,51 +52,72 @@ from rest_framework.views import APIView
 from .models import ChatMessage
 from rest_framework.exceptions import NotFound
 from django.http import JsonResponse
-from firebase_admin import messaging
 import firebase_admin
-from firebase_admin import credentials
+from firebase_admin import credentials, messaging
 
-try:
-    cred = credentials.Certificate('/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-865ea2a63a.json')
-    firebase_admin.initialize_app(cred)
-except FileNotFoundError:
-    print("Warning: Firebase credentials file not found. Skipping Firebase initialization.")
+# Path to your Firebase Admin SDK JSON key file
+FIREBASE_CREDENTIALS_PATH = "/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-367f5e9e17.json"
 
-def send_firebase_notification(token, title, body):
-    """Send a Firebase Cloud Messaging notification."""
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,
-            body=body,
-        ),
-        token=token,
-    )
-
-    try:
-        # Simulate sending a notification
-        response = messaging.send(message)
-        return response
-    except Exception as e:
-        raise Exception(f"Error sending message: {str(e)}")
-
-def send_notification(request):
-    """Test sending notification with a dummy FCM token."""
-    # Use a dummy token for testing
-    dummy_token = "dummy_fcm_token_for_testing"
-
-    title = "Test Notification"
-    body = "This is a test notification sent from Django."
-
-    try:
-        # Call the function to send the notification
-        response = send_firebase_notification(dummy_token, title, body)
-        return JsonResponse({"message": "Test notification sent successfully!", "response": response})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
-
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+firebase_admin.initialize_app(cred)
 
 # Define your custom User model or replace it with appropriate logic
 # from .models import YourCustomUserModel  # Update this line to use your new model if needed
+
+
+def send_push_notification(title, body, token):
+    """
+    Send push notification to a specific device using Firebase Cloud Messaging.
+    
+    :param title: The title of the notification.
+    :param body: The body of the notification.
+    :param token: The device token of the user you want to send the notification to.
+    :return: The response from Firebase.
+    """
+    try:
+        # Create the notification message
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            token=token,  # Token of the device you want to send the notification to
+        )
+        
+        # Send the message
+        response = messaging.send(message)
+        return response
+    except Exception as e:
+        print(f"Error sending notification: {e}")
+        return None
+    
+
+
+def notify_user(request):
+    """
+    Endpoint to send a push notification to a specific user.
+    :param request: The HTTP request.
+    :return: JsonResponse with the result of the notification sending.
+    """
+    if request.method == "POST":
+        # Extract parameters from the request
+        title = request.POST.get('title')
+        body = request.POST.get('body')
+        token = request.POST.get('token')
+
+        if not title or not body or not token:
+            return JsonResponse({"error": "Missing required fields"}, status=400)
+
+        # Send the push notification
+        response = send_push_notification(title, body, token)
+
+        if response:
+            return JsonResponse({"success": "Notification sent successfully", "response": response})
+        else:
+            return JsonResponse({"error": "Failed to send notification"}, status=500)
+    
+    return JsonResponse({"error": "Invalid request method"}, status=405)    
 
 def LogInView(request):
     if request.method == 'POST':
@@ -4380,19 +4401,23 @@ def addMoreCatView(request,id):
     mains = item.itemmain.split(';') if item.itemmain else []
     subs = item.itemsubmain.split(';') if item.itemsubmain else []
     models = item.itemthird.split(';') if item.itemthird else []
+    engines = item.engine_no.split(';') if item.engine_no else []
 
     main_select = Maintypetable.objects.all().values()
     sub_select = Subtypetable.objects.all().values()
     model_select = Modeltable.objects.all().values()
+    engine_select = enginesTable.objects.all().values()
 
     context = {
         'mains':mains,
         'subs':subs,
         'models':models,
+        'engines':engines,
 
         'main_select':main_select,
         'sub_select':sub_select,
         'model_select':model_select,
+        'engine_select':engine_select,
     }
     #return JsonResponse(context)
     return render(request,'add-more-cat.html',context)
