@@ -55,6 +55,8 @@ from django.http import JsonResponse
 import firebase_admin
 from firebase_admin import credentials, messaging
 
+from almogOil import serializers
+
 # Path to your Firebase Admin SDK JSON key file
 FIREBASE_CREDENTIALS_PATH = "/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-367f5e9e17.json"
 
@@ -1352,7 +1354,7 @@ def edit_main_item(request):
             safe_update('eitemname', data.get('pnameenglish'))
             safe_update('companyproduct', data.get('company'))
             safe_update('replaceno', data.get('companyno'))
-            #safe_update('pno', data.get('pno'))
+            safe_update('engine_no', data.get('engine'))
             safe_update('barcodeno', data.get('barcode'))
             safe_update('memo', data.get('description'))
             safe_update('itemsize', data.get('country'))
@@ -1398,6 +1400,7 @@ def create_main_item(request):
                 short_name=data.get('shortname') or None,
                 companyproduct=data.get('company') or None,
                 replaceno=data.get('companyno') or None,
+                engine_no=data.get('engine') or None,
                 pno=next_pno_no,
                 barcodeno=data.get('barcode') or None,
                 memo=data.get('description') or None,
@@ -3938,6 +3941,18 @@ def sell_invoice_storage_management(request):
         "final_note": invoice.notes  or "",
     }
     return render(request,'sell_invoice_storage_management.html',context)
+
+def sell_invoice_profile(request, id):
+    invoice = get_object_or_404(SellinvoiceTable, invoice_no=id)
+
+    serializer = serializers.SellInvoiceSerializer(invoice)
+    clients = AllClientsTable.objects.all().values()
+
+    context = {
+        "clients": clients,
+        "invoice": serializer.data,
+    }
+    return render(request, 'sell_invoice_profile.html', context)
 
 @csrf_exempt
 def prepare_sell_invoice(request):

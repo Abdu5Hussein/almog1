@@ -236,7 +236,7 @@
                                 <!-- Inside feedbackHtml generation -->
 
 <!-- Replace this button with a link -->
-<a href="/feedback_details/{{ feedback.id }}/" class="btn btn-info toggle-feedback-btn">
+<a href="/feedback_details/${feedback.id}/" class="btn btn-info toggle-feedback-btn" onclick="openFeedbackDetails(event, ${feedback.id})">
     <i class="fas fa-caret-down"></i> عرض التفاصيل
 </a>
  <!-- Arabic text for 'Toggle Feedback Details' -->
@@ -369,6 +369,14 @@
         }  // This was missing
     });
 }
+
+    function openFeedbackDetails(event, feedbackId) {
+        event.preventDefault(); // Prevent the default anchor click behavior
+        var url = "/feedback_details/" + feedbackId + "/"; // URL of the feedback details page
+        var windowName = "feedbackDetailsWindow"; // Name of the new window
+        var windowOptions = "width=1020,height=900,scrollbars=yes,resizable=yes"; // Window size and options
+        window.open(url, windowName, windowOptions); // Open in a new window
+    }
 
 
     // Delete Feedback

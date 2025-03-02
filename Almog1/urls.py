@@ -131,6 +131,7 @@ urlpatterns = [
     path('sell_invoice_search_storage', sell_invoice_search_storage, name='sell_invoice_search_storage'),
     path('sell_invoice_add_invoice', sell_invoice_add_invoice, name='sell_invoice_add_invoice'),
     path('sell_invoice_management', sell_invoice_management, name='sell_invoice_management'),
+    path('sell-invoice-profile/<int:id>/', views.sell_invoice_profile, name='sell_invoice_profile'),
     path('api/create-sell-invoice-record', create_sell_invoice, name='create_sell_invoice'),
     path('get-last-sellinvoice-id',get_sellinvoice_no,name='get-last-sell-invoice'),
     path('sell_invoice_add_items',sell_invoice_add_items,name='sell_invoice_add_items'),

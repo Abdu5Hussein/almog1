@@ -437,6 +437,7 @@ document.addEventListener("DOMContentLoaded", function () {
       sellprice: getValueById("sell-price") || 0,
       lessprice: getValueById("less-price") || 0,
       shortname: getValueById("short-name") || null,
+      engine: getSelectedTextById("engine") || null,
     };
 
     console.log(data);
@@ -517,6 +518,7 @@ document.addEventListener("DOMContentLoaded", function () {
         sellprice: getValueById("sell-price") || 0,
         lessprice: getValueById("less-price") || 0,
         shortname: getValueById("short-name") || null,
+        engine: getSelectedTextById("engine") || null,
       };
 
       // Send the data to the server via a PATCH request
@@ -944,104 +946,56 @@ document.addEventListener("DOMContentLoaded", function () {
   // Populate input fields with row data
   function populateInputFields(data) {
     clearForm(false);
-    // For 'countries' dropdown (set selected item based on 'data.itemsize')
-    const countrySelect = document.getElementById("countries");
-    const countryOptions = countrySelect.options;
-    let countrySelected = false;  // Flag to track if a match is found
-    /*for (let i = 0; i < countryOptions.length; i++) {
-      if (countryOptions[i].text === data.itemsize) {  // Compare text (country name)
-        countrySelect.selectedIndex = i;  // Set the selected option
-        countrySelected = true;  // Mark as selected
+
+    setDropdownValue("countries", data.itemsize, "اختر دولة");
+    setDropdownValue("item-main", data.itemmain, "اختر بيان رئيسي");
+    setDropdownValue("item-sub-main", data.itemsubmain, "اختر بيان فرعي");
+    setDropdownValue("company", data.companyproduct, "اختر شركة");
+    setDropdownValue("model", data.itemthird, "اختر موديل");
+    setDropdownValue("engine", data.engine_no, "اختر محرك");
+
+    setPlaceholder("original-no", data.itemno);
+    setPlaceholder("pname-arabic", data.itemname);
+    setPlaceholder("pname-english", data.eitemname);
+    setPlaceholder("company-no", data.replaceno);
+    setPlaceholder("pno", data.pno);
+    setPlaceholder("barcode-no", data.barcodeno);
+    setPlaceholder("description", data.memo);
+    setPlaceholder("pieces-per-box", data.itemperbox);
+    setPlaceholder("storage-balance", data.itemvalue, "0");
+    setPlaceholder("backup-balance", data.itemtemp, "0");
+    setPlaceholder("temp-balance", data.itemvalueb, "0");
+    setPlaceholder("reserved-balance", data.reservedvalue, "0");
+    setPlaceholder("location", data.itemplace);
+    setPlaceholder("origin-price", data.orgprice, "0");
+    setPlaceholder("buy-price", data.orderprice, "0");
+    setPlaceholder("expenses-price", data.costprice, "0");
+    setPlaceholder("sell-price", data.buyprice, "0");
+    setPlaceholder("less-price", data.lessprice, "0");
+    setPlaceholder("short-name", data.short_name);
+  }
+
+  function setDropdownValue(elementId, value, defaultText) {
+    const select = document.getElementById(elementId);
+    const options = select.options;
+    let found = false;
+
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].text === value) {
+        select.selectedIndex = i;
+        found = true;
         break;
       }
-    }*/
-    if (!countrySelected) {  // Reset if no match found
-      countrySelect.selectedIndex = 0;  // Set the selected option to the first one
-    }
-    countryOptions[0].text = data.itemsize || "اختر دولة";
-    // For 'item-main' dropdown (set selected item based on 'data.itemmain')
-    const itemMainSelect = document.getElementById("item-main");
-    const itemMainOptions = itemMainSelect.options;
-    let itemMainSelected = false;  // Flag to track if a match is found
-    /*for (let i = 0; i < itemMainOptions.length; i++) {
-      if (itemMainOptions[i].text === data.itemmain) {  // Compare text (item main)
-        itemMainSelect.selectedIndex = i;  // Set the selected option
-        itemMainSelected = true;  // Mark as selected
-        break;
-      }
-    }*/
-    itemMainOptions[0].text = data.itemmain || "اختر بيان رئيسي";
-    if (!itemMainSelected) {  // Reset if no match found
-      itemMainSelect.selectedIndex = 0;  // Set the selected option to the first one
     }
 
-    // For 'item-sub-main' dropdown (set selected item based on 'data.itemsubmain')
-    const itemSubMainSelect = document.getElementById("item-sub-main");
-    const itemSubMainOptions = itemSubMainSelect.options;
-    let itemSubMainSelected = false;  // Flag to track if a match is found
-    /*for (let i = 0; i < itemSubMainOptions.length; i++) {
-      if (itemSubMainOptions[i].text === data.itemsubmain) {  // Compare text (item sub main)
-        itemSubMainSelect.selectedIndex = i;  // Set the selected option
-        itemSubMainSelected = true;  // Mark as selected
-        break;
-      }
-    }*/
-    itemSubMainOptions[0].text = data.itemsubmain || "اختر بيان فرعي";
-    if (!itemSubMainSelected) {  // Reset if no match found
-      itemSubMainSelect.selectedIndex = 0;  // Set the selected option to the first one
+    if (!found) {
+      options[0].text = value || defaultText;
+      select.selectedIndex = 0;
     }
+  }
 
-    // For 'company' dropdown (set selected item based on 'data.companyproduct')
-    const companySelect = document.getElementById("company");
-    const companyOptions = companySelect.options;
-    let companySelected = false;  // Flag to track if a match is found
-    /*for (let i = 0; i < companyOptions.length; i++) {
-      if (companyOptions[i].text === data.companyproduct) {  // Compare text (company name)
-        companySelect.selectedIndex = i;  // Set the selected option
-        companySelected = true;  // Mark as selected
-        break;
-      }
-    }*/
-    companyOptions[0].text = data.companyproduct || "اختر شركة";
-    if (!companySelected) {  // Reset if no match found
-      companySelect.selectedIndex = 0;  // Set the selected option to the first one
-    }
-
-    // For 'model' dropdown (set selected item based on 'data.model')
-    const modelSelect = document.getElementById("model");
-    const modelOptions = modelSelect.options;
-    let modelSelected = false;  // Flag to track if a match is found
-    /*for (let i = 0; i < modelOptions.length; i++) {
-      if (modelOptions[i].text === data.itemthird) {  // Compare text (model name)
-        modelSelect.selectedIndex = i;  // Set the selected option
-        modelSelected = true;  // Mark as selected
-        break;
-      }
-    }*/
-    modelOptions[0].text = data.itemthird || "اختر موديل";
-    if (!modelSelected) {  // Reset if no match found
-      modelSelect.selectedIndex = 0;  // Set the selected option to the first one
-    }
-
-    document.getElementById("original-no").placeholder = data.itemno || "";
-    document.getElementById("pname-arabic").placeholder = data.itemname || "";
-    document.getElementById("pname-english").placeholder = data.eitemname || "";
-    document.getElementById("company-no").placeholder = data.replaceno || "";
-    document.getElementById("pno").placeholder = data.pno || "";
-    document.getElementById("barcode-no").placeholder = data.barcodeno || "";
-    document.getElementById("description").placeholder = data.memo || "";
-    document.getElementById("pieces-per-box").placeholder = data.itemperbox || "";
-    document.getElementById("storage-balance").placeholder = data.itemvalue || "0";
-    document.getElementById("backup-balance").placeholder = data.itemtemp || "0";
-    document.getElementById("temp-balance").placeholder = data.itemvalueb || "0";
-    document.getElementById("reserved-balance").placeholder = data.reservedvalue || "0";
-    document.getElementById("location").placeholder = data.itemplace || "";
-    document.getElementById("origin-price").placeholder = data.orgprice || "0";
-    document.getElementById("buy-price").placeholder = data.orderprice || "0";
-    document.getElementById("expenses-price").placeholder = data.costprice || "0";
-    document.getElementById("sell-price").placeholder = data.buyprice || "0";
-    document.getElementById("less-price").placeholder = data.lessprice || "0";
-    document.getElementById("short-name").placeholder = data.short_name || "";
+  function setPlaceholder(elementId, value, defaultValue = "") {
+    document.getElementById(elementId).placeholder = value || defaultValue;
   }
 
 
