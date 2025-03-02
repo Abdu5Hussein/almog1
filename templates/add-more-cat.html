@@ -216,6 +216,71 @@
             </table>
 
         </div>
+        <div class="col">
+
+            <!-- Form Container -->
+            <div class="form-container">
+                <h4 class="mb-3">إدارة المحركات</h4>
+                <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+
+                <div class="mb-3">
+                    <label for="engine-name" class="form-label">اسم المحرك</label>
+                    <select name="engine" class="form-control text-center" id="model">
+                        {% comment %} {% for x in engine_select %}
+                        <option value="{{ x.engine_name }}">{{ x.engine_name }}</option>
+                        {% endfor %} {% endcomment %}
+                    </select>
+                    <div class="invalid-feedback">الرجاء إدخال اسم المحرك.</div>
+                </div>
+
+                <div class="btn-container d-flex justify-content-start gap-2">
+                    <button
+                    type="button"
+                    name="action"
+                    value="add"
+                    class="btn btn-success"
+                    id="btn-engine-add"
+                    >
+                    إضافة
+                    </button>
+
+                    <button
+                    type="button"
+                    name="action"
+                    value="delete"
+                    class="btn btn-danger"
+                    id="btn-engine-remove"
+                    >
+                    حذف
+                    </button>
+                </div>
+                </form>
+            </div>
+
+            <!-- Data Grid -->
+            <table
+                id="engines-table"
+                class="table table-bordered table-hover text-center"
+            >
+                <thead class="table-dark">
+                <tr>
+                    <th>اسم المحرك</th>
+                    <!-- MainType column -->
+                </tr>
+                </thead>
+                <tbody>
+                {% comment %} {% for x in engines %}
+                <tr data-main-type="{{ x }}">
+                    <!-- Data attribute for  ID -->
+                    <td>{{ x }}</td>
+                </tr>
+                {% endfor %} {% endcomment %}
+                </tbody>
+            </table>
+
+        </div>
     </div>
 
     <!-- Bootstrap JS (optional) -->

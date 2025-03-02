@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
@@ -19,13 +20,13 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import SupportChatConversation,SellinvoiceTable, SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
+from .models import SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
 from .serializers import SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-
+from django.dispatch import receiver
 
 
 @api_view(["POST"])
@@ -238,9 +239,9 @@ def send_message(request, conversation_id=None):
         }, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
-def get_all_clients1(request):
+def get_all_clients1(request,id=None):
     if request.method == 'GET':
-        clients = AllClientsTable.objects.all()
+        clients = AllClientsTable.objects.all().filter(clientid=id)
         serializer = AllClientsTableSerializer(clients, many=True)
         return Response({'clients': serializer.data})
 
@@ -353,10 +354,10 @@ def update_invoice_status(request, invoice_no):
     except SellinvoiceTable.DoesNotExist:
         return Response({"error": "Invoice not found."}, status=404)
 
-    new_status = request.data.get("invoice_status")
+    new_status = request.data.get("delivery_status")
 
     if new_status in ["جاري التوصيل", "تم التوصيل"]:
-        invoice.invoice_status = new_status
+        invoice.delivery_status = new_status
         if new_status == "تم التوصيل":
             invoice.delivered_date = now()  # Set the current timestamp
         invoice.save()
@@ -369,7 +370,7 @@ def update_invoice_status(request, invoice_no):
 @api_view(['GET'])
 def get_delivery_invoices(request):
     """Fetch all invoices with status 'حضرت'."""
-    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت")
+    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,delivery_status="جاري التوصيل")
     serializer = SellInvoiceSerializer(invoices, many=True)
     return Response(serializer.data)
 
@@ -508,6 +509,50 @@ def UpdateItemsModelApiView(request, item_id):
         itemthird = s_data['itemthird']
         return Response({'models': itemthird}, status=status.HTTP_200_OK)
 
+@api_view(['GET', 'POST'])
+def UpdateItemsEngineApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        engine_list = item.engine_no.split(";") if item.engine_no else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in engine_list:
+                engine_list.append(value)
+                item.engine_no = ";".join(engine_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in engine_list:
+                engine_list.remove(value)
+                item.engine_no = ";".join(engine_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        engines = s_data['engine_no']
+        return Response({'engines': engines}, status=status.HTTP_200_OK)
+
 
 def send_invoice_notification(invoice, status_message):
     """Send a notification when invoice status changes."""
@@ -523,3 +568,122 @@ def send_invoice_notification(invoice, status_message):
             "new_status": status_message
         }
     )
+
+
+from rest_framework import generics, mixins,viewsets
+
+
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from decimal import Decimal
+from . import models, serializers
+from .models import AllClientsTable, SellinvoiceTable
+
+class ReturnPermissionViewSet(viewsets.ModelViewSet):
+    queryset = models.return_permission.objects.all()
+    serializer_class = serializers.ReturnPermissionSerializer
+    lookup_field = 'autoid'
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Convert and validate foreign keys
+        client_id = data.get("client")
+        invoice_id = data.get("invoice")
+
+        if not AllClientsTable.objects.filter(clientid=client_id).exists():
+            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
+            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch related objects
+        client = AllClientsTable.objects.get(clientid=client_id)
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+
+        # Create the return permission
+        return_permission_instance = models.return_permission.objects.create(
+            client=client,
+            employee=data.get("employee"),
+            quantity=int(data.get("quantity")) if data.get("quantity") else None,
+            invoice_obj=invoice,
+            invoice_no=invoice.invoice_no,
+            payment=data.get("payment", ""),  # Default to empty if not provided
+        )
+
+        # Serialize and return the created object
+        serializer = self.get_serializer(return_permission_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+# class InvoiceStatusViewSet(viewsets.ViewSet):
+#     """
+#     A viewset to handle updating invoice status or delivery status
+#     and send notifications when the status changes.
+#     """
+
+#     def update_status(self, request, pk=None):
+#         try:
+#             invoice_item = SellInvoiceItemsTable.objects.get(pk=pk)
+#             status_type = request.data.get('status_type')  # invoice_status or delivery_status
+#             new_status = request.data.get('new_status')  # The new status value
+
+#             if status_type not in ['invoice_status', 'delivery_status']:
+#                 return Response({"error": "Invalid status type"}, status=status.HTTP_400_BAD_REQUEST)
+
+#             # Update status based on type
+#             setattr(invoice_item, status_type, new_status)
+#             invoice_item.save()
+
+#             # Send notification based on status change
+#             # send_notification(invoice_item, status_type, new_status)
+
+#             return Response(
+#                 SellInvoiceSerializer(invoice_item).data,
+#                 status=status.HTTP_200_OK,
+#             )
+#         except SellInvoiceItemsTable.DoesNotExist:
+#             return Response({"error": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
+    queryset = models.return_permission_items.objects.all()
+    serializer_class = serializers.ReturnPermissionItemsSerializer
+    lookup_field = 'pno'
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Convert and validate foreign keys
+        invoice_id = data.get("invoice")
+        pno = data.get("pno")
+        autoid = data.get("autoid")
+
+        if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
+            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not models.SellInvoiceItemsTable.objects.filter(autoid=autoid).exists():
+            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch related objects
+        invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
+        invoice_item = models.SellInvoiceItemsTable.objects.get(autoid=autoid)
+
+        # Create the return permission
+        returned_item_instance = models.return_permission_items.objects.create(
+            pno=invoice_item.pno,
+            company_no=invoice_item.company_no,
+            company=invoice_item.company,
+            item_name=invoice_item.name,
+            org_quantity=invoice.quantity,
+            returned_quantity=data.get("quantity") if data.get("quantity") else invoice.quantity,
+            price=invoice_item.dinar_unit_price,
+            invoice_obj=invoice,
+            invoice_no=invoice.invoice_no,
+        )
+
+        # Serialize and return the created object
+        serializer = self.get_serializer(returned_item_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

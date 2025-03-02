@@ -3504,6 +3504,7 @@ def create_sell_invoice(request):
                 for_who=data.get("for_who"),
                 date_time=datetime.now(),
                 price_status="",
+                mobile=data.get("mobile") if data.get("mobile") else False,
             )
 
             # Return a success response
@@ -3667,7 +3668,7 @@ def Sell_invoice_create_item(request):
 
             account_statement = TransactionsHistoryTable.objects.create(
                 credit=0.0,
-                debt=float(sell_price * item_value),
+                debt=Decimal(sell_price * item_value),
                 transaction=f" شراء بضائع - ر.خ : {data.get('pno')}",
                 details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
                 registration_date=datetime.now(),
@@ -3677,7 +3678,7 @@ def Sell_invoice_create_item(request):
 
             if invoice.payment_status == "نقدي":
                 TransactionsHistoryTable.objects.create(
-                credit=float(sell_price * item_value),
+                credit=Decimal(sell_price * item_value),
                 debt=0.0,
                 transaction=f"دفع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
                 details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
@@ -3688,12 +3689,12 @@ def Sell_invoice_create_item(request):
 
             if invoice.mobile == True:
                 TransactionsHistoryTable.objects.create(
-                credit=float(sell_price * item_value)*0.10,
+                credit=Decimal(sell_price * item_value)*Decimal(0.10),
                 debt=0.0,
                 transaction=f"نسبة بيع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
                 details=f"نسبة بيع 10% مقابل بضاتع - فاتورة رقم {data.get('invoice_id')}",
                 registration_date=datetime.now(),
-                current_balance=round(last_balance_amount, 2) + (float(sell_price * item_value)*0.10),  # Updated balance
+                current_balance=round(last_balance_amount, 2) + (Decimal(sell_price * item_value)*Decimal(0.10)),  # Updated balance
                 client_id_id=invoice.client,  # Client ID
                 )
 
@@ -4004,6 +4005,7 @@ def deliver_sell_invoice(request):
             invoice.delivered_date = deliverer_date or None
             invoice.office_no = bill
             invoice.invoice_status = status
+            invoice.delivery_status = "جاري التوصيل" if invoice.mobile else "في المحل"
 
             # Save the updated invoice
             invoice.save()
@@ -4397,3 +4399,23 @@ def addMoreCatView(request,id):
 
 def notifications_page(request):
     return render(request, 'notifications.html')
+
+
+def return_items_view(request):
+    clients = AllClientsTable.objects.all().values('clientid','name')
+    invoices = SellinvoiceTable.objects.all().values('invoice_no','client','client_name')
+    context = {
+        'clients':clients,
+        'invoices':invoices,
+    }
+    return render(request, 'return-permission-add.html',context)
+
+def return_items_report_view(request):
+    clients = AllClientsTable.objects.all().values('clientid','name')
+    context = {
+        'clients':clients,
+    }
+    return render(request, 'return-permission-report.html',context)
+
+
+

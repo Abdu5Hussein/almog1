@@ -20,13 +20,20 @@ from django.conf.urls.static import static
 
 from django.contrib import admin
 from django.urls import path
-from almogOil.views import addMoreCatView,notifications_page,send_firebase_notification, cancel_sell_invoice,Sell_invoice_create_item,fetch_feedback_messages,support_dashboard,fetch_all_feedback, close_feedback,delete_feedback,add_message_to_feedback,feedback_by_user_id, SendMessageView, GetChatMessagesView, MarkMessageAsReadView,SupportChatMessageView, create_conversation, create_sell_invoice, deliver_sell_invoice, fetch_sell_invoice_items, fetch_sellinvoices, filter_sellinvoices, get_mainItem_last_pno, get_sellinvoice_no, prepare_sell_invoice, sell_invoice_add_items, sell_invoice_management,sell_invoice_add_invoice, sell_invoice_prepare_report,sell_invoice_search_storage,buy_invoice_add_items,filter_buyinvoices,fetch_buyinvoices,Buyinvoice_management,delete_buyinvoice_cost, BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, sell_invoice_storage_management, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage, validate_sell_invoice
+from almogOil.views import addMoreCatView,notifications_page, return_items_report_view, return_items_view,send_firebase_notification, cancel_sell_invoice,Sell_invoice_create_item,fetch_feedback_messages,support_dashboard,fetch_all_feedback, close_feedback,delete_feedback,add_message_to_feedback,feedback_by_user_id, SendMessageView, GetChatMessagesView, MarkMessageAsReadView,SupportChatMessageView, create_conversation, create_sell_invoice, deliver_sell_invoice, fetch_sell_invoice_items, fetch_sellinvoices, filter_sellinvoices, get_mainItem_last_pno, get_sellinvoice_no, prepare_sell_invoice, sell_invoice_add_items, sell_invoice_management,sell_invoice_add_invoice, sell_invoice_prepare_report,sell_invoice_search_storage,buy_invoice_add_items,filter_buyinvoices,fetch_buyinvoices,Buyinvoice_management,delete_buyinvoice_cost, BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, sell_invoice_storage_management, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage, validate_sell_invoice
 from almogOil.api_views import support_conversations,get_delivery_invoices,update_invoice_status, get_conversation_messages, send_message,get_all_clients1,start_conversation,respond_to_feedback,send_feedback
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
 from almogOil import api_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from rest_framework.routers import DefaultRouter
+from almogOil import api_views
+
+router = DefaultRouter()
+router.register(r'permissions', api_views.ReturnPermissionViewSet, basename='return-permission')
+router.register(r'permission-items', api_views.ReturnPermissionItemsViewSet, basename='return-permission-items')
 
 
 urlpatterns = [
@@ -156,7 +163,7 @@ urlpatterns = [
     path('api/conversations/<int:conversation_id>/messages/', get_conversation_messages, name='get_conversation_messages'),
     path('api/conversations/<int:conversation_id>/send_message/', send_message, name='send_message'),
     path('api/conversations/start/<int:client_id>/', start_conversation, name='start_conversation'),
-    path('api/clients/', get_all_clients1, name='get_all_clients1'),
+    path('api/clients/<int:id>/', get_all_clients1, name='get_all_clients1'),
     path('api/conversations/send_message/', send_message, name='send_message_without_conversation'),
     path('respond_to_feedback/<int:feedback_id>/', respond_to_feedback, name='respond_to_feedback'),
     path('send_feedback/', send_feedback, name='send_feedback'),
@@ -167,14 +174,18 @@ urlpatterns = [
     path('delete_feedback/<int:feedback_id>/', delete_feedback, name='delete_feedback'),
     path('feedbacks/', feedback_by_user_id, name='feedback-by-user-id'),
     path('invoice/delivery/', get_delivery_invoices, name='get_delivery_invoices'),
-    path('invoice/<int:invoice_id>/update_status/', update_invoice_status, name='update_invoice_status'),
+    path('invoice/<str:invoice_no>/update_status/', update_invoice_status, name='update_invoice_status'),
     path('item/<int:id>/add-more-categories',addMoreCatView,name='add-more-categories'),
     path('item/<int:item_id>/update-main/',api_views.UpdateItemsItemmainApiView,name='update-main'),
     path('item/<int:item_id>/update-sub/',api_views.UpdateItemsSubmainApiView,name='update-sub'),
     path('item/<int:item_id>/update-model/',api_views.UpdateItemsModelApiView,name='update-model'),
+    path('item/<int:item_id>/update-engine/',api_views.UpdateItemsEngineApiView,name='update-engine'),
 
     path('send-notification/', send_firebase_notification, name='send_firebase_notification'),
-    path('notifications/', notifications_page, name='notifications_page')
+    path('notifications/', notifications_page, name='notifications_page'),
+    path('sell-invoice/return-items/', return_items_view, name='return-items'),
+    path('sell-invoice/return-items-report/', return_items_report_view, name='return-report'),
+    path('',include(router.urls))
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

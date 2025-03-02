@@ -98,7 +98,8 @@ class SupportChatConversationSerializer1(serializers.ModelSerializer):
 class AllClientsTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = AllClientsTable
-        fields = ['clientid', 'username', 'email', 'name', 'address', 'phone', 'mobile', 'last_transaction', 'accountcurr']
+        fields =  "__all__"
+
 
 class FeedbackSerializer(serializers.ModelSerializer):
     sender = serializers.StringRelatedField()  # Display client name
@@ -112,3 +113,15 @@ class SellInvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SellinvoiceTable
         fields = "__all__"
+
+
+
+class ReturnPermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.return_permission
+        fields = "__all__"  # Include all fields
+
+class ReturnPermissionItemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.return_permission_items
+        fields = "__all__"  # Include all fields

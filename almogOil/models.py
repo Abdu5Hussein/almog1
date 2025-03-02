@@ -154,6 +154,7 @@ class SellinvoiceTable(models.Model):
     taxes = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     net_amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    # return_id = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     paid_amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     employee = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     date_time = models.DateTimeField(blank=True, null=True)
@@ -177,6 +178,7 @@ class SellinvoiceTable(models.Model):
     office = models.CharField(max_length=1000, blank=True, null=True)
     office_no = models.CharField(max_length=100, blank=True, null=True)
     mobile = models.BooleanField(default=False)
+    delivery_status = models.CharField(max_length=150, default="معلقة")
 
     def __str__(self):
         return f"Invoice {self.autoid}"
@@ -868,3 +870,39 @@ class FeedbackMessage(models.Model):
 
     def __str__(self):
         return f"Message in Feedback {self.feedback.id}"
+
+
+class return_permission(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    client=models.ForeignKey(AllClientsTable,on_delete=models.CASCADE)
+    employee=models.CharField(max_length=200,null=True,blank=True)
+    date = models.DateField(auto_now_add=True)
+    quantity = models.IntegerField(blank=True,null=True)
+    invoice_obj = models.ForeignKey(SellinvoiceTable,on_delete=models.CASCADE)
+    invoice_no = models.CharField(max_length=200,null=True,blank=True)
+    amount = models.DecimalField(default=0,max_digits=19,decimal_places=4)
+    payment = models.CharField(max_length=150,default='نقدي')
+
+    def __str__(self):
+        return str(self.autoid) + "- invoice: " + str(self.invoice.invoice_no) + "- amount: " + str(self.amount)
+
+class return_permission_items(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    pno = models.IntegerField(blank=True,null=True)
+    company_no = models.CharField(max_length=200,null=True,blank=True)
+    company = models.CharField(max_length=200,null=True,blank=True)
+    item_name = models.CharField(max_length=200,null=True,blank=True)
+    org_quantity = models.IntegerField(blank=True,null=True)
+    returned_quantity = models.IntegerField(blank=True,null=True)
+    price = models.DecimalField(max_digits=19,decimal_places=4,null=False)
+    total = models.DecimalField(max_digits=19,decimal_places=4,null=False)
+    invoice_obj = models.ForeignKey(SellinvoiceTable,on_delete=models.CASCADE)
+    invoice_no = models.CharField(max_length=40,null=True,blank=True)
+
+    def save(self, *args, **kwargs):
+        # Ensure total is always calculated as returned_quantity * price
+        self.total = (self.returned_quantity or 0) * (self.price or 0)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.item_name} - {self.total}"

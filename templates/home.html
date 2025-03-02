@@ -37,10 +37,10 @@
         display: inline-block; /* Keep inline with text */
       }
 
-      
-      
+
+
       @media (max-width: 768px) {
-        
+
         .sidebar{
           top: 73px !important;
           right: -300px !important;
@@ -692,11 +692,11 @@
   </head>
   <body>
     <div class="d-flex full-height">
-      
+
 
       <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top besideSideBar p-3">
         <div class="container-fluid">
-          <a class="navbar-brand d-flex justify-content-center align-items-center" href="#"> 
+          <a class="navbar-brand d-flex justify-content-center align-items-center" href="#">
             <div class="logo-container">
               <img
                 src="{% static 'images/marine-logo.svg' %}"
@@ -844,8 +844,8 @@
                   ><i class="fas fa-chevron-down"></i>الترجيعات</a
                 >
                 <div class="sub-menu">
-                  <a class="nav-link" href="#subitem6-1">Subitem 6-1</a>
-                  <a class="nav-link" href="#subitem6-2">Subitem 6-2</a>
+                  <a class="nav-link" id="item-6-1">ادخال اذن ترجيع</a>
+                  <a class="nav-link" id="item-6-2">تقارير الترجيع</a>
                 </div>
               </li>
               <li class="nav-item">
@@ -876,6 +876,7 @@
                 <div class="sub-menu">
                   <a class="nav-link" id="item-9-1">قيود الخزينة</a>
                   <a class="nav-link" id="item-9-2">تقارير الخزينة</a>
+                  <a class="nav-link" id="item-9-3">طلب قيمة</a>
                 </div>
               </li>
               <li class="nav-item">
@@ -1136,6 +1137,20 @@
           id: "item-5-5",
           url: "/sell_invoice_storage_report",
           name: "sell_invoice_storage_report",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-6-1",
+          url: "/sell-invoice/return-items/",
+          name: "return-items/",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-6-2",
+          url: "/sell-invoice/return-items-report/",
+          name: "return-items/",
           width: 1100,
           height: 700,
         },
