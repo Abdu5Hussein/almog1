@@ -239,8 +239,12 @@ def create_buy_invoice(request):
         multi_source_flag = data.get("multi_source_flag", False)
         source = AllSourcesTable.objects.get(clientid=source_id)
         # Create a new record in the Buyinvoicetable model
+        last_id_response = json.loads(get_buyinvoice_no(request).content)  # Get response data
+        last_id_no = last_id_response.get("autoid")
+        next_id_no = int(last_id_no) + 1
+
         invoice = Buyinvoicetable.objects.create(
-            invoice_no=invoice_autoid,
+            invoice_no=next_id_no,
             original_no=org_invoice_id,
             source=source.name,
             invoice_date=invoice_date,
@@ -630,6 +634,7 @@ def ProductsDetails(req):
         'column_titles': COLUMN_TITLES,
     }
     return render(req, 'products-details.html', context)
+#until here
 
 def filter_clients(request):
     try:
@@ -1108,7 +1113,7 @@ def process_excel_and_import(request):
 
         return JsonResponse({"status": "error", "message": "Invalid request or missing file."})
 
-
+#until here
 
 # Register the Amiri font
 from django.conf import settings
@@ -1539,15 +1544,16 @@ def get_data(request):
     try:
         # Fetch all records
         print(request.body)
-        items = Mainitem.objects.all().values(
-            'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname',
-            'itemthird', 'itemsize', 'companyproduct', 'itemvalue',
-            'itemtemp', 'itemplace', 'buyprice', 'memo', 'replaceno',
-            'barcodeno', 'eitemname', 'currtype', 'lessprice', 'pno',
-            'currvalue', 'itemvalueb', 'costprice', 'resvalue', 'orderprice',
-            'orderlastdate', 'ordersource', 'orderbillno',
-            'buylastdate', 'buysource', 'buybillno', 'orgprice','itemperbox','oem_numbers','short_name'
-        ).order_by('itemname')
+        # items = Mainitem.objects.all().values(
+        #     'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname',
+        #     'itemthird', 'itemsize', 'companyproduct', 'itemvalue',
+        #     'itemtemp', 'itemplace', 'buyprice', 'memo', 'replaceno',
+        #     'barcodeno', 'eitemname', 'currtype', 'lessprice', 'pno',
+        #     'currvalue', 'itemvalueb', 'costprice', 'resvalue', 'orderprice',
+        #     'orderlastdate', 'ordersource', 'orderbillno',
+        #     'buylastdate', 'buysource', 'buybillno', 'orgprice','itemperbox','oem_numbers','short_name'
+        # ).order_by('itemname')
+        items = Mainitem.objects.all().values().order_by('itemname')
 
         total_itemvalue = Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
         total_itemvalueb = Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']

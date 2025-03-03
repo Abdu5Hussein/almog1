@@ -106,7 +106,7 @@ class Blancetable(models.Model):
     ttype = models.IntegerField(db_column='TType', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'BlanceTable'
 
 
@@ -347,7 +347,7 @@ class Oemtable(models.Model):
     oemno = models.CharField(db_column='OEMNO', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'OEMTable'
 
 
@@ -400,7 +400,7 @@ class Ttable(models.Model):
     tname = models.CharField(db_column='TName', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'TTable'
 
 
@@ -408,7 +408,7 @@ class Tablerights(models.Model):
     fileid = models.AutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'TableRights'
 
 
@@ -417,7 +417,7 @@ class Titletable(models.Model):
     titlename = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'TitleTable'
 
 
@@ -634,7 +634,7 @@ class Manufaccountrytable(models.Model):
     countryname = models.CharField(db_column='countryName', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'manufacCountryTable'
 
 
@@ -642,7 +642,7 @@ class MeasurementsTable(models.Model):
     name = models.CharField(max_length=100, db_collation='Arabic_CI_AS')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'measurements'
 
 
@@ -663,7 +663,7 @@ class Productnametable(models.Model):
     typename = models.CharField(db_column='TypeName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'productNameTable'
 
 

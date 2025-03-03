@@ -137,3 +137,13 @@ class EnginesTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.enginesTable
         fields = ['fileid', 'engine_name', 'maintype_str', 'subtype_str']
+
+class BuyInvoiceSerializer(serializers.ModelSerializer):
+    invoice_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Buyinvoicetable
+        fields = "__all__"
+
+    def get_invoice_date(self, obj):
+        return obj.invoice_date.strftime("%Y-%m-%d")  # Ensure "YYYY-MM-DD" format
