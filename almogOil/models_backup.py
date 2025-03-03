@@ -154,6 +154,7 @@ class SellinvoiceTable(models.Model):
     taxes = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     net_amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    # return_id = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     paid_amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     employee = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     date_time = models.DateTimeField(blank=True, null=True)
@@ -176,6 +177,8 @@ class SellinvoiceTable(models.Model):
     sent_by = models.CharField(max_length=1000, blank=True, null=True)
     office = models.CharField(max_length=1000, blank=True, null=True)
     office_no = models.CharField(max_length=100, blank=True, null=True)
+    mobile = models.BooleanField(default=False)
+    delivery_status = models.CharField(max_length=150, default="معلقة")
 
     def __str__(self):
         return f"Invoice {self.autoid}"
@@ -249,6 +252,7 @@ class Mainitem(models.Model):
     itemmain = models.CharField(db_column='ItemMain', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemsubmain = models.CharField(db_column='ItemSubMain', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemname = models.CharField(db_column='ItemName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    short_name = models.CharField(db_column='ShortName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemthird = models.CharField(db_column='ItemThird', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemsize = models.CharField(db_column='ItemSize', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     companyproduct = models.CharField(db_column='CompanyProduct', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
@@ -278,7 +282,7 @@ class Mainitem(models.Model):
     eitemname = models.CharField(db_column='EItemName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     currtype = models.CharField(db_column='CurrType', max_length=5, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     lessprice = models.DecimalField(db_column='LessPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
-    pno = models.CharField(db_column='PNo', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    pno = models.IntegerField(db_column='PNo', blank=False, null=False, unique=True)  # Field name made lowercase.
     currvalue = models.DecimalField(db_column='CurrValue', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
     resvalue = models.IntegerField(db_column='resValue', blank=True, null=True)  # Field name made lowercase.
     itemperbox = models.IntegerField(db_column='ItemPerbox', blank=True, null=True)  # Field name made lowercase.
@@ -618,8 +622,9 @@ class Maintypetable(models.Model):
     typename = models.CharField(db_column='TypeName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'mainTypeTable'
+
     def __str__(self):
         return str(self.fileid) + " | " + (self.typename if self.typename else "Unnamed Subtype")
 
@@ -783,5 +788,122 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.receiver.username}"
-    
-    
+
+
+
+class SupportChatConversation(models.Model):
+    """
+    Represents a conversation between a client and a support agent.
+    Both sides are represented by the AllClientsTable.
+    """
+    conversation_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(
+        'AllClientsTable',
+        on_delete=models.CASCADE,
+        related_name='client_conversations'
+    )
+    support_agent = models.ForeignKey(
+        'AllClientsTable',
+        on_delete=models.CASCADE,
+        related_name='support_conversations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'support_chat_conversation'
+        unique_together = (('client', 'support_agent'),)
+
+    def __str__(self):
+        return f"Conversation: {self.client.username} & {self.support_agent.username}"
+
+
+class SupportChatMessageSys(models.Model):
+    """
+    Stores individual messages within a support chat conversation.
+    """
+    message_id = models.AutoField(primary_key=True)
+    conversation = models.ForeignKey(
+        SupportChatConversation,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    sender = models.ForeignKey(
+        'AllClientsTable',
+        on_delete=models.CASCADE,
+        related_name='sent_support_messages'
+    )
+    # sender_type explicitly marks whether the sender is a 'client' or 'support'
+    sender_type = models.CharField(
+        max_length=10,
+        choices=(('client', 'Client'), ('support', 'Support')),
+        default='client'
+    )
+    message = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'support_chat_message_sys'
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.sender.username} ({self.sender_type}) at {self.timestamp}"
+
+
+class Feedback(models.Model):
+    sender = models.ForeignKey(AllClientsTable, related_name="sent_feedback", on_delete=models.CASCADE)
+    feedback_text = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+    is_resolved = models.BooleanField(default=False)
+    parent_feedback = models.ForeignKey('self', related_name='replies', null=True, blank=True, on_delete=models.SET_NULL)
+    employee_response = models.TextField(blank=True, null=True)  # Added for employee to respond to feedback
+    response_at = models.DateTimeField(null=True, blank=True)  # The time the employee responded
+
+    def __str__(self):
+        return f"Feedback from {self.sender.name} to {self.receiver.name} at {self.created_at}"
+
+class FeedbackMessage(models.Model):
+    feedback = models.ForeignKey(Feedback, on_delete=models.CASCADE, related_name="messages")
+    sender_type = models.CharField(max_length=10, choices=[('client', 'Client'), ('employee', 'Employee')])
+    message_text = models.TextField()
+    sent_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Message in Feedback {self.feedback.id}"
+
+
+class return_permission(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    client=models.ForeignKey(AllClientsTable,on_delete=models.CASCADE)
+    employee=models.CharField(max_length=200,null=True,blank=True)
+    date = models.DateField(auto_now_add=True)
+    quantity = models.IntegerField(blank=True,null=True)
+    invoice_obj = models.ForeignKey(SellinvoiceTable,on_delete=models.CASCADE)
+    invoice_no = models.CharField(max_length=200,null=True,blank=True)
+    amount = models.DecimalField(default=0,max_digits=19,decimal_places=4)
+    payment = models.CharField(max_length=150,default='نقدي')
+
+    def __str__(self):
+        return str(self.autoid) + "- invoice: " + str(self.invoice.invoice_no) + "- amount: " + str(self.amount)
+
+class return_permission_items(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    pno = models.IntegerField(blank=True,null=True)
+    company_no = models.CharField(max_length=200,null=True,blank=True)
+    company = models.CharField(max_length=200,null=True,blank=True)
+    item_name = models.CharField(max_length=200,null=True,blank=True)
+    org_quantity = models.IntegerField(blank=True,null=True)
+    returned_quantity = models.IntegerField(blank=True,null=True)
+    price = models.DecimalField(max_digits=19,decimal_places=4,null=False)
+    total = models.DecimalField(max_digits=19,decimal_places=4,null=False)
+    invoice_obj = models.ForeignKey(SellinvoiceTable,on_delete=models.CASCADE)
+    invoice_no = models.CharField(max_length=40,null=True,blank=True)
+
+    def save(self, *args, **kwargs):
+        # Ensure total is always calculated as returned_quantity * price
+        self.total = (self.returned_quantity or 0) * (self.price or 0)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.item_name} - {self.total}"

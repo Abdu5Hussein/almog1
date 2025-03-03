@@ -1290,10 +1290,9 @@
                     { title: "رقم الفاتورة", field: "invoice_no", headerSort: false },
                     {
                         title: "تاريخ الفاتورة",
-                        field: "invoice_date",
+                        field: "invoice_date",width:160,
                     },
-                    { title: "العميل", field: "client_name" },
-                    { title: "تصنيف العميل", field: "client_rate" },
+                    { title: "العميل", field: "client_name" ,width:90},
                     { title: "حالة الدفع", field: "payment_status" },
                     { title: "المبلغ الإجمالي", field: "amount", sorter: "number", formatter: "money", formatterParams: { thousand: ",", symbol: " دل ", symbolAfter: "p" } },
                     { title: "الخصم", field: "discount", sorter: "number", formatter: "money", formatterParams: { thousand: ",", symbol: " دل ", symbolAfter: "p" } },
@@ -1302,13 +1301,7 @@
                     { title: "ترجيع", field: "returned", sorter: "number", formatter: "money", formatterParams: { thousand: ",", symbol: " دل ", symbolAfter: "p" } },
                     { title: "المدفوع", field: "paid_amount", sorter: "number", formatter: "money", formatterParams: { thousand: ",", symbol: " دل ", symbolAfter: "p" } },
                     { title: "الموظف", field: "employee" },
-                    { title: "التاريخ ووقت الاصدار", field: "date_time"
-                    },
-                    { title: "تاريخ التسليم", field: "delivered_date"},
-                    { title: "حالة الفاتورة", field: "invoice_status"},
-                    { title: "لحساب", field: "for_who" },
-                    { title: "فاتورة جزئية", field: "partial_flag", formatter: "tickCross", sorter: "boolean" },
-                    { title: "ملاحظات", field: "notes" }
+                    { title: "التاريخ ووقت الاصدار", field: "date_time"},
                 ],
         placeholder: "No Data Available",
         rowFormatter: function (row) {

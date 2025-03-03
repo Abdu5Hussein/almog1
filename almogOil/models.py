@@ -622,8 +622,9 @@ class Maintypetable(models.Model):
     typename = models.CharField(db_column='TypeName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'mainTypeTable'
+
     def __str__(self):
         return str(self.fileid) + " | " + (self.typename if self.typename else "Unnamed Subtype")
 

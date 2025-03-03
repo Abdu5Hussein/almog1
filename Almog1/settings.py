@@ -162,6 +162,9 @@ DATABASES = {
                 'driver': 'ODBC Driver 17 for SQL Server',
                 'Trusted_Connection':'yes',
             },
+            'TEST': {
+            'NAME': 'almog1_testing_db',  # Change this line to avoid conflict
+            },
         },
     }
 

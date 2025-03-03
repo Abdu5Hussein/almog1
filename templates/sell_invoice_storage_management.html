@@ -63,7 +63,7 @@
       }
 
       .page-link-active {
-          background-color: #0d6efd;         
+          background-color: #0d6efd;
           color:rgb(255, 255, 255);
       }
       .button-row .btn {
@@ -243,7 +243,7 @@
                     <label for="invoice-no" class="form-label">رقم الفاتورة</label>
                 </div>
                 <input type="number" class="form-control" id="invoice-no" value="{{ invoice_no }}" readonly/>
-            </div>   
+            </div>
         </div>
         <div class="col">
             <div class="input-group  mb-1">
@@ -251,7 +251,7 @@
                     <label for="client_name" class="form-label">اسم العميل</label>
                 </div>
                 <input type="text" class="form-control" id="client_name" value="{{ invoice_client }}" readonly/>
-            </div> 
+            </div>
         </div>
     </div>
     <div class="row container px-4" id="preparer-section">
@@ -261,8 +261,8 @@
                     <label for="for-who" class="form-label">ملاحظات</label>
                 </div>
                 <textarea class="form-control" id="note">{{ preparer_note }}</textarea>
-            </div>    
-            
+            </div>
+
         </div>
         <div class="col">
             <div class="input-group  mb-1">
@@ -283,13 +283,13 @@
                   </option>
                   {% endfor %}
                 </select>
-            </div> 
-           
+            </div>
+
         </div>
         <div class="col-2">
             <button type="button" class="btn btn-primary m-1" id="inProgress_btn">جاري التحضير</button>
         </div>
-        
+
     </div>
     <div class="row container px-4" id="reviewer-section">
         <div class="col">
@@ -298,14 +298,14 @@
                     <label for="for-who" class="form-label">عدد الصناديق</label>
                 </div>
                 <input type="number" class="form-control" id="box-size" value="{{ quantity }}" />
-            </div>  
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">مكان التخزين</label>
                 </div>
                 <input type="text" class="form-control" id="place" value="{{ place }}"/>
-            </div>  
-             
+            </div>
+
         </div>
         <div class="col">
             <div class="input-group  mb-1">
@@ -326,8 +326,8 @@
                   </option>
                   {% endfor %}
                 </select>
-            </div> 
-             
+            </div>
+
         </div>
         <div class="col-2">
             <button type="button" class="btn btn-primary m-1" id="validated_btn">روجعت</button>
@@ -353,20 +353,20 @@
                   </option>
                   {% endfor %}
                 </select>
-            </div>  
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">اسم المحضر</label>
                 </div>
                 <input type="text" class="form-control text-center" name="preparer" id="preparer" value="{{ preparer_name }}" readonly>
-            </div>  
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">اسم المراجع</label>
                 </div>
                 <input type="text" class="form-control text-center" name="reviewer" id="reviewer" value="{{ reviewer_name }}" readonly>
-                
-            </div>  
+
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">اسم المسلم</label>
@@ -385,7 +385,7 @@
                   </option>
                   {% endfor %}
                 </select>
-            </div>  
+            </div>
         </div>
         <div class="col">
             <div class="input-group  mb-1">
@@ -393,20 +393,20 @@
                     <label for="for-who" class="form-label">عدد الصناديق</label>
                 </div>
                 <input type="number" class="form-control" id="box-size2" value="{{ delivered_quantity }}" />
-            </div>   
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">ارسلت بواسطة</label>
                 </div>
                 <input type="text" class="form-control" id="sent_by" value="{{ sent_by }}" />
-            </div> 
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">مكتب الشحن</label>
                 </div>
                 <input type="text" class="form-control" id="office" value="{{ office }}"/>
-            </div> 
-             
+            </div>
+
         </div>
         <div class="col">
             <div class="input-group  mb-1">
@@ -414,33 +414,33 @@
                     <label for="for-who" class="form-label">تاريخ التسليم</label>
                 </div>
                 <input type="date" class="form-control" id="delivered_date" value="{{ delivered_date }}" />
-            </div> 
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">رقم الايصال</label>
                 </div>
                 <input type="text" class="form-control" id="bill" value="{{ bill_no }}"/>
-            </div> 
+            </div>
             <div class="input-group  mb-1">
                 <div class="width-95 d-flex align-items-center">
                     <label for="for-who" class="form-label">المسلم</label>
                 </div>
                 <input type="text" class="form-control" id="deliverer-name" value="{{ deliverer_name }}" readonly/>
-            </div> 
+            </div>
             <button type="button" class="btn btn-primary" style="width: 100px;margin-right:95px;" id="Done_btn">سلمت</button>
         </div>
     </div>
-    
+
     <div class="row container px-4">
         <div class="row d-flex justify-content-around gap-5 align-items-center">
             <button type="button" class="btn btn-primary m-1" style="width: 100px" id="cancel_btn">الغاء التحضير</button>
             <div style="width: 600px">
                 <button type="button" class="btn btn-primary m-1" style="width: 100px" id="partly_btn">سلمت جزئيا</button>
-                
+
             </div>
         </div>
 
-      
+
     </div>
     <div class="row container px-4">
         <div class="input-group  mb-1">
@@ -448,7 +448,7 @@
                     <label for="final-note" class="form-label">الملاحظات</label>
                 </div>
                 <textarea type="text" class="form-control" id="final-note">{{ final_note }}</textarea>
-        </div>  
+        </div>
     </div>
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
@@ -489,7 +489,7 @@
             disableInput("place");
             disableInput("reviewer-name");
             disableInput("inProgress_btn");
-            
+
             disableInput("biller");
             disableInput("preparer");
             disableInput("reviewer");
@@ -501,7 +501,7 @@
             disableInput("bill");
             disableInput("deliverer-name");
 
-            break;  
+            break;
         }
     }
       const contextData = {
@@ -538,13 +538,14 @@
           })
           .catch((error) => {
             console.error("Error:", error);
+          }).finally(()=>{
+            location.reload();
           });
-    } 
+    }
      const inProgress_btn = document.getElementById("inProgress_btn");
      inProgress_btn.addEventListener("click",function(){
       inProgress_func();
-      window.location.replace(window.location.href);
-     })   
+     })
 
     function validated_func(){
       const inProgress_btn = document.getElementById("inProgress_btn").disabled;
@@ -583,8 +584,10 @@
           })
           .catch((error) => {
             console.error("Error:", error);
+          }).finally(()=>{
+            location.reload();
           });
-    } 
+    }
     function deliverInvoice_func(status){
       const biller = document.getElementById("biller").value;
       const size = document.getElementById("box-size2").value;
@@ -595,7 +598,7 @@
       const deliverer_date = document.getElementById("delivered_date").value;
       const invoice_no = document.getElementById("invoice-no").value;
       const note = document.getElementById("final-note").value;
-     
+
      const validated_btn = document.getElementById("validated_btn").disabled;
 
       if(!validated_btn){
@@ -631,40 +634,41 @@
           })
           .catch((error) => {
             console.error("Error:", error);
+          }).finally(()=>{
+            location.reload();
           });
-    } 
+    }
 
     const reviewer = document.getElementById("reviewer-name");
     reviewer.addEventListener("change",function(){
       document.getElementById("reviewer").value = this.value;
-     })   
+     })
 
       const Done_btn = document.getElementById("Done_btn");
     Done_btn.addEventListener("click",function(){
       deliverInvoice_func("سلمت");
-     }) 
+     })
 
      const partly_btn = document.getElementById("partly_btn");
     partly_btn.addEventListener("click",function(){
       deliverInvoice_func("سلمت جزئيا");
-     }) 
+     })
      const validated_btn = document.getElementById("validated_btn");
     validated_btn.addEventListener("click",function(){
       validated_func();
-      window.location.replace(window.location.href);
-    }) 
+    })
 
     const preparedBy = document.getElementById("preparedBy");
     preparedBy.addEventListener("change",function(){
       document.getElementById("preparer").value = this.value;
-    })  
+    })
     const deliverer = document.getElementById("deliverer");
     deliverer.addEventListener("change",function(){
       document.getElementById("deliverer-name").value = this.value;
-     })  
+     })
     function cancel_func(){
       const invoice_no = document.getElementById("invoice-no").value;
-     
+
 
       const data = {
         invoice_id: invoice_no,
@@ -685,19 +689,19 @@
           })
           .catch((error) => {
             console.error("Error:", error);
+          }).finally(()=>{
+            location.reload();
           });
-    
+
     }
      const cancel_btn = document.getElementById("cancel_btn");
      cancel_btn.addEventListener("click",function(){
       cancel_func();
-      //window.location.replace(window.location.href);
-     })  
+     })
     </script>
-   
+
   </body>
 </html>
 
 
 
-           
