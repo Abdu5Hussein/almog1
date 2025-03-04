@@ -1175,10 +1175,12 @@
         }
       });
         ///////////////////
-
-       document.getElementById("add-btn").addEventListener("click", function () {
-       createReturnItem();
+    document.getElementById("return-all-btn").addEventListener("click", function () {
+       createReturnAllItem();
       });
+    document.getElementById("add-btn").addEventListener("click", function () {
+       createReturnItem();
+    });
     table.on("rowClick", function (e, row) {
         if (row.getData().quantity > 0) {
 
@@ -1200,7 +1202,7 @@
         document.getElementById("pno-hidden").value = data.pno || 0;
         document.getElementById("autoid-hidden").value = data.autoid || 0;
     }
-      function createReturnItem(){
+    function createReturnItem(){
 
         const submitButton = document.getElementById("add-btn");
         submitButton.disabled = true;
@@ -1245,7 +1247,73 @@
           }).finally(() => {
             submitButton.disabled = false;
           });
-      }
+    }
+
+    function createReturnAllItem() {
+        const submitButton = document.getElementById("add-btn");
+        submitButton.disabled = true;
+
+        const allbtn = document.getElementById("return-all-btn");
+        allbtn.disabled = true;
+
+        // Get the table data
+        const tableData = table.getData(); // Get all the rows' data
+        let successCount = 0; // Counter to track successful returns
+        let totalCount = tableData.length; // Total number of rows to process
+
+        // Iterate over each row in the table and send a separate request for each
+        tableData.forEach(row => {
+            // Construct the data for each row
+            const data = {
+                returned_quantity: row.quantity, // Get the quantity for the returned quantity
+                autoid: row.autoid, // Get the autoid from the row
+                invoice_no: row.invoice_no, // Get the invoice_no from the row
+                pno: row.pno, // Get the pno from the row
+            };
+
+            console.log("Data sent for row: " + row.pno + " data: " + JSON.stringify(data));
+
+            // Send the request for each row
+            fetch(`/permission-items/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            })
+            .then((response) => response.json())
+            .then((result) => {
+                if (result.error) {
+                    if (result.error === "Returned quantity greater than original quantity") {
+                        console.log(" لا يوجد كمية كافية لترجيع الصنف ", row.pno);
+                    } else {
+                        console.log(`Error: ${result.error} for ${row.pno}`);
+                    }
+                    // Do not increment successCount if there's an error
+                    return;
+                }
+                console.log(result);
+                clearForm(); // Clear the form if successful
+                console.log("تم ترجيع الصنف ", row.pno);
+
+                // Increment successCount when request is successful
+                successCount++;
+
+                // Check if all rows have been successfully processed
+                if (successCount === totalCount) {
+                    alert("تم ترجيع جميع الأصناف بنجاح");
+                }
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+        });
+
+        // Re-enable the submit button after processing all rows (disabled during processing)
+        // The button remains disabled after submission to prevent multiple submissions
+    }
+
+
     </script>
 
   </body>
