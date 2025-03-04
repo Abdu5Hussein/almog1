@@ -729,6 +729,7 @@ class SellInvoiceItemsTable(models.Model):
     e_name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     prev_quantity = models.IntegerField(blank=True, null=True)
     current_quantity = models.IntegerField(blank=True, null=True)
+    current_quantity_after_return = models.IntegerField(blank=True, null=True)
     invoice_instance = models.ForeignKey(SellinvoiceTable, models.DO_NOTHING)
     invoice_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     main_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -885,7 +886,7 @@ class return_permission(models.Model):
     payment = models.CharField(max_length=150,default='نقدي')
 
     def __str__(self):
-        return str(self.autoid) + "- invoice: " + str(self.invoice.invoice_no) + "- amount: " + str(self.amount)
+        return str(self.autoid) + "- invoice: " + str(self.invoice_obj.invoice_no) + "- amount: " + str(self.amount)
 
 class return_permission_items(models.Model):
     autoid = models.AutoField(primary_key=True)

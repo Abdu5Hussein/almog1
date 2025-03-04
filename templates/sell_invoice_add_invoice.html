@@ -475,7 +475,7 @@
         font-size: 12px;
         padding: 5px;
       }
-      .max-width-500{       
+      .max-width-500{
         max-width: 500px;
       }
     </style>
@@ -540,7 +540,7 @@
                         />
                         <label>نقدا</label>
                     </div>
-                    <div class="col">                        
+                    <div class="col">
                         <input
                         type="radio"
                         name="payment"
@@ -549,9 +549,9 @@
                         />
                         <label>أجل</label>
                     </div>
-                
+
                 </div>
-                
+
               </div>
               <div class="input-group mb-1 d-flex align-items-center">
                 <div class="d-flex" style="width: calc(100% - 518px);">
@@ -581,14 +581,14 @@
                     <label for="balance" class="form-label me-2">الرصيد</label>
                     <input type="text" name="balance" id="balance" class="form-control" style="width: 100px !important;" required readonly />
                 </div>
-              </div>  
+              </div>
 
                 <div class="input-group max-width-500 mb-1">
                     <div class="width-95 d-flex align-items-center">
                         <label for="for-who" class="form-label">لحساب</label>
                     </div>
                     <input type="text" class="form-control" id="for-who" />
-                </div>   
+                </div>
 
                 <div class="border max-width-500 p-1">
                     <div class="input-group max-width-500 mb-1">
@@ -596,15 +596,15 @@
                         <p class="mx-2" id="last-sell-date"> 05/06/2025 </p>
                         <p class="mx-2"> بقيمة : </p>
                         <p class="mx-2" id="last-sell-amount"> 500 دل </p>
-                    </div>  
+                    </div>
                     <div class="input-group max-width-500 mb-1">
                         <p class="mx-2" style="padding-left:27px"> اخر دفعة : </p>
                         <p class="mx-2" id="last-pay-date"> 05/06/2025 </p>
                         <p class="mx-2"> بقيمة : </p>
                         <p class="mx-2" id="last-pay-amount"> 500 دل </p>
-                    </div>    
-                </div> 
-              
+                    </div>
+                </div>
+
             </div>
 
 
@@ -694,7 +694,7 @@
                         readonly
                     />
                 </div>
-                
+
                 <div class="input-group mb-1">
                     <div class="width-73 d-flex align-items-center">
                         <label for="discount" class="form-label">خصم</label>
@@ -714,7 +714,7 @@
                         type="text"
                         class="form-control value-fixed small-input"
                         id="discount-curr"
-                        value=" دل " 
+                        value=" دل "
                         readonly
                     />
                 </div>
@@ -733,7 +733,7 @@
             <div class="col">
                 <div class="input-group mb-1">
                     <div class="width-73 d-flex align-items-center">
-                        <label for="returned" class="form-label">ترجيع</label>                        
+                        <label for="returned" class="form-label">ترجيع</label>
                     </div>
                     <input
                         type="text"
@@ -750,7 +750,7 @@
                         type="number"
                         class="form-control value-fixed"
                         id="quantity"
-                        
+
                     />
                 </div>
                 <div class="input-group mb-1">
@@ -763,7 +763,7 @@
                         id="payment-discount"
                         readonly
                     />
-                </div>           
+                </div>
             </div>
             <div class="col" style="border-right: 3px solid lightgrey;">
                 <div class="input-group mb-1">
@@ -775,12 +775,12 @@
                         class="form-control value-fixed"
                         id="delivered_date"
                         readonly
-                        
+
                     />
                 </div>
                 <div class="input-group mb-1">
                     <div class="width-73 d-flex align-items-center">
-                        <label for="cargo" class="form-label">نقل</label>     
+                        <label for="cargo" class="form-label">نقل</label>
                     </div>
                     <input
                         type="text"
@@ -802,7 +802,7 @@
                 </div>
             </div>
             <div class="col">
-            
+
             <div class="input-group mb-1">
               <div class="width-73 d-flex align-items-center">
                 <label for="paid" class="form-label">المدفوع</label>
@@ -854,7 +854,7 @@
             type="button"
             class="btn btn-primary m-1"
             onclick="openWindow('payment-installments')"
-            
+
           >
             قيود الدفع
           </button>
@@ -986,9 +986,9 @@
         element.addEventListener("search", function () {
           // Get only visible choices (filtering out placeholders and removed items)
           let allChoices = choices._store.choices.filter(choice => !choice.placeholder && !choice.disabled);
-          
+
           choices_options = allChoices.map(choice => choice.label.trim());
-          
+
           //console.log("allChoices:", allChoices);
           console.log("choices_options:", choices_options);
         });
@@ -997,8 +997,8 @@
           "addItem",
           function (event) {
             const newClient = event.detail.label.trim();
-            
-            
+
+
             if (!choices_options.includes(newClient)) {
               const data = {
                 client_name: newClient,
@@ -1022,7 +1022,7 @@
                 .then((data) => {
                   if (data && data.success) {
                     console.log("Client created successfully!");
-            
+
                   } else {
                     console.log("Error occurred:", data.message);
                   }
@@ -1034,7 +1034,7 @@
             } else {
               console.log("Client already exists, skipping creation.");
             }
-             
+
           },
           false
         );
@@ -1099,7 +1099,7 @@
           // Get all input fields in the form
           const inputs = form.querySelectorAll("input[required]");
           const client_index = document.getElementById("client").selectedIndex;
-          
+
           /*if (client_index == 0) {
             alert("الرجاء اختيار العميل");
             return;
@@ -1126,7 +1126,7 @@
             };
 
             // Make a POST request to the server
-            
+
             fetch("/sell_invoice_add_items", {
               method: "POST",
               headers: {
@@ -1181,7 +1181,7 @@
           // Get all input fields in the form
           const inputs = form.querySelectorAll("input[required]");
           const client_index = document.getElementById("client").selectedIndex;
-          
+
           /*if (client_index == 0) {
             alert("الرجاء اختيار العميل");
             return;
@@ -1208,7 +1208,7 @@
             };
 
             // Make a POST request to the server
-            
+
             fetch("/sell_invoice_add_items", {
               method: "POST",
               headers: {
@@ -1252,7 +1252,7 @@
         });
       function updateInput(id,value){
         document.getElementById(id).value = value;
-      }  
+      }
       function getInputValue(id) {
         const element = document.getElementById(id);
         if (element) {
@@ -1285,7 +1285,7 @@
         // Display the result
         if (!selectedValue) {
             alert(" ! الرجاء اختيار طريقة الدفع! ");
-        } 
+        }
         // Collecting form data
         const data = {
           csrfmiddlewaretoken: getCSRFToken() || null,
@@ -1485,7 +1485,7 @@
           document.getElementById("discount-curr").value = discount_per ? " % " : " دل ";
           update_net_total();
       })
-      
+
       function update_net_total(){
           const discount_per = document.getElementById("discount-percentage").checked;
           console.log("percentage: ",discount_per);
@@ -1496,8 +1496,8 @@
           const netPrice = total - discount - returned;
           updateInput("net-total",netPrice + " دل ");
       }
-      
+
     </script>
-    
+
   </body>
 </html>

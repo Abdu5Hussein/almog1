@@ -20,8 +20,8 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
-from .serializers import SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
+from .models import Mainitem,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
+from .serializers import MainitemSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
@@ -148,6 +148,32 @@ def get_dropboxes(request):
         'main_types': serialized_main.data,
         })
 
+
+
+@api_view(["GET"])
+def get_models(request):
+    models_data = models.Modeltable.objects.all()
+    serialized_data = serializers.ModelSerializer(models_data, many=True)
+    return Response({'models': serialized_data.data})
+
+@api_view(["GET"])
+def get_engines(request):
+    engines_data = models.enginesTable.objects.all()
+    serialized_data = serializers.EngineSerializer(engines_data, many=True)
+    return Response({'engines': serialized_data.data})
+
+@api_view(["GET"])
+def get_main_types(request):
+    main_types_data = models.Maintypetable.objects.all()
+    serialized_data = serializers.MainTypeSerializer(main_types_data, many=True)
+    return Response({'main_types': serialized_data.data})
+
+@api_view(["GET"])
+def get_sub_types(request):
+    sub_types_data = models.Subtypetable.objects.all()
+    serialized_data = serializers.SubTypeSerializer(sub_types_data, many=True)
+    return Response({'sub_types': serialized_data.data})
+
 @api_view(['GET'])
 def GetClientInvoices(request, id):
     # Filter invoices based on the client ID
@@ -166,7 +192,33 @@ def GetClientInvoices(request, id):
 
 # API to list all support messages (for the support team)
 
+@api_view(['POST'])
+def filter_Items(request):
+    # Extract the filter parameters from the request body
+    itemmain = request.data.get('itemmain', None)
+    itemsubmain = request.data.get('itemsubmain', None)
+    itemthird = request.data.get('itemthird', None)
+    engine_no = request.data.get('engine_no', None)
 
+    # Build the query dynamically based on provided parameters
+    filters = {}
+    if itemmain:
+        filters['itemmain__icontains'] = itemmain  # Case-insensitive search
+    if itemsubmain:
+        filters['itemsubmain__icontains'] = itemsubmain  # Case-insensitive search
+    if itemthird:
+        filters['itemthird__icontains'] = itemthird  # Case-insensitive search
+    if engine_no:
+        filters['engine_no__icontains'] = engine_no  # Case-insensitive search
+
+    # Apply the filters to the Mainitem model
+    items = Mainitem.objects.filter(**filters)
+
+    # Serialize the filtered items
+    serializer = MainitemSerializer(items, many=True)
+
+    # Return the serialized data as the response
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def support_conversations(request):
@@ -658,7 +710,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         data = request.data
 
         # Convert and validate foreign keys
-        invoice_id = data.get("invoice")
+        invoice_id = data.get("invoice_no")
         pno = data.get("pno")
         autoid = data.get("autoid")
 
@@ -672,6 +724,8 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
         invoice_item = models.SellInvoiceItemsTable.objects.get(autoid=autoid)
 
+        if int(data.get("returned_quantity")) > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
+            return Response({"error": "Returned quantity greater than original quantity"}, status=status.HTTP_400_BAD_REQUEST)
         # Create the return permission
         returned_item_instance = models.return_permission_items.objects.create(
             pno=invoice_item.pno,
@@ -679,11 +733,19 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
             company=invoice_item.company,
             item_name=invoice_item.name,
             org_quantity=invoice.quantity,
-            returned_quantity=data.get("quantity") if data.get("quantity") else invoice.quantity,
+            returned_quantity=data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity,
             price=invoice_item.dinar_unit_price,
             invoice_obj=invoice,
             invoice_no=invoice.invoice_no,
         )
+        if invoice_item.current_quantity_after_return is not None and invoice_item.current_quantity_after_return > 0:
+            # Decrease the current quantity after return
+            invoice_item.current_quantity_after_return -= int(data.get("returned_quantity"))
+            invoice_item.save()
+        elif invoice_item.current_quantity_after_return in (None, 0):
+            # Set the current quantity after return to the original quantity minus returned quantity
+            invoice_item.current_quantity_after_return = invoice_item.quantity - int(data.get("returned_quantity"))
+            invoice_item.save()
 
         # Serialize and return the created object
         serializer = self.get_serializer(returned_item_instance)

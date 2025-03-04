@@ -147,3 +147,9 @@ class BuyInvoiceSerializer(serializers.ModelSerializer):
 
     def get_invoice_date(self, obj):
         return obj.invoice_date.strftime("%Y-%m-%d")  # Ensure "YYYY-MM-DD" format
+
+class SellInvoiceItemsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.SellInvoiceItemsTable
+        fields = "__all__"

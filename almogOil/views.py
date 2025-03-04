@@ -54,8 +54,7 @@ from rest_framework.exceptions import NotFound
 from django.http import JsonResponse
 import firebase_admin
 from firebase_admin import credentials, messaging
-
-from almogOil import serializers
+from almogOil import serializers,models
 
 # Path to your Firebase Admin SDK JSON key file
 FIREBASE_CREDENTIALS_PATH = "/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-367f5e9e17.json"
@@ -756,6 +755,10 @@ def delete_record(request):
     return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
 
 from django.core.cache import cache
+
+
+
+
 
 @csrf_exempt
 def filter_items(request):
@@ -4485,3 +4488,17 @@ def engines_view(request):
         'subType': subtypes,
         'mainType': maintypes,
     })
+
+def return_items_add_items(request, id):
+    try:
+        invoice_items = models.SellInvoiceItemsTable.objects.filter(invoice_no=id)
+        serializer = serializers.SellInvoiceItemsSerializer(invoice_items, many=True)
+        invoice_items_data = json.dumps(serializer.data) # Store serialized data
+    except models.SellInvoiceItemsTable.DoesNotExist:
+        invoice_items_data = {}  # Return an empty list if no records are found
+
+    context = {
+        "invoice_items": invoice_items_data,
+        "invoice":id,
+    }
+    return render(request, 'return_permission_add_items.html', context)
