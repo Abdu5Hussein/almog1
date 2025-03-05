@@ -248,25 +248,25 @@ class LostAndDamagedTable(models.Model):
 
 class Mainitem(models.Model):
     fileid = models.BigAutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
-    itemno = models.CharField(db_column='ItemNo', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    itemmain = models.CharField(db_column='ItemMain', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    itemsubmain = models.CharField(db_column='ItemSubMain', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    itemname = models.CharField(db_column='ItemName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    short_name = models.CharField(db_column='ShortName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    itemthird = models.CharField(db_column='ItemThird', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    itemsize = models.CharField(db_column='ItemSize', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    companyproduct = models.CharField(db_column='CompanyProduct', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    dateproduct = models.CharField(db_column='DateProduct', max_length=10, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    levelproduct = models.CharField(db_column='LevelProduct', max_length=10, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemno = models.CharField(db_column='ItemNo', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemmain = models.CharField(db_column='ItemMain', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemsubmain = models.CharField(db_column='ItemSubMain', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemname = models.CharField(db_column='ItemName', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    short_name = models.CharField(db_column='ShortName', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemthird = models.CharField(db_column='ItemThird', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemsize = models.CharField(db_column='ItemSize', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    companyproduct = models.CharField(db_column='CompanyProduct', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    dateproduct = models.CharField(db_column='DateProduct', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    levelproduct = models.CharField(db_column='LevelProduct', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     itemvalue = models.IntegerField(db_column='ItemValue', blank=True, null=True)  # Field name made lowercase.
     itemtemp = models.IntegerField(db_column='ItemTemp', blank=True, null=True)  # Field name made lowercase.
-    itemplace = models.CharField(db_column='ItemPlace', max_length=10, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemplace = models.CharField(db_column='ItemPlace', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     orderlastdate = models.DateTimeField(db_column='OrderLastDate', blank=True, null=True)  # Field name made lowercase.
-    ordersource = models.CharField(db_column='OrderSource', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    orderbillno = models.CharField(db_column='OrderBillNo', max_length=10, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    ordersource = models.CharField(db_column='OrderSource', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    orderbillno = models.CharField(db_column='OrderBillNo', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     buylastdate = models.DateTimeField(db_column='buyLastdate', blank=True, null=True)  # Field name made lowercase.
-    buysource = models.CharField(db_column='BuySource', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    buybillno = models.CharField(db_column='BuyBillNo', max_length=10, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    buysource = models.CharField(db_column='BuySource', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    buybillno = models.CharField(db_column='BuyBillNo', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     orgprice = models.DecimalField(db_column='OrgPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
     orderprice = models.DecimalField(db_column='OrderPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
     costprice = models.DecimalField(db_column='CostPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
@@ -276,11 +276,11 @@ class Mainitem(models.Model):
     buystop = models.BooleanField(db_column='BuyStop', blank=True, null=True)  # Field name made lowercase.
     itemtrans = models.BooleanField(db_column='ItemTrans', blank=True, null=True)  # Field name made lowercase.
     itemvalueb = models.IntegerField(db_column='ItemValueB', blank=True, null=True)  # Field name made lowercase.
-    replaceno = models.CharField(db_column='ReplaceNo', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    itemtype = models.CharField(db_column='ItemType', max_length=15, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    barcodeno = models.CharField(db_column='BarcodeNo', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    eitemname = models.CharField(db_column='EItemName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    currtype = models.CharField(db_column='CurrType', max_length=5, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    replaceno = models.CharField(db_column='ReplaceNo', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemtype = models.CharField(db_column='ItemType', max_length=115, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    barcodeno = models.CharField(db_column='BarcodeNo', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    eitemname = models.CharField(db_column='EItemName', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    currtype = models.CharField(db_column='CurrType', max_length=115, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     lessprice = models.DecimalField(db_column='LessPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
     pno = models.IntegerField(db_column='PNo', blank=False, null=False, unique=True)  # Field name made lowercase.
     currvalue = models.DecimalField(db_column='CurrValue', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.

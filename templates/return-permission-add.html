@@ -710,17 +710,7 @@
 
                     />
                 </div>
-                <div class="input-group mb-1">
-                    <div class="width-73 d-flex align-items-center">
-                        <label for="notes" class="form-label">ملاحظات</label>
-                    </div>
-                    <input
-                        type="text"
-                        class="form-control value-fixed"
-                        id="notes"
-                        readonly
-                    />
-                </div>
+
             </div>
 
 
@@ -794,7 +784,9 @@
         pagination: true,     // Enable pagination
         paginationSize: 5,   // Set number of rows per page
     });
-
+function setInputValue(id,value){
+  document.getElementById(id).value = value;
+}
 async function createPermission() {
     // Get input values
     //const employee = document.getElementById("employee").value;
@@ -828,6 +820,7 @@ async function createPermission() {
             alert("Permission created successfully! ID: " + result.autoid);
             document.getElementById("createButton").disabled = "true";
             document.getElementById("returnButton").style.display = "block";
+            document.getElementById("return-autoid").value = result.autoid;
             addPermissionItems();
         } else {
             alert("Error: " + JSON.stringify(result));
@@ -859,6 +852,18 @@ function fetchData(){
     fetchData();
     document.getElementById('createButton').addEventListener('click',function (){
       createPermission();
+    });
+    document.getElementById('returnButton').addEventListener('click',function (){
+      addPermissionItems();
+    });
+    document.getElementById('refresh-btn').addEventListener('click',function (){
+      const invoice = document.getElementById("invoice").value
+      const create_button_disabled = document.getElementById("createButton").disabled
+
+      if (invoice && create_button_disabled)
+      {
+        fetchInvoiceItems(invoice);
+      }
     });
     document.getElementById("client").addEventListener("change", function () {
     const selectedClient = this.options[this.selectedIndex].dataset.clientName;
@@ -962,6 +967,87 @@ function fetchData(){
             }
           });
         };
+      }
+      async function fetchInvoiceItems(invoiceId) {
+        const url = `/sell-invoice/${invoiceId}/returned-items`; // Replace `/your-endpoint-url/` with the actual endpoint path
+
+        try {
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to fetch invoice items");
+          }
+
+          const data = await response.json();
+          console.log("Fetched items:", data); // You can remove this or handle the data as needed
+          table.setData(data.data);
+          setInputValue("returned",calculateColumnSum("total") + " دل ");
+          setInputValue("quantity",calculateColumnSum("returned_quantity"));
+          setInputValue("total",data.invoice_total + " دل ");
+          setInputValue("paid",data.invoice_paid + " دل ");
+          const remaining = parseFloat(data.invoice_total)-parseFloat(data.invoice_paid);
+          setInputValue("remaining",remaining + " دل ");
+          return data; // Return the fetched data
+        } catch (error) {
+          console.error("Error fetching invoice items:", error.message);
+          alert("! حدث خطا اثناء جلب الاصناف المرجعة !");
+          return null; // You can handle errors differently, e.g., show a user-friendly message
+        }
+      }
+      /*function get_invoice_returned_items() {
+        const invoice = parseFloat(
+          document.getElementById("invoice-autoid").value.trim()
+        );
+        console.log("invioce", invoice);
+
+        fetchInvoiceItems(invoice).then((items) => {
+          if (items) {
+            console.log("Invoice items:", items);
+            table.replaceData(items); // Add the row data to second_table
+            let totalPrice = calculateColumnSum("dinar_total_price"); // Get the column sum
+            let totalcost = isNaN(calculateColumnSum("cost_total_price")) ? 0 : calculateColumnSum("cost_total_price");
+            let netcost = totalcost==0 ? 0 : totalcost - totalPrice;
+            let roundedPrice = parseFloat(totalPrice).toFixed(2);
+            document.getElementById("total").value = roundedPrice + " دل ";
+            document.getElementById("expenses").value =  parseFloat(netcost).toFixed(2) + " دل";
+            document.getElementById("org-price").value =
+              calculateColumnSum("org_total_price").toFixed(2);
+             let netTotal = totalPrice + netcost;
+            document.getElementById("net-total").value = parseFloat(netTotal).toFixed(2) + " دل ";
+            const paidValue = parseFloat(document.getElementById("paid").value);
+            let remainingValue = isNaN(paidValue)? netTotal: netTotal - paidValue;
+            document.getElementById("remaining").value = parseFloat(remainingValue).toFixed(2) + " دل ";
+            // Handle the fetched items, e.g., display them in the UI
+          } else {
+            console.log("No items fetched or an error occurred.");
+            table.replaceData([]);
+          }
+        });
+      }*/
+      function calculateColumnSum(columnName) {
+        let sum = 0;
+        const rowData = table.getData(); // Fetch row data from Tabulator
+
+        if (Array.isArray(rowData)) {
+          // Ensure rowData is an array
+          rowData.forEach((row) => {
+            if (!isNaN(row[columnName])) {
+              sum += parseFloat(row[columnName]); // Convert to float and add to sum
+            }
+          });
+        } else {
+          console.error(
+            `rowData is not an array or is undefined for column: ${columnName}`
+          );
+        }
+
+        return parseFloat(sum);
       }
     </script>
 

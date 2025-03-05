@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
+from rest_framework.pagination import PageNumberPagination
 from django.core.exceptions import FieldError
 from . import models  # Adjust this import to match your project structure
 from . import serializers
@@ -192,7 +193,11 @@ def GetClientInvoices(request, id):
 
 # API to list all support messages (for the support team)
 
-@api_view(['POST'])
+class CustomPagination(PageNumberPagination):
+    page_size = 10  # Limit the results to 10 per page
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 def filter_Items(request):
     # Extract the filter parameters from the request body
     itemmain = request.data.get('itemmain', None)
@@ -214,11 +219,19 @@ def filter_Items(request):
     # Apply the filters to the Mainitem model
     items = Mainitem.objects.filter(**filters)
 
-    # Serialize the filtered items
-    serializer = MainitemSerializer(items, many=True)
+    # Check if any items are found
+    if not items.exists():
+        return Response({"message": "No items found matching the criteria."}, status=status.HTTP_404_NOT_FOUND)
 
-    # Return the serialized data as the response
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    # Apply pagination
+    paginator = CustomPagination()
+    paginated_items = paginator.paginate_queryset(items, request)
+
+    # Serialize the filtered and paginated items
+    serializer = MainitemSerializer(paginated_items, many=True)
+
+    # Return the paginated data as the response
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['GET'])
 def support_conversations(request):
@@ -704,7 +717,7 @@ class ReturnPermissionViewSet(viewsets.ModelViewSet):
 class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
     queryset = models.return_permission_items.objects.all()
     serializer_class = serializers.ReturnPermissionItemsSerializer
-    lookup_field = 'pno'
+    lookup_field = 'autoid'
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -755,3 +768,14 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
 class EnginesTableViewSet(viewsets.ModelViewSet):
     queryset = models.enginesTable.objects.all()
     serializer_class = serializers.EnginesTableSerializer
+
+@api_view(['GET'])
+def get_invoice_returned_items(request,id):
+    returned_items = models.return_permission_items.objects.filter(invoice_no=id)
+    invoice = SellinvoiceTable.objects.get(invoice_no=id)
+    serializer = serializers.ReturnPermissionItemsSerializer(returned_items,many=True)
+    return Response({
+        'data':serializer.data,
+        'invoice_total':invoice.amount,
+        'invoice_paid':invoice.paid_amount,
+        }, status=status.HTTP_200_OK)

@@ -783,6 +783,10 @@ def filter_items(request):
                 filters_q &= Q(itemmain__icontains=filters['itemmain'])
             if filters.get('itemsubmain'):
                 filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
+            if filters.get('engine_no'):
+               filters_q &= Q(engine_no__icontains=filters['engine_no'])  # New filter
+            if filters.get('itemthird'):
+               filters_q &= Q(itemthird__icontains=filters['itemthird'])  # Already exists in 'model'
             if filters.get('companyproduct'):
                 filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
             if filters.get('itemname'):
@@ -829,7 +833,13 @@ def filter_items(request):
                     return JsonResponse({'error': 'Invalid date format'}, status=400)
 
             # Now filter the queryset using the combined Q object
-            queryset = Mainitem.objects.filter(filters_q).values('pno','fileid','itemplace','itemmain', 'itemname', 'companyproduct','itemno','pno','replaceno','itemvalue','buyprice','itemperbox','resvalue','oem_numbers').order_by('itemname')
+            queryset = Mainitem.objects.filter(filters_q).values(
+                    'pno', 'fileid', 'itemplace', 'itemmain', 'itemname', 
+                    'companyproduct', 'itemno', 'pno', 'replaceno', 
+                 'itemvalue', 'buyprice', 'itemperbox', 'resvalue', 
+                      'oem_numbers', 'engine_no', 'itemthird'  # Add new fields
+                                   ).order_by('itemname')
+ 
 
             # Serialize the filtered data
             items_data = list(queryset)  # Customize the fields to return as needed
