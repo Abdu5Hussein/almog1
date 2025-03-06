@@ -758,6 +758,7 @@ class EmployeesTable(models.Model):
     bank_details = models.CharField(blank=True, null=True, max_length=200)
     bank_account_no = models.CharField(blank=True, null=True, max_length=100)
     bank_iban_no = models.CharField(blank=True, null=True, max_length=100)
+    is_available = models.BooleanField(default=True)
 
     # New fields
     username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
@@ -923,3 +924,64 @@ class PaymentRequestTable(models.Model):
     def __str__(self):
         return str(self.autoid) +' | '+ self.client.name + ' | '+ str(self.requested_amount)
 
+class DeliveryQueue(models.Model):
+    order = models.ForeignKey(SellinvoiceTable, on_delete=models.CASCADE, related_name='delivery_queue')
+    employee = models.ForeignKey(EmployeesTable, on_delete=models.CASCADE, related_name='assigned_orders')
+    order_assigned_at = models.DateTimeField(default=timezone.now)
+    order_delivered_at = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('delivered', 'Delivered')], default='pending')
+    queue_number = models.PositiveIntegerField(default=1)  # Track the queue number
+
+    def assign_order(self):
+        """Assign the order to the first available delivery person with queue_number 1."""
+        available_employee = EmployeesTable.objects.filter(is_available=True).first()
+
+        if available_employee:
+            self.employee = available_employee
+            self.status = 'pending'
+            self.employee.is_available = False  # Mark the employee as unavailable
+            self.employee.save()
+            self.save()
+
+            # Reassign the queue number and update position in the queue
+            next_queue = DeliveryQueue.objects.filter(queue_number__gte=1).order_by('queue_number')
+            self.queue_number = next_queue.last().queue_number + 1 if next_queue.exists() else 1
+            self.save()
+
+            # Move the employee to the last position in the queue after they take the order
+            DeliveryQueue.objects.filter(employee=available_employee).update(queue_number=self.queue_number)
+
+            return f"Order {self.order.autoid} assigned to {available_employee.name}."
+        return "No available delivery person."
+
+    def mark_delivered(self):
+        """Mark the order as delivered and make the delivery person available again."""
+        self.status = 'delivered'
+        self.order_delivered_at = timezone.now()
+        self.employee.is_available = True  # Make the employee available again
+        self.employee.save()
+        self.save()
+
+        # Move the employee to the last position in the queue
+        self.employee.is_available = False
+        self.save()
+
+        return f"Order {self.order.autoid} has been delivered by {self.employee.name}."
+
+    class Meta:
+        db_table = 'DeliveryQueue'
+
+
+
+
+class OrderQueue(models.Model):
+    employee = models.ForeignKey(EmployeesTable, on_delete=models.CASCADE)
+    order = models.ForeignKey(SellinvoiceTable, on_delete=models.CASCADE)
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    is_completed = models.BooleanField(default=False)
+    is_accepted = models.BooleanField(default=False)
+    is_declined = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'order_queue'
+        ordering = ['assigned_at']  # Ensures round-robin assignment by time.

@@ -391,3 +391,388 @@ class FilterClientsInputTests(TestCase):
         response = self.client.post(reverse('filter-client-input'), '{"itemname": "Item 1"', content_type='application/json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['error'], 'Invalid JSON format')
+
+from django.test import TestCase
+from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
+import pandas as pd
+from io import BytesIO
+from .models import Mainitem
+import json
+
+class ProcessExcelAndImportTests(TestCase):
+
+    def setUp(self):
+        # Prepare initial data or setup
+        self.url = reverse('import_tabulator_data')
+
+    # def test_process_excel_upload(self):
+    #     # Create an Excel file to upload
+    #     data = {
+    #         "ItemNo": [1, 2],
+    #         "ItemMain": ["Main1", "Main2"],
+    #         "ItemName": ["Item1", "Item2"],
+    #         "ItemValue": [100, 200],
+    #         "Pno": [100, 200]  # Ensure Pno has valid values
+    #     }
+    #     df = pd.DataFrame(data)
+    #     excel_file = BytesIO()
+    #     with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
+    #         df.to_excel(writer, index=False)
+    #     excel_file.seek(0)
+
+    #     # Create a SimpleUploadedFile object to simulate file upload
+    #     file = SimpleUploadedFile("test_file.xlsx", excel_file.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+    #     # Send a POST request with the Excel file
+    #     response = self.client.post(self.url, {'fileInput': file})
+
+    #     # Check the response status and content
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertIn('Excel data imported successfully', response.content.decode())
+
+    #     # Verify records are created in the database
+    #     self.assertEqual(Mainitem.objects.count(), 2)
+    #     self.assertEqual(Mainitem.objects.first().itemno, 1)
+    #     self.assertEqual(Mainitem.objects.last().itemname, "Item2")
+
+    def test_process_tabulator_data(self):
+        # Prepare the data to be sent via Tabulator
+        data = [
+            {
+                "ItemNo": 1,
+                "ItemMain": "Main1",
+                "ItemName": "Item1",
+                "ItemValue": 100,
+                "PNo": "99"  # Ensure PNo has valid value
+            },
+            {
+                "ItemNo": 2,
+                "ItemMain": "Main2",
+                "ItemName": "Item2",
+                "ItemValue": 200,
+                "PNo": "88"  # Ensure PNo has valid value
+            }
+        ]
+        json_data = json.dumps(data)
+
+        # Send a POST request with the Tabulator data
+        response = self.client.post(self.url, {'data': json_data})
+
+        # Check the response status and content
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Tabulator data imported successfully', response.content.decode())
+
+        # Verify records are created in the database
+        self.assertEqual(Mainitem.objects.count(), 2)  # Now we should have 4 items in the database
+
+    def test_missing_file_or_data(self):
+        # Send a POST request with no file or data
+        response = self.client.post(self.url, {})
+
+        # Check the response status and content
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Invalid request or missing file', response.content.decode())
+
+    def test_invalid_excel_file(self):
+        # Create an invalid file type (not an Excel file)
+        file = SimpleUploadedFile("invalid_file.txt", b"Invalid content", content_type="text/plain")
+
+        # Send a POST request with the invalid file
+        response = self.client.post(self.url, {'fileInput': file})
+
+        # Check the response status and content
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Excel file format cannot be determined', response.content.decode())  # Check the actual error message
+
+from django.test import TestCase, Client
+from django.urls import reverse
+import json
+
+class GeneratePDFTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse('generate_pdf')  # Replace with your URL name
+
+    def test_generate_pdf_success(self):
+        # Prepare the data for the POST request
+        data = {
+            'data': [
+                {
+                    'fileid': '1',
+                    'itemno': '123',
+                    'itemmain': 'Main Item',
+                    'itemsubmain': 'Sub Item',
+                    'itemname': 'Item Name',
+                    'companyproduct': 'Company Product',
+                    'itemvalue': '100',
+                    'memo': 'Description',
+                    'replaceno': '001',
+                    'barcodeno': '123456789',
+                    'pno': '11',
+                }
+            ]
+        }
+
+        response = self.client.post(self.url, json.dumps(data), content_type="application/json")
+
+        # Assert that the response status code is 200 OK
+        self.assertEqual(response.status_code, 200)
+
+        # Assert that the response is a PDF
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response['Content-Disposition'].startswith('inline; filename="tabulator_data.pdf"'))
+
+    def test_generate_pdf_no_data(self):
+        # Test with empty data
+        data = {'data': []}
+
+        response = self.client.post(self.url, json.dumps(data), content_type="application/json")
+
+        # Assert that the response is still a PDF, even with no data
+        self.assertEqual(response.status_code, 400)
+
+    def test_generate_pdf_invalid_method(self):
+        # Test invalid method (GET instead of POST)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 405)  # Method Not Allowed
+
+
+from django.test import TestCase, Client
+from django.urls import reverse
+import json
+from almogOil.models import Mainitem  # Replace with the actual model import path
+
+class EditMainItemTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.item = Mainitem.objects.create(
+            fileid='1',
+            itemno='123',
+            itemmain='Main Item',
+            itemsubmain='Sub Item',
+            itemname='Item Name',
+            companyproduct='Company Product',
+            itemvalue='100',
+            memo='Description',
+            pno=99
+        )
+        self.url = reverse('edit_main_item')  # Replace with your URL name
+
+    def test_edit_main_item_success(self):
+        # Prepare the data for the PATCH request
+        data = {
+            'fileid': '1',
+            'originalno': '456',
+            'itemmain': 'Updated Main Item',
+            'itemsub': 'Updated Sub Item',
+            'pnamearabic': 'اسم العنصر',
+            'company': 'Updated Company',
+            'sellprice': '200'
+        }
+
+        response = self.client.patch(self.url, json.dumps(data), content_type="application/json")
+
+        # Assert that the response status code is 200 OK
+        self.assertEqual(response.status_code, 200)
+
+        # Check that the item was updated
+        updated_item = Mainitem.objects.get(fileid='1')
+        self.assertEqual(updated_item.itemno, '456')
+        self.assertEqual(updated_item.itemmain, 'Updated Main Item')
+        self.assertEqual(updated_item.companyproduct, 'Updated Company')
+        self.assertEqual(updated_item.buyprice, 200)
+
+    def test_edit_main_item_not_found(self):
+        # Test for a fileid that does not exist
+        data = {
+            'fileid': '999',
+            'originalno': '456',
+            'itemmain': 'Updated Main Item',
+        }
+
+        response = self.client.patch(self.url, json.dumps(data), content_type="application/json")
+
+        self.assertEqual(response.status_code, 404)  # Not Found
+
+    def test_edit_main_item_invalid_method(self):
+        # Test invalid method (POST instead of PATCH)
+        data = {
+            'fileid': '1',
+            'originalno': '456',
+            'itemmain': 'Updated Main Item',
+        }
+
+        response = self.client.post(self.url, json.dumps(data), content_type="application/json")
+
+        self.assertEqual(response.status_code, 400)  # Bad Request (Invalid method)
+
+from django.test import TestCase, Client
+from django.urls import reverse
+from rest_framework import status
+
+class GetItemDataTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.item = Mainitem.objects.create(
+            fileid='1',
+            itemno='123',
+            itemmain='Main Item',
+            itemsubmain='Sub Item',
+            itemname='Item Name',
+            companyproduct='Company Product',
+            itemvalue='100',
+            memo='Description',
+            pno=100
+        )
+        self.url = reverse('get_item_data', args=[self.item.fileid])  # Replace with your URL name
+
+    def test_get_item_data_success(self):
+        response = self.client.get(self.url)
+
+        # Assert that the response status code is 200 OK
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Assert that the response contains the correct data
+        self.assertEqual(response.data['fileid'], 1)
+        self.assertEqual(response.data['itemno'], '123')
+        self.assertEqual(response.data['itemmain'], 'Main Item')
+
+    def test_get_item_data_not_found(self):
+        # Test for a fileid that does not exist
+        url = reverse('get_item_data', args=['999'])  # Non-existing fileid
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_item_data_invalid_method(self):
+        # Test invalid method (POST instead of GET)
+        response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+from django.test import TestCase
+from django.urls import reverse
+from django.http import JsonResponse
+from .models import Mainitem
+
+class CreateMainItemTest(TestCase):
+    def test_create_main_item(self):
+        data = {
+            "originalno": "12345",
+            "itemmain": "Main Category",
+            "itemsub": "Sub Category",
+            "pnamearabic": "اسم العنصر",
+            "pnameenglish": "Item Name",
+            "shortname": "ShortName",
+            "company": "Company A",
+            "companyno": "54321",
+            "engine": "Engine123",
+            "barcode": "1234567890",
+            "description": "Product description",
+            "location": "Warehouse A",
+            "country": "Country A",
+            "pieces4box": 10,
+            "model": "Model A",
+            "storage": 100,
+            "backup": 20,
+            "temp": 30,
+            "reserved": 50,
+            "originprice": 200.0,
+            "buyprice": 180.0,
+            "expensesprice": 150.0,
+            "sellprice": 250.0,
+            "lessprice": 10.0,
+        }
+
+        # Simulate the POST request to create an item
+        response = self.client.post(reverse('create_main_item'), data, content_type="application/json")
+
+        # Assert successful creation
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'success')
+        self.assertEqual(response.json()['message'], 'Record created successfully!')
+
+        # Verify the item was saved in the database
+        self.assertTrue(Mainitem.objects.filter(itemno=data['originalno']).exists())
+
+    def test_create_main_item_invalid_method(self):
+        response = self.client.get(reverse('create_main_item'))  # Using GET instead of POST
+        self.assertEqual(response.status_code, 405)  # Method not allowed
+        self.assertEqual(response.json()['status'], 'error')
+        self.assertEqual(response.json()['message'], 'Invalid request method.')
+
+
+# class ProductsReportsTest(TestCase):
+#     def test_products_reports(self):
+#         response = self.client.get(reverse('products-reports'))
+#         self.assertEqual(response.status_code, 200)
+#         self.assertTemplateUsed(response, 'products-reports.html')
+#         self.assertIn('company', response.context)
+#         self.assertIn('columns', response.context)
+#         self.assertIn('models', response.context)
+
+#     def test_products_reports_with_invalid_method(self):
+#         response = self.client.post(reverse('products-reports'))  # Using POST instead of GET
+#         self.assertEqual(response.status_code, 405)
+#         self.assertEqual(response.json()['message'], 'Invalid request method.')
+
+
+
+class GetDataTest(TestCase):
+    def test_get_data(self):
+        response = self.client.get(reverse('get_data'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('data', response.json())
+        self.assertIn('last_page', response.json())
+        self.assertIn('total_rows', response.json())
+
+    def test_get_data_with_full_table(self):
+        response = self.client.get(reverse('get_data'), {'fullTable': 'true'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('fullTable', response.json())
+        self.assertIn('total_itemvalue', response.json())
+
+
+class UpdateItemValueTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.item = Mainitem.objects.create(
+            fileid='1234',
+            itemno='123',
+            itemmain='Main Item',
+            itemsubmain='Sub Item',
+            itemname='Item Name',
+            companyproduct='Company Product',
+            itemvalue='100',
+            memo='Description',
+            pno=1234
+        )
+
+    def test_update_item_value(self):
+        data = {
+            'fileid': '1234',
+            'newItemValue': 200
+        }
+
+        response = self.client.post(reverse('update-itemvalue'), data, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['success'], True)
+        self.assertEqual(response.json()['message'], 'Item value updated successfully.')
+
+    def test_update_item_value_item_not_found(self):
+        data = {
+            'fileid': '9999',  # Assuming item does not exist
+            'newItemValue': 200
+        }
+
+        response = self.client.post(reverse('update-itemvalue'), data, content_type="application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()['message'], 'Item not found.')
+
+    def test_update_item_value_invalid_method(self):
+        response = self.client.get(reverse('update-itemvalue'))  # Using GET instead of POST
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(response.json()['message'], 'Invalid request method.')

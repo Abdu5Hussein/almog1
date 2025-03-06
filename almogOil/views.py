@@ -605,7 +605,7 @@ def ProductsDetails(req):
     engines = enginesTable.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
-    countries = Manufaccountrytable.objects.all()
+    #countries = Manufaccountrytable.objects.all()
     models = Modeltable.objects.all()
     columns = [field.name for field in Mainitem._meta.fields]
     column_visibility = {
@@ -628,7 +628,7 @@ def ProductsDetails(req):
         'mainType': mainType,
         'subType':subType,
         'engines':engines,
-        'countries':countries,
+        #'countries':countries,
         'models':models,
         'column_titles': COLUMN_TITLES,
     }
@@ -1066,7 +1066,7 @@ def process_excel_and_import(request):
                 return JsonResponse({"status": "error", "message": f"Error: {str(e)}"})
 
         # Handle imported data (Tabulator data)
-        elif request.POST.get("data"):
+        if request.POST.get("data"):
             data = json.loads(request.POST["data"])
             print(f"tabulator data {data}")
             try:
@@ -1211,6 +1211,8 @@ def generate_pdf(request):
         # Parse the incoming JSON data
         data = json.loads(request.body)
         table_data = data.get('data', [])
+        if not table_data:  # Handle empty data case
+            return JsonResponse({'error': 'No data provided for PDF generation'}, status=400)
 
         # Create a response object to return as a PDF
         response = HttpResponse(content_type='application/pdf')
@@ -1305,6 +1307,8 @@ def generate_pdf(request):
 
         for i in range(0, rows, max_rows_per_page):
             page_data = formatted_data[i:i + max_rows_per_page]
+            if not page_data:
+                return JsonResponse({'error': 'No data provided for PDF generation'}, status=400)
             page_table = Table(page_data, colWidths=max_column_widths)
             page_table.setStyle(table_style)
 
@@ -1402,6 +1406,8 @@ def edit_main_item(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
+#until here
+
 @csrf_exempt
 def create_main_item(request):
     if request.method == 'POST':
@@ -1443,7 +1449,7 @@ def create_main_item(request):
 
         return JsonResponse({'status': 'success', 'message': 'Record created successfully!'})
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'},status=405)
 
 def safe_int(value, default=0):
     """Safely convert a value to an integer, or return the default if conversion fails."""
@@ -1490,10 +1496,12 @@ def UpdateUserView(request):
 
 
 def ProductsReports(req):
+    if req.method == 'POST':
+        return JsonResponse({'message': 'Invalid request method.'}, status=405)
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
-    countries = Manufaccountrytable.objects.all()
+    #countries = Manufaccountrytable.objects.all()
     models = Modeltable.objects.all()
     columns = [field.name for field in Mainitem._meta.fields]
     column_visibility = {
@@ -1506,7 +1514,7 @@ def ProductsReports(req):
     'buyprice':True,
     'itemplace':True,
 
-}
+    }
 
 
     print(columns)  # Debugging to check the contents of columns
@@ -1515,7 +1523,7 @@ def ProductsReports(req):
         'columns': columns,
         'mainType': mainType,
         'subType':subType,
-        'countries':countries,
+        #'countries':countries,
         'column_titles': COLUMN_TITLES,
         'column_visibility': column_visibility,
         'models':models
@@ -1653,11 +1661,13 @@ def update_itemvalue(request):
             # Return a successful response
             return JsonResponse({'success': True, 'message': 'Item value updated successfully.'})
         except Mainitem.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Item not found.'})
+            return JsonResponse({'success': False, 'message': 'Item not found.'},status=404)
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'},status=405)
+
+#until here
 
 @csrf_exempt  # Disable CSRF validation for this view (use with caution in production)
 def update_storage(request):
@@ -2457,7 +2467,7 @@ def BuyInvoiceItemsView(request):
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
     model = Modeltable.objects.all()
-    country = Manufaccountrytable.objects.all()
+    #country = Manufaccountrytable.objects.all()
     data = request.session.get('data')
     # Convert data to JSON string
     json_data = json.dumps(data)
@@ -2465,7 +2475,7 @@ def BuyInvoiceItemsView(request):
         'company': company,
         'mainType':mainType,
         'subType':subType,
-        'country': country,
+        #'country': country,
         'model':model,
         "data":json_data
         }
@@ -3477,12 +3487,12 @@ def sell_invoice_search_storage(request):
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
-    countries = Manufaccountrytable.objects.all()
+    #countries = Manufaccountrytable.objects.all()
     context = {
         "company":company,
         "mainType":mainType,
         "subType":subType,
-        "countries":countries,
+        #"countries":countries,
     }
     return render(request,'sell_invoice_search_products.html',context)
 

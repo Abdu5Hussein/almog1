@@ -21,7 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import Mainitem,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
+from .models import Mainitem,OrderQueue,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
 from .serializers import MainitemSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
@@ -440,8 +440,144 @@ def get_delivery_invoices(request):
     serializer = SellInvoiceSerializer(invoices, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+def get_employee_order(request, employee_id):
+    try:
+        # Fetch the employee by ID
+        employee = EmployeesTable.objects.get(employee_id=employee_id)
+
+        if not employee.is_available:
+            return Response({"message": "Employee is not available."}, status=400)
+
+        # Get the first available order in the queue
+        pending_order = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل').first()
+
+        if not pending_order:
+            return Response({"message": "No pending orders."}, status=400)
+
+        # Create a queue entry for the employee and pending order if it's not already in the queue
+        order_queue, created = OrderQueue.objects.get_or_create(employee=employee, order=pending_order, is_completed=False, is_declined=False)
+
+        if created:
+            # Return the assigned order with options to accept or decline
+            return Response({
+                "message": "Order assigned. You can either accept or decline.",
+                "order": {
+                    "order_id": pending_order.autoid,
+                    "invoice_no": pending_order.invoice_no,
+                    "client": pending_order.client,
+                    "amount": str(pending_order.amount),
+                    "delivery_status": pending_order.delivery_status
+                },
+                "action": {
+                    "accept": f"/accept-order/{order_queue.id}/",
+                    "decline": f"/decline-order/{order_queue.id}/"
+                }
+            })
+        else:
+            return Response({"message": "Order already assigned."}, status=400)
+
+    except EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=404)
 
 
+@api_view(['POST'])
+def accept_order(request, queue_id):
+    try:
+        # Fetch the order queue entry by ID
+        order_queue = OrderQueue.objects.get(id=queue_id)
+
+        # Mark the order as accepted
+        order_queue.is_accepted = True
+        order_queue.save()
+
+        # Update the order's delivery status to 'جاري التوصيل'
+        order = order_queue.order
+        order.delivery_status = 'جاري التوصيل'
+        order.save()
+
+        # Mark the employee as unavailable
+        employee = order_queue.employee
+        employee.is_available = False
+        employee.save()
+
+        return Response({
+            "message": "Order accepted successfully.",
+            "order_id": order.autoid,
+            "invoice_no": order.invoice_no,
+            "client": order.client,
+            "delivery_status": order.delivery_status
+        })
+
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order queue entry not found."}, status=404)
+    
+
+@api_view(['POST'])
+def decline_order(request, queue_id):
+    try:
+        # Fetch the order queue entry by ID
+        order_queue = OrderQueue.objects.get(id=queue_id)
+
+        if order_queue.is_accepted or order_queue.is_completed:
+            return Response({"message": "Order has already been accepted or completed."}, status=400)
+
+        # Mark the order as declined
+        order_queue.is_declined = True
+        order_queue.save()
+
+        # Mark the order's delivery status back to 'معلقة'
+        order = order_queue.order
+        order.delivery_status = 'معلقة'
+        order.save()
+
+        # Re-assign the order to the next employee in the queue
+        next_available_employee = EmployeesTable.objects.filter(is_available=True).first()
+
+        if next_available_employee:
+            # Assign the order to the next available employee
+            OrderQueue.objects.create(employee=next_available_employee, order=order)
+
+        return Response({
+            "message": "Order declined. The next available employee will take it."
+        })
+
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order queue entry not found."}, status=404)
+
+
+@api_view(['POST'])
+def skip_order(request, queue_id):
+    try:
+        # Fetch the order queue entry by ID
+        order_queue = OrderQueue.objects.get(id=queue_id)
+
+        # Skip the order and mark the order queue entry as completed
+        order_queue.is_completed = True
+        order_queue.save()
+
+        # Remove the order from the employee's current queue and make the employee available again
+        employee = order_queue.employee
+        employee.is_available = True
+        employee.save()
+
+        # Reassign the order to the next available delivery person
+        next_available_employee = EmployeesTable.objects.filter(is_available=True).first()
+
+        if not next_available_employee:
+            return Response({"message": "No available employees to take the order."}, status=400)
+
+        # Reassign the order to the next employee in the queue
+        OrderQueue.objects.create(employee=next_available_employee, order=order_queue.order)
+
+        return Response({
+            "message": "Order skipped. The next available employee will take it."
+        })
+
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order queue entry not found."}, status=404)
+
+    
 @api_view(['GET', 'POST'])
 def UpdateItemsItemmainApiView(request, item_id):
     try:
@@ -779,3 +915,33 @@ def get_invoice_returned_items(request,id):
         'invoice_total':invoice.amount,
         'invoice_paid':invoice.paid_amount,
         }, status=status.HTTP_200_OK)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def update_delivery_availability(request):
+    """Toggle the availability of the delivery person based on their employee ID."""
+    
+    # Get the delivery person ID from the request data
+    delivery_person_id = request.data.get('employee_id')
+    
+    if not delivery_person_id:
+        return Response({"error": "Employee ID is required."}, status=400)
+
+    try:
+        # Get the delivery person using the provided ID
+        employee = EmployeesTable.objects.get(employee_id=delivery_person_id)
+    except EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=404)
+
+    # Toggle the availability status
+    employee.is_available = not employee.is_available
+    employee.save()
+
+    return Response({
+        "message": f"Employee availability updated to {'available' if employee.is_available else 'unavailable'}.",
+        "is_available": employee.is_available
+    })
+
+
+
