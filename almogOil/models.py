@@ -908,3 +908,18 @@ class return_permission_items(models.Model):
 
     def __str__(self):
         return f"{self.item_name} - {self.total}"
+
+
+class PaymentRequestTable(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    client = models.ForeignKey(AllClientsTable,on_delete=models.CASCADE)
+    requested_amount = models.DecimalField(max_digits=19,decimal_places=4)
+    accepted_amount = models.DecimalField(max_digits=19,decimal_places=4)
+    employee = models.CharField(max_length=100, null=True, blank=True)
+    issue_date = models.DateField(auto_now_add=True)
+    accept_date = models.DateField(null=True)
+    accepted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.autoid) +' | '+ self.client.name + ' | '+ str(self.requested_amount)
+

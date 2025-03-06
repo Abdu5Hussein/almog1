@@ -777,6 +777,9 @@ def filter_items(request):
             filters_q = Q()
 
             # Build the query based on the filters
+            if filters.get('fileid'):
+               filters_q &= Q(fileid__icontains=filters['fileid'])
+
             if filters.get('itemno'):
                 filters_q &= Q(itemno__icontains=filters['itemno'])
             if filters.get('itemmain'):
@@ -834,12 +837,12 @@ def filter_items(request):
 
             # Now filter the queryset using the combined Q object
             queryset = Mainitem.objects.filter(filters_q).values(
-                    'pno', 'fileid', 'itemplace', 'itemmain', 'itemname', 
-                    'companyproduct', 'itemno', 'pno', 'replaceno', 
-                 'itemvalue', 'buyprice', 'itemperbox', 'resvalue', 
+                    'pno', 'fileid', 'itemplace', 'itemmain', 'itemname',
+                    'companyproduct', 'itemno', 'pno', 'replaceno',
+                 'itemvalue', 'buyprice', 'itemperbox', 'resvalue',
                       'oem_numbers', 'engine_no', 'itemthird'  # Add new fields
                                    ).order_by('itemname')
- 
+
 
             # Serialize the filtered data
             items_data = list(queryset)  # Customize the fields to return as needed
@@ -4512,3 +4515,37 @@ def return_items_add_items(request, id):
         "invoice":id,
     }
     return render(request, 'return_permission_add_items.html', context)
+
+def request_payment_view(request):
+    requests = models.PaymentRequestTable.objects.select_related('client').all()  # Fetch requests with clients
+    updated_data = []  # List to store modified request objects
+
+    for req in requests:
+        # Calculate balance from TransactionsHistoryTable
+        balance_data = models.TransactionsHistoryTable.objects.filter(client_id=req.client_id).aggregate(
+            total_debt=Sum('debt'),
+            total_credit=Sum('credit')
+        )
+
+        total_debt = balance_data.get('total_debt') or 0
+        total_credit = balance_data.get('total_credit') or 0
+        balance = round(total_credit - total_debt, 2)
+
+        # Convert object to dictionary
+        updated_data.append({
+            'autoid': req.autoid,
+            'client_id': req.client.clientid,
+            'client_name': req.client.name,
+            'balance': balance,
+            'requested_amount': float(req.requested_amount),  # Convert Decimal to float
+            'accepted_amount': float(req.accepted_amount),    # Convert Decimal to float
+            'employee': req.employee,
+            'issue_date': req.issue_date.strftime('%Y-%m-%d') if req.issue_date else None,
+            'accept_date': req.accept_date.strftime('%Y-%m-%d') if req.accept_date else None,
+        })
+    # Pass updated_data as part of context
+    context = {
+        'requests': updated_data
+    }
+
+    return render(request, 'request-payment.html', context)

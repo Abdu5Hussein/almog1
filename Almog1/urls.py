@@ -197,6 +197,7 @@ urlpatterns = [
     path('',include(router.urls)),
     path('engines-page/', views.engines_view, name='engines-view'),  # Render the engine management page
     path('sell-invoice/<int:id>/returned-items',api_views.get_invoice_returned_items,name="get-invoice-returned-items"),
+    path('clients/payment-requests',views.request_payment_view,name="request_payment")
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
