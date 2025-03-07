@@ -974,14 +974,15 @@ class DeliveryQueue(models.Model):
 
 
 
-class OrderQueue(models.Model):
+# Assume EmployeeTable is already defined
+# Add a Queue Table if not already
+class EmployeeQueue(models.Model):
     employee = models.ForeignKey(EmployeesTable, on_delete=models.CASCADE)
-    order = models.ForeignKey(SellinvoiceTable, on_delete=models.CASCADE)
-    assigned_at = models.DateTimeField(auto_now_add=True)
-    is_completed = models.BooleanField(default=False)
-    is_accepted = models.BooleanField(default=False)
-    is_declined = models.BooleanField(default=False)
+    position = models.PositiveIntegerField()  # Position in the queue
+    is_assigned = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=False)  # To check if the employee is available
 
-    class Meta:
-        db_table = 'order_queue'
-        ordering = ['assigned_at']  # Ensures round-robin assignment by time.
+class OrderQueue(models.Model):
+    order = models.ForeignKey(SellinvoiceTable, on_delete=models.CASCADE)
+    employee = models.ForeignKey(EmployeesTable, on_delete=models.CASCADE)
+    is_completed = models.BooleanField(default=False)  # Track if the order is completed

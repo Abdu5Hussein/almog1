@@ -59,7 +59,6 @@ class TestViews(TestCase):
             data,
             content_type='application/json'
         )
-        print("Response Data:", response.json())
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.json()["success"])
 
@@ -181,68 +180,68 @@ class TestViews(TestCase):
         self.assertFalse(models.Companytable.objects.filter(pk=company.pk).exists())
 
     # # Test for manage_countries view (Add, Edit, Delete)
-    # def test_add_country(self):
-    #     data = {
-    #         'action': 'add',
-    #         'name': 'Test Country'
-    #     }
-    #     response = self.client.post(reverse('manage_countries'), data)
-    #     self.assertEqual(response.status_code, 302)
-    #     self.assertTrue(models.Manufaccountrytable.objects.filter(countryname='Test Country').exists())
+    def test_add_country(self):
+        data = {
+            'action': 'add',
+            'name': 'Test Country'
+        }
+        response = self.client.post(reverse('manage_countries'), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(models.Manufaccountrytable.objects.filter(countryname='Test Country').exists())
 
-    # def test_edit_country(self):
-    #     country = models.Manufaccountrytable.objects.create(countryname='Old Country')
-    #     data = {
-    #         'action': 'edit',
-    #         'id': country.fileid,
-    #         'name': 'Updated Country'
-    #     }
-    #     response = self.client.post(reverse('manage_countries'), data)
-    #     country.refresh_from_db()
-    #     self.assertEqual(response.status_code, 302)
-    #     self.assertEqual(country.countryname, 'Updated Country')
+    def test_edit_country(self):
+        country = models.Manufaccountrytable.objects.create(countryname='Old Country')
+        data = {
+            'action': 'edit',
+            'id': country.fileid,
+            'name': 'Updated Country'
+        }
+        response = self.client.post(reverse('manage_countries'), data)
+        country.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(country.countryname, 'Updated Country')
 
-    # def test_delete_country(self):
-    #     country = models.Manufaccountrytable.objects.create(countryname='Test Country')
-    #     data = {
-    #         'action': 'delete',
-    #         'id': country.fileid
-    #     }
-    #     response = self.client.post(reverse('manage_countries'), data)
-    #     self.assertEqual(response.status_code, 302)
-    #     self.assertFalse(models.Manufaccountrytable.objects.filter(fileid=country.fileid).exists())
+    def test_delete_country(self):
+        country = models.Manufaccountrytable.objects.create(countryname='Test Country')
+        data = {
+            'action': 'delete',
+            'id': country.fileid
+        }
+        response = self.client.post(reverse('manage_countries'), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(models.Manufaccountrytable.objects.filter(fileid=country.fileid).exists())
 
     # # Test for Measurements view (Add, Edit, Delete)
-    # def test_add_measurement(self):
-    #     data = {
-    #         'action': 'add',
-    #         'name': 'Test Measurement'
-    #     }
-    #     response = self.client.post(reverse('measurements'), data)
-    #     self.assertEqual(response.status_code, 302)
-    #     self.assertTrue(models.MeasurementsTable.objects.filter(name='Test Measurement').exists())
+    def test_add_measurement(self):
+        data = {
+            'action': 'add',
+            'name': 'Test Measurement'
+        }
+        response = self.client.post(reverse('measurements'), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(models.MeasurementsTable.objects.filter(name='Test Measurement').exists())
 
-    # def test_edit_measurement(self):
-    #     measurement = models.MeasurementsTable.objects.create(name='Old Measurement')
-    #     data = {
-    #         'action': 'edit',
-    #         'id': measurement.id,
-    #         'name': 'Updated Measurement'
-    #     }
-    #     response = self.client.post(reverse('measurements'), data)
-    #     measurement.refresh_from_db()
-    #     self.assertEqual(response.status_code, 302)
-    #     self.assertEqual(measurement.name, 'Updated Measurement')
+    def test_edit_measurement(self):
+        measurement = models.MeasurementsTable.objects.create(name='Old Measurement')
+        data = {
+            'action': 'edit',
+            'id': measurement.id,
+            'name': 'Updated Measurement'
+        }
+        response = self.client.post(reverse('measurements'), data)
+        measurement.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(measurement.name, 'Updated Measurement')
 
-    # def test_delete_measurement(self):
-    #     measurement = models.MeasurementsTable.objects.create(name='Test Measurement')
-    #     data = {
-    #         'action': 'delete',
-    #         'id': measurement.id
-    #     }
-    #     response = self.client.post(reverse('measurements'), data)
-    #     self.assertEqual(response.status_code, 302)
-    #     self.assertFalse(models.MeasurementsTable.objects.filter(id=measurement.id).exists())
+    def test_delete_measurement(self):
+        measurement = models.MeasurementsTable.objects.create(name='Test Measurement')
+        data = {
+            'action': 'delete',
+            'id': measurement.id
+        }
+        response = self.client.post(reverse('measurements'), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(models.MeasurementsTable.objects.filter(id=measurement.id).exists())
 
 
 
@@ -776,3 +775,245 @@ class UpdateItemValueTest(TestCase):
         response = self.client.get(reverse('update-itemvalue'))  # Using GET instead of POST
         self.assertEqual(response.status_code, 405)
         self.assertEqual(response.json()['message'], 'Invalid request method.')
+
+from django.test import TestCase
+from django.urls import reverse
+from .models import Mainitem
+import json
+
+class UpdateStorageTestCase(TestCase):
+    def setUp(self):
+        # Create a test Mainitem object
+        self.item = Mainitem.objects.create(fileid="12345", itemplace="Old Storage",pno=22)
+
+    def test_update_storage_success(self):
+        url = reverse('update-storage')  # Replace with the actual URL name
+        data = {
+            "fileid": "12345",
+            "storage": "New Storage"
+        }
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(str(response.content, encoding='utf8'), {'success': True, 'message': 'storage updated successfully.'})
+
+        # Check if the data was updated in the database
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.itemplace, "New Storage")
+
+    def test_update_storage_item_not_found(self):
+        url = reverse('update-storage')  # Replace with the actual URL name
+        data = {
+            "fileid": "99999",  # This fileid doesn't exist
+            "storage": "New Storage"
+        }
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(str(response.content, encoding='utf8'), {'success': False, 'message': 'Item not found.'})
+
+
+class DeleteLostDamagedTestCase(TestCase):
+    def setUp(self):
+        Mainitem.objects.create(fileid="12345", itemplace="Old Storage",pno=22)
+        # Create a test LostAndDamagedTable record
+        self.lost_damaged_item = models.LostAndDamagedTable.objects.create(
+            fileid="12345", itemname="Test Item", quantity=10, costprice=100,pno_id=12345
+        )
+
+    def test_delete_lost_damaged_success(self):
+        url = reverse('delete_lost_damaged')  # Replace with actual URL name
+        data = {"fileid": "12345"}
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(str(response.content, encoding='utf8'), {'success': True, 'message': 'Record deleted successfully.'})
+
+        # Ensure that the record was deleted
+        with self.assertRaises(models.LostAndDamagedTable.DoesNotExist):
+            models.LostAndDamagedTable.objects.get(fileid="12345")
+
+    def test_delete_lost_damaged_item_not_found(self):
+        url = reverse('delete_lost_damaged')  # Replace with actual URL name
+        data = {"fileid": "99999"}  # This fileid doesn't exist
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 404)
+        self.assertJSONEqual(str(response.content, encoding='utf8'), {'success': False, 'message': 'Record with fileid 99999 does not exist.'})
+
+class AddLostDamagedTestCase(TestCase):
+    def setUp(self):
+        # Create a test Mainitem object
+        self.main_item = Mainitem.objects.create(fileid="12345", itemplace="Storage", itemvalue=100,pno=22)
+
+    def test_add_lost_damaged_success(self):
+        url = reverse('add_lost_damaged')  # Replace with actual URL name
+        data = {
+            "fileid": "12345",
+            "itemno": "12345",
+            "companyno": "98765",
+            "company": "Test Company",
+            "itemname": "Test Item",
+            "costprice": 100,
+            "quantity": 5,
+            "pno": "22",  # This should correspond to a valid Mainitem
+            "status": "Lost",
+            "date": "2025-03-07",
+            "itemmain": "Main Type"
+        }
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Record added successfully.',str(response.content, encoding='utf8'))
+
+        # Ensure the LostAndDamagedTable record was created
+        self.assertTrue(models.LostAndDamagedTable.objects.filter(itemno="12345").exists())
+
+    def test_add_lost_damaged_missing_field(self):
+        url = reverse('add_lost_damaged')  # Replace with actual URL name
+        data = {
+            "itemno": "12345",
+            "companyno": "98765",
+            "company": "Test Company",
+            "itemname": "Test Item",
+            "costprice": 100,
+            #"quantity": 5,
+            "pno": "22",  # This should correspond to a valid Mainitem
+            "status": "Lost",
+            # "date" is missing in this case
+            "itemmain": "Main Type"
+        }
+
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(str(response.content, encoding='utf8'), {'success': False, 'message': 'Missing required fields.'})
+
+class FilterLostDamagedTestCase(TestCase):
+    def setUp(self):
+        Mainitem.objects.create(fileid="12345", itemplace="Old Storage",pno=22)
+        # Create a test LostAndDamagedTable record
+        self.lost_damaged_item = models.LostAndDamagedTable.objects.create(
+            fileid="12345", itemname="Test Item", quantity=10, costprice=100, date="2025-03-07",pno_id=12345
+        )
+
+    def test_filter_lost_damaged_by_date(self):
+        url = reverse('filter_lost_damaged')  # Replace with actual URL name
+        filters = {
+            "fromdate": "2025-03-01",
+            "todate": "2025-03-31"
+        }
+
+        response = self.client.post(url, json.dumps(filters), content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertGreater(len(data), 0)  # Check if there are results
+
+    def test_filter_lost_damaged_invalid_date(self):
+        url = reverse('filter_lost_damaged')  # Replace with actual URL name
+        filters = {
+            "fromdate": "invalid-date",
+            "todate": "2025-03-31"
+        }
+
+        response = self.client.post(url, json.dumps(filters), content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(str(response.content, encoding='utf8'), {'error': 'Invalid date format'})
+
+class GetAllClientsTestCase(TestCase):
+    def setUp(self):
+        # Create a test client record
+        self.client_record = models.AllClientsTable.objects.create(
+            clientid="12345", name="Test Client", address="Test Address", email="test@example.com"
+        )
+
+    def test_get_all_clients_success(self):
+        url = reverse('get-all-clients')  # Replace with actual URL name
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertGreater(len(data['data']), 0)  # Ensure there are records
+        self.assertEqual(data['data'][0]['clientid'], 12345)
+
+
+    def test_get_all_clients_pagination(self):
+        url = reverse('get-all-clients')  # Replace with actual URL name
+        response = self.client.get(url, {'page': 1, 'size': 1})
+
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertEqual(len(data['data']), 1)  # Pagination ensures only 1 record is returned
+
+from django.test import TestCase
+from django.urls import reverse
+from django.contrib.auth.models import User
+import json
+
+class CreateClientRecordTestCase(TestCase):
+    def setUp(self):
+        # Set up any required data or users before the test
+        self.url = reverse('create-client')  # Replace with the actual URL name
+
+    def test_create_client_record_success(self):
+        # Simulate the POST request with valid data
+        data = {
+            'client_name': 'Test Client',
+            'address': 'Test Address',
+            'email': 'test@example.com',
+            'website': 'http://test.com',
+            'phone': '1234567890',
+            'mobile': '0987654321',
+            'last_transaction': '100',
+            'currency': 'USD',
+            'account_type': 'Business',
+            'sub_category': 'Retail',
+            'limit': '12',
+            'limit_value': '5000.0',
+            'installments': '12',
+            'types': 'Type A',
+            'client_stop': '1',
+            'curr_flag': '1',
+            'permissions': 'Read, Write',
+            'other': 'None',
+            'username': 'client'
+        }
+        response = self.client.post(self.url, json.dumps(data), content_type='application/json')
+
+        # Assert the response status and message
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['status'], 'success')
+        self.assertEqual(response_data['message'], 'Record created successfully!')
+
+        # Check if the user and client record were created
+        user = User.objects.get(username='1234567890')
+        self.assertEqual(user.email, 'test@example.com')
+
+        # Check the client record
+        client = models.AllClientsTable.objects.get(name='Test Client')
+        self.assertEqual(client.email, 'test@example.com')
+        self.assertEqual(client.address, 'Test Address')
+
+    def test_create_client_record_missing_fields(self):
+        # Simulate the POST request with missing required fields
+        data = {
+            'client_name': 'Test Client',
+            'address': 'Test Address'
+            # Missing other fields intentionally
+        }
+        response = self.client.post(self.url, json.dumps(data), content_type='application/json')
+
+        # Assert the response status and message
+        self.assertEqual(response.status_code, 400)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['status'], 'error')
+
+

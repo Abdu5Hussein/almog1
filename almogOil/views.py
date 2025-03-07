@@ -55,6 +55,8 @@ from django.http import JsonResponse
 import firebase_admin
 from firebase_admin import credentials, messaging
 from almogOil import serializers,models
+from django.utils import timezone
+
 
 # Path to your Firebase Admin SDK JSON key file
 FIREBASE_CREDENTIALS_PATH = "/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-367f5e9e17.json"
@@ -605,7 +607,7 @@ def ProductsDetails(req):
     engines = enginesTable.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
-    #countries = Manufaccountrytable.objects.all()
+    countries = Manufaccountrytable.objects.all()
     models = Modeltable.objects.all()
     columns = [field.name for field in Mainitem._meta.fields]
     column_visibility = {
@@ -628,7 +630,7 @@ def ProductsDetails(req):
         'mainType': mainType,
         'subType':subType,
         'engines':engines,
-        #'countries':countries,
+        'countries':countries,
         'models':models,
         'column_titles': COLUMN_TITLES,
     }
@@ -1501,7 +1503,7 @@ def ProductsReports(req):
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
-    #countries = Manufaccountrytable.objects.all()
+    countries = Manufaccountrytable.objects.all()
     models = Modeltable.objects.all()
     columns = [field.name for field in Mainitem._meta.fields]
     column_visibility = {
@@ -1523,7 +1525,7 @@ def ProductsReports(req):
         'columns': columns,
         'mainType': mainType,
         'subType':subType,
-        #'countries':countries,
+        'countries':countries,
         'column_titles': COLUMN_TITLES,
         'column_visibility': column_visibility,
         'models':models
@@ -1649,7 +1651,7 @@ def update_itemvalue(request):
                 itemname=item.itemname,
                 maintype=item.itemmain,
                 currentbalance=item.itemvalue,
-                date=datetime.now(),
+                date=timezone.now(),
                 clientname="اعادة ترصيد",
                 #billno="",
                 description="اعادة ترصيد للصنف",
@@ -2008,7 +2010,8 @@ from django.core.exceptions import ValidationError
 def create_client_record(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-
+        if not data.get('phone'):
+            return JsonResponse({'status': 'error', 'message': 'Phone number is required.'}, status=400)
         # Create a new MainItem instance
         new_item = AllClientsTable(
             name=data.get('client_name', '').strip() or None,  # Ensure name is not empty
@@ -2040,19 +2043,21 @@ def create_client_record(request):
                 user.full_clean()  # Ensure the object is valid before saving
                 user.save()
             except ValidationError as e:
-                return JsonResponse({'status': 'error', 'message': f'Validation Error: {e.message_dict}'})
+                return JsonResponse({'status': 'error', 'message': f'Validation Error: {e.message_dict}'},status=400)
 
         # Validate before saving
         try:
             new_item.full_clean()  # Ensure the object is valid before saving
             new_item.save()
         except ValidationError as e:
-            return JsonResponse({'status': 'error', 'message': f'Validation Error: {e.message_dict}'})
+            return JsonResponse({'status': 'error', 'message': f'Validation Error: {e.message_dict}'},status=400)
 
 
         return JsonResponse({'status': 'success', 'message': 'Record created successfully!'})
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'},status=400)
+
+#until here
 
 @csrf_exempt
 def update_client_record(request):
@@ -2467,7 +2472,7 @@ def BuyInvoiceItemsView(request):
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
     model = Modeltable.objects.all()
-    #country = Manufaccountrytable.objects.all()
+    country = Manufaccountrytable.objects.all()
     data = request.session.get('data')
     # Convert data to JSON string
     json_data = json.dumps(data)
@@ -2475,7 +2480,7 @@ def BuyInvoiceItemsView(request):
         'company': company,
         'mainType':mainType,
         'subType':subType,
-        #'country': country,
+        'country': country,
         'model':model,
         "data":json_data
         }
@@ -3180,7 +3185,7 @@ def confirm_temp_invoice(request):
                         itemname=main.itemname,
                         maintype=main.itemmain,
                         currentbalance=main.itemvalue,
-                        date=datetime.now(),
+                        date=timezone.now(),
                         clientname="فاتورة شراء",
                         billno=invoice_no,
                         description="ترحيل فاتورة شراء",
@@ -3320,7 +3325,7 @@ def BuyInvoiceItemCreateView(request):
                 itemname=main.itemname,
                 maintype=main.itemmain,
                 currentbalance=main.itemvalue,
-                date=datetime.now(),
+                date=timezone.now(),
                 clientname="فاتورة شراء",
                 billno=data.get("invoice_id"),
                 description="فاتورة شراء",
@@ -3487,12 +3492,12 @@ def sell_invoice_search_storage(request):
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
     subType = Subtypetable.objects.all()
-    #countries = Manufaccountrytable.objects.all()
+    countries = Manufaccountrytable.objects.all()
     context = {
         "company":company,
         "mainType":mainType,
         "subType":subType,
-        #"countries":countries,
+        "countries":countries,
     }
     return render(request,'sell_invoice_search_products.html',context)
 
@@ -3558,7 +3563,7 @@ def create_sell_invoice(request):
                 invoice_status="لم تحضر",
                 payment_status=data.get("payment_status"),
                 for_who=data.get("for_who"),
-                date_time=datetime.now(),
+                date_time=timezone.now(),
                 price_status="",
                 mobile=data.get("mobile") if data.get("mobile") else False,
             )
@@ -3670,7 +3675,7 @@ def Sell_invoice_create_item(request):
                 company=product.companyproduct,
                 company_no=product.replaceno,
                 quantity=item_value,
-                date=datetime.now(),
+                date=timezone.now(),
                 place=product.itemplace,
                 dinar_unit_price=sell_price,
                 dinar_total_price=sell_price * item_value,
@@ -3688,7 +3693,7 @@ def Sell_invoice_create_item(request):
                 itemname=product.itemname,
                 maintype=product.itemmain,
                 currentbalance=product.itemvalue,
-                date=datetime.now(),
+                date=timezone.now(),
                 clientname="فاتورة بيع",
                 billno=data.get("invoice_id"),
                 description="فاتورة بيع",
@@ -3700,7 +3705,7 @@ def Sell_invoice_create_item(request):
             client_object = AllClientsTable.objects.get(clientid=invoice.client)
             StorageTransactionsTable.objects.create(
                 reciept_no=f"ف.ب : {data.get('invoice_id')}",
-                transaction_date=datetime.now(),
+                transaction_date=timezone.now(),
                 amount=sell_price * item_value,
                 issued_for="فاتورة بيع",
                 note=f" شراء بضائع - ر.خ : {data.get('pno')}",
@@ -3727,7 +3732,7 @@ def Sell_invoice_create_item(request):
                 debt=Decimal(sell_price * item_value),
                 transaction=f" شراء بضائع - ر.خ : {data.get('pno')}",
                 details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
-                registration_date=datetime.now(),
+                registration_date=timezone.now(),
                 current_balance=updated_balance,  # Updated balance
                 client_id_id=invoice.client,  # Client ID
             )
@@ -3738,7 +3743,7 @@ def Sell_invoice_create_item(request):
                 debt=0.0,
                 transaction=f"دفع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
                 details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
-                registration_date=datetime.now(),
+                registration_date=timezone.now(),
                 current_balance=round(last_balance_amount, 2),  # Updated balance
                 client_id_id=invoice.client,  # Client ID
                 )
@@ -3749,7 +3754,7 @@ def Sell_invoice_create_item(request):
                 debt=0.0,
                 transaction=f"نسبة بيع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
                 details=f"نسبة بيع 10% مقابل بضاتع - فاتورة رقم {data.get('invoice_id')}",
-                registration_date=datetime.now(),
+                registration_date=timezone.now(),
                 current_balance=round(last_balance_amount, 2) + (Decimal(sell_price * item_value)*Decimal(0.10)),  # Updated balance
                 client_id_id=invoice.client,  # Client ID
                 )

@@ -21,7 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import Mainitem,OrderQueue,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
+from .models import Mainitem,OrderQueue,EmployeeQueue,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
 from .serializers import MainitemSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
@@ -440,6 +440,7 @@ def get_delivery_invoices(request):
     serializer = SellInvoiceSerializer(invoices, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 def get_employee_order(request, employee_id):
     try:
@@ -449,36 +450,41 @@ def get_employee_order(request, employee_id):
         if not employee.is_available:
             return Response({"message": "Employee is not available."}, status=400)
 
-        # Get the first available order in the queue
-        pending_order = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل').first()
+        # Add the employee to the queue (if not already in the queue)
+        queue_position = EmployeeQueue.objects.filter(is_assigned=False).count() + 1
+        EmployeeQueue.objects.create(employee=employee, position=queue_position, is_available=True)
 
-        if not pending_order:
+        # Fetch the first available order
+        pending_orders = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', orderqueue__isnull=True)
+
+        if not pending_orders:
             return Response({"message": "No pending orders."}, status=400)
 
-        # Create a queue entry for the employee and pending order if it's not already in the queue
-        order_queue, created = OrderQueue.objects.get_or_create(employee=employee, order=pending_order, is_completed=False, is_declined=False)
+        # Get the order to assign to the employee based on their queue position
+        order_to_assign = pending_orders[queue_position - 1]  # Get the order for the position in the queue
 
-        if created:
-            # Return the assigned order with options to accept or decline
-            return Response({
-                "message": "Order assigned. You can either accept or decline.",
-                "order": {
-                    "order_id": pending_order.autoid,
-                    "invoice_no": pending_order.invoice_no,
-                    "client": pending_order.client,
-                    "amount": str(pending_order.amount),
-                    "delivery_status": pending_order.delivery_status
-                },
-                "action": {
-                    "accept": f"/accept-order/{order_queue.id}/",
-                    "decline": f"/decline-order/{order_queue.id}/"
-                }
-            })
-        else:
-            return Response({"message": "Order already assigned."}, status=400)
+        # Assign the order to the employee in the OrderQueue
+        order_queue = OrderQueue.objects.create(employee=employee, order=order_to_assign)
+
+        # Return the order details along with options to accept or decline
+        return Response({
+            "message": "Order assigned. You can either accept or decline.",
+            "order": {
+                "order_id": order_to_assign.autoid,
+                "invoice_no": order_to_assign.invoice_no,
+                "client": order_to_assign.client,
+                "amount": str(order_to_assign.amount),
+                "delivery_status": order_to_assign.delivery_status
+            },
+            "action": {
+                "accept": f"/accept-order/{order_queue.id}/",
+                "decline": f"/decline-order/{order_queue.id}/"
+            }
+        })
 
     except EmployeesTable.DoesNotExist:
         return Response({"error": "Employee not found."}, status=404)
+
 
 
 @api_view(['POST'])
@@ -493,7 +499,7 @@ def accept_order(request, queue_id):
 
         # Update the order's delivery status to 'جاري التوصيل'
         order = order_queue.order
-        order.delivery_status = 'جاري التوصيل'
+        order.delivery_status = 'ججاري التوصيل'
         order.save()
 
         # Mark the employee as unavailable
@@ -528,7 +534,7 @@ def decline_order(request, queue_id):
 
         # Mark the order's delivery status back to 'معلقة'
         order = order_queue.order
-        order.delivery_status = 'معلقة'
+        order.delivery_status = 'جاري التوصيل'
         order.save()
 
         # Re-assign the order to the next employee in the queue
@@ -920,7 +926,7 @@ def get_invoice_returned_items(request,id):
 @csrf_exempt
 @api_view(['POST'])
 def update_delivery_availability(request):
-    """Toggle the availability of the delivery person based on their employee ID."""
+    """Toggle the availability of the delivery person based on their employee ID and update their queue position."""
     
     # Get the delivery person ID from the request data
     delivery_person_id = request.data.get('employee_id')
@@ -938,10 +944,27 @@ def update_delivery_availability(request):
     employee.is_available = not employee.is_available
     employee.save()
 
+    # If the employee is available, add them to the queue
+    if employee.is_available:
+        # Check if the employee is already in the queue
+        if not EmployeeQueue.objects.filter(employee=employee).exists():
+            # Get the number of available employees in the queue to set the position
+            queue_position = EmployeeQueue.objects.filter(is_available=True).count() + 1
+            # Add to queue
+            EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
+            message = f"Employee {employee.employee_id} is now available and added to the queue as position {queue_position}."
+        else:
+            message = f"Employee {employee.employee_id} is already in the queue."
+    else:
+        # If the employee is unavailable, remove them from the queue
+        queue_entry = EmployeeQueue.objects.filter(employee=employee, is_available=True).first()
+        if queue_entry:
+            queue_entry.delete()
+            message = f"Employee {employee.employee_id} is now unavailable and removed from the queue."
+        else:
+            message = f"Employee {employee.employee_id} was not in the queue."
+
     return Response({
-        "message": f"Employee availability updated to {'available' if employee.is_available else 'unavailable'}.",
+        "message": message,
         "is_available": employee.is_available
     })
-
-
-
