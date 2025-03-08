@@ -204,6 +204,7 @@ urlpatterns = [
     path('complete-delivery/<int:invoice_id>/', complete_delivery, name='complete_delivery'),
     path('pending-orders/', pending_orders, name='pending_orders'),
     path('available-employees/', available_employees, name='available_employees'),
+    path('deliver-order/<int:queue_id>/', api_views.deliver_order, name='deliver-order'),
     path('products/add-description',views.main_item_add_json_description,name="add-json-description")
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()

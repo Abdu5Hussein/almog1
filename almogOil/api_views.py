@@ -582,7 +582,7 @@ def decline_order(request, queue_id):
     except OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
-
+@api_view(['POST'])
 def deliver_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -619,7 +619,7 @@ def deliver_order(request, queue_id):
         return Response({"error": "Order queue entry not found."}, status=404)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
-    
+
 @api_view(['POST'])
 def skip_order(request, queue_id):
     try:
