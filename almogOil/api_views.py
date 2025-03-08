@@ -582,6 +582,44 @@ def decline_order(request, queue_id):
     except OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
+
+def deliver_order(request, queue_id):
+    try:
+        # Fetch the order queue entry by ID
+        order_queue = OrderQueue.objects.get(id=queue_id)
+
+        # Check if the order has already been delivered or is in the process of being delivered
+        if order_queue.order.delivery_status == 'تم التوصيل':
+            return Response({"message": "Order has already been delivered."}, status=400)
+
+        # Update the order's delivery status to 'تم التوصيل'
+        order = order_queue.order
+        order.delivery_status = 'تم التوصيل'
+        order.save()
+
+        # Mark the employee as available again and reset the active order flag
+        employee = order_queue.employee
+        employee.is_available = True
+        employee.has_active_order = False  # Reset the active order flag
+        employee.save()
+
+        # Mark the order as completed
+        order_queue.is_completed = True
+        order_queue.save()
+
+        return Response({
+            "message": "Order has been successfully delivered.",
+            "order_id": order.autoid,
+            "invoice_no": order.invoice_no,
+            "client": order.client,
+            "delivery_status": order.delivery_status
+        })
+
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order queue entry not found."}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+    
 @api_view(['POST'])
 def skip_order(request, queue_id):
     try:
