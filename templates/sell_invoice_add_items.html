@@ -63,7 +63,7 @@
       }
 
       .page-link-active {
-          background-color: #0d6efd;         
+          background-color: #0d6efd;
           color:rgb(255, 255, 255);
       }
       .button-row .btn {
@@ -296,12 +296,12 @@
                   {% endfor %}
                 </select>
               </div>
-              
+
             </div>
 
             <!-- Second column -->
             <div class="col-md-4">
-              
+
               <div class="mb-1 d-flex align-items-center">
                 <div style="width: 100px">
                   <label for="company" class="form-label">الشركة المنتجة</label>
@@ -364,7 +364,7 @@
                   required
                 />
               </div>
-              
+
               <div class="mb-1 d-flex align-items-center">
                 <div style="width: 100px">
                   <label for="company-no" class="form-label">رقم الشركة</label>
@@ -396,6 +396,7 @@
       <div name="hidden-inputs">
         <input type="hidden" name="pno-hidden" id="pno-hidden">
         <input type="hidden" name="invoice-hidden" id="invoice-hidden" value="{{ invoice }}">
+        <input type="hidden" name="permission-hidden" id="permission-hidden" value="{{ permission }}">
         <input type="hidden" name="fileid-hidden" id="fileid-hidden">
       </div>
 
@@ -411,7 +412,7 @@
         Show/Hide Columns
       </button>
       <nav aria-label="Page navigation example">
-        <ul class="pagination h-1"> 
+        <ul class="pagination h-1">
         <p id="page-total" class="page-link item-disabled">total of x pages</p>
           <li class="page-first"><a class="page-link" href="#">First</a></li>
           <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
@@ -426,7 +427,7 @@
         </ul>
       </nav>
       </div>
-      
+
       <!-- Dropdown menu for column visibility -->
       <div id="column-menu" class="dropdown" style="display: none">
         {% for column in columns %}
@@ -442,7 +443,7 @@
 
         {% endfor %}
       </div>
-      
+
       <!-- Table Section -->
       <div class="custom-table mb-1">
         <div
@@ -479,7 +480,7 @@
                   readonly
                 />
               </div>
-              
+
             </div>
 
             <!-- Second column -->
@@ -498,7 +499,7 @@
                   readonly
                 />
               </div>
-              
+
             </div>
 
             <!-- Third column -->
@@ -515,7 +516,7 @@
                   id="quantity"
                   placeholder="0"
                 />
-              </div>              
+              </div>
             </div>
             <div class="col">
               <div class="mb-1 d-flex align-items-center">
@@ -531,7 +532,7 @@
                   placeholder="0"
                   readonly
                 />
-              </div>              
+              </div>
             </div>
           </div>
         </form>
@@ -583,7 +584,7 @@
               </div>
             </div>
           </div>
-          
+
 
           <!-- Adjusted column sizes for buttons -->
           <div class="col-auto m-1">
@@ -606,7 +607,7 @@
             جديد
             </button>
           </div>
-          
+
           <div class="col-auto m-1">
             <button type="button" class="btn btn-primary" style="width: 100px" onclick="window.close()">
               اغلاق
@@ -771,7 +772,7 @@
             });
           },*/
         });
-        
+
         document.getElementById("clear-btn").addEventListener("click", clearForm);
         function clearForm() {
           window.requestAnimationFrame(function () {
@@ -855,7 +856,7 @@
           };
           console.log("filter values: ",filterValues);
 
-          // Add additional filter conditions based on checkboxes 
+          // Add additional filter conditions based on checkboxes
           if (filterElements.check4.checked) filterValues.itemvalue = ">0";
           //if (filterElements.check3.checked) filterValues.itemvalue_itemtemp = "lte";
 
@@ -916,7 +917,7 @@
 
               // Update summary inputs
               //updateIntegerInput("#itemvalue", data.total_itemvalue);
-              
+
             })
             .catch((error) => {
               console.error("Error fetching filtered data:", error.message);
@@ -965,7 +966,7 @@
             debouncedApplyFilters();
         });
         });
-        /////////// 
+        ///////////
 
   let currentPage = 1; // Tracks the current page
   let lastPage = false; // Indicates if the last page is reached
@@ -1010,7 +1011,7 @@
   };
   function fetchDataFromServer({ page = 1, size = 100 }) {
     //if (isLoading) return; // Prevent fetch if already loading
-    //isLoading = true; // Set loading flag before initiating fetch  
+    //isLoading = true; // Set loading flag before initiating fetch
 
     // Use the URL in your fetch request
 
@@ -1074,7 +1075,7 @@
   // Apply debounce to applyFilters with a 300ms delay
   //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
   fetchDataFromServer({ page: 1, size: 100 });
-  
+
       function showLoader() {
         const loader = document.getElementById("loader-element");
         loader.classList.remove("d-none"); // Show the loader by removing d-none
@@ -1084,7 +1085,7 @@
 
       function hideLoader() {
         const loader = document.getElementById("loader-element");
-              
+
         // Set a delay (e.g., 2000ms = 2 seconds)
         setTimeout(function() {
           loader.classList.remove("d-flex"); // Remove d-flex
@@ -1160,17 +1161,17 @@
       // Event listener for page links
       document.querySelector(".pagination").addEventListener("click", function (event) {
         const target = event.target;
-        if (target.classList.contains("page-link") && 
-            !target.parentNode.classList.contains("disabled") && 
+        if (target.classList.contains("page-link") &&
+            !target.parentNode.classList.contains("disabled") &&
             !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
             event.preventDefault();
             const selectedPage = parseInt(target.getAttribute("data-page"), 10);
             const selectedPageSize = document.getElementById("page-size").value;
 
             if(lastPage){
-              return 
+              return
             }
-            
+
             // Fetch data for selected page
             console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
             if(active_url=="server_filtered_data"){
@@ -1179,7 +1180,7 @@
             }else{
                 currentPage = selectedPage;
                 fetchDataFromServer({page: selectedPage,size: selectedPageSize});
-            }       
+            }
         }
      });
 
@@ -1204,15 +1205,15 @@
       });
     table.on("rowClick", function (e, row) {
         if (row.getData().itemvalue > 0) {
-          
+
             populateInputFields(row.getData());
             // Store the values in sessionStorage
-        
+
             updateSumInput("#resInput",row.getData().resvalue);
             updateSumInput("#itemperboxInput",row.getData().itemperbox);
             updateSumInput("#sell-price",row.getData().buyprice);
             document.getElementById("quantity").focus();
-          
+
         } else {
           alert("رصيد الصنف 0 قطعة");
         }
@@ -1223,7 +1224,7 @@
     function populateInputFields(data) {
         console.log("input row data:", data);
         document.getElementById("pno-hidden").value = data.pno || 0;
-        document.getElementById("fileid-hidden").value = data.fileid || 0;       
+        document.getElementById("fileid-hidden").value = data.fileid || 0;
     }
       function createSellItem(){
 
@@ -1274,6 +1275,6 @@
           });
       }
     </script>
-   
+
   </body>
 </html>

@@ -179,6 +179,7 @@ class SellinvoiceTable(models.Model):
     office_no = models.CharField(max_length=100, blank=True, null=True)
     mobile = models.BooleanField(default=False)
     delivery_status = models.CharField(max_length=150, default="معلقة")
+    is_assigned = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Invoice {self.autoid}"
@@ -289,6 +290,7 @@ class Mainitem(models.Model):
     cstate = models.IntegerField(db_column='CSTate', blank=True, null=True)  # Field name made lowercase.
     oem_numbers = models.CharField(max_length=1000, blank=True, null=True)
     engine_no = models.CharField(max_length=300, blank=True, null=True)
+    json_description = models.JSONField(null=True,blank=True)
 
     class Meta:
         managed = True
@@ -714,26 +716,26 @@ class TransactionsHistoryTable(models.Model):
 
 class SellInvoiceItemsTable(models.Model):
     autoid = models.BigAutoField(primary_key=True)
-    item_no = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
-    pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
-    name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
-    company = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
-    company_no = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    item_no = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
+    pno = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
+    name = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company_no = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     quantity = models.IntegerField(blank=True, null=True)
-    quantity_unit = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
-    date = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
-    place = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
+    quantity_unit = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
+    date = models.CharField(max_length=130, db_collation='Arabic_CI_AS', blank=True, null=True)
+    place = models.CharField(max_length=130, db_collation='Arabic_CI_AS', blank=True, null=True)
     dinar_unit_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     dinar_total_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     note = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
-    e_name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    e_name = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     prev_quantity = models.IntegerField(blank=True, null=True)
     current_quantity = models.IntegerField(blank=True, null=True)
     current_quantity_after_return = models.IntegerField(blank=True, null=True)
     invoice_instance = models.ForeignKey(SellinvoiceTable, models.DO_NOTHING)
     invoice_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
-    main_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
-    sub_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
+    main_cat = models.CharField(max_length=170, db_collation='Arabic_CI_AS', blank=True, null=True)
+    sub_cat = models.CharField(max_length=170, db_collation='Arabic_CI_AS', blank=True, null=True)
     paid = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     remaining = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
@@ -759,6 +761,8 @@ class EmployeesTable(models.Model):
     bank_account_no = models.CharField(blank=True, null=True, max_length=100)
     bank_iban_no = models.CharField(blank=True, null=True, max_length=100)
     is_available = models.BooleanField(default=True)
+    has_active_order = models.BooleanField(default=False)
+
 
     # New fields
     username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
@@ -880,7 +884,7 @@ class return_permission(models.Model):
     client=models.ForeignKey(AllClientsTable,on_delete=models.CASCADE)
     employee=models.CharField(max_length=200,null=True,blank=True)
     date = models.DateField(auto_now_add=True)
-    quantity = models.IntegerField(blank=True,null=True)
+    quantity = models.IntegerField(default=0)
     invoice_obj = models.ForeignKey(SellinvoiceTable,on_delete=models.CASCADE)
     invoice_no = models.CharField(max_length=200,null=True,blank=True)
     amount = models.DecimalField(default=0,max_digits=19,decimal_places=4)
@@ -901,6 +905,7 @@ class return_permission_items(models.Model):
     total = models.DecimalField(max_digits=19,decimal_places=4,null=False)
     invoice_obj = models.ForeignKey(SellinvoiceTable,on_delete=models.CASCADE)
     invoice_no = models.CharField(max_length=40,null=True,blank=True)
+    permission_obj = models.ForeignKey(return_permission,on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
         # Ensure total is always calculated as returned_quantity * price
@@ -985,4 +990,6 @@ class EmployeeQueue(models.Model):
 class OrderQueue(models.Model):
     order = models.ForeignKey(SellinvoiceTable, on_delete=models.CASCADE)
     employee = models.ForeignKey(EmployeesTable, on_delete=models.CASCADE)
+    is_accepted = models.BooleanField(default=False)  # Add this field
+    is_declined = models.BooleanField(default=False)
     is_completed = models.BooleanField(default=False)  # Track if the order is completed

@@ -821,7 +821,7 @@ async function createPermission() {
             document.getElementById("createButton").disabled = "true";
             document.getElementById("returnButton").style.display = "block";
             document.getElementById("return-autoid").value = result.autoid;
-            addPermissionItems();
+            addPermissionItems(result.autoid);
         } else {
             alert("Error: " + JSON.stringify(result));
         }
@@ -831,9 +831,9 @@ async function createPermission() {
     }
 }
 
-function addPermissionItems(){
+function addPermissionItems(permission){
   invoice_no = document.getElementById("invoice").value;
-  openWindow("/sell-invoice/"+ invoice_no +"/return-items/");
+  openWindow("/sell-invoice/"+ invoice_no +"/"+ permission + "/return-items/");
 }
 function fetchData(){
         /* // Fetch data from the API endpoint
@@ -854,7 +854,8 @@ function fetchData(){
       createPermission();
     });
     document.getElementById('returnButton').addEventListener('click',function (){
-      addPermissionItems();
+      const permission = document.getElementById("return-autoid").value;
+      addPermissionItems(permission);
     });
     document.getElementById('refresh-btn').addEventListener('click',function (){
       const invoice = document.getElementById("invoice").value

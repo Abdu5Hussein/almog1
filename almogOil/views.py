@@ -4517,7 +4517,7 @@ def engines_view(request):
         'mainType': maintypes,
     })
 
-def return_items_add_items(request, id):
+def return_items_add_items(request, id, permission):
     try:
         invoice_items = models.SellInvoiceItemsTable.objects.filter(invoice_no=id)
         serializer = serializers.SellInvoiceItemsSerializer(invoice_items, many=True)
@@ -4528,6 +4528,7 @@ def return_items_add_items(request, id):
     context = {
         "invoice_items": invoice_items_data,
         "invoice":id,
+        "permission":permission,
     }
     return render(request, 'return_permission_add_items.html', context)
 
@@ -4564,3 +4565,12 @@ def request_payment_view(request):
     }
 
     return render(request, 'request-payment.html', context)
+
+
+def main_item_add_json_description(request):
+    products = models.Mainitem.objects.all().values('pno','itemname').order_by('pno')
+    context = {
+        'products': products,
+    }
+    return render(request, 'add-json-description-mainitem.html',context)
+

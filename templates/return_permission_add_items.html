@@ -396,6 +396,7 @@
       <div name="hidden-inputs">
         <input type="hidden" name="pno-hidden" id="pno-hidden">
         <input type="hidden" name="invoice-hidden" id="invoice-hidden" value="{{ invoice }}">
+        <input type="hidden" name="permission-hidden" id="permission-hidden" value="{{ permission }}">
         <input type="hidden" name="autoid-hidden" id="autoid-hidden">
       </div>
 
@@ -535,6 +536,7 @@
                   class="form-control"
                   id="returned_quantity"
                   placeholder="0"
+                  min="0"
                 />
               </div>
 
@@ -1209,6 +1211,7 @@
 
         const quantity = document.getElementById("returned_quantity").value || null;
         const invoice = document.getElementById("invoice-hidden").value || null;
+        const permission = document.getElementById("permission-hidden").value || null;
         const pno = document.getElementById("pno-hidden").value || null;
         const autoid = document.getElementById("autoid-hidden").value || null;
 
@@ -1218,6 +1221,7 @@
             autoid:parseInt(autoid),
             invoice_no: parseInt(invoice),
             pno: parseInt(pno),
+            permission: parseInt(permission),
         };
         console.log("data sent to create: ",data);
         const baseUrl = window.location.origin;
@@ -1260,6 +1264,7 @@
         const tableData = table.getData(); // Get all the rows' data
         let successCount = 0; // Counter to track successful returns
         let totalCount = tableData.length; // Total number of rows to process
+        const permission = document.getElementById("permission-hidden").value || null;
 
         // Iterate over each row in the table and send a separate request for each
         tableData.forEach(row => {
@@ -1269,6 +1274,7 @@
                 autoid: row.autoid, // Get the autoid from the row
                 invoice_no: row.invoice_no, // Get the invoice_no from the row
                 pno: row.pno, // Get the pno from the row
+                permission: parseInt(permission),
             };
 
             console.log("Data sent for row: " + row.pno + " data: " + JSON.stringify(data));

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Key-Value Descriptions</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .key-value-pair {
+            margin-bottom: 10px;
+        }
+        .remove-btn {
+            padding: 5px;
+            cursor: pointer;
+            color: red;
+            border: none;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Add Key-Value Descriptions</h2>
+    <form id="keyValueForm" method="POST">
+        <div class='row mb-2'>
+            <div class='col'>
+                <select name="pno" id="pno" class='form-control me-2'>
+                    <option value="">اختر صنف</option>
+                    {% for x in products %}
+                    <option value="{{ x.pno }}" data-name="{{ x.itemname }}" >{{ x.pno }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class='col'>
+                <input type="text" name="name" id="name" class="form-control me-2" required>
+            </div>
+        </div>
+        <div id="keyValueContainer">
+            <div class="key-value-pair d-flex mb-3">
+                <input type="text" name="key" class="form-control me-2" placeholder="Key" required>
+                <input type="text" name="value" class="form-control me-2" placeholder="Value" required>
+                <button type="button" class="remove-btn btn" onclick="removeKeyValue(this)">Remove</button>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary mb-3" onclick="addKeyValue()">Add Key-Value Pair</button>
+        <br><br>
+        <button type="submit" class="btn btn-success">Submit</button>
+    </form>
+</div>
+
+<!-- Bootstrap JS (optional, for better functionality with components like modals, tooltips, etc.) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function addKeyValue() {
+        // Create a new key-value pair div with inputs for key and value
+        const container = document.getElementById("keyValueContainer");
+        const newPair = document.createElement("div");
+        newPair.classList.add("key-value-pair", "d-flex", "mb-3");
+
+        newPair.innerHTML = `
+            <input type="text" name="key" class="form-control me-2" placeholder="Key" required>
+            <input type="text" name="value" class="form-control me-2" placeholder="Value" required>
+            <button type="button" class="remove-btn btn" onclick="removeKeyValue(this)">Remove</button>
+        `;
+
+        container.appendChild(newPair);
+    }
+
+    function removeKeyValue(button) {
+        // Remove the parent div of the clicked remove button
+        button.parentElement.remove();
+    }
+</script>
+
+</body>
+</html>

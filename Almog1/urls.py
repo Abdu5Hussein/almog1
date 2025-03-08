@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from almogOil.views import addMoreCatView,notify_user,notifications_page,feedback_details, return_items_add_items, return_items_report_view, return_items_view, cancel_sell_invoice,Sell_invoice_create_item,fetch_feedback_messages,support_dashboard,fetch_all_feedback, close_feedback,delete_feedback,add_message_to_feedback,feedback_by_user_id, SendMessageView, GetChatMessagesView, MarkMessageAsReadView,SupportChatMessageView, create_conversation, create_sell_invoice, deliver_sell_invoice, fetch_sell_invoice_items, fetch_sellinvoices, filter_sellinvoices, get_mainItem_last_pno, get_sellinvoice_no, prepare_sell_invoice, sell_invoice_add_items, sell_invoice_management,sell_invoice_add_invoice, sell_invoice_prepare_report,sell_invoice_search_storage,buy_invoice_add_items,filter_buyinvoices,fetch_buyinvoices,Buyinvoice_management,delete_buyinvoice_cost, BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, sell_invoice_storage_management, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage, validate_sell_invoice
-from almogOil.api_views import filter_Items,accept_order,skip_order,get_employee_order,update_delivery_availability,decline_order,support_conversations,get_models,get_engines,get_main_types,get_sub_types,get_delivery_invoices,update_invoice_status, get_conversation_messages, send_message,get_all_clients1,start_conversation,respond_to_feedback,send_feedback
+from almogOil.api_views import filter_Items,pending_orders,available_employees,complete_delivery,assign_orders,accept_order,skip_order,get_employee_order,update_delivery_availability,decline_order,support_conversations,get_models,get_engines,get_main_types,get_sub_types,get_delivery_invoices,update_invoice_status, get_conversation_messages, send_message,get_all_clients1,start_conversation,respond_to_feedback,send_feedback
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
@@ -193,13 +193,18 @@ urlpatterns = [
     path('send-notification/', notify_user, name='send_firebase_notification'),
     path('notifications/', notifications_page, name='notifications_page'),
     path('sell-invoice/return-items-page/', return_items_view, name='return-items-view'),
-    path('sell-invoice/<int:id>/return-items/', return_items_add_items, name='return-items'),
+    path('sell-invoice/<int:id>/<int:permission>/return-items/', return_items_add_items, name='return-items'),
     path('update-delivery-availability/', update_delivery_availability, name='update-delivery-availability'),
     path('sell-invoice/return-items-report/', return_items_report_view, name='return-report'),
     path('',include(router.urls)),
     path('engines-page/', views.engines_view, name='engines-view'),  # Render the engine management page
     path('sell-invoice/<int:id>/returned-items',api_views.get_invoice_returned_items,name="get-invoice-returned-items"),
-    path('clients/payment-requests',views.request_payment_view,name="request_payment")
+    path('clients/payment-requests',views.request_payment_view,name="request_payment"),
+    path('assign-orders/', assign_orders, name='assign_orders'),
+    path('complete-delivery/<int:invoice_id>/', complete_delivery, name='complete_delivery'),
+    path('pending-orders/', pending_orders, name='pending_orders'),
+    path('available-employees/', available_employees, name='available_employees'),
+    path('products/add-description',views.main_item_add_json_description,name="add-json-description")
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

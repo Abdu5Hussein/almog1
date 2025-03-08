@@ -22,13 +22,14 @@ import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .models import Mainitem,OrderQueue,EmployeeQueue,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
-from .serializers import MainitemSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
+from .serializers import MainitemSerializer,EmployeeSerializer,OrderSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.dispatch import receiver
 from rest_framework.decorators import action
+from django.db import transaction
 
 
 @api_view(["POST"])
@@ -443,48 +444,71 @@ def get_delivery_invoices(request):
 
 @api_view(['GET'])
 def get_employee_order(request, employee_id):
+    """Assign an order directly to the employee based on their position in the queue."""
     try:
-        # Fetch the employee by ID
+        # Get the employee
         employee = EmployeesTable.objects.get(employee_id=employee_id)
 
         if not employee.is_available:
             return Response({"message": "Employee is not available."}, status=400)
 
-        # Add the employee to the queue (if not already in the queue)
-        queue_position = EmployeeQueue.objects.filter(is_assigned=False).count() + 1
-        EmployeeQueue.objects.create(employee=employee, position=queue_position, is_available=True)
+        if employee.has_active_order:
+            return Response({"message": "Employee already has an active order and cannot be assigned a new one."}, status=400)
 
-        # Fetch the first available order
-        pending_orders = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', orderqueue__isnull=True)
+        # Get the employee queue (ordered by employee_id)
+        employee_queue = list(EmployeesTable.objects.filter(is_available=True).order_by('employee_id'))
+
+        if not employee_queue:
+            return Response({"message": "No available employees in the queue."}, status=400)
+
+        # Get pending orders that are not already assigned
+        pending_orders = list(SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', is_assigned=False))
 
         if not pending_orders:
-            return Response({"message": "No pending orders."}, status=400)
+            return Response({"message": "No pending orders available."}, status=400)
 
-        # Get the order to assign to the employee based on their queue position
-        order_to_assign = pending_orders[queue_position - 1]  # Get the order for the position in the queue
+        # Find the employee's position in the queue
+        try:
+            employee_index = next(i for i, emp in enumerate(employee_queue) if emp.employee_id == employee_id)
+        except StopIteration:
+            return Response({"error": "Employee is not in the queue."}, status=400)
 
-        # Assign the order to the employee in the OrderQueue
-        order_queue = OrderQueue.objects.create(employee=employee, order=order_to_assign)
+        # Ensure there's a matching order for the employee's queue position
+        if employee_index >= len(pending_orders):
+            return Response({"message": "No order assigned to this employee at this time."}, status=400)
 
-        # Return the order details along with options to accept or decline
+        # Get the order based on the queue position
+        assigned_order = pending_orders[employee_index]
+
+        # Mark the employee as unavailable and set the active order flag to True
+        employee.is_available = False
+        employee.has_active_order = True
+        employee.save()
+
+        # Update the order's delivery status to 'جاري التوصيل' and mark it as assigned
+        assigned_order.delivery_status = 'جاري التوصيل'
+        assigned_order.is_assigned = True  # Mark the order as assigned to this employee
+        assigned_order.save()
+
+        # Create an order queue record and automatically mark the order as accepted
+        order_queue = OrderQueue.objects.create(employee=employee, order=assigned_order, is_accepted=True)
+
         return Response({
-            "message": "Order assigned. You can either accept or decline.",
+            "message": "Order assigned and accepted automatically.",
             "order": {
-                "order_id": order_to_assign.autoid,
-                "invoice_no": order_to_assign.invoice_no,
-                "client": order_to_assign.client,
-                "amount": str(order_to_assign.amount),
-                "delivery_status": order_to_assign.delivery_status
+                "order_id": assigned_order.autoid,
+                "invoice_no": assigned_order.invoice_no,
+                "client": assigned_order.client,
+                "amount": str(assigned_order.amount),
+                "delivery_status": assigned_order.delivery_status
             },
             "action": {
-                "accept": f"/accept-order/{order_queue.id}/",
                 "decline": f"/decline-order/{order_queue.id}/"
             }
         })
 
     except EmployeesTable.DoesNotExist:
         return Response({"error": "Employee not found."}, status=404)
-
 
 
 @api_view(['POST'])
@@ -499,12 +523,13 @@ def accept_order(request, queue_id):
 
         # Update the order's delivery status to 'جاري التوصيل'
         order = order_queue.order
-        order.delivery_status = 'ججاري التوصيل'
+        order.delivery_status = 'جاري التوصيل'
         order.save()
 
-        # Mark the employee as unavailable
+        # Mark the employee as unavailable and set the active order flag
         employee = order_queue.employee
         employee.is_available = False
+        employee.has_active_order = True  # Set the active order flag
         employee.save()
 
         return Response({
@@ -517,7 +542,7 @@ def accept_order(request, queue_id):
 
     except OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
-    
+
 
 @api_view(['POST'])
 def decline_order(request, queue_id):
@@ -534,15 +559,21 @@ def decline_order(request, queue_id):
 
         # Mark the order's delivery status back to 'معلقة'
         order = order_queue.order
-        order.delivery_status = 'جاري التوصيل'
+        order.delivery_status = 'معلقة'
         order.save()
 
-        # Re-assign the order to the next employee in the queue
-        next_available_employee = EmployeesTable.objects.filter(is_available=True).first()
+        # Reassign the order to the next employee in the queue
+        next_available_employee = EmployeesTable.objects.filter(is_available=True, has_active_order=False).first()
 
         if next_available_employee:
             # Assign the order to the next available employee
             OrderQueue.objects.create(employee=next_available_employee, order=order)
+
+        # Mark the employee as available again and reset the active order flag
+        employee = order_queue.employee
+        employee.is_available = True
+        employee.has_active_order = False  # Reset the active order flag
+        employee.save()
 
         return Response({
             "message": "Order declined. The next available employee will take it."
@@ -550,7 +581,6 @@ def decline_order(request, queue_id):
 
     except OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
-
 
 @api_view(['POST'])
 def skip_order(request, queue_id):
@@ -583,7 +613,7 @@ def skip_order(request, queue_id):
     except OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
-    
+
 @api_view(['GET', 'POST'])
 def UpdateItemsItemmainApiView(request, item_id):
     try:
@@ -813,7 +843,6 @@ class ReturnPermissionViewSet(viewsets.ModelViewSet):
         return_permission_instance = models.return_permission.objects.create(
             client=client,
             employee=data.get("employee"),
-            quantity=int(data.get("quantity")) if data.get("quantity") else None,
             invoice_obj=invoice,
             invoice_no=invoice.invoice_no,
             payment=data.get("payment", ""),  # Default to empty if not provided
@@ -868,6 +897,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         invoice_id = data.get("invoice_no")
         pno = data.get("pno")
         autoid = data.get("autoid")
+        permission = data.get("permission")
 
         if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
             return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
@@ -878,6 +908,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         # Fetch related objects
         invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
         invoice_item = models.SellInvoiceItemsTable.objects.get(autoid=autoid)
+        permission_obj = models.return_permission.objects.get(autoid=permission)
 
         if int(data.get("returned_quantity")) > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
             return Response({"error": "Returned quantity greater than original quantity"}, status=status.HTTP_400_BAD_REQUEST)
@@ -892,7 +923,12 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
             price=invoice_item.dinar_unit_price,
             invoice_obj=invoice,
             invoice_no=invoice.invoice_no,
+            permission_obj=permission_obj,
         )
+        permission_obj.amount += returned_item_instance.total
+        permission_obj.quantity+= int(data.get("returned_quantity")) if data.get("returned_quantity") else invoice.quantity
+        permission_obj.save()
+
         if invoice_item.current_quantity_after_return is not None and invoice_item.current_quantity_after_return > 0:
             # Decrease the current quantity after return
             invoice_item.current_quantity_after_return -= int(data.get("returned_quantity"))
@@ -902,6 +938,57 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
             invoice_item.current_quantity_after_return = invoice_item.quantity - int(data.get("returned_quantity"))
             invoice_item.save()
 
+        try:
+            mainitem = models.Mainitem.objects.get(pno=pno if pno else invoice_item.pno)
+            mainitem.itemvalue += data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity
+            mainitem.save()
+        except models.Mainitem.DoesNotExist:
+            return Response({"error": "Product not found in products"}, status=status.HTTP_400_BAD_REQUEST)
+        except models.Mainitem.MultipleObjectsReturned:
+            return Response({"error": "Api returned multiple objects for pno"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"error": "Product in products caused an error!"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        last_balance = (
+            models.TransactionsHistoryTable.objects.filter(client_id_id=invoice.client)
+            .order_by("-registration_date")
+            .first()
+        )
+        last_balance_amount = last_balance.current_balance if last_balance else 0
+        if invoice.payment_status == "نقدي":
+            try:
+                models.TransactionsHistoryTable.objects.create(
+                    credit=Decimal(returned_item_instance.total),
+                    debt=0.0,
+                    transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                    details=f"ترجيع بضاتع - فاتورة رقم {invoice_item.invoice_no}",
+                    registration_date=timezone.now(),
+                    current_balance=round(last_balance_amount, 2) + Decimal(returned_item_instance.total),  # Updated balance
+                    client_id_id=invoice.client,  # Client ID
+                    )
+            except:
+                return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            client_object = AllClientsTable.objects.get(clientid=invoice.client)
+            models.StorageTransactionsTable.objects.create(
+                reciept_no=f"ف.ب : {invoice_item.invoice_no}",
+                transaction_date=timezone.now(),
+                amount=Decimal(returned_item_instance.total),
+                issued_for="اذن ترجيع",
+                note=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                account_type="عميل",
+                transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                place="مارين",
+                section="ترجيع",
+                subsection="ترجيع",
+                person=client_object.name or "",
+                payment= "نقدا" if invoice.payment_status == "نقدي" else "اجل",
+                daily_status =False,
+            )
+        except:
+            return Response({"error": "error in storage saving!"}, status=status.HTTP_400_BAD_REQUEST)
         # Serialize and return the created object
         serializer = self.get_serializer(returned_item_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -927,10 +1014,10 @@ def get_invoice_returned_items(request,id):
 @api_view(['POST'])
 def update_delivery_availability(request):
     """Toggle the availability of the delivery person based on their employee ID and update their queue position."""
-    
+
     # Get the delivery person ID from the request data
     delivery_person_id = request.data.get('employee_id')
-    
+
     if not delivery_person_id:
         return Response({"error": "Employee ID is required."}, status=400)
 
@@ -968,3 +1055,71 @@ def update_delivery_availability(request):
         "message": message,
         "is_available": employee.is_available
     })
+
+
+@api_view(['POST'])
+def assign_orders(request):
+    with transaction.atomic():
+        available_employees = EmployeesTable.objects.filter(is_available=True)
+        pending_orders = SellinvoiceTable.objects.filter(delivery_status="معلقة").order_by("invoice_date")
+
+        assigned_orders = []
+
+        for order in pending_orders:
+            if available_employees.exists():
+                employee = available_employees.first()
+                order.deliverer_name = employee.name
+                order.delivery_status = "جاري التوصيل"  # In Progress
+                order.save()
+
+                employee.is_available = False  # Mark employee as busy
+                employee.save()
+
+                assigned_orders.append({
+                    "invoice_id": order.autoid,
+                    "deliverer": employee.name
+                })
+            else:
+                break  # Stop if no available employees
+
+        return Response({"assigned_orders": assigned_orders}, status=200)
+
+
+# 📌 Complete a delivery and assign a new order
+@api_view(['POST'])
+def complete_delivery(request, invoice_id):
+    with transaction.atomic():
+        try:
+            order = SellinvoiceTable.objects.get(autoid=invoice_id)
+            order.delivery_status = "تم التوصيل"  # Mark as delivered
+            order.save()
+
+            # Make the employee available again
+            employee = EmployeesTable.objects.filter(name=order.deliverer_name).first()
+            if employee:
+                employee.is_available = True
+                employee.save()
+
+            # Assign new orders to available employees
+            assign_orders(request)
+
+            return Response({"message": f"Order {invoice_id} marked as delivered and new orders assigned."}, status=200)
+
+        except SellinvoiceTable.DoesNotExist:
+            return Response({"error": "Order not found."}, status=404)
+
+
+# 📌 View all pending orders
+@api_view(['GET'])
+def pending_orders(request):
+    orders = SellinvoiceTable.objects.filter(delivery_status="معلقة")
+    serializer = OrderSerializer(orders, many=True)
+    return Response(serializer.data, status=200)
+
+
+# 📌 View all available employees
+@api_view(['GET'])
+def available_employees(request):
+    employees = EmployeesTable.objects.filter(is_available=True)
+    serializer = EmployeeSerializer(employees, many=True)
+    return Response(serializer.data, status=200)

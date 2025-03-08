@@ -1,7 +1,7 @@
 # serializers.py
 from rest_framework import serializers
 from . import models
-from .models import ChatMessage, SupportChatMessageSys, SupportChatConversation, AllClientsTable, Feedback,EmployeesTable
+from .models import ChatMessage, SupportChatMessageSys, SellinvoiceTable,SupportChatConversation, AllClientsTable, Feedback,EmployeesTable
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -153,3 +153,14 @@ class SellInvoiceItemsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SellInvoiceItemsTable
         fields = "__all__"
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SellinvoiceTable
+        fields = '__all__'
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeesTable
+        fields = '__all__'
