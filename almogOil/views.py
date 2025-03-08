@@ -4568,7 +4568,7 @@ def request_payment_view(request):
 
 
 def main_item_add_json_description(request):
-    products = models.Mainitem.objects.all().values('pno','itemname').order_by('pno')
+    products = models.Mainitem.objects.all().values('pno','itemname','companyproduct').order_by('pno')
     context = {
         'products': products,
     }

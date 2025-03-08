@@ -437,14 +437,14 @@ def update_invoice_status(request, invoice_no):
 @api_view(['GET'])
 def get_delivery_invoices(request):
     """Fetch all invoices with status 'حضرت'."""
-    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,delivery_status="جاري التوصيل")
+    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
     serializer = SellInvoiceSerializer(invoices, many=True)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
 def get_employee_order(request, employee_id):
-    """Assign an order directly to the employee based on their position in the queue."""
+    """Assign an order directly to an employee while ensuring a fair and accurate queue system."""
     try:
         # Get the employee
         employee = EmployeesTable.objects.get(employee_id=employee_id)
@@ -455,46 +455,53 @@ def get_employee_order(request, employee_id):
         if employee.has_active_order:
             return Response({"message": "Employee already has an active order and cannot be assigned a new one."}, status=400)
 
-        # Get the employee queue (ordered by employee_id)
+        # Get all available employees sorted by employee_id (ensuring queue order)
         employee_queue = list(EmployeesTable.objects.filter(is_available=True).order_by('employee_id'))
 
         if not employee_queue:
             return Response({"message": "No available employees in the queue."}, status=400)
 
-        # Get pending orders that are not already assigned
-        pending_orders = list(SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', is_assigned=False))
+        # Get all pending orders that are not assigned yet
+        pending_orders = list(SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', is_assigned=False).order_by('autoid'))
 
         if not pending_orders:
             return Response({"message": "No pending orders available."}, status=400)
 
-        # Find the employee's position in the queue
-        try:
-            employee_index = next(i for i, emp in enumerate(employee_queue) if emp.employee_id == employee_id)
-        except StopIteration:
-            return Response({"error": "Employee is not in the queue."}, status=400)
+        # Ensure every employee gets their fair share of orders based on queue order
+        employee_count = len(employee_queue)
+        order_count = len(pending_orders)
 
-        # Ensure there's a matching order for the employee's queue position
-        if employee_index >= len(pending_orders):
-            return Response({"message": "No order assigned to this employee at this time."}, status=400)
+        if order_count == 0:
+            return Response({"message": "No orders available to assign."}, status=400)
 
-        # Get the order based on the queue position
-        assigned_order = pending_orders[employee_index]
+        # Assign orders in a round-robin fashion to match employees correctly
+        assigned_order = None
+        for index, emp in enumerate(employee_queue):
+            if emp.employee_id == employee_id:
+                if index < order_count:
+                    assigned_order = pending_orders[index]  # Assign the corresponding order
+                else:
+                    return Response({"message": "No order assigned at this moment."}, status=400)
+                break
 
-        # Mark the employee as unavailable and set the active order flag to True
+        if not assigned_order:
+            return Response({"message": "No matching order found for this employee."}, status=400)
+
+        # Update employee status
         employee.is_available = False
         employee.has_active_order = True
         employee.save()
 
-        # Update the order's delivery status to 'جاري التوصيل' and mark it as assigned
+        # Update order status
         assigned_order.delivery_status = 'جاري التوصيل'
-        assigned_order.is_assigned = True  # Mark the order as assigned to this employee
+        assigned_order.is_assigned = True
         assigned_order.save()
 
-        # Create an order queue record and automatically mark the order as accepted
+        # Create an order queue record and automatically accept it
         order_queue = OrderQueue.objects.create(employee=employee, order=assigned_order, is_accepted=True)
 
         return Response({
-            "message": "Order assigned and accepted automatically.",
+            "message": "Order assigned successfully.",
             "order": {
                 "order_id": assigned_order.autoid,
                 "invoice_no": assigned_order.invoice_no,
@@ -523,7 +530,7 @@ def accept_order(request, queue_id):
 
         # Update the order's delivery status to 'جاري التوصيل'
         order = order_queue.order
-        order.delivery_status = 'جاري التوصيل'
+        order.delivery_status = 'كهجاري التوصيل'
         order.save()
 
         # Mark the employee as unavailable and set the active order flag
@@ -1161,3 +1168,115 @@ def available_employees(request):
     employees = EmployeesTable.objects.filter(is_available=True)
     serializer = EmployeeSerializer(employees, many=True)
     return Response(serializer.data, status=200)
+
+
+
+@api_view(['POST'])
+def set_available(request):
+    """Mark employee as available and add to queue"""
+    delivery_person_id = request.data.get('employee_id')
+
+    if not delivery_person_id:
+        return Response({"error": "Employee ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        employee = EmployeesTable.objects.get(employee_id=delivery_person_id)
+    except EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if employee.is_available:
+        return Response({"message": f"Employee {employee.employee_id} is already available."})
+
+    # Update availability
+    employee.is_available = True
+    employee.save()
+
+    # Add to queue if not already present
+    if not EmployeeQueue.objects.filter(employee=employee).exists():
+        queue_position = EmployeeQueue.objects.filter(is_available=True).count() + 1
+        EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
+        message = f"Employee {employee.employee_id} is now available and added to the queue at position {queue_position}."
+    else:
+        message = f"Employee {employee.employee_id} is already in the queue."
+
+    return Response({
+        "message": message,
+        "is_available": employee.is_available
+    })
+
+@api_view(['POST'])
+def set_unavailable(request):
+    """Mark employee as unavailable and remove from queue"""
+    delivery_person_id = request.data.get('employee_id')
+
+    if not delivery_person_id:
+        return Response({"error": "Employee ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        employee = EmployeesTable.objects.get(employee_id=delivery_person_id)
+    except EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if not employee.is_available:
+        return Response({"message": f"Employee {employee.employee_id} is already unavailable."})
+
+    # Update availability
+    employee.is_available = False
+    employee.save()
+
+    # Remove from queue
+    queue_entry = EmployeeQueue.objects.filter(employee=employee, is_available=True).first()
+    if queue_entry:
+        queue_entry.delete()
+        message = f"Employee {employee.employee_id} is now unavailable and removed from the queue."
+    else:
+        message = f"Employee {employee.employee_id} was not in the queue."
+
+    return Response({
+        "message": message,
+        "is_available": employee.is_available
+    })
+
+
+@api_view(['POST'])
+def clear_queue(request):
+    """Clear all employees from the queue and set all employees as unavailable"""
+
+    # Clear the queue
+    deleted_count, _ = EmployeeQueue.objects.all().delete()
+
+    # Set all employees' is_available to False
+    updated_count = EmployeesTable.objects.filter(is_available=True).update(is_available=False)
+    updated_count = EmployeesTable.objects.filter( has_active_order=True).update( has_active_order=False)
+
+    return Response({
+        "message": "Employee queue has been cleared and all employees are now unavailable.",
+        "deleted_queue_entries": deleted_count,
+        "updated_employees": updated_count
+    }, status=status.HTTP_200_OK)
+
+
+
+@api_view(['POST'])
+def mainitem_add_json_desc(request, id):
+    """Add JSON description to a Mainitem product"""
+    try:
+        data = request.data
+        json_data = data.get('json')
+
+        # Parse the JSON data
+        parsed_json = json.loads(json_data) if isinstance(json_data, str) else json_data
+
+        # Retrieve the product
+        product = models.Mainitem.objects.get(pno=id)
+        product.json_description = parsed_json  # Assuming this field is a JSONField
+        product.save()
+
+        return Response({"message": "JSON description updated successfully"}, status=status.HTTP_200_OK)
+
+    except models.Mainitem.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

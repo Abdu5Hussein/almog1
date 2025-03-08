@@ -29,12 +29,15 @@
                 <select name="pno" id="pno" class='form-control me-2'>
                     <option value="">اختر صنف</option>
                     {% for x in products %}
-                    <option value="{{ x.pno }}" data-name="{{ x.itemname }}" >{{ x.pno }}</option>
+                    <option value="{{ x.pno }}" data-name="{{ x.itemname }}" data-company="{{ x.companyproduct }}">{{ x.pno }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class='col'>
                 <input type="text" name="name" id="name" class="form-control me-2" required>
+            </div>
+            <div class='col'>
+                <input type="text" name="company" id="company" class="form-control me-2" required>
             </div>
         </div>
         <div id="keyValueContainer">
@@ -73,6 +76,69 @@
         // Remove the parent div of the clicked remove button
         button.parentElement.remove();
     }
+
+    document.getElementById("pno").addEventListener("change", function() {
+        // Get the selected option element
+        const selectedOption = this.options[this.selectedIndex];
+
+        // Retrieve the data-name and data-company attributes
+        const name = selectedOption.getAttribute("data-name");
+        const company = selectedOption.getAttribute("data-company");
+
+        // Set the values into the input fields
+        document.getElementById("name").value = name;
+        document.getElementById("company").value = company;
+    });
+    document.getElementById("keyValueForm").addEventListener("submit", function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        // Create an object to hold the key-value pairs
+        const keyValuePairs = {};
+
+        // Get all key-value pair inputs
+        document.querySelectorAll(".key-value-pair").forEach(function(pair) {
+            const key = pair.querySelector("input[name='key']").value.trim();
+            const value = pair.querySelector("input[name='value']").value.trim();
+            if (key) {
+                keyValuePairs[key] = value;
+            }
+        });
+
+        // Get the selected product ID (pno)
+        const pno = document.getElementById("pno").value;
+
+        if (!pno) {
+            alert("Please select a product.");
+            return;
+        }
+
+        // Convert key-value pairs to JSON
+        const jsonData = {
+            json: keyValuePairs
+        };
+
+        // Send the POST request to Django API
+        fetch(`/api/products/${pno}/add-json-description`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(jsonData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Success:", data);
+            alert("JSON description added successfully!");
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Failed to add JSON description.");
+        });
+    });
+
+
+
+
 </script>
 
 </body>

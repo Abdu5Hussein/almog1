@@ -203,10 +203,13 @@ urlpatterns = [
     path('assign-orders/', assign_orders, name='assign_orders'),
     path('complete-delivery/<int:invoice_id>/', complete_delivery, name='complete_delivery'),
     path('pending-orders/', pending_orders, name='pending_orders'),
+    path('employee/set_available/', api_views.set_available, name='set_available'),
+    path('employee/set_unavailable/', api_views.set_unavailable, name='set_unavailable'),
     path('available-employees/', available_employees, name='available_employees'),
+     path('employee/clear_queue/', api_views.clear_queue, name='clear_queue'),
     path('deliver-order/<int:queue_id>/', api_views.deliver_order, name='deliver-order'),
-    path('products/add-description',views.main_item_add_json_description,name="add-json-description")
-
+    path('products/add-description',views.main_item_add_json_description,name="add-description"),
+    path('api/products/<int:id>/add-json-description',api_views.mainitem_add_json_desc,name="add-json-description"),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode
