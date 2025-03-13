@@ -4601,7 +4601,7 @@ def assign_order_manual(request):
         with transaction.atomic():
             # Get the selected employee
             employee_queue = get_object_or_404(EmployeeQueue, employee_id=employee_id, is_available=True, is_assigned=False)
-            employee = employee_queue.employee  
+            employee = employee_queue.employee
 
             # Get the order
             order = get_object_or_404(SellinvoiceTable, invoice_no=order_id, is_assigned=True)
@@ -4641,7 +4641,7 @@ def assign_order_manual(request):
 def get_available_employees(request):
     employees = EmployeeQueue.objects.filter(is_available=True, is_assigned=False).select_related('employee')
     data = [{"id": emp.employee.id, "name": emp.employee.name} for emp in employees]
-    return JsonResponse(data, safe=False)        
+    return JsonResponse(data, safe=False)
 
 def get_unassigned_orders(request):
     orders = SellinvoiceTable.objects.filter(
@@ -4659,9 +4659,13 @@ def get_unassigned_orders(request):
 def get_unassigned_orders(request):
     orders = SellinvoiceTable.objects.filter(is_assigned=False)
     data = [{"invoice_no": order.invoice_no} for order in orders]
-    return JsonResponse(data, safe=False)    
+    return JsonResponse(data, safe=False)
 
 from django.shortcuts import render
 
 def assign_order_page(request):
     return render(request, 'assign_order.html')
+
+
+def invoice_notifications(request):
+    return render(request, 'WStest.html')

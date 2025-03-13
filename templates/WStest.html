@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Status Notifications</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl; /* Right to left for Arabic */
+        }
+        .notification {
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            margin: 10px;
+            border-radius: 5px;
+        }
+        .notification.new {
+            background-color: #dff0d8;
+        }
+    </style>
+</head>
+<body>
+    <h1>تحديث حالة الفاتورة</h1>
+    <div id="notifications-container">
+        <!-- Notifications will appear here -->
+    </div>
+
+    <script>
+        // WebSocket connection URL (adjust to your Django WebSocket endpoint)
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl = 'ws://45.13.59.226/ws/notifications/';
+
+        const notificationSocket = new WebSocket(wsUrl);
+
+        // Handle WebSocket messages
+        notificationSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const message = data.message;
+            displayNotification(message);
+        };
+
+        // Handle WebSocket connection open
+        notificationSocket.onopen = function(e) {
+            console.log('WebSocket connected');
+        };
+
+        // Handle WebSocket error
+        notificationSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+
+        // Handle WebSocket connection close
+        notificationSocket.onclose = function(e) {
+            console.log('WebSocket connection closed');
+        };
+
+        // Function to display notification
+        function displayNotification(message) {
+            const notificationContainer = document.getElementById('notifications-container');
+            
+            const notificationElement = document.createElement('div');
+            notificationElement.classList.add('notification', 'new');
+            notificationElement.textContent = message;
+
+            // Append the new notification to the container
+            notificationContainer.appendChild(notificationElement);
+
+            // Optional: Automatically remove the notification after a few seconds
+            setTimeout(() => {
+                notificationElement.classList.remove('new');
+                notificationContainer.removeChild(notificationElement);
+            }, 5000);
+        }
+
+        // Example of sending a test notification from the front-end (optional)
+        function sendTestNotification() {
+            const testMessage = "حالة الفاتورة قد تغيرت!";
+            notificationSocket.send(JSON.stringify({
+                'message': testMessage
+            }));
+        }
+
+        // Uncomment below to test the WebSocket by sending a message every 5 seconds
+        // setInterval(sendTestNotification, 5000);
+    </script>
+</body>
+</html>

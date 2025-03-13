@@ -221,6 +221,7 @@ urlpatterns = [
     path('confirm_order_arrival/<int:order_id>/', api_views.confirm_order_arrival, name='confirm_order_arrival'),
     path('confirmed_orders/', api_views.get_all_confirmed_orders, name='get_all_confirmed_orders'),
     path('complete_order/<int:autoid>/', api_views.complete_order, name='complete_order'),
+    path('WStest/', views.invoice_notifications, name='WStest'),
     path('invoice/<int:autoid>/', api_views.get_invoice_data, name='get_invoice_data'),
     path('api/employees/', views.get_available_employees, name='get-employees'),
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
@@ -230,6 +231,7 @@ urlpatterns = [
     path('api/employee_current_order_info/<int:employee_id>/', api_views.employee_current_order_info, name='employee_current_order_info'),
     path('api/products/<int:id>/add-json-description',api_views.mainitem_add_json_desc,name="add-json-description"),
     path('api/payment-requests/<int:id>/accept',api_views.accept_payment_req,name="accept_payment_request"),
+    path('api/filter-return-requests/', api_views.filter_return_reqs, name='filter_return_reqs'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

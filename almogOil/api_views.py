@@ -31,6 +31,8 @@ from django.dispatch import receiver
 from rest_framework.decorators import action
 from django.db import transaction
 from django_q.tasks import async_task
+from datetime import datetime, timedelta
+from django.utils.timezone import make_aware
 
 @api_view(["POST"])
 def sign_in(request):
@@ -1872,3 +1874,48 @@ def accept_payment_req(request, id):
         return Response({"error": "Payment request not found."}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+from django.db.models import Q
+
+
+@api_view(["POST"])
+def filter_return_reqs(request):
+    try:
+        filters = request.data  # DRF automatically parses the JSON body
+        query_filter = Q()  # Initialize an empty Q object for combining filters
+
+        # Apply client-name filter if provided
+        if 'client' in filters:
+            query_filter &= Q(client__clientid__icontains=filters['client'])
+
+        # Apply payment filter if provided
+        if 'payment' in filters:
+            query_filter &= Q(payment__icontains=filters['payment'])
+
+        # Apply date range filter if fromdate and todate are provided
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                query_filter &= Q(date__range=[from_date_obj, to_date_obj])
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Query the model with the combined filters
+        queryset = models.return_permission.objects.filter(query_filter)
+        serializer = serializers.ReturnPermissionSerializer(queryset,many=True)
+
+        # If no matching records, return an empty list
+        if not queryset.exists():
+            return Response([], status=status.HTTP_200_OK)
+
+        # Serialize and return the filtered data
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
