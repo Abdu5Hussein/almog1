@@ -1,14 +1,16 @@
 #import datetime
 from decimal import Decimal
+from .Tasks import assign_orders
 import json
 import os
+from django_q.tasks import async_task
 from django.conf import settings
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from .models import  EmployeesTable,AllClientsTable,SupportChatConversation, FeedbackMessage,Feedback,SupportChatMessageSys,  Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
+from .models import  EmployeesTable,AllClientsTable,OrderQueue,EmployeeQueue,SupportChatConversation, FeedbackMessage,Feedback,SupportChatMessageSys,  Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
@@ -26,6 +28,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_RIGHT, TA_LEFT
 import math
+from django.db import transaction
 from io import BytesIO
 import pandas as pd
 from django.http import JsonResponse
@@ -3517,16 +3520,16 @@ def sell_invoice_management(request):
     }
     return render(request,'sell_invoice_management.html',context)
 
-@csrf_exempt
+
+@api_view(["POST"])
 def create_sell_invoice(request):
     if request.method == "POST":
         try:
-            # Parse the incoming JSON data
             data = json.loads(request.body)
-
             client = None
             balance_data = {"total_debt": Decimal("0.0000"), "total_credit": Decimal("0.0000")}
 
+            # Fetch client based on provided client data
             try:
                 if data.get("client").isdigit():  # If it's a number, fetch by clientid
                     client = AllClientsTable.objects.get(clientid=data.get("client"))
@@ -3535,7 +3538,7 @@ def create_sell_invoice(request):
                 balance_data = TransactionsHistoryTable.objects.filter(client_id_id=client).aggregate(
                     total_debt=Sum('debt'),
                     total_credit=Sum('credit')
-                )  # Aggregates the debt and credit for the client
+                )
             except AllClientsTable.DoesNotExist:
                 client = None
             except TransactionsHistoryTable.DoesNotExist:
@@ -3546,9 +3549,13 @@ def create_sell_invoice(request):
             total_credit = balance_data.get('total_credit', Decimal('0.0000')) or 0
             client_balance = total_credit - total_debt  # Calculate the balance
 
-            last_recipt_response = json.loads(get_sellinvoice_no(request).content)  # Get response data
+            # Get the last receipt number
+            last_recipt_response = json.loads(get_sellinvoice_no(request).content)
             last_recipt_no = last_recipt_response.get("autoid")
             next_recipt_no = int(last_recipt_no) + 1
+
+            # Determine the 'for_who' field
+            for_who = "application" if data.get("for_who") == "application" else None
 
             # Create the SellInvoice record
             sell_invoice = SellinvoiceTable.objects.create(
@@ -3562,20 +3569,25 @@ def create_sell_invoice(request):
                 invoice_date=data.get("invoice_date"),
                 invoice_status="لم تحضر",
                 payment_status=data.get("payment_status"),
-                for_who=data.get("for_who"),
+                for_who=for_who,  # Assign 'for_who'
                 date_time=timezone.now(),
                 price_status="",
                 mobile=data.get("mobile") if data.get("mobile") else False,
             )
 
-            # Return a success response
-            return JsonResponse({"success": True, "message": "Sell invoice created successfully!", "invoice_no": sell_invoice.invoice_no, "client_balance": sell_invoice.client_balance})
+            # Schedule the background task using Django Q (will run every 60 seconds)
+            async_task('almogOil.Tasks.assign_orders') # Adjust path accordingly
+
+            return JsonResponse({
+                "success": True,
+                "message": "Sell invoice created and order assignment triggered!",
+                "invoice_no": sell_invoice.invoice_no,
+                "client_balance": sell_invoice.client_balance
+            })
 
         except Exception as e:
-            # Handle any errors
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
-    # Handle invalid request methods
     return JsonResponse({"success": False, "error": "Invalid HTTP method. Only POST is allowed."}, status=405)
 
 
@@ -4079,7 +4091,8 @@ def deliver_sell_invoice(request):
             invoice.office_no = bill
             invoice.invoice_status = status
             invoice.delivery_status = "جاري التوصيل" if invoice.mobile else "في المحل"
-
+ # Schedule the background task using Django Q (will run every 60 seconds)
+            async_task('almogOil.Tasks.assign_orders') # Adjust path accordingly
             # Save the updated invoice
             invoice.save()
 
@@ -4574,3 +4587,81 @@ def main_item_add_json_description(request):
     }
     return render(request, 'add-json-description-mainitem.html',context)
 
+
+@csrf_exempt  # Remove this if using DRF
+def assign_order_manual(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        employee_id = data.get('employee_id')
+        order_id = data.get('order_id')
+
+        with transaction.atomic():
+            # Get the selected employee
+            employee_queue = get_object_or_404(EmployeeQueue, employee_id=employee_id, is_available=True, is_assigned=False)
+            employee = employee_queue.employee  
+
+            # Get the order
+            order = get_object_or_404(SellinvoiceTable, invoice_no=order_id, is_assigned=True)
+
+            # Assign the order
+            employee.is_available = False
+            employee.has_active_order = True
+            employee.save()
+
+            order.delivery_status = 'جاري التوصيل'
+            order.is_assigned = True
+            order.save()
+
+            # Add to order queue
+            OrderQueue.objects.create(
+                employee=employee, order=order, is_accepted=False, is_assigned=True, assigned_at=now()
+            )
+
+            # Schedule confirmation check
+            from django_q.tasks import async_task
+            async_task('app.tasks.check_order_confirmation', order_id=order_id)
+
+            # Update employee queue
+            employee_queue.is_assigned = True
+            employee_queue.is_available = False
+            employee_queue.assigned_time = now()
+            employee_queue.save()
+
+        return JsonResponse({'message': 'Order assigned successfully'}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_available_employees(request):
+    employees = EmployeeQueue.objects.filter(is_available=True, is_assigned=False).select_related('employee')
+    data = [{"id": emp.employee.id, "name": emp.employee.name} for emp in employees]
+    return JsonResponse(data, safe=False)        
+
+def get_unassigned_orders(request):
+    orders = SellinvoiceTable.objects.filter(
+        invoice_status='سلمت',
+        delivery_status='جاري التوصيل'
+    )
+
+    if not orders.exists():
+        return JsonResponse({"error": "No matching orders found."}, status=404)
+
+    data = [{"invoice_no": order.invoice_no} for order in orders]
+    return JsonResponse(data, safe=False)
+
+
+def get_unassigned_orders(request):
+    orders = SellinvoiceTable.objects.filter(is_assigned=False)
+    data = [{"invoice_no": order.invoice_no} for order in orders]
+    return JsonResponse(data, safe=False)    
+
+from django.shortcuts import render
+
+def assign_order_page(request):
+    return render(request, 'assign_order.html')

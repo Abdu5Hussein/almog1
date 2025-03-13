@@ -21,8 +21,8 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import Mainitem,OrderQueue,EmployeeQueue,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
-from .serializers import MainitemSerializer,EmployeeSerializer,OrderSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
+from .models import Mainitem,OrderArchive,OrderQueue,EmployeeQueue,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
+from .serializers import MainitemSerializer,EmployeeWithOrderSerializer,EmployeeSerializer,OrderSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
@@ -30,7 +30,7 @@ from asgiref.sync import async_to_sync
 from django.dispatch import receiver
 from rest_framework.decorators import action
 from django.db import transaction
-
+from django_q.tasks import async_task
 
 @api_view(["POST"])
 def sign_in(request):
@@ -426,6 +426,7 @@ def update_invoice_status(request, invoice_no):
     if new_status in ["جاري التوصيل", "تم التوصيل"]:
         invoice.delivery_status = new_status
         if new_status == "تم التوصيل":
+
             invoice.delivered_date = now()  # Set the current timestamp
         invoice.save()
         send_invoice_notification(invoice, new_status)
@@ -1191,18 +1192,21 @@ def set_available(request):
     employee.is_available = True
     employee.save()
 
+    # Check if the employee is already in the queue
+    if EmployeeQueue.objects.filter(employee=employee).exists():
+        # If employee is already in the queue, stop the process and return the message
+        return Response({"message": f"Employee {employee.employee_id} is already in the queue."})
+
     # Add to queue if not already present
-    if not EmployeeQueue.objects.filter(employee=employee).exists():
-        queue_position = EmployeeQueue.objects.filter(is_available=True).count() + 1
-        EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
-        message = f"Employee {employee.employee_id} is now available and added to the queue at position {queue_position}."
-    else:
-        message = f"Employee {employee.employee_id} is already in the queue."
+    queue_position = EmployeeQueue.objects.filter(is_available=True).count() + 1
+    EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
 
     return Response({
-        "message": message,
+        "message": f"Employee {employee.employee_id} is now available and added to the queue at position {queue_position}.",
         "is_available": employee.is_available
     })
+
+
 
 @api_view(['POST'])
 def set_unavailable(request):
@@ -1240,20 +1244,28 @@ def set_unavailable(request):
 
 @api_view(['POST'])
 def clear_queue(request):
-    """Clear all employees from the queue and set all employees as unavailable"""
+    """Clear all employees and orders from the queue, set all employees as unavailable, and reset invoice assignments."""
 
-    # Clear the queue
-    deleted_count, _ = EmployeeQueue.objects.all().delete()
+    # Clear employee queue
+    deleted_employee_queue, _ = EmployeeQueue.objects.all().delete()
 
-    # Set all employees' is_available to False
-    updated_count = EmployeesTable.objects.filter(is_available=True).update(is_available=False)
-    updated_count = EmployeesTable.objects.filter( has_active_order=True).update( has_active_order=False)
+    # Clear order queue
+    deleted_order_queue, _ = OrderQueue.objects.all().delete()
+
+    # Set all employees as unavailable
+    EmployeesTable.objects.filter(is_available=True).update(is_available=False)
+    EmployeesTable.objects.filter(has_active_order=True).update(has_active_order=False)
+
+    # Reset assign_to field in InvoiceTable
+
 
     return Response({
-        "message": "Employee queue has been cleared and all employees are now unavailable.",
-        "deleted_queue_entries": deleted_count,
-        "updated_employees": updated_count
+        "message": "Employee and order queues have been cleared. All employees are now unavailable, and invoice assignments have been reset.",
+        "deleted_employee_queue_entries": deleted_employee_queue,
+        "deleted_order_queue_entries": deleted_order_queue,
+
     }, status=status.HTTP_200_OK)
+
 
 
 
@@ -1278,5 +1290,585 @@ def mainitem_add_json_desc(request, id):
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
     except json.JSONDecodeError:
         return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+def get_employee_orders(request, employee_id):
+    try:
+        # Fetch the employee
+        employee = EmployeesTable.objects.filter(employee_id=employee_id).first()
+        if not employee:
+            return Response({"error": "Employee not found."}, status=404)
+
+        # Get the latest assigned active order for the employee
+        order = OrderQueue.objects.filter(
+            employee=employee,
+            is_accepted=True,
+            order__delivery_status='جاري التوصيل'
+        ).select_related('order').first()
+
+        if not order:
+            return Response({"message": "No active orders assigned to you."}, status=400)
+
+        # Return order details
+        return Response({
+            "order_id": order.order.autoid,
+            "invoice_no": order.order.invoice_no,
+            "client": order.order.client_id,  # Ensure consistency with client structure
+            "amount": str(order.order.amount),
+            "delivery_status": order.order.delivery_status,
+            "action": {
+                "decline": f"/decline-order/{order.id}/"
+            }
+        }, status=200)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+@api_view(["POST"])
+def complete_order(request, autoid):
+    try:
+        # Get the OrderQueue using the autoid field of the related order
+        order_queue = OrderQueue.objects.get(order__autoid=autoid)
+        employee = order_queue.employee
+
+        # Update order status
+        order_queue.order.delivery_status = 'تم التسليم'
+        order_queue.is_completed = True
+
+        # Save the updated order and order queue
+        order_queue.order.save()
+        order_queue.save()
+
+        # Update employee status
+        employee.is_available = False  # Mark as available for new orders
+        employee.has_active_order = False
+
+        # Remove the employee from the EmployeeQueue
+        EmployeeQueue.objects.filter(employee=employee).delete()
+
+        # Save the employee model
+        employee.save()
+
+        # Archive the order in the OrderArchive model
+        OrderArchive.objects.create(
+            order=order_queue.order,  # Store the original order
+            employee=employee,  # Store the employee who completed the order
+            delivery_status=order_queue.order.delivery_status,  # 'تم التسليم'
+            is_completed=True,  # The order is completed
+        )
+
+        return Response({"message": "Order completed successfully and archived."})
+
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order not found."}, status=404)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+
+@api_view(["GET"])
+def get_available_employees(request):
+    # Get all employees who are available
+
+    available_employees = EmployeesTable.objects.filter(is_available=True)
+
+    # Serialize the employee data along with their orders
+    serializer = EmployeeWithOrderSerializer(available_employees, many=True)
+
+    # Return the serialized data in the response
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def check_assign_status(request):
+    # Run asynchronous task to assign orders
+    async_task('almogOil.Tasks.assign_orders')
+
+    # Fetch available employees
+    available_employees = EmployeesTable.objects.filter(is_available=True)
+
+    # Fetch pending orders that have not been assigned yet
+    pending_orders = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', is_assigned=False)
+
+    # Get orders that have been assigned
+    assigned_orders = OrderQueue.objects.filter(is_assigned=True)
+
+    # Get orders that have been accepted but not assigned
+    accepted_orders = OrderQueue.objects.filter(is_accepted=True)
+
+    # Prepare the response data
+    data = {
+        "available_employees": [employee.employee_id for employee in available_employees],
+        "pending_orders": [
+            {
+                "invoice_no": order.invoice_no,
+                "client": order.client_name,
+                "status": order.delivery_status,
+            }
+            for order in pending_orders
+        ],
+        "assigned_orders": [
+            {
+                "order_id": order.order.autoid,
+                "invoice_number": order.order.invoice_no,
+                "employee_id": order.employee.employee_id,
+                "status": order.order.delivery_status,
+            }
+            for order in assigned_orders
+        ],
+        "accepted_orders": [
+            {
+                "order_id": order.order.autoid,
+                "invoice_number": order.order.invoice_no,
+                "employee_id": order.employee.employee_id,
+                "status": order.order.delivery_status,
+            }
+            for order in accepted_orders
+        ],
+    }
+
+    return Response(data)
+
+@api_view(["GET"])
+def check_assign_statusss(request, employee_id):
+    try:
+        # Get the employee
+
+        async_task('almogOil.Tasks.assign_orders')
+
+        employee = EmployeesTable.objects.filter(employee_id=employee_id).first()
+        if not employee:
+            return Response({"error": "Employee not found."}, status=404)
+
+        # Fetch assigned orders for this employee
+        assigned_orders = OrderQueue.objects.filter(employee=employee, is_accepted=True).select_related('order')
+
+        # Prepare response data
+        data = {
+            "employee_id": employee.employee_id,
+            "employee_name": employee.name,  # Assuming there's a `name` field
+            "is_available": employee.is_available,
+            "assigned_orders": [
+                {
+                    "order_id": order.order.autoid,
+                    "invoice_no": order.order.invoice_no,
+                    "client": order.order.client_name,
+                    "client_id": order.order.client,  # Ensure correct field for client
+                    "amount": str(order.order.amount),
+                    "delivery_status": order.order.delivery_status,
+                    "payment_status": order.order.payment_status,
+                    "invoice_date": order.order.invoice_date.strftime('%Y-%m-%d %H:%M:%S'),  # Format datetime
+                } for order in assigned_orders
+            ]
+        }
+
+        return Response(data, status=200)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(["POST"])
+def confirm_order(request, order_id):
+    try:
+        # Get the order queue where the order is not accepted
+        order_queue = OrderQueue.objects.get(order_id=order_id, is_accepted=False)
+
+        # Update the order queue to mark it as accepted
+        order_queue.is_accepted = True
+        order_queue.save()
+
+        # Get the related sell invoice and update its status to 'جاري التوصيل'
+        sell_invoice = SellinvoiceTable.objects.get(invoice_no=order_queue.order.invoice_no)
+        sell_invoice.delivery_status = "جاري التوصيل"  # Update the invoice status
+        sell_invoice.save()
+
+        # Return success response
+        return Response({"success": True, "message": "Order confirmed successfully and invoice status updated."})
+
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order not found or already confirmed."}, status=404)
+
+    except SellinvoiceTable.DoesNotExist:
+        return Response({"error": "Sell invoice not found."}, status=404)
+
+
+
+
+@api_view(["POST"])
+def decline_order(request, order_id):
+    try:
+        # Get the order queue that is not yet accepted
+        order_queue = OrderQueue.objects.get(order_id=order_id, is_accepted=False)
+        employee = order_queue.employee
+        assigned_order = order_queue.order
+
+        # Make employee available again
+        employee.is_available = False
+        employee.has_active_order = False
+        employee.save()
+
+        # Remove the employee from the EmployeeQueue, regardless of their assignment status
+        EmployeeQueue.objects.filter(employee=employee).delete()
+
+        # Mark the assigned order as unassigned and move it to pending
+        assigned_order.is_assigned = False
+        assigned_order.delivery_status = 'جاري التوصيل'  # Or the appropriate status for pending orders
+        assigned_order.save()
+
+        # Delete the order from the queue
+        order_queue.delete()
+
+        # Ensure that unassigned orders are processed again
+        # Re-run the assignment for unassigned orders
+        async_task('almogOil.Tasks.assign_orders')
+
+        return Response({"success": True, "message": "Order declined, employee marked as available, and reassignment triggered."})
+
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order not found or already processed."}, status=404)
+
+
+
+
+@api_view(["GET"])
+def monitor_order_assignments(request):
+    try:
+        # Fetch available employees
+        available_employees = EmployeesTable.objects.filter(is_available=True)
+
+        # Fetch pending orders that are waiting for delivery
+        pending_orders = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', is_assigned=False)
+
+        # Fetch all assigned orders
+        assigned_orders = OrderQueue.objects.select_related('employee', 'order').all()
+
+        # Split assigned orders into confirmed and unconfirmed
+        confirmed_orders = []
+        unconfirmed_orders = []
+
+        for order_queue in assigned_orders:
+            order = order_queue.order
+            employee = order_queue.employee
+
+            if order_queue.is_accepted:
+                confirmed_orders.append({
+                    "order_id": order.autoid,
+                    "invoice_number": order.invoice_no,
+                    "employee_id": employee.employee_id,
+                    "employee_name": employee.name,
+                    "status": order.delivery_status,
+                    "confirmation_status": "Confirmed",
+                })
+            else:
+                unconfirmed_orders.append({
+                    "order_id": order.autoid,
+                    "invoice_number": order.invoice_no,
+                    "employee_id": employee.employee_id,
+                    "employee_name": employee.name,
+                    "status": order.delivery_status,
+                    "confirmation_status": "Pending",
+                })
+
+        # Prepare the response data
+        data = {
+            "available_employees": [employee.employee_id for employee in available_employees],
+            "pending_orders": [
+                {"invoice_no": order.invoice_no, "client": order.client_name, "status": order.delivery_status}
+                for order in pending_orders
+            ],
+            "assigned_orders": {
+                "confirmed": confirmed_orders,
+                "unconfirmed": unconfirmed_orders,
+            }
+        }
+
+        # Return the response with data
+        return Response({
+            "status": "success",
+            "data": data
+        })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+@api_view(["GET"])
+def employee_order_info(request, employee_id):
+    try:
+        # Get employee object by employee_id
+        employee = EmployeesTable.objects.get(employee_id=employee_id)
+
+        # Fetch the employee's assigned orders
+        assigned_orders = OrderQueue.objects.filter(employee=employee).select_related('order')
+
+        # Prepare a list to hold order details
+        order_details = []
+
+        # Iterate over the assigned orders and add the relevant details
+        for idx, order_queue in enumerate(assigned_orders):
+            order = order_queue.order
+            order_details.append({
+                "order_id": order.autoid,
+                "invoice_number": order.invoice_no,
+                "client": order.client_name,
+                "delivery_status": order.delivery_status,
+                "order_status": order.invoice_status,
+                "is_confirmed": order_queue.is_accepted,
+                "position_in_queue": idx + 1,  # Position in the queue (1-based index)
+                "confirmation_status": "Confirmed" if order_queue.is_accepted else "Pending"
+            })
+
+        # Prepare the response data
+        data = {
+            "employee_id": employee.employee_id,
+            "employee_name": employee.name,
+            "assigned_orders": order_details
+        }
+
+        return Response({
+            "status": "success",
+            "data": data
+        })
+
+    except EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(["GET"])
+def employee_current_order_info(request, employee_id):
+    try:
+        # Get employee object by employee_id
+        employee = EmployeesTable.objects.get(employee_id=employee_id)
+
+        # Fetch the employee's assigned orders excluding those with "تم التوصيل" delivery status
+        assigned_orders = OrderQueue.objects.filter(employee=employee).select_related('order').order_by('assigned_at')
+        assigned_orders = assigned_orders.exclude(order__delivery_status="تم التسليم")
+
+        # Get the current order for the employee
+        current_order = None
+        if assigned_orders.exists():
+            current_order = assigned_orders.first()  # The first assigned order is considered the "current" order
+
+        # Get the position of the employee in the queue
+        employee_position_in_queue = OrderQueue.objects.filter(is_accepted=False).count() + 1
+
+        if current_order:
+            order = current_order.order
+            current_order_details = {
+                "order_id": order.autoid,
+                "invoice_number": order.invoice_no,
+                "client": order.client_name,
+                "delivery_status": order.delivery_status,
+                "order_status": order.invoice_status,
+                "amount": order.amount,
+                "is_confirmed": current_order.is_accepted,
+                "confirmation_status": "Confirmed" if current_order.is_accepted else "Pending",
+                "position_in_queue": employee_position_in_queue
+            }
+        else:
+            current_order_details = None
+
+        # Prepare the response data
+        data = {
+            "employee_id": employee.employee_id,
+            "employee_name": employee.name,
+            "current_order": current_order_details,
+            "position_in_queue": employee_position_in_queue
+        }
+
+        return Response({
+            "status": "success",
+            "data": data
+        })
+
+    except EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+# views.py
+
+@api_view(["POST"])
+def confirm_order_arrival(request, order_id):
+    try:
+        # Find the order in the queue which is assigned but not confirmed
+        order_queue = OrderQueue.objects.get(order_id=order_id, is_accepted=True)
+
+        # Find the actual order linked to this queue entry
+        order = order_queue.order
+
+        # Confirm that the order has arrived
+
+        order.delivery_status = 'تم التوصيل'  # Mark the order as delivered
+        order.save()
+
+        order_queue.is_completed = True  # Set the is_completed field to True
+        order_queue.save()
+        # Make employee available again
+        employee = order_queue.employee
+        employee.is_available = False
+        employee.has_active_order = False
+        employee.save()
+
+        # Delete the order queue entry, since the order is now confirmed
+        order_queue.delete()
+
+        return Response({"success": True, "message": "Order confirmed as arrived."}, status=200)
+    except OrderQueue.DoesNotExist:
+        return Response({"error": "Order not found or already confirmed."}, status=404)
+
+
+@api_view(["GET"])
+def get_all_confirmed_orders(request):
+    confirmed_orders = SellinvoiceTable.objects.filter(delivery_status='تم التوصيل')
+
+    data = [
+        {
+            "invoice_no": order.invoice_no,
+            "client": order.client_name,
+            "status": order.delivery_status,
+            "employee_id": order.employee_id,
+            "amount": order.amount,
+            "payment_status": order.payment_status,
+            "invoice_date": order.invoice_date.strftime('%Y-%m-%d %H:%M:%S')  # Format the date
+        }
+        for order in confirmed_orders
+    ]
+
+    return Response(data, status=200)
+
+@api_view(["GET"])
+def get_employee_confirmed_orders(request):
+    # Get all orders that have been confirmed as arrived by the employee
+    confirmed_orders = SellinvoiceTable.objects.filter(
+        orderqueue__is_completed=True,
+        delivery_status='تم التوصيل'
+    ).distinct()
+
+    data = [
+        {
+            "invoice_no": order.invoice_no,
+            "client": order.client_name,
+            "status": order.delivery_status,
+            "employee_id": order.employee_id,  # Assuming employee_id is stored in SellinvoiceTable
+            "amount": order.amount,
+            "payment_status": order.payment_status,
+            "invoice_date": order.invoice_date.strftime('%Y-%m-%d %H:%M:%S')  # Format the date
+        }
+        for order in confirmed_orders
+    ]
+
+    return Response(data, status=200)
+
+@api_view(['GET'])
+def get_invoice_data(request, autoid):
+    try:
+        # Fetch the data using the provided autoid (primary key)
+        invoice_data = SellinvoiceTable.objects.get(autoid=autoid)
+        serializer = OrderSerializer(invoice_data)
+        return Response(serializer.data)
+    except SellinvoiceTable.DoesNotExist:
+        return Response({"error": "Invoice not found"}, status=404)
+
+
+@api_view(["GET"])
+def get_archived_orders(request, employee_id):
+    try:
+        # Fetch the orders archived for the specific employee
+        archived_orders = OrderArchive.objects.filter(employee_id=employee_id)
+
+        # If no archived orders found
+        if not archived_orders:
+            return Response({"message": "No archived orders found for this employee."}, status=404)
+
+        # Serialize the archived orders data
+        serialized_orders = [
+            {
+                "order_id": archived_order.order.id,
+                "employee_name": archived_order.employee.name,
+                "delivery_status": archived_order.delivery_status,
+                "is_completed": archived_order.is_completed,
+                "order_date": archived_order.order_date,
+                "completion_date": archived_order.completion_date,
+            }
+            for archived_order in archived_orders
+        ]
+
+        return Response({"archived_orders": serialized_orders})
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(["POST"])
+def accept_payment_req(request, id):
+    """Accept or reject a payment request from a client."""
+    try:
+        # Get loan amount from request body
+        data = request.data
+        loan_amount = Decimal(data.get('loan_amount', 0))
+
+        # Fetch the payment request from the database
+        req = models.PaymentRequestTable.objects.get(autoid=id)
+
+        # Check action type (accept/reject)
+        if data.get('action') == "accept":
+            if loan_amount <= 0:
+                return Response({"error": "Invalid loan amount."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Start a database transaction to ensure atomicity
+            with transaction.atomic():
+                req.accepted_amount = loan_amount
+                req.accepted = True
+                req.rejected = False
+                req.accept_date = timezone.now()
+                req.save()
+
+                # Fetch last balance
+                last_balance = (
+                    models.TransactionsHistoryTable.objects.filter(client_id_id=req.client.clientid)
+                    .order_by("-registration_date")
+                    .first()
+                )
+                last_balance_amount = last_balance.current_balance if last_balance else 0
+
+                # Save the transaction record
+                try:
+                    models.TransactionsHistoryTable.objects.create(
+                        credit=0.0,
+                        debt=loan_amount,
+                        transaction="طلب قيمة مالية",
+                        details="طلب قيمة مالية",
+                        registration_date=timezone.now(),
+                        current_balance=round(last_balance_amount + loan_amount, 2),  # Updated balance
+                        client_id_id=req.client.clientid,  # Client ID
+                    )
+                except Exception as e:
+                    return Response({"error": f"Error in transaction saving: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({"message": "Payment request accepted successfully"})
+
+        elif data.get('action') == "reject":
+            with transaction.atomic():
+                req.rejected = True
+                req.accepted = False
+                req.accepted_amount = 0
+                req.accept_date = timezone.now()
+                req.save()
+
+            return Response({"message": "Payment request has been rejected!"})
+
+        else:
+            return Response({"error": "Invalid action. Action must be 'accept' or 'reject'."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    except models.PaymentRequestTable.DoesNotExist:
+        return Response({"error": "Payment request not found."}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

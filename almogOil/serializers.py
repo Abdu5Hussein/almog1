@@ -164,3 +164,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeesTable
         fields = '__all__'
+
+class EmployeeWithOrderSerializer(serializers.ModelSerializer):
+    orders = OrderSerializer(many=True, read_only=True)  # Assuming there is a related field for orders
+
+    class Meta:
+        model = EmployeesTable
+        fields = ['employee_id', 'name', 'is_available', 'orders']

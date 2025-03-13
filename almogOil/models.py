@@ -920,11 +920,12 @@ class PaymentRequestTable(models.Model):
     autoid = models.AutoField(primary_key=True)
     client = models.ForeignKey(AllClientsTable,on_delete=models.CASCADE)
     requested_amount = models.DecimalField(max_digits=19,decimal_places=4)
-    accepted_amount = models.DecimalField(max_digits=19,decimal_places=4)
+    accepted_amount = models.DecimalField(max_digits=19,decimal_places=4,default=0)
     employee = models.CharField(max_length=100, null=True, blank=True)
     issue_date = models.DateField(auto_now_add=True)
     accept_date = models.DateField(null=True)
     accepted = models.BooleanField(default=False)
+    rejected = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.autoid) +' | '+ self.client.name + ' | '+ str(self.requested_amount)
@@ -986,6 +987,8 @@ class EmployeeQueue(models.Model):
     position = models.PositiveIntegerField()  # Position in the queue
     is_assigned = models.BooleanField(default=False)
     is_available = models.BooleanField(default=False)  # To check if the employee is available
+    assigned_time = models.DateTimeField(null=True, blank=True)  # Track when order was assigned
+
 
 class OrderQueue(models.Model):
     order = models.ForeignKey(SellinvoiceTable, on_delete=models.CASCADE)
@@ -993,3 +996,17 @@ class OrderQueue(models.Model):
     is_accepted = models.BooleanField(default=False)  # Add this field
     is_declined = models.BooleanField(default=False)
     is_completed = models.BooleanField(default=False)  # Track if the order is completed
+    assigned_at = models.DateTimeField(default=timezone.now) # Store assignment time
+    is_assigned = models.BooleanField(default=False)
+from django.db import models
+
+class OrderArchive(models.Model):
+    order = models.ForeignKey('SellinvoiceTable', on_delete=models.CASCADE)  # Reference to the original order
+    employee = models.ForeignKey('EmployeesTable', on_delete=models.CASCADE)  # Employee who completed the order
+    delivery_status = models.CharField(max_length=255)  # Delivery status (e.g., 'تم التسليم')
+    is_completed = models.BooleanField(default=False)  # Status of completion
+    order_date = models.DateTimeField(auto_now_add=True)  # Timestamp when the order was archived
+    completion_date = models.DateTimeField(auto_now=True)  # Timestamp when the order was completed
+
+    def __str__(self):
+        return f"Order {self.order.id} completed by {self.employee.name}"

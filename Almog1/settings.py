@@ -63,6 +63,9 @@ INSTALLED_APPS = [
     'rest_framework',
     "corsheaders",
     'channels',
+    'django_celery_beat',
+    'background_task',
+    'django_q',
 ]
 
 
@@ -218,8 +221,20 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Celery Configuration
+# settings.py
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Replace with your Redis URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_TIMEZONE = 'Africa/Cairo'  # Or your timezone
+
+
 #caching
 CACHES = {
+    
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
@@ -232,4 +247,14 @@ CHANNEL_LAYERS = {
             "hosts": [('127.0.0.1', 6379)],
         },
     },
+}
+Q_CLUSTER = {
+    'name': 'OrderAssignmentQueue',  # Name of the cluster
+    'workers': 4,  # Number of worker processes
+    'timeout': 90,  # Timeout for tasks
+    'retry': 120,  # Retry failed tasks after 120 seconds
+    'queue_limit': 50,  # Maximum number of tasks in the queue
+    'bulk': 10,  # Number of tasks to process in bulk
+    'orm': 'default',  # Use Django's ORM for the task broker
+    'sync': False,  # Run tasks asynchronously
 }

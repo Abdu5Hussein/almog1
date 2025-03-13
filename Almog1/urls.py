@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from almogOil.views import addMoreCatView,notify_user,notifications_page,feedback_details, return_items_add_items, return_items_report_view, return_items_view, cancel_sell_invoice,Sell_invoice_create_item,fetch_feedback_messages,support_dashboard,fetch_all_feedback, close_feedback,delete_feedback,add_message_to_feedback,feedback_by_user_id, SendMessageView, GetChatMessagesView, MarkMessageAsReadView,SupportChatMessageView, create_conversation, create_sell_invoice, deliver_sell_invoice, fetch_sell_invoice_items, fetch_sellinvoices, filter_sellinvoices, get_mainItem_last_pno, get_sellinvoice_no, prepare_sell_invoice, sell_invoice_add_items, sell_invoice_management,sell_invoice_add_invoice, sell_invoice_prepare_report,sell_invoice_search_storage,buy_invoice_add_items,filter_buyinvoices,fetch_buyinvoices,Buyinvoice_management,delete_buyinvoice_cost, BuyInvoiceItemCreateView, BuyInvoiceItemsView, BuyInvoicesAdd, ClientsManagement, ClientsReports, ImageView, ImportExcel, ModelView, OemNumbers, SectionAndSubSection, StoragePlaces, StorageManagement, StorageReports, account_statement, add_lost_damaged, buyInvoice_edit_prices, buyInvoice_excell, calculate_cost, check_items, confirm_temp_invoice, cost_management, create_buy_invoice, create_client_record, create_cost_record, create_storage_record, delete_buy_invoice_item, delete_client_record, delete_lost_damaged, delete_storage_record, fetch_costs, fetch_invoice_items, fetch_lost_damaged_data, filter_all_clients, filter_all_storage, filter_clients, filter_clients_input, filter_lost_damaged, generate_pdf,MoreDetails,filter_items, get_account_statement, get_all_clients, get_all_storage, get_buyinvoice_no, get_clients, get_invoice_items, get_last_reciept_no, get_subsections, manage_buy_invoice, payment_installments, process_add_data, process_buyInvoice_excel, process_data, process_excel_and_import,manage_countries,manage_companies,SubCat,MainCat,get_item_data,edit_main_item,delete_record,create_main_item,Measurements ,MainCat,LostDamaged,get_data,DataInventory,TestView, UsersView,AddUserView , LogInView,HomeView,ProductsDetails,UpdateUserView,ProductsReports,EditPrices,ProductsMovementReport,PartialProductsReports, ProductsBalance, process_temp_confirm, sell_invoice_storage_management, temp_confirm, update_buyinvoiceitem, update_client_record, update_itemvalue, update_storage, validate_sell_invoice
-from almogOil.api_views import filter_Items,pending_orders,available_employees,complete_delivery,assign_orders,accept_order,skip_order,get_employee_order,update_delivery_availability,decline_order,support_conversations,get_models,get_engines,get_main_types,get_sub_types,get_delivery_invoices,update_invoice_status, get_conversation_messages, send_message,get_all_clients1,start_conversation,respond_to_feedback,send_feedback
+from almogOil.api_views import filter_Items,pending_orders,check_assign_statusss,get_available_employees,get_employee_orders,available_employees,check_assign_status,complete_delivery,assign_orders,accept_order,skip_order,get_employee_order,update_delivery_availability,decline_order,support_conversations,get_models,get_engines,get_main_types,get_sub_types,get_delivery_invoices,update_invoice_status, get_conversation_messages, send_message,get_all_clients1,start_conversation,respond_to_feedback,send_feedback
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
@@ -188,8 +188,9 @@ urlpatterns = [
     path('item/<int:item_id>/update-sub/',api_views.UpdateItemsSubmainApiView,name='update-sub'),
     path('item/<int:item_id>/update-model/',api_views.UpdateItemsModelApiView,name='update-model'),
     path('item/<int:item_id>/update-engine/',api_views.UpdateItemsEngineApiView,name='update-engine'),
+    path('assign-order-manual/', views.assign_order_manual, name='assign-order'),
     path('feedback_details/<int:feedback_id>/', feedback_details, name='feedback_details'),
-    path('get-employee-order/<int:employee_id>/', api_views.get_employee_order, name='get-employee-order'),
+    path('get-employee-orders/<int:employee_id>/', api_views.get_employee_order, name='get-employee-order'),
     path('send-notification/', notify_user, name='send_firebase_notification'),
     path('notifications/', notifications_page, name='notifications_page'),
     path('sell-invoice/return-items-page/', return_items_view, name='return-items-view'),
@@ -206,10 +207,30 @@ urlpatterns = [
     path('employee/set_available/', api_views.set_available, name='set_available'),
     path('employee/set_unavailable/', api_views.set_unavailable, name='set_unavailable'),
     path('available-employees/', available_employees, name='available_employees'),
-     path('employee/clear_queue/', api_views.clear_queue, name='clear_queue'),
+    path('employee/clear_queue/', api_views.clear_queue, name='clear_queue'),
+    path('check-assign-status/', check_assign_status, name='check_assign_status'),
+     path('api/available-employees/', api_views.get_available_employees, name='available_employees'),
+    path('get-employee-orders/<int:employee_id>/', get_employee_orders, name='get_employee_orders'),
     path('deliver-order/<int:queue_id>/', api_views.deliver_order, name='deliver-order'),
     path('products/add-description',views.main_item_add_json_description,name="add-description"),
+    path('confirm_order/<int:order_id>/', api_views.confirm_order, name='confirm_order'),
+    path('decline_order/<int:order_id>/', api_views.decline_order, name='decline_order'),
+    path('monitor-order-assignments/', api_views.monitor_order_assignments, name='monitor_order_assignments'),
+    path("check-assign-statusss/<int:employee_id>/", check_assign_statusss, name="check_assign_status"),
+    path('employee_order_info/<int:employee_id>/', api_views.employee_order_info, name='employee_order_info'),
+    path('confirm_order_arrival/<int:order_id>/', api_views.confirm_order_arrival, name='confirm_order_arrival'),
+    path('confirmed_orders/', api_views.get_all_confirmed_orders, name='get_all_confirmed_orders'),
+    path('complete_order/<int:autoid>/', api_views.complete_order, name='complete_order'),
+    path('invoice/<int:autoid>/', api_views.get_invoice_data, name='get_invoice_data'),
+    path('api/employees/', views.get_available_employees, name='get-employees'),
+    path('api/orders/', views.get_unassigned_orders, name='get-orders'),
+    path('assign-order/', views.assign_order_page, name='assign-order-page'),
+    path('api/orders/', views.get_unassigned_orders, name='get-orders'),
+    path('archived-orders/<int:employee_id>/', api_views.get_archived_orders, name='get_archived_orders'),
+    path('api/employee_current_order_info/<int:employee_id>/', api_views.employee_current_order_info, name='employee_current_order_info'),
     path('api/products/<int:id>/add-json-description',api_views.mainitem_add_json_desc,name="add-json-description"),
+    path('api/payment-requests/<int:id>/accept',api_views.accept_payment_req,name="accept_payment_request"),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode
