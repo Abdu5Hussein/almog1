@@ -31,6 +31,7 @@ class AllClientsTable(models.Model):
     subtype = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     client_stop = models.BooleanField(blank=True, null=True)
     curr_flag = models.BooleanField(blank=True, null=True)
+    fcm_token = models.TextField(null=True, blank=True)
     permissions = models.CharField(max_length=400, db_collation='Arabic_CI_AS', blank=True, null=True)
     other = models.CharField(max_length=400, db_collation='Arabic_CI_AS', blank=True, null=True)
     last_transaction_details = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -765,6 +766,7 @@ class EmployeesTable(models.Model):
     bank_iban_no = models.CharField(blank=True, null=True, max_length=100)
     is_available = models.BooleanField(default=True)
     has_active_order = models.BooleanField(default=False)
+    fcm_token = models.TextField(null=True, blank=True)
 
 
     # New fields
