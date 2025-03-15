@@ -3,6 +3,8 @@ from decimal import Decimal
 from .Tasks import assign_orders
 import json
 import os
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from django_q.tasks import async_task
 from django.conf import settings
 from django.shortcuts import redirect, render
@@ -59,17 +61,10 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 from almogOil import serializers,models
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password, check_password
 
 
-# Path to your Firebase Admin SDK JSON key file
-FIREBASE_CREDENTIALS_PATH = "/home/django/almog1/almogoilerpsys-firebase-adminsdk-fbsvc-367f5e9e17.json"
 
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
-firebase_admin.initialize_app(cred)
-
-# Define your custom User model or replace it with appropriate logic
-# from .models import YourCustomUserModel  # Update this line to use your new model if needed
 
 
 def send_push_notification(title, body, token):
@@ -2015,6 +2010,14 @@ def create_client_record(request):
         data = json.loads(request.body)
         if not data.get('phone'):
             return JsonResponse({'status': 'error', 'message': 'Phone number is required.'}, status=400)
+
+        existing_phones = User.objects.values_list('username', flat=True)  # Extracts a list of phone numbers
+        if data.get('phone') in existing_phones:
+            return JsonResponse({'status': 'error', 'message': 'Phone number already exists.'}, status=400)
+
+        password = make_password(data.get('password'))
+        is_correct = check_password(data.get('password'), password)  # Verify the hash
+
         # Create a new MainItem instance
         new_item = AllClientsTable(
             name=data.get('client_name', '').strip() or None,  # Ensure name is not empty
@@ -2025,7 +2028,7 @@ def create_client_record(request):
             mobile=data.get('mobile', '').strip() or None,
             last_transaction_amount=data.get('last_transaction', '0').strip() or '0',  # Default to '0' if missing
             accountcurr=data.get('currency', '').strip() or None,
-            type=data.get('account_type', '').strip() or None,
+            type="عميل",
             category=data.get('sub_category', '').strip() or None,
             loan_period=int(data.get('limit', '0')) if str(data.get('limit', '0')).isdigit() else None,
             loan_limit=float(data.get('limit_value', '0.0')) if data.get('limit_value') else None,
@@ -2036,10 +2039,10 @@ def create_client_record(request):
             permissions=data.get('permissions', '').strip() or None,
             other=data.get('other', '').strip() or None,
             username=data.get('phone'),
-            password="mypassword"
+            password=password,
         )
         if new_item:
-            user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password="mypassword")
+            user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=password)
 
             # Validate before saving
             try:
@@ -2056,7 +2059,7 @@ def create_client_record(request):
             return JsonResponse({'status': 'error', 'message': f'Validation Error: {e.message_dict}'},status=400)
 
 
-        return JsonResponse({'status': 'success', 'message': 'Record created successfully!'})
+        return JsonResponse({'status': 'success', 'message': 'Record created successfully!','p':password,'is_correct': is_correct})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'},status=400)
 
@@ -4064,23 +4067,21 @@ def validate_sell_invoice(request):
 def deliver_sell_invoice(request):
     if request.method == "POST":
         try:
-            # Get the data from the request body
             data = json.loads(request.body.decode('utf-8'))
+            # Extract the data from the request.
             biller = data.get('biller')
             sent = data.get('sent')
             office = data.get('office')
             size = data.get('size')
             deliverer = data.get('deliverer')
-            deliverer_date = data.get('deliverer_date',None)
+            deliverer_date = data.get('deliverer_date', None)
             invoice_id = data.get('invoice_id')
             bill = data.get('bill')
             status = data.get('status')
             final_note = data.get('final_note')
 
-            # Get the invoice object
             invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
 
-           # Update invoice fields
             invoice.biller_name = biller
             invoice.notes = final_note
             invoice.sent_by = sent
@@ -4091,16 +4092,32 @@ def deliver_sell_invoice(request):
             invoice.office_no = bill
             invoice.invoice_status = status
             invoice.delivery_status = "جاري التوصيل" if invoice.mobile else "في المحل"
- # Schedule the background task using Django Q (will run every 60 seconds)
-            async_task('almogOil.Tasks.assign_orders') # Adjust path accordingly
-            # Save the updated invoice
+
             invoice.save()
 
+            # Send notification to the user associated with this invoice.
+            user_id = invoice.client # Make sure this field exists on your model.
+            room_group_name = f'user_{user_id}'
+            message = f"تم تحديث حالة الفاتورة رقم {invoice_id} إلى {status}."
+
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    "type": "send_notification",
+                    "message": message,
+                }
+            )
+
+            async_task('almogOil.Tasks.assign_orders')  # Adjust as needed
+
             return JsonResponse({'status': 'success', 'message': 'Invoice updated successfully'})
-        except invoice.DoesNotExist:
+
+        except SellinvoiceTable.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Invoice not found'}, status=404)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 @csrf_exempt
 def cancel_sell_invoice(request):
@@ -4669,3 +4686,8 @@ def assign_order_page(request):
 
 def invoice_notifications(request):
     return render(request, 'WStest.html')
+
+def sources_management_View(request):
+    context = {}
+    return render(request,'sources-management.html',context)
+

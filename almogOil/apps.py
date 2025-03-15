@@ -6,5 +6,9 @@ class AlmogOilConfig(AppConfig):
     name = 'almogOil'
 
     def ready(self):
+        # Schedule the background task when Django starts
         from almogOil.Tasks import schedule_assign_orders
-        schedule_assign_orders()  # Ensure the task is scheduled when Django starts
+        schedule_assign_orders()
+
+        # Ensure signals are imported so that they register
+        import almogOil.signals  # noqa

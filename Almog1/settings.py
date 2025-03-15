@@ -17,8 +17,9 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
+FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, '/home/django/almog1/almogoilltd-firebase-adminsdk-fbsvc-54f21c0f8d.json')
+# Quick-start develolmog12345
+# pment settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -73,8 +74,11 @@ ASGI_APPLICATION = "Almog1.asgi.application"
 
 
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],  # Assuming Redis is running locally
+        },
     },
 }
 # Configure JWT settings
@@ -244,10 +248,11 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [('127.0.0.1', 6379)],  # Local Redis server
         },
     },
 }
+
 Q_CLUSTER = {
     'name': 'OrderAssignmentQueue',  # Name of the cluster
     'workers': 4,  # Number of worker processes

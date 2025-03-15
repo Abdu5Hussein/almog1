@@ -529,7 +529,7 @@
       <!-- Form Section with 5 input columns -->
       <div class="custom-form">
         <div class="title-container">
-          <h3>بيانات العملاء</h3>
+          <h3>بيانات الموردين</h3>
         </div>
         <form>
           {% csrf_token %}
@@ -539,7 +539,7 @@
               <div class="input-group mb-1">
                 <div class="width-73 d-flex align-items-center">
                   <label for="pname-arabic" class="form-label"
-                    >اسم العميل</label
+                    >اسم المورد</label
                   >
                 </div>
 
@@ -554,7 +554,7 @@
               <div class="input-group mb-1">
                 <div class="width-73 d-flex align-items-center">
                   <label for="pname-english" class="form-label"
-                    >رقم العميل</label
+                    >رقم المورد</label
                   >
                 </div>
                 <input
@@ -865,14 +865,14 @@
           data: [], // Placeholder, will be loaded dynamically
           columns: [
             {
-              title: "رقم العميل",
+              title: "رقم المورد",
               field: "clientid",
               sorter: "number",
               visible: true,
               width: 150,
             },
             {
-              title: "اسم العميل",
+              title: "اسم المورد",
               field: "name",
               sorter: "string",
               visible: true,

@@ -25,6 +25,7 @@ from almogOil.api_views import filter_Items,pending_orders,check_assign_statusss
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
+from almogOil import consumers
 from almogOil import api_views,views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -232,9 +233,20 @@ urlpatterns = [
     path('api/products/<int:id>/add-json-description',api_views.mainitem_add_json_desc,name="add-json-description"),
     path('api/payment-requests/<int:id>/accept',api_views.accept_payment_req,name="accept_payment_request"),
     path('api/filter-return-requests/', api_views.filter_return_reqs, name='filter_return_reqs'),
+    path('sources/management',views.sources_management_View,name='sources_management_View'),
+    path('api/create_source',api_views.create_source_record,name="create_source_record"),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+
+
+
+
+websocket_urlpatterns = [
+    path('ws/notifications/', consumers.NotificationConsumer.as_asgi()),
+]

@@ -1,18 +1,16 @@
-# asgi.py
 import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from django.urls import re_path
-from almogOil.consumers import NotificationConsumer
+from almogOil.routing import websocket_urlpatterns  # Import your WebSocket routes
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Almog1.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'almog1.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
-        URLRouter([
-            re_path(r"^/ws/notifications/$", NotificationConsumer.as_asgi()),  # Add WebSocket URL
-        ])
+        URLRouter(
+            websocket_urlpatterns  # Add your WebSocket route here
+        )
     ),
 })

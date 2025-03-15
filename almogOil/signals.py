@@ -1,29 +1,28 @@
-# notifications/signals.py
-
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from .models import SellInvoiceItemsTable  # Adjust the import if your model is elsewhere
+from .models import SellinvoiceTable  # Adjust as needed
 
-@receiver(post_save, sender=SellInvoiceItemsTable)
+@receiver(post_save, sender=SellinvoiceTable)
 def notify_invoice_status_change(sender, instance, created, **kwargs):
-    # You might choose not to send a notification on creation,
-    # or you could add extra logic here if needed.
     if created:
-        return
+        return  # Optionally skip notification on creation
 
-    # If you want to notify only when a particular field changes,
-    # you could compare the previous value to the new value.
-    # For now, we notify every time the record is updated.
+    # Use the 'client' field from the model as the identifier.
+    client_id = instance.client
+    if not client_id:
+        return  # If there's no client identifier, don't send a notification
+
+    # Group name for this client
+    room_group_name = f'user_{client_id}'
+    message = f"تم تحديث حالة الفاتورة رقم {instance.invoice_no} إلى {instance.invoice_status}."
+
     channel_layer = get_channel_layer()
-    message = f"Invoice item {instance.pk} has been updated."
-    
-    # Send the notification to the group 'notifications'
     async_to_sync(channel_layer.group_send)(
-        "notifications",  # This should match the group name in your consumer
+        room_group_name,
         {
-            "type": "send_notification",  # This maps to a method in your consumer
+            "type": "send_notification",
             "message": message,
         }
     )

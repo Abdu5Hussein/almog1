@@ -33,6 +33,9 @@ from django.db import transaction
 from django_q.tasks import async_task
 from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password, check_password
+from rest_framework.exceptions import ValidationError
 
 @api_view(["POST"])
 def sign_in(request):
@@ -1919,3 +1922,62 @@ def filter_return_reqs(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def create_source_record(request):
+    data = request.data  # Use DRF's request.data
+
+    # Ensure the phone number is provided
+    if not data.get('phone'):
+        return Response({'status': 'error', 'message': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if the phone number already exists
+    existing_phones = User.objects.values_list('username', flat=True)
+    if data.get('phone') in existing_phones:
+        return Response({'status': 'error', 'message': 'Phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Hash the password
+    password = make_password(data.get('password'))
+    is_correct = check_password(data.get('password'), password)
+
+    # Create and save the user
+    try:
+        user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=password)
+        user.full_clean()  # Validate user fields
+        user.save()
+    except ValidationError as e:
+        return Response({'status': 'error', 'message': f'Validation Error: {e.message_dict}'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create a new source record (AllSourcesTable)
+    new_item = models.AllSourcesTable(
+        name=data.get('client_name', '').strip() or None,
+        address=data.get('address', '').strip() or None,
+        email=data.get('email', '').strip() or None,
+        website=data.get('website', '').strip() or None,
+        phone=data.get('phone', '').strip() or None,
+        mobile=data.get('mobile', '').strip() or None,
+        last_transaction_amount=data.get('last_transaction', '0').strip() or '0',
+        accountcurr=data.get('currency', '').strip() or None,
+        type="مورد",
+        category=data.get('sub_category', '').strip() or None,
+        loan_period=int(data.get('limit', '0')) if str(data.get('limit', '0')).isdigit() else None,
+        loan_limit=float(data.get('limit_value', '0.0')) if data.get('limit_value') else None,
+        loan_day=data.get('installments') or None,
+        subtype=data.get('types', '').strip() or None,
+        client_stop=True if str(data.get('client_stop', '0')).lower() in ['on', '1', 'true'] else False,
+        curr_flag=bool(int(data.get('curr_flag', '0'))) if str(data.get('curr_flag', '0')).isdigit() else False,
+        permissions=data.get('permissions', '').strip() or None,
+        other=data.get('other', '').strip() or None,
+        username=data.get('phone'),
+        password=password,
+    )
+
+    # Validate and save the new source record (AllSourcesTable)
+    try:
+        new_item.full_clean()  # Ensure the object is valid before saving
+        new_item.save()
+    except ValidationError as e:
+        return Response({'status': 'error', 'message': f'Validation Error: {e.message_dict}'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Return success response
+    return Response({'status': 'success', 'message': 'Record created successfully!', 'p': password, 'is_correct': is_correct}, status=status.HTTP_201_CREATED)

@@ -9,6 +9,9 @@ from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from django.utils.timezone import now
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .firebase_config import send_firebase_notification
 
 class AllClientsTable(models.Model):
     clientid = models.AutoField(primary_key=True)
@@ -1010,3 +1013,12 @@ class OrderArchive(models.Model):
 
     def __str__(self):
         return f"Order {self.order.id} completed by {self.employee.name}"
+
+@receiver(post_save, sender=SellinvoiceTable)
+def send_order_status_notification(sender, instance, **kwargs):
+    if instance.client and instance.client.fcm_token:
+        send_firebase_notification(
+            instance.client.fcm_token,
+            "Order Update",
+            f"Your order #{instance.invoice_no} is now {instance.invoice_status}."
+        )
