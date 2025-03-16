@@ -758,6 +758,28 @@
                   <option value="وكيل"  selected>وكيل</option>
                 </select>
               </div>
+              <div class="input-group mb-1">
+                <div class="width-80 d-flex justify-content-between align-items-center">
+                  <label for="reserved-balance" class="form-label">كلمة السر</label>
+                </div>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  name="password"
+                />
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-80 d-flex justify-content-between align-items-center">
+                  <label for="reserved-balance" class="form-label">تاكيد كلمة السر</label>
+                </div>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password2"
+                  name="password2"
+                />
+              </div>
             </div>
 
             <!-- Fifth column -->
@@ -1147,6 +1169,26 @@
 
         function createNewRecord() {
 
+          const password = document.getElementById("password")?.value;
+          const confirm_password = document.getElementById("password2")?.value;
+          const phone = document.getElementById("phone-no")?.value;
+          const name = document.getElementById("cname-arabic")?.value;
+
+          if (!password || !confirm_password){
+            alert("الرجاء ادخال وتاكيد كلمة السر");
+            return
+          }
+          if (!phone || !name){
+            alert("الرجاء ادخال اسم ورقم هاتف العميل");
+            return
+          }
+
+          if (password!=confirm_password){
+            alert(" !فشل تاكيد كلمة السر , ادخال مختلف ");
+            return
+          }
+
+
           event.preventDefault();
 
           // Get selected country, skip if index is 0 (reset value)
@@ -1220,6 +1262,7 @@
             other: document.getElementById("text-area")?.value || "",
             permissions: permissions,
             curr_flag: cuurencyFlagValue,
+            password: document.getElementById("password")?.value || null,
           };
           console.log(data);
 

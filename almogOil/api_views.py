@@ -1942,7 +1942,7 @@ def create_source_record(request):
 
     # Create and save the user
     try:
-        user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=password)
+        user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=data.get('password'))
         user.full_clean()  # Validate user fields
         user.save()
     except ValidationError as e:

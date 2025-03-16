@@ -228,6 +228,7 @@ urlpatterns = [
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
     path('assign-order/', views.assign_order_page, name='assign-order-page'),
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
+    path('test-send-notification/', views.test_send_notification, name='test_send_notification'),
     path('archived-orders/<int:employee_id>/', api_views.get_archived_orders, name='get_archived_orders'),
     path('api/employee_current_order_info/<int:employee_id>/', api_views.employee_current_order_info, name='employee_current_order_info'),
     path('api/products/<int:id>/add-json-description',api_views.mainitem_add_json_desc,name="add-json-description"),

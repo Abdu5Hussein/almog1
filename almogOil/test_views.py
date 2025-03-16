@@ -1017,3 +1017,31 @@ class CreateClientRecordTestCase(TestCase):
         self.assertEqual(response_data['status'], 'error')
 
 
+from unittest.mock import patch
+from almogOil.firebase_config import send_firebase_notification
+
+class NotificationTestCase(TestCase):
+    @patch('almogOil.firebase_config.messaging.send')  # Mock the Firebase send function
+    def test_order_status_notification(self, mock_send):
+        # Create a client and store a fake FCM token
+        client = models.AllClientsTable.objects.create(name="John Doe", fcm_token="fake_fcm_token")
+
+        # Create an invoice for the client
+        invoice = models.SellinvoiceTable.objects.create(
+            client=client,
+            invoice_no="12345",
+            invoice_status="Pending"
+        )
+
+        # Change the order status to trigger the notification
+        invoice.invoice_status = "Shipped"
+        invoice.save()
+
+        # Assert that the notification send function is called once
+        mock_send.assert_called_once()
+
+        # Check if the message sent has the correct title and body
+        args, kwargs = mock_send.call_args
+        message = kwargs.get('message')
+        self.assertEqual(message.notification.title, "Order Update")
+        self.assertEqual(message.notification.body, "Your order #12345 is now Shipped.")

@@ -2008,8 +2008,8 @@ from django.core.exceptions import ValidationError
 def create_client_record(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        if not data.get('phone'):
-            return JsonResponse({'status': 'error', 'message': 'Phone number is required.'}, status=400)
+        if not data.get('phone') or not data.get('password'):
+            return JsonResponse({'status': 'error', 'message': 'Phone number and Password are required.'}, status=400)
 
         existing_phones = User.objects.values_list('username', flat=True)  # Extracts a list of phone numbers
         if data.get('phone') in existing_phones:
@@ -2042,7 +2042,7 @@ def create_client_record(request):
             password=password,
         )
         if new_item:
-            user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=password)
+            user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=data.get('password'))
 
             # Validate before saving
             try:
@@ -4691,3 +4691,30 @@ def sources_management_View(request):
     context = {}
     return render(request,'sources-management.html',context)
 
+
+from .firebase_config import send_firebase_notification
+
+def test_send_notification(request):
+    try:
+        # Fetch the client you want to notify (example: client with id=14)
+        client = AllClientsTable.objects.get(clientid=14)  # Ensure 'clientid' is correct
+
+        # Create a mock invoice to simulate a status change
+        invoice = SellinvoiceTable.objects.create(
+            client=client,
+            invoice_no="12345",
+            invoice_status="تم التوصيل"
+        )
+
+        # Send notification
+        if client.fcm_token:  # Check if the client has a valid FCM token
+            send_firebase_notification(
+                client.fcm_token,
+                "Order Update",
+                f"Your order #{invoice.invoice_no} is now {invoice.invoice_status}."
+            )
+            return JsonResponse({"status": "Notification sent"})
+        else:
+            return JsonResponse({"status": "Client FCM token not available"}, status=400)
+    except AllClientsTable.DoesNotExist:
+        return JsonResponse({"status": "Client not found"}, status=404)
