@@ -704,6 +704,7 @@
             { title: "عدد القطع", field: "quantity", width: 120 },
             { title: "الاجمالي", field: "amount", width: 150 },
             { title: "العميل", field: "client", width: 120 },
+            { title: "اسم العميل", field: "client_name", width: 120 },
         ],
         movableColumns: true, // Allow columns to be moved
         resizableRows: true,  // Allow rows to be resized
@@ -725,9 +726,18 @@
                 console.error('Error fetching data:', error);
             }).finally(()=>{
                 updateInput('total',calculateColumnSum('amount') + " دل ");
+                scrollToLastRow();
             });
     }
     fetchData();
+    function scrollToLastRow() {
+      return_table.setPage(return_table.getPageMax()).then(() => {
+          var lastRow = return_table.getRows().pop();
+          if (lastRow) {
+              return_table.scrollToRow(lastRow, "bottom").catch(err => console.warn("Scroll Error:", err));
+          }
+      });
+    }
     function updateInput(id,value){
         document.getElementById(id).value = value;
     }
@@ -846,6 +856,8 @@
           })
           .catch((error) => {
             console.error("Error fetching filtered data:", error);
+          }).finally(()=>{
+            scrollToLastRow();
           });
       }
 
@@ -865,6 +877,71 @@
           inputElement.addEventListener("input", applyFilters);
         }
       });
+      return_table.on("rowClick", function (e, row) {
+          console.log("Row clicked after data update:", row.getData());
+          const clickedId = row.getData().autoid; // Get pno of the clicked row
+          openWindow("/return-permissions/" + clickedId + "/profile/");
+        });
+      let childWindows = [];
+      function openWindow(url,width = 600,height = 700) {
+        // Get the parent window's dimensions and position
+        const parentWidth = window.innerWidth;
+        const parentHeight = window.innerHeight;
+        const parentLeft = window.screenX;
+        const parentTop = window.screenY;
+
+        // Calculate the center position for the child window
+        const left = parentLeft + (parentWidth - width) / 2;
+        const top = parentTop + (parentHeight - height) / 2;
+
+        // Open a new child window
+        const childWindow = window.open(
+          url,
+          "_blank",
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+
+        if (!childWindow) {
+          alert("Pop-up blocked! Please allow pop-ups for this website.");
+          return;
+        }
+
+        /* // Set the child window's size and disable resizing by enforcing it every time it's resized
+                      childWindow.addEventListener('resize', () => {
+                        // Enforce fixed size by resetting the size after any resize attempt
+                        childWindow.resizeTo(width, height);
+                      });*/
+
+        // Add the new child window to the array
+        childWindows.push(childWindow);
+
+        // Monitor the child window's state
+        const monitorChild = setInterval(() => {
+          if (childWindow.closed) {
+            // Remove the closed window from the array
+            childWindows = childWindows.filter((win) => win !== childWindow);
+            clearInterval(monitorChild);
+          }
+        }, 300);
+
+        /*// Focus all child windows periodically
+                      setInterval(() => {
+                        childWindows.forEach(win => {
+                          if (!win.closed) {
+                            win.focus();
+                          }
+                        });
+                      }, 500);*/
+
+        // Close all child windows when the parent is closed
+        window.onbeforeunload = function () {
+          childWindows.forEach((win) => {
+            if (!win.closed) {
+              win.close();
+            }
+          });
+        };
+      }
     </script>
   </body>
 </html>

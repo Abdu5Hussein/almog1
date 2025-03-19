@@ -228,14 +228,17 @@ urlpatterns = [
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
     path('assign-order/', views.assign_order_page, name='assign-order-page'),
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
-    path('test-send-notification/', views.test_send_notification, name='test_send_notification'),
+    path('api/add-to-cart/', views.AddToCartView.as_view(), name='add-to-cart'),
     path('archived-orders/<int:employee_id>/', api_views.get_archived_orders, name='get_archived_orders'),
     path('api/employee_current_order_info/<int:employee_id>/', api_views.employee_current_order_info, name='employee_current_order_info'),
     path('api/products/<int:id>/add-json-description',api_views.mainitem_add_json_desc,name="add-json-description"),
     path('api/payment-requests/<int:id>/accept',api_views.accept_payment_req,name="accept_payment_request"),
     path('api/filter-return-requests/', api_views.filter_return_reqs, name='filter_return_reqs'),
     path('sources/management',views.sources_management_View,name='sources_management_View'),
+    path('register_fcm/', api_views.register_fcm_token, name='register_fcm_token'),
+    path('send_notifications/', api_views.send_notification, name='send_notification'),
     path('api/create_source',api_views.create_source_record,name="create_source_record"),
+    path('return-permissions/<int:id>/profile/',views.return_permission_profile,name="return_permission-profile"),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

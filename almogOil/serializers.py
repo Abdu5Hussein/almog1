@@ -1,7 +1,7 @@
 # serializers.py
 from rest_framework import serializers
 from . import models
-from .models import ChatMessage, SupportChatMessageSys, SellinvoiceTable,SupportChatConversation, AllClientsTable, Feedback,EmployeesTable
+from .models import ChatMessage, SupportChatMessageSys, CartItem,SellinvoiceTable,SupportChatConversation, AllClientsTable, Feedback,EmployeesTable
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -124,6 +124,8 @@ class SellInvoiceSerializer(serializers.ModelSerializer):
 
 
 class ReturnPermissionSerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(source="client.name", read_only=True)
+
     class Meta:
         model = models.return_permission
         fields = "__all__"  # Include all fields
@@ -171,3 +173,9 @@ class EmployeeWithOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeesTable
         fields = ['employee_id', 'name', 'is_available', 'orders']
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = '__all__'

@@ -98,13 +98,12 @@ aria-hidden="true"
                 <tr>
                   <td>
                     {% if image.image_obj %}
-                    {{ image.image_obj.url }}
                     <img
-                      src="{{ image.image_obj }}"
+                      src="{{ image.image_obj.url }}"
                       alt="Product Image"
                       class="img-fluid"
                       width="100"
-                      onclick="openImageModal('{{ image.image.url }}')"
+                      onclick="openImageModal('{{ image.image_obj.url }}')"
                       style="cursor: pointer;"
                     />
                     {% else %}
@@ -122,8 +121,8 @@ aria-hidden="true"
                 </tr>
                 {% endfor %}
               </tbody>
-              
-              
+
+
         </tbody>
       </table>
     </div>
@@ -184,14 +183,14 @@ aria-hidden="true"
         document.addEventListener('DOMContentLoaded', function () {
           const deleteForms = document.querySelectorAll('.delete-form');
           const successMessageDiv = document.getElementById('success-message');
-      
+
           deleteForms.forEach(form => {
             form.addEventListener('submit', function (e) {
               e.preventDefault();
               const deleteId = this.querySelector('input[name="delete-id"]').value;
               const csrfToken = '{{ csrf_token }}';
               const row = this.closest('tr');
-      
+
               if (confirm('Are you sure you want to delete this image?')) {
                 fetch('', { // Empty URL sends the request to the current view
                   method: 'POST',
@@ -206,11 +205,11 @@ aria-hidden="true"
                     if (data.status === 'success') {
                       // Remove the row from the table
                       row.remove();
-      
+
                       // Show success message
                       successMessageDiv.textContent = data.message;
                       successMessageDiv.classList.remove('d-none');
-      
+
                       // Hide the success message after 3 seconds
                       setTimeout(() => {
                         successMessageDiv.classList.add('d-none');
@@ -234,7 +233,7 @@ aria-hidden="true"
         if (productId) {
           document.getElementById("product-id").value = productId;
         }
-        
+
         });
         function openImageModal(imageUrl) {
           const modalImage = document.getElementById('modalImage');
@@ -245,8 +244,8 @@ aria-hidden="true"
           viewImageModal.show();
   }
       </script>
-      
-      
+
+
     <!-- Script for handling image editing -->
   </body>
 </html>

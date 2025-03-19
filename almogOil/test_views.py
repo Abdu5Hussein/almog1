@@ -1,7 +1,10 @@
+from decimal import Decimal
 from django.test import TestCase
 from django.urls import reverse
 from almogOil import models
 import json
+from django.utils.timezone import now
+
 
 class TestViews(TestCase):
 
@@ -983,7 +986,8 @@ class CreateClientRecordTestCase(TestCase):
             'curr_flag': '1',
             'permissions': 'Read, Write',
             'other': 'None',
-            'username': 'client'
+            'username': 'client',
+            'password':'12345'
         }
         response = self.client.post(self.url, json.dumps(data), content_type='application/json')
 
@@ -1020,28 +1024,503 @@ class CreateClientRecordTestCase(TestCase):
 from unittest.mock import patch
 from almogOil.firebase_config import send_firebase_notification
 
-class NotificationTestCase(TestCase):
-    @patch('almogOil.firebase_config.messaging.send')  # Mock the Firebase send function
-    def test_order_status_notification(self, mock_send):
-        # Create a client and store a fake FCM token
-        client = models.AllClientsTable.objects.create(name="John Doe", fcm_token="fake_fcm_token")
+# class NotificationTestCase(TestCase):
+#     @patch('almogOil.firebase_config.messaging.send')  # Mock the Firebase send function
+#     def test_order_status_notification(self, mock_send):
+#         # Create a client and store a fake FCM token
+#         client = models.AllClientsTable.objects.create(name="John Doe", fcm_token="fake_fcm_token")
 
-        # Create an invoice for the client
-        invoice = models.SellinvoiceTable.objects.create(
-            client=client,
-            invoice_no="12345",
-            invoice_status="Pending"
+#         # Create an invoice for the client
+#         invoice = models.SellinvoiceTable.objects.create(
+#             client=client,
+#             invoice_no="12345",
+#             invoice_status="Pending"
+#         )
+
+#         # Change the order status to trigger the notification
+#         invoice.invoice_status = "Shipped"
+#         invoice.save()
+
+#         # Assert that the notification send function is called once
+#         mock_send.assert_called_once()
+
+#         # Check if the message sent has the correct title and body
+#         args, kwargs = mock_send.call_args
+#         message = kwargs.get('message')
+#         self.assertEqual(message.notification.title, "Order Update")
+#         self.assertEqual(message.notification.body, "Your order #12345 is now Shipped.")
+
+
+
+class UpdateClientRecordTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.client_instance = models.AllClientsTable.objects.create(
+            clientid=1,
+            name="Test Client",
+            address="Test Address",
+            email="test@example.com",
+            phone="123456789",
+            mobile="987654321",
+            last_transaction=now(),
+            accountcurr="USD",
+            type="Regular",
+            category="General",
+            loan_period=12,
+            loan_limit=5000.0,
+            loan_day=30,
+            subtype="Type A",
+            client_stop=False,
+            curr_flag=False,
+            permissions="Read",
+            other="Notes",
+            geo_location="Test Location"
         )
 
-        # Change the order status to trigger the notification
-        invoice.invoice_status = "Shipped"
-        invoice.save()
+    def test_update_client_success(self):
+        response = self.client.post(
+            "/api/update-client",
+            json.dumps({"client_id": 1, "client_name": "Updated Client", "email": "updated@example.com"}),
+            content_type="application/json",
+        )
+        self.client_instance.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client_instance.name, "Updated Client")
+        self.assertEqual(self.client_instance.email, "updated@example.com")
 
-        # Assert that the notification send function is called once
-        mock_send.assert_called_once()
+    def test_update_client_not_found(self):
+        response = self.client.post(
+            "/api/update-client",
+            json.dumps({"clientid": 999}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
 
-        # Check if the message sent has the correct title and body
-        args, kwargs = mock_send.call_args
-        message = kwargs.get('message')
-        self.assertEqual(message.notification.title, "Order Update")
-        self.assertEqual(message.notification.body, "Your order #12345 is now Shipped.")
+class DeleteClientRecordTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.client_instance = models.AllClientsTable.objects.create(clientid=2, name="To Delete")
+
+    def test_delete_client_success(self):
+        response = self.client.post(
+            "/api/delete-client",
+            json.dumps({"client_id": 2}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(models.AllClientsTable.objects.filter(clientid=2).exists())
+
+    def test_delete_client_not_found(self):
+        response = self.client.post(
+            "/api/delete-client",
+            json.dumps({"client_id": 999}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
+
+from django.utils.timezone import make_aware
+from datetime import datetime
+
+class FilterAllClientsTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        models.AllClientsTable.objects.create(clientid=3, name="John Doe", email="john@example.com")
+
+    def test_filter_client_by_name(self):
+        response = self.client.post(
+            "/api/filter-all-clients",
+            json.dumps({"name": "John"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue("John Doe" in str(response.content))
+
+    def test_filter_client_by_email(self):
+        response = self.client.post(
+            "/api/filter-all-clients",
+            json.dumps({"email": "john@example.com"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue("john@example.com" in str(response.content))
+
+    def test_invalid_date_format(self):
+        response = self.client.post(
+            "/api/filter-all-clients",
+            json.dumps({"fromdate": "2024/01/01", "todate": "2024-12-31"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "Invalid date format")
+
+
+class CreateStorageRecordTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.client_instance = models.AllClientsTable.objects.create(clientid=4, name="Storage Client")
+
+    def test_create_storage_record_success(self):
+        response = self.client.post(
+            "/api/create-storage-record",
+            json.dumps({
+                "transaction_date": "2025-03-16",
+                "reciept_no": "REC123",
+                "amount": 1000.0,
+                "for_what": "Office Supplies",
+                "note": "Monthly Purchase",
+                "type": "Expense",
+                "transaction": "Purchase",
+                "place": "Store A",
+                "section": "Electronics",
+                "subsection": "Laptops",
+                "for_who": "Storage Client",
+                "pay_method": "Cash",
+                "daily": False,
+                "bank": "XYZ Bank",
+                "checkno": "CHK123"
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(models.StorageTransactionsTable.objects.exists())
+        self.assertTrue(models.TransactionsHistoryTable.objects.exists())
+
+    def test_create_storage_record_invalid_client(self):
+        response = self.client.post(
+            "/api/create-storage-record",
+            json.dumps({
+                "transaction_date": "2025-03-16",
+                "for_who": "Unknown Client",
+                "amount": 500.0,
+                "daily": False,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "Client 'Unknown Client' not found")
+
+
+from django.test import TestCase, Client
+from django.urls import reverse
+from django.http import JsonResponse
+from .models import StorageTransactionsTable
+import json
+
+class StorageTransactionTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.storage_record = StorageTransactionsTable.objects.create(storageid="123",daily_status=False)
+
+    def test_delete_storage_record_success(self):
+        """Test deleting an existing storage record"""
+        response = self.client.post(reverse('delete_storage_record'), json.dumps({"storage_id": "123"}), content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Record deleted successfully!"})
+        self.assertFalse(StorageTransactionsTable.objects.filter(storageid="123").exists())
+
+    def test_delete_storage_record_not_found(self):
+        """Test deleting a non-existent storage record"""
+        response = self.client.post(reverse('delete_storage_record'), json.dumps({"storage_id": "999"}), content_type="application/json")
+        self.assertEqual(response.status_code, 404)
+
+
+    def test_delete_storage_record_invalid_method(self):
+        """Test calling the delete function with GET method"""
+        response = self.client.get(reverse('delete_storage_record'))
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(response.json(), {"error": "Invalid request method."})
+
+class GetAllStorageTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        StorageTransactionsTable.objects.create(storageid="1", account_type="Type1",daily_status=False)
+        StorageTransactionsTable.objects.create(storageid="2", account_type="Type2",daily_status=False)
+
+    def test_get_all_storage_success(self):
+        """Test fetching all storage records"""
+        response = self.client.get(reverse('get-all-storage'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
+        self.assertEqual(len(response.json()), 2)
+
+class FilterAllStorageTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        StorageTransactionsTable.objects.create(storageid="1", person="Client1",daily_status=False, section="Finance", transaction_date="2024-01-01")
+
+    def test_filter_all_storage_by_id(self):
+        """Test filtering storage records by ID"""
+        response = self.client.post(reverse('filter-all-storage'), json.dumps({"id": "1"}), content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+    def test_filter_all_storage_invalid_json(self):
+        """Test handling invalid JSON"""
+        response = self.client.post(reverse('filter-all-storage'), "invalid json", content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Invalid JSON format"})
+
+class GetLastRecieptNoTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        models.StorageTransactionsTable.objects.create(storageid="1",daily_status=False , reciept_no="100", transaction="ايداع")
+        models.StorageTransactionsTable.objects.create(storageid="2",daily_status=False , reciept_no="200", transaction="صرف")
+
+    def test_get_last_reciept_no_valid(self):
+        """Test fetching last receipt number"""
+        response = self.client.get(reverse('last-reciept-no') + "?transactionType=ايداع")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"lastRecieptNo": 100})
+
+    def test_get_last_reciept_no_invalid_type(self):
+        """Test with an invalid transaction type"""
+        response = self.client.get(reverse('last-reciept-no') + "?transactionType=Unknown")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Invalid transaction type"})
+
+class FetchInvoiceItemsTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        invoice = models.Buyinvoicetable.objects.create(invoice_no=6562)
+        item = models.BuyInvoiceItemsTable.objects.create(invoice_no=invoice , invoice_no2="6562", item_no="ITEM1")
+        #item.refresh_from_db()
+
+    # def test_fetch_invoice_items_success(self):
+    #     """Test fetching invoice items"""
+    #     response = self.client.get(reverse('fetch-buy-invoice-items') + "?id=6562")
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertEqual(len(response.json()), 1)
+
+    def test_fetch_invoice_items_not_found(self):
+        """Test fetching invoice items for non-existent invoice"""
+        response = self.client.get(reverse('fetch-buy-invoice-items') + "?id=999")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 0)
+
+    def test_fetch_invoice_items_missing_id(self):
+        """Test missing invoice number parameter"""
+        response = self.client.get(reverse('fetch-buy-invoice-items'))
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Invoice number is required."})
+
+class CreateCostRecordTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.invoice = models.Buyinvoicetable.objects.create(invoice_no="1", amount=1000, exchange_rate=5)
+
+    def test_create_cost_record_success(self):
+        """Test creating a cost record successfully"""
+        data = {
+            "invoice": "1",
+            "type": "Shipping",
+            "cost": "500",
+            "rate": "5",
+            "dinar": "2500"
+        }
+        response = self.client.post(reverse('create-cost-record'), json.dumps(data), content_type="application/json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["success"], True)
+
+    def test_create_cost_record_missing_fields(self):
+        """Test missing fields in request"""
+        data = {
+            "invoice": "1",
+            "type": "Shipping"
+        }
+        response = self.client.post(reverse('create-cost-record'), json.dumps(data), content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["success"], False)
+
+    def test_create_cost_record_invalid_json(self):
+        """Test invalid JSON input"""
+        response = self.client.post(reverse('create-cost-record'), "invalid json", content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"success": False, "message": "Invalid JSON format"})
+
+class FetchCostsTests(TestCase):
+    def setUp(self):
+        self.invoice = models.Buyinvoicetable.objects.create(invoice_no="1", amount=1000, exchange_rate=5)
+
+        self.cost = models.BuyinvoiceCosts.objects.create(
+                invoice=self.invoice,
+                cost_for=type,
+                cost_price=100,
+                exchange_rate=21.1,
+                dinar_cost_price=100,
+                invoice_no=self.invoice.invoice_no
+            )
+
+    def test_fetch_costs_valid_invoice_no(self):
+        # Add your setup data here (create BuyinvoiceCosts with invoice_no)
+        response = self.client.get(reverse('fetch-costs'), {'id': f"{self.invoice.invoice_no}"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('autoid',response.json())  # Check for fields in the response
+
+    def test_fetch_costs_missing_invoice_no(self):
+        response = self.client.get(reverse('fetch-costs'))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invoice number is required", response.json().get('message'))
+
+    def test_fetch_costs_invalid_method(self):
+        response = self.client.post(reverse('fetch-costs'))
+        self.assertEqual(response.status_code, 405)
+        self.assertIn("Invalid HTTP method",response.json().get('message'))
+
+class DeleteBuyInvoiceCostTests(TestCase):
+    def test_delete_buyinvoice_cost_valid_autoid(self):
+        # Setup: Create a BuyinvoiceCosts instance
+        cost = models.BuyinvoiceCosts.objects.create(invoice_no='valid_invoice', cost_for='Test', cost_price=100)
+        response = self.client.delete(reverse('delete_buyinvoice_cost', args=[cost.autoid]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Record deleted successfully!', response.json().get('message'))
+
+    def test_delete_buyinvoice_cost_invalid_autoid(self):
+        response = self.client.delete(reverse('delete_buyinvoice_cost', args=[999]))
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('Record not found', response.json().get('message'))
+
+    def test_delete_buyinvoice_cost_invalid_method(self):
+        response = self.client.get(reverse('delete_buyinvoice_cost', args=[999]))
+        self.assertEqual(response.status_code, 405)
+        self.assertIn('Invalid request method', response.json().get('message'))
+
+class CalculateCostTests(TestCase):
+    def test_calculate_cost_valid(self):
+        data = {
+            "cost_total": "1000",
+            "invoice_total": "5000",
+            "invoice": "valid_invoice_no"
+        }
+        response = self.client.post(reverse('calculate_cost'), data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Cost updated successfully.', response.json().get('message'))
+
+    def test_calculate_cost_missing_fields(self):
+        data = {
+            "cost_total": "1000",
+            "invoice_total": "5000"
+        }
+        response = self.client.post(reverse('calculate_cost'), data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Missing required fields', response.json().get('message'))
+
+    def test_calculate_cost_invalid_json(self):
+        response = self.client.post(reverse('calculate_cost'), data="invalid_json", content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid JSON format.', response.json().get('message'))
+
+
+class ProcessDataTests(TestCase):
+    def test_process_data_valid(self):
+        invoice = models.Buyinvoicetable.objects.create(invoice_no=123)
+        models.BuyInvoiceItemsTable.objects.create(autoid=123,invoice_no=invoice)
+        data = {
+            "id": "123",
+            "currency": "USD",
+            "rate": "1.2"
+        }
+        response = self.client.post(reverse('process-edit-invoice'), data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertRedirects(response, '/manage-buy-invoice/')
+
+    def test_process_data_missing_fields(self):
+        data = {
+            "id": "123",
+            "currency": "USD"
+        }
+        response = self.client.post(reverse('process-edit-invoice'), data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Missing required fields', response.json().get('message'))
+
+    def test_process_data_invalid_json(self):
+        response = self.client.post(reverse('process-edit-invoice'), data="invalid_json", content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid JSON format', response.json().get('message'))
+
+
+
+class UpdateBuyInvoiceItemTests(TestCase):
+
+    def setUp(self):
+        # Create an invoice
+        self.invoice = models.Buyinvoicetable.objects.create(invoice_no=321,amount=0)
+
+    def test_update_buyinvoice_item_valid(self):
+        # Create an item
+        item = models.BuyInvoiceItemsTable.objects.create(
+            invoice_no=self.invoice,
+            org_unit_price=Decimal(100),
+            dinar_unit_price=Decimal(120),
+            dinar_total_price=10*120,
+            quantity=10
+        )
+
+        # Data for updating
+        data = {
+            'id': item.autoid,
+            'invoice_no': str(self.invoice.invoice_no),  # Use actual invoice_no
+            'org': '100',
+            'order': '110',
+            'quantity': 5
+        }
+        print(f"data {data}")
+        # Make the POST request to update
+        response = self.client.post(
+            reverse('update-buy-invoice-item'),
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+
+        # Assertions
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Item updated successfully', response.json().get('message'))
+
+    def test_update_buyinvoice_item_invalid_data(self):
+        # Data with invalid quantity
+        data = {
+            'id': '0000',  # Non-existent ID
+            'invoice_no': str(self.invoice.invoice_no),
+            'org': '100',
+            'order': '110',
+            'quantity': 'five'  # Invalid quantity type (string instead of int)
+        }
+
+        # Make the POST request
+        response = self.client.post(
+            reverse('update-buy-invoice-item'),
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+
+        # Assertions
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invalid request method', response.json().get('message'))
+
+    def test_update_buyinvoice_item_invalid_method(self):
+        # Test with GET method (should return 405)
+        response = self.client.get(reverse('update-buy-invoice-item'))
+        self.assertEqual(response.status_code, 405)
+        self.assertIn('Invalid request method', response.json().get('message'))
+
+class BuyInvoiceExcellTests(TestCase):
+    def test_buy_invoice_excell_post_valid(self):
+        data = {
+            "invoice": "valid_invoice",
+            "org": "org_value"
+        }
+        response = self.client.post(reverse('invoice_excell'), data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertRedirects(response, '/invoice_excell')
+
+    def test_buy_invoice_excell_get_valid(self):
+        self.client.post(reverse('invoice_excell'), data=json.dumps({"invoice": "valid_invoice", "org": "org_value"}), content_type='application/json')
+        response = self.client.get(reverse('invoice_excell'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'buy-invoice-excell.html')
+
+    def test_buy_invoice_excell_get_no_invoice_in_session(self):
+        response = self.client.get(reverse('invoice_excell'))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('No invoice found in session', response.json().get('message'))

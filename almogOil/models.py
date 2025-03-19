@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .firebase_config import send_firebase_notification
+
 
 class AllClientsTable(models.Model):
     clientid = models.AutoField(primary_key=True)
@@ -1016,11 +1016,32 @@ class OrderArchive(models.Model):
     def __str__(self):
         return f"Order {self.order.id} completed by {self.employee.name}"
 
-@receiver(post_save, sender=SellinvoiceTable)
-def send_order_status_notification(sender, instance, **kwargs):
-    if instance.client and instance.client.fcm_token:
-        send_firebase_notification(
-            instance.client.fcm_token,
-            "Order Update",
-            f"Your order #{instance.invoice_no} is now {instance.invoice_status}."
-        )
+# @receiver(post_save, sender=SellinvoiceTable)
+# def send_order_status_notification(sender, instance, **kwargs):
+#     if instance.client and instance.client.fcm_token:
+#         send_firebase_notification(
+#             instance.client.fcm_token,
+#             "Order Update",
+#             f"Your order #{instance.invoice_no} is now {instance.invoice_status}."
+#         )
+
+
+
+class CartItem(models.Model):
+    # Link cart item to a client using ForeignKey
+    client = models.ForeignKey('AllClientsTable', on_delete=models.CASCADE, related_name='cart_items')
+
+    fileid = models.CharField(max_length=255)
+    itemname = models.CharField(max_length=255)
+    buyprice = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)
+    image = models.URLField(max_length=500, blank=True, null=True)
+    logo = models.URLField(max_length=500, blank=True, null=True)
+    pno = models.CharField(max_length=50, blank=True, null=True)
+    itemvalue = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ('client', 'fileid')  # Ensure the same item isn't duplicated for a client
+
+    def __str__(self):
+        return f"{self.client.name} - {self.itemname} (x{self.quantity})"

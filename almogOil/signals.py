@@ -1,28 +1,30 @@
+# signals.py
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-from .models import SellinvoiceTable  # Adjust as needed
+from .models import SellinvoiceTable,AllClientsTable
+from .notifications import send_order_tracking_notification  # Import the new function
 
 @receiver(post_save, sender=SellinvoiceTable)
-def notify_invoice_status_change(sender, instance, created, **kwargs):
-    if created:
-        return  # Optionally skip notification on creation
+def order_tracking_invoice_status_change_notification(sender, instance, **kwargs):
+    """
+    Sends a notification to the client whenever the invoice status is changed.
+    """
+    if instance.invoice_status and instance.pk:
+        title = "Invoice Status Updated"
+        body = f"Your invoice number {instance.invoice_no} status is now {instance.invoice_status}"
 
-    # Use the 'client' field from the model as the identifier.
-    client_id = instance.client
-    if not client_id:
-        return  # If there's no client identifier, don't send a notification
+        # If client is a ForeignKey, access the clientid using 'instance.client.clientid'
+        if instance.client:
+            client_id = instance.client.clientid  # Accessing clientid from the ForeignKey object
 
-    # Group name for this client
-    room_group_name = f'user_{client_id}'
-    message = f"تم تحديث حالة الفاتورة رقم {instance.invoice_no} إلى {instance.invoice_status}."
+            # Now filter AllClientsTable based on client_id
+            user = AllClientsTable.objects.filter(clientid=client_id).first()
 
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        room_group_name,
-        {
-            "type": "send_notification",
-            "message": message,
-        }
-    )
+            if user and user.fcm_token:
+                try:
+                    # Call the function to send the notification
+                    send_order_tracking_notification(user.fcm_token, title, body)
+                except ValueError as e:
+                    print(f"Error sending notification: {str(e)}")
+            else:
+                print(f"Client with ID '{client_id}' not found.")

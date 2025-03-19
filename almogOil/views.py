@@ -9,10 +9,10 @@ from django_q.tasks import async_task
 from django.conf import settings
 from django.shortcuts import redirect, render
 from django.contrib import messages
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse,Http404
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from .models import  EmployeesTable,AllClientsTable,OrderQueue,EmployeeQueue,SupportChatConversation, FeedbackMessage,Feedback,SupportChatMessageSys,  Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
+from .models import  EmployeesTable,CartItem,AllClientsTable,OrderQueue,EmployeeQueue,SupportChatConversation, FeedbackMessage,Feedback,SupportChatMessageSys,  Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
@@ -45,7 +45,7 @@ from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.cache import cache
 from rest_framework.response import Response
-from .serializers import MainitemSerializer, SupportChatMessageSysSerializer, SupportChatConversationSerializer,SupportChatConversationSerializer1,FeedbackSerializer
+from .serializers import MainitemSerializer, CartItemSerializer,SupportChatMessageSysSerializer, SupportChatConversationSerializer,SupportChatConversationSerializer1,FeedbackSerializer
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -2321,18 +2321,33 @@ def create_storage_record(request):
             return JsonResponse({"error": str(e)}, status=400)
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
+#until here
+
 @csrf_exempt
 def delete_storage_record(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
             storage_id = data.get("storage_id")
+
+            # Fetch the record or return a 404 response automatically
             record = get_object_or_404(StorageTransactionsTable, storageid=storage_id)
+
+            # Delete the record
             record.delete()
             return JsonResponse({"message": "Record deleted successfully!"}, status=200)
-        except Exception as e:
+
+        except Http404:  # Catch the 404 error and return a JSON response
+            return JsonResponse({"error": "404 Not Found in db."}, status=404)
+
+        except json.JSONDecodeError:  # If the request body is not valid JSON
+            return JsonResponse({"error": "Invalid JSON format."}, status=400)
+
+        except Exception as e:  # Catch all other unexpected errors
             return JsonResponse({"error": str(e)}, status=400)
+
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
 
 def get_all_storage(request):
     try:
@@ -2503,7 +2518,7 @@ def fetch_invoice_items(request):
 
         # Fetch all data from the model
         items = list(
-            BuyInvoiceItemsTable.objects.filter(invoice_no2= invoice_no).values(
+            BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_no).values(
                 "autoid",
                 "invoice_no",
                 "item_no",
@@ -2626,6 +2641,8 @@ def create_cost_record(request):
 
     return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
 
+#until here
+
 csrf_exempt
 def fetch_costs(request):
     if request.method == "GET":
@@ -2662,10 +2679,10 @@ def delete_buyinvoice_cost(request, autoid):
             # Find and delete the record with the given autoid
             record = BuyinvoiceCosts.objects.get(autoid=autoid)
             record.delete()
-            return JsonResponse({'status': 'success', 'message': 'Record deleted successfully!'})
+            return JsonResponse({'status': 'success', 'message': 'Record deleted successfully!'},status=200)
         except BuyinvoiceCosts.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Record not found!'})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+            return JsonResponse({'status': 'error', 'message': 'Record not found!'},status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'},status=405)
 
 
 def payment_installments(request):
@@ -2881,14 +2898,14 @@ def update_buyinvoiceitem(request):
             item.quantity = quantity
             item.save()
 
-            return JsonResponse({"success": True, "message": "Item updated successfully"})
+            return JsonResponse({"success": True, "message": "Item updated successfully"},status=200)
 
         except BuyInvoiceItemsTable.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Item not found"})
+            return JsonResponse({"success": False, "message": "Item not found"},status=404)
         except Exception as e:
             return JsonResponse({"success": False, "message": str(e)})
     else:
-        return JsonResponse({"success": False, "message": "Invalid request method"})
+        return JsonResponse({"success": False, "message": "Invalid request method"},status=405)
 
 
 def buyInvoice_excell(request):
@@ -2940,6 +2957,9 @@ def buyInvoice_excell(request):
         return render(request, "buy-invoice-excell.html", context)
 
     return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
+
+#until here
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -3523,7 +3543,7 @@ def sell_invoice_management(request):
     }
     return render(request,'sell_invoice_management.html',context)
 
-
+@csrf_exempt
 @api_view(["POST"])
 def create_sell_invoice(request):
     if request.method == "POST":
@@ -3534,7 +3554,7 @@ def create_sell_invoice(request):
 
             # Fetch client based on provided client data
             try:
-                if data.get("client").isdigit():  # If it's a number, fetch by clientid
+                if isinstance(data.get("client"), int) or str(data.get("client")).isdigit():  # If it's a number, fetch by clientid
                     client = AllClientsTable.objects.get(clientid=data.get("client"))
                 else:  # Otherwise, fetch by name
                     client = AllClientsTable.objects.get(name=data.get("client"))
@@ -4692,29 +4712,79 @@ def sources_management_View(request):
     return render(request,'sources-management.html',context)
 
 
-from .firebase_config import send_firebase_notification
+#from .firebase_config import send_firebase_notification
 
-def test_send_notification(request):
-    try:
+#def test_send_notification(request):
+  #  try:
         # Fetch the client you want to notify (example: client with id=14)
-        client = AllClientsTable.objects.get(clientid=14)  # Ensure 'clientid' is correct
+  #      client = AllClientsTable.objects.get(clientid=14)  # Ensure 'clientid' is correct
 
         # Create a mock invoice to simulate a status change
-        invoice = SellinvoiceTable.objects.create(
-            client=client,
-            invoice_no="12345",
-            invoice_status="تم التوصيل"
-        )
+   #     invoice = SellinvoiceTable.objects.create(
+    #        client=client,
+     #       invoice_no="12345",
+      #      invoice_status="تم التوصيل"
+       # )
 
         # Send notification
-        if client.fcm_token:  # Check if the client has a valid FCM token
-            send_firebase_notification(
-                client.fcm_token,
-                "Order Update",
-                f"Your order #{invoice.invoice_no} is now {invoice.invoice_status}."
-            )
-            return JsonResponse({"status": "Notification sent"})
-        else:
-            return JsonResponse({"status": "Client FCM token not available"}, status=400)
-    except AllClientsTable.DoesNotExist:
-        return JsonResponse({"status": "Client not found"}, status=404)
+        #if client.fcm_token:  # Check if the client has a valid FCM token
+         #   send_firebase_notification(
+          #      client.fcm_token,
+           #     "Order Update",
+            #    f"Your order #{invoice.invoice_no} is now {invoice.invoice_status}."
+            #)
+            #return JsonResponse({"status": "Notification sent"})
+        #else:
+         #   return JsonResponse({"status": "Client FCM token not available"}, status=400)
+    #except AllClientsTable.DoesNotExist:
+     #   return JsonResponse({"status": "Client not found"}, status=404)
+class AddToCartView(APIView):
+    def post(self, request):
+        client_id = request.data.get("clientid")
+        fileid = request.data.get("fileid")
+        itemname = request.data.get("itemname")
+        buyprice = request.data.get("buyprice")
+        quantity = int(request.data.get("quantity", 1))
+        image = request.data.get("image", "")
+        logo = request.data.get("logo", "")
+        pno = request.data.get("pno", "")
+        itemvalue = int(request.data.get("itemvalue", 0))
+
+        # Validate client existence
+        try:
+            client = AllClientsTable.objects.get(clientid=client_id)
+        except AllClientsTable.DoesNotExist:
+            return Response({"error": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the item already exists in the cart
+        cart_item, created = CartItem.objects.get_or_create(
+            client=client,
+            fileid=fileid,
+            defaults={
+                "itemname": itemname,
+                "buyprice": buyprice,
+                "quantity": quantity,
+                "image": image,
+                "logo": logo,
+                "pno": pno,
+                "itemvalue": itemvalue,
+            }
+        )
+
+        if not created:
+            if cart_item.quantity + quantity <= cart_item.itemvalue:
+                cart_item.quantity += quantity
+                cart_item.save()
+            else:
+                return Response({"error": f"Cannot add more than {cart_item.itemvalue} items."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
+
+def return_permission_profile(request, id):
+    return_permission = get_object_or_404(models.return_permission, autoid=id)
+    context = {
+        "return": return_permission,
+        "date": return_permission.date.strftime("%Y-%m-%d"),
+        "client_name": return_permission.client.name,
+    }
+    return render(request, 'return_permission_profile.html', context)

@@ -851,6 +851,10 @@
     <script>
       $(document).ready(function () {
         sessionStorage.clear();
+
+        let today = new Date().toISOString().split("T")[0];
+        document.getElementById("filter-date").value = today;
+
         //const form = document.getElementById("myForm");
         const withdrawRadios = document.getElementsByName("transaction-type");
         const reciept_no = document.getElementById("reciept-no");
@@ -958,7 +962,9 @@
             // Set data in Tabulator
             table.setData(data);
           })
-          .catch((error) => console.error("Error fetching data:", error));
+          .catch((error) => console.error("Error fetching data:", error)).finally(()=> {
+            scrollToLastRow();
+          });
        }
         table.on("rowClick", function (e, row) {
           console.log("Row clicked after data update:", row.getData());
@@ -1154,6 +1160,7 @@
           .getElementById("createButton")
           .addEventListener("click", function (event) {
             createNewRecord();
+            clearForm();
           });
         function createNewRecord() {
           /*if (!form.checkValidity()) {
@@ -1333,7 +1340,8 @@
           }
 
           const filterValues = {
-            date: getInputValue("filter-date"),
+            fromdate: getInputValue("filter-date"),
+            todate: getInputValue("filter-date"),
           };
 
           // Remove empty filters
@@ -1626,7 +1634,25 @@
             });
           };
         }
+        function scrollToLastRow() {
+          table.setPage(table.getPageMax()).then(() => {
+              setTimeout(() => {
+                  // Scroll to last row
+                  var lastRow = table.getRows().pop();
+                  if (lastRow) {
+                      table.scrollToRow(lastRow, "bottom").catch(err => console.warn("Scroll Error:", err));
+                  }
+
+                  // Scroll the table container to the bottom
+                  let tableContainer = document.getElementById("users-table");
+                  if (tableContainer) {
+                      tableContainer.scrollTop = tableContainer.scrollHeight;
+                  }
+              }, 300); // Small delay to ensure content loads before scrolling
+          });
+      }
       });
+
     </script>
   </body>
 </html>

@@ -1981,3 +1981,115 @@ def create_source_record(request):
 
     # Return success response
     return Response({'status': 'success', 'message': 'Record created successfully!', 'p': password, 'is_correct': is_correct}, status=status.HTTP_201_CREATED)
+
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.contrib.auth.hashers import make_password, check_password
+from firebase_admin import messaging
+from .models import EmployeesTable, AllClientsTable
+import firebase_admin
+from firebase_admin import credentials
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate("serviceAccountKey.json")
+firebase_admin.initialize_app(cred)
+
+
+@api_view(['POST'])
+def register_fcm_token(request):
+    """
+    Register an FCM token for a user (Employee or Client).
+    """
+    user_id = request.data.get('user_id')
+    user_type = request.data.get('user_type')  # 'employee' or 'client'
+    fcm_token = request.data.get('fcm_token')
+
+    if not user_id or not user_type or not fcm_token:
+        return Response({"error": "Missing user_id, user_type, or fcm_token"}, status=400)
+
+    if user_type == 'employee':
+        user = EmployeesTable.objects.filter(employee_id=user_id).first()
+    elif user_type == 'client':
+        user = AllClientsTable.objects.filter(clientid=user_id).first()
+    else:
+        return Response({"error": "Invalid user_type"}, status=400)
+
+    if not user:
+        return Response({"error": "User not found"}, status=404)
+
+    user.fcm_token = fcm_token
+    user.save()
+    return Response({"message": "FCM token registered successfully"}, status=200)
+
+
+@api_view(['POST'])
+def send_notification(request):
+    """
+    Send an FCM notification to an Employee or Client.
+    """
+    user_id = request.data.get('user_id')
+    user_type = request.data.get('user_type')  # 'employee' or 'client'
+    title = request.data.get('title')
+    body = request.data.get('body')
+
+    if not user_id or not user_type or not title or not body:
+        return Response({"error": "Missing required fields"}, status=400)
+
+    if user_type == 'employee':
+        user = EmployeesTable.objects.filter(employee_id=user_id).first()
+    elif user_type == 'client':
+        user = AllClientsTable.objects.filter(clientid=user_id).first()
+    else:
+        return Response({"error": "Invalid user_type"}, status=400)
+
+    if not user or not user.fcm_token:
+        return Response({"error": "User not found or no FCM token"}, status=404)
+
+    # Construct the Firebase message
+    message = messaging.Message(
+        notification=messaging.Notification(title=title, body=body),
+        token=user.fcm_token
+    )
+
+    try:
+        response = messaging.send(message)
+        return Response({"message": "Notification sent successfully", "firebase_response": response}, status=200)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+def store_fcm_token(request):
+    if request.method == 'POST':
+        user_id = request.data.get('user_id')
+        fcm_token = request.data.get('fcm_token')
+
+        if not user_id or not fcm_token:
+            return Response({"error": "user_id and fcm_token are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Try saving to AllClientsTable first
+        try:
+            # Try to find the client in the AllClientsTable
+            client = AllClientsTable.objects.get(clientid=user_id)
+            client.fcm_token = fcm_token
+            client.save()
+
+            return Response({"message": "FCM Token successfully stored for client."}, status=status.HTTP_200_OK)
+        except AllClientsTable.DoesNotExist:
+            pass  # If the client does not exist, move to EmployeesTable
+
+        # Try saving to EmployeesTable
+        try:
+            # Try to find the employee in the EmployeesTable
+            employee = EmployeesTable.objects.get(employee_id=user_id)
+            employee.fcm_token = fcm_token
+            employee.save()
+
+            return Response({"message": "FCM Token successfully stored for employee."}, status=status.HTTP_200_OK)
+        except EmployeesTable.DoesNotExist:
+            return Response({"error": "User not found in either client or employee table."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
