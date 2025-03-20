@@ -146,7 +146,8 @@ class Buyinvoicetable(models.Model):
 class SellinvoiceTable(models.Model):
     autoid = models.AutoField(primary_key=True)
     invoice_date = models.DateTimeField(blank=True, null=True)
-    client = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
+    client_obj= models.ForeignKey(AllClientsTable,on_delete=models.CASCADE)
+    client_id = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
     client_name = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     client_rate = models.CharField(max_length=60, blank=True, null=True)
     client_category = models.CharField(max_length=60, blank=True, null=True)
@@ -1022,14 +1023,6 @@ class OrderArchive(models.Model):
     def __str__(self):
         return f"Order {self.order.id} completed by {self.employee.name}"
 
-# @receiver(post_save, sender=SellinvoiceTable)
-# def send_order_status_notification(sender, instance, **kwargs):
-#     if instance.client and instance.client.fcm_token:
-#         send_firebase_notification(
-#             instance.client.fcm_token,
-#             "Order Update",
-#             f"Your order #{instance.invoice_no} is now {instance.invoice_status}."
-#         )
 
 
 

@@ -14,8 +14,8 @@ def order_tracking_invoice_status_change_notification(sender, instance, **kwargs
         body = f"Your invoice number {instance.invoice_no} status is now {instance.invoice_status}"
 
         # If client is a ForeignKey, access the clientid using 'instance.client.clientid'
-        if instance.client:
-            client_id = instance.client.clientid  # Accessing clientid from the ForeignKey object
+        if instance.client_obj:
+            client_id = instance.client_obj.clientid  # Accessing clientid from the ForeignKey object
 
             # Now filter AllClientsTable based on client_id
             user = AllClientsTable.objects.filter(clientid=client_id).first()

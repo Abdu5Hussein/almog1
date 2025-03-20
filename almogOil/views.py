@@ -2905,7 +2905,7 @@ def update_buyinvoiceitem(request):
         except BuyInvoiceItemsTable.DoesNotExist:
             return JsonResponse({"success": False, "message": "Item not found"},status=404)
         except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)})
+            return JsonResponse({"success": False, "message": str(e)},status=400)
     else:
         return JsonResponse({"success": False, "message": "Invalid request method"},status=405)
 
@@ -3545,75 +3545,82 @@ def sell_invoice_management(request):
     }
     return render(request,'sell_invoice_management.html',context)
 
+
 @csrf_exempt
 @api_view(["POST"])
 def create_sell_invoice(request):
-    if request.method == "POST":
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Invalid HTTP method. Only POST is allowed."}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        client = None
+        balance_data = {"total_debt": Decimal("0.0000"), "total_credit": Decimal("0.0000")}
+
+        # Validate client input
+        client_identifier = data.get("client")
+        if not client_identifier:
+            return JsonResponse({"success": False, "error": "Client is null"}, status=400)
+
+        # Fetch client as a model instance
         try:
-            data = json.loads(request.body)
-            client = None
-            balance_data = {"total_debt": Decimal("0.0000"), "total_credit": Decimal("0.0000")}
+            if isinstance(client_identifier, int) or (isinstance(client_identifier, str) and client_identifier.isdigit()):
+                client_obj = AllClientsTable.objects.get(clientid=int(client_identifier))
+            else:
+                client_obj = AllClientsTable.objects.get(name=client_identifier)
 
-            # Fetch client based on provided client data
-            try:
-                if isinstance(data.get("client"), int) or str(data.get("client")).isdigit():  # If it's a number, fetch by clientid
-                    client = AllClientsTable.objects.get(clientid=data.get("client"))
-                else:  # Otherwise, fetch by name
-                    client = AllClientsTable.objects.get(name=data.get("client"))
-                balance_data = TransactionsHistoryTable.objects.filter(client_id_id=client).aggregate(
-                    total_debt=Sum('debt'),
-                    total_credit=Sum('credit')
-                )
-            except AllClientsTable.DoesNotExist:
-                client = None
-            except TransactionsHistoryTable.DoesNotExist:
-                balance_data = {"total_debt": Decimal("0.0000"), "total_credit": Decimal("0.0000")}
-
-            # Extract individual values from balance_data
-            total_debt = balance_data.get('total_debt', Decimal('0.0000')) or 0
-            total_credit = balance_data.get('total_credit', Decimal('0.0000')) or 0
-            client_balance = total_credit - total_debt  # Calculate the balance
-
-            # Get the last receipt number
-            last_recipt_response = json.loads(get_sellinvoice_no(request).content)
-            last_recipt_no = last_recipt_response.get("autoid")
-            next_recipt_no = int(last_recipt_no) + 1
-
-            # Determine the 'for_who' field
-            for_who = "application" if data.get("for_who") == "application" else None
-
-            # Create the SellInvoice record
-            sell_invoice = SellinvoiceTable.objects.create(
-                invoice_no=next_recipt_no,
-                client=client.clientid,
-                client_name=client.name if client else None,
-                client_rate=client.category if client else None,
-                client_category=client.subtype if client else None,
-                client_limit=client.loan_limit if client else 0,
-                client_balance=client_balance,
-                invoice_date=data.get("invoice_date"),
-                invoice_status="لم تحضر",
-                payment_status=data.get("payment_status"),
-                for_who=for_who,  # Assign 'for_who'
-                date_time=timezone.now(),
-                price_status="",
-                mobile=data.get("mobile") if data.get("mobile") else False,
+            # Get total debt and credit from TransactionsHistoryTable
+            balance_data = TransactionsHistoryTable.objects.filter(client_id=client_obj).aggregate(
+                total_debt=Sum('debt') or Decimal("0.0000"),
+                total_credit=Sum('credit') or Decimal("0.0000")
             )
+        except AllClientsTable.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Client not found"}, status=400)
 
-            # Schedule the background task using Django Q (will run every 60 seconds)
-            async_task('almogOil.Tasks.assign_orders') # Adjust path accordingly
+        # Extract balance values
+        total_debt = balance_data.get('total_debt') or Decimal('0.0000')
+        total_credit = balance_data.get('total_credit') or Decimal('0.0000')
+        client_balance = total_credit - total_debt
 
-            return JsonResponse({
-                "success": True,
-                "message": "Sell invoice created and order assignment triggered!",
-                "invoice_no": sell_invoice.invoice_no,
-                "client_balance": sell_invoice.client_balance
-            })
+        # Get the last receipt number and determine the next one
+        last_receipt_response = json.loads(get_sellinvoice_no(request).content)
+        last_receipt_no = last_receipt_response.get("autoid", 0)
+        next_receipt_no = int(last_receipt_no) + 1
 
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
+        # Determine 'for_who' field
+        for_who = "application" if data.get("for_who") == "application" else None
 
-    return JsonResponse({"success": False, "error": "Invalid HTTP method. Only POST is allowed."}, status=405)
+        # Create the SellInvoice record
+        sell_invoice = SellinvoiceTable.objects.create(
+            invoice_no=next_receipt_no,
+            client_obj=client_obj,
+            client_id=client_obj.clientid,  # Ensure client is a model instance
+            client_name=client_obj.name,
+            client_rate=client_obj.category,
+            client_category=client_obj.subtype,
+            client_limit=client_obj.loan_limit,
+            client_balance=client_balance,
+            invoice_date=data.get("invoice_date"),
+            invoice_status="لم تحضر",
+            payment_status=data.get("payment_status"),
+            for_who=for_who,
+            date_time=timezone.now(),
+            price_status="",
+            mobile=data.get("mobile") if data.get("mobile") else False,
+        )
+
+        # Schedule the background task using Django Q
+        async_task('almogOil.Tasks.assign_orders')
+
+        return JsonResponse({
+            "success": True,
+            "message": "Sell invoice created and order assignment triggered!",
+            "invoice_no": sell_invoice.invoice_no,
+            "client_balance": sell_invoice.client_balance
+        })
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
 def sell_invoice_add_items(request):
@@ -3739,7 +3746,11 @@ def Sell_invoice_create_item(request):
                 pno=product.pno,
             )
             #test later
-            client_object = AllClientsTable.objects.get(clientid=invoice.client)
+            try:
+                client_object = invoice.client_obj
+            except:
+                return JsonResponse({"error": "client not found"}, status=400)
+
             StorageTransactionsTable.objects.create(
                 reciept_no=f"ف.ب : {data.get('invoice_id')}",
                 transaction_date=timezone.now(),
@@ -3757,7 +3768,7 @@ def Sell_invoice_create_item(request):
             )
 
             last_balance = (
-                TransactionsHistoryTable.objects.filter(client_id_id=invoice.client)
+                TransactionsHistoryTable.objects.filter(client_id=invoice.client_obj)
                 .order_by("-registration_date")
                 .first()
             )
@@ -3771,7 +3782,7 @@ def Sell_invoice_create_item(request):
                 details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
                 registration_date=timezone.now(),
                 current_balance=updated_balance,  # Updated balance
-                client_id_id=invoice.client,  # Client ID
+                client_id=invoice.client_obj,  # Client ID
             )
 
             if invoice.payment_status == "نقدي":
@@ -3782,7 +3793,7 @@ def Sell_invoice_create_item(request):
                 details=f"شراء بضاتع - فاتورة رقم {data.get('invoice_id')}",
                 registration_date=timezone.now(),
                 current_balance=round(last_balance_amount, 2),  # Updated balance
-                client_id_id=invoice.client,  # Client ID
+                client_id=invoice.client_obj,  # Client ID
                 )
 
             if invoice.mobile == True:
@@ -3793,7 +3804,7 @@ def Sell_invoice_create_item(request):
                 details=f"نسبة بيع 10% مقابل بضاتع - فاتورة رقم {data.get('invoice_id')}",
                 registration_date=timezone.now(),
                 current_balance=round(last_balance_amount, 2) + (Decimal(sell_price * item_value)*Decimal(0.10)),  # Updated balance
-                client_id_id=invoice.client,  # Client ID
+                client_id=invoice.client_obj,  # Client ID
                 )
 
             # Return success response
@@ -3807,7 +3818,6 @@ def Sell_invoice_create_item(request):
 
         except Exception as e:
             return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
-
     else:
         return JsonResponse({"error": "Invalid HTTP method. Use POST."}, status=405)
 
