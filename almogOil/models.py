@@ -883,6 +883,12 @@ class FeedbackMessage(models.Model):
     def __str__(self):
         return f"Message in Feedback {self.feedback.id}"
 
+class BlacklistedToken(models.Model):
+    token = models.TextField()  # Store the JWT token (string format)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.token
 
 class return_permission(models.Model):
     autoid = models.AutoField(primary_key=True)

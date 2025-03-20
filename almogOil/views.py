@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse,Http404
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from .models import  EmployeesTable,CartItem,AllClientsTable,OrderQueue,EmployeeQueue,SupportChatConversation, FeedbackMessage,Feedback,SupportChatMessageSys,  Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -337,6 +338,7 @@ def ModelView(request):
         'models': models,
     })
 
+@login_required
 def HomeView(request):
     return render(request, 'home.html')
 

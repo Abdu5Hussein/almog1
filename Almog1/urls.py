@@ -30,6 +30,7 @@ from almogOil import api_views,views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework.routers import DefaultRouter
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 router = DefaultRouter()
 router.register(r'permissions', api_views.ReturnPermissionViewSet, basename='return-permission')
@@ -43,7 +44,17 @@ urlpatterns = [
     path('test/', TestView, name='test'),
     path('users',UsersView , name='users'),
     path('add-user/', AddUserView, name='add_user'),
+
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Swagger UI
+    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    # ReDoc UI
+    path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+
     path('', LogInView, name='login'),
+    path('process-login', api_views.sign_in, name='login-process'),
+    path('api/user/logout', api_views.logout_view, name='logout'),
+
     path('home', HomeView, name='home'),
     path('products-details', ProductsDetails, name='products-details'),
     path('update-user/', UpdateUserView, name='update_user'),  # New URL for update
@@ -155,7 +166,7 @@ urlpatterns = [
     path('api/main-types/', get_main_types, name='get_main_types'),
     path('api/sub-types/', get_sub_types, name='get_sub_types'),
     path('api/filter-itemsapp/', api_views.filter_Items, name='filter-items'),
-    path('process-login', api_views.sign_in, name='login-process'),
+
     path('api/get-drop-lists', api_views.get_dropboxes, name='get-drop-lists'),
     path('fetch_messages/<int:feedback_id>/', fetch_feedback_messages, name='fetch_feedback_messages'),
     path("add_message_to_feedback/<int:feedback_id>/", add_message_to_feedback, name="add_message_to_feedback"),
@@ -229,6 +240,7 @@ urlpatterns = [
     path('assign-order/', views.assign_order_page, name='assign-order-page'),
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
     path('api/add-to-cart/', views.AddToCartView.as_view(), name='add-to-cart'),
+     path('api/store-token/', api_views.store_fcm_token, name='store_fcm_token'),  # Define the API URL
     path('archived-orders/<int:employee_id>/', api_views.get_archived_orders, name='get_archived_orders'),
     path('api/employee_current_order_info/<int:employee_id>/', api_views.employee_current_order_info, name='employee_current_order_info'),
     path('api/products/<int:id>/add-json-description',api_views.mainitem_add_json_desc,name="add-json-description"),

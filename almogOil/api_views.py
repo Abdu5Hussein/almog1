@@ -36,6 +36,47 @@ from django.utils.timezone import make_aware
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.exceptions import ValidationError
+from django.contrib.auth import logout
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK
+
+from django.contrib.auth import logout
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from .models import BlacklistedToken  # Assuming you have a model for blacklisting tokens
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    # Log out the user by clearing the session
+    logout(request)
+
+    # Ensure the session was cleared
+    if not request.user.is_authenticated:
+        # If using JWT refresh tokens, blacklist the refresh token
+        try:
+            refresh_token = request.data.get("refresh")  # Get the refresh token from the request body
+            if refresh_token:
+                # Check if the refresh token is already blacklisted
+                if BlacklistedToken.objects.filter(token=refresh_token).exists():
+                    return Response({"message": "This refresh token is already blacklisted", "session": False}, status=status.HTTP_400_BAD_REQUEST)
+
+                # If not blacklisted, add the refresh token to the blacklist
+                token = RefreshToken(refresh_token)
+                BlacklistedToken.objects.create(token=str(token))  # Store the token in the blacklist
+                return Response({"message": "Successfully logged out", "session": False}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Refresh token is required to blacklist", "session": False}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            return Response({"message": "Refresh token is missing", "session": False}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({"message": "Logout failed, session not cleared", "session": True}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["POST"])
 def sign_in(request):
@@ -2060,36 +2101,41 @@ def send_notification(request):
         return Response({"error": str(e)}, status=500)
 
 
+
 @api_view(['POST'])
 def store_fcm_token(request):
     if request.method == 'POST':
+        # Extract the data from the request
         user_id = request.data.get('user_id')
         fcm_token = request.data.get('fcm_token')
+        role = request.data.get('role')
 
-        if not user_id or not fcm_token:
-            return Response({"error": "user_id and fcm_token are required"}, status=status.HTTP_400_BAD_REQUEST)
+        # Validate that necessary fields are provided
+        if not user_id or not fcm_token or not role:
+            return Response({"error": "user_id, fcm_token, and role are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Try saving to AllClientsTable first
-        try:
-            # Try to find the client in the AllClientsTable
-            client = AllClientsTable.objects.get(clientid=user_id)
-            client.fcm_token = fcm_token
-            client.save()
+        # Based on the role, store the FCM token in the appropriate table
+        if role == 'client':
+            try:
+                # Try to find the client in AllClientsTable
+                client = AllClientsTable.objects.get(clientid=user_id)
+                client.fcm_token = fcm_token
+                client.save()
 
-            return Response({"message": "FCM Token successfully stored for client."}, status=status.HTTP_200_OK)
-        except AllClientsTable.DoesNotExist:
-            pass  # If the client does not exist, move to EmployeesTable
+                return Response({"message": "FCM Token successfully stored for client."}, status=status.HTTP_200_OK)
+            except AllClientsTable.DoesNotExist:
+                return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Try saving to EmployeesTable
-        try:
-            # Try to find the employee in the EmployeesTable
-            employee = EmployeesTable.objects.get(employee_id=user_id)
-            employee.fcm_token = fcm_token
-            employee.save()
+        elif role == 'employee':
+            try:
+                # Try to find the employee in EmployeesTable
+                employee = EmployeesTable.objects.get(employee_id=user_id)
+                employee.fcm_token = fcm_token
+                employee.save()
 
-            return Response({"message": "FCM Token successfully stored for employee."}, status=status.HTTP_200_OK)
-        except EmployeesTable.DoesNotExist:
-            return Response({"error": "User not found in either client or employee table."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message": "FCM Token successfully stored for employee."}, status=status.HTTP_200_OK)
+            except EmployeesTable.DoesNotExist:
+                return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
-
+        else:
+            return Response({"error": "Invalid role. Role should be 'client' or 'employee'."}, status=status.HTTP_400_BAD_REQUEST)
