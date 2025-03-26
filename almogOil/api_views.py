@@ -5,7 +5,6 @@ from django.contrib.auth import authenticate, login
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
-from rest_framework_simplejwt.tokens import RefreshToken
 import json
 from rest_framework.pagination import PageNumberPagination
 from django.core.exceptions import FieldError
@@ -48,35 +47,29 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import BlacklistedToken  # Assuming you have a model for blacklisting tokens
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    # Log out the user by clearing the session
+    # Log out the user by clearing the session (for session-based authentication)
     logout(request)
 
-    # Ensure the session was cleared
-    if not request.user.is_authenticated:
-        # If using JWT refresh tokens, blacklist the refresh token
-        try:
-            refresh_token = request.data.get("refresh")  # Get the refresh token from the request body
-            if refresh_token:
-                # Check if the refresh token is already blacklisted
-                if BlacklistedToken.objects.filter(token=refresh_token).exists():
-                    return Response({"message": "This refresh token is already blacklisted", "session": False}, status=status.HTTP_400_BAD_REQUEST)
+    # Handle JWT refresh token blacklisting
+    refresh_token = request.data.get("refresh")  # Get the refresh token from the request body
+    if not refresh_token:
+        return Response({"message": "Refresh token is required to logout", "session": False}, status=status.HTTP_400_BAD_REQUEST)
 
-                # If not blacklisted, add the refresh token to the blacklist
-                token = RefreshToken(refresh_token)
-                BlacklistedToken.objects.create(token=str(token))  # Store the token in the blacklist
-                return Response({"message": "Successfully logged out", "session": False}, status=status.HTTP_200_OK)
-            else:
-                return Response({"message": "Refresh token is required to blacklist", "session": False}, status=status.HTTP_400_BAD_REQUEST)
-        except KeyError:
-            return Response({"message": "Refresh token is missing", "session": False}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        token = RefreshToken(refresh_token)
+        token.blacklist()  # Blacklist the token using SimpleJWT's built-in method
 
-    return Response({"message": "Logout failed, session not cleared", "session": True}, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response(
+            {"message": "Successfully logged out", "session": False},
+            status=status.HTTP_200_OK  # This sets the status code to 200 OK
+        )
+    except Exception as e:
+        return Response({"message": "Invalid or expired refresh token", "error": str(e), "session": False}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["POST"])
 def sign_in(request):
@@ -226,7 +219,7 @@ def get_sub_types(request):
 def GetClientInvoices(request, id):
     # Filter invoices based on the client ID
     str_id = str(id)
-    invoices = models.SellinvoiceTable.objects.filter(client=str_id)
+    invoices = models.SellinvoiceTable.objects.filter(client_id=str_id)
 
     if not invoices.exists():
         return Response({'error': 'No invoices found for the provided client ID.'}, status=status.HTTP_404_NOT_FOUND)
@@ -1043,44 +1036,45 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
 
 
         last_balance = (
-            models.TransactionsHistoryTable.objects.filter(client_id_id=invoice.client)
+            models.TransactionsHistoryTable.objects.filter(client_id_id=invoice.client_id)
             .order_by("-registration_date")
             .first()
         )
         last_balance_amount = last_balance.current_balance if last_balance else 0
-        if invoice.payment_status == "نقدي":
-            try:
-                models.TransactionsHistoryTable.objects.create(
-                    credit=Decimal(returned_item_instance.total),
-                    debt=0.0,
-                    transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                    details=f"ترجيع بضاتع - فاتورة رقم {invoice_item.invoice_no}",
-                    registration_date=timezone.now(),
-                    current_balance=round(last_balance_amount, 2) + Decimal(returned_item_instance.total),  # Updated balance
-                    client_id_id=invoice.client,  # Client ID
-                    )
-            except:
-                return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            client_object = AllClientsTable.objects.get(clientid=invoice.client)
-            models.StorageTransactionsTable.objects.create(
-                reciept_no=f"ف.ب : {invoice_item.invoice_no}",
-                transaction_date=timezone.now(),
-                amount=Decimal(returned_item_instance.total),
-                issued_for="اذن ترجيع",
-                note=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                account_type="عميل",
-                transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                place="مارين",
-                section="ترجيع",
-                subsection="ترجيع",
-                person=client_object.name or "",
-                payment= "نقدا" if invoice.payment_status == "نقدي" else "اجل",
-                daily_status =False,
+            models.TransactionsHistoryTable.objects.create(
+                credit=Decimal(returned_item_instance.total),
+                debt=0.0,
+                transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                details=f"ترجيع بضاتع - فاتورة رقم {invoice_item.invoice_no}",
+                registration_date=timezone.now(),
+                current_balance=round(last_balance_amount, 2) + Decimal(returned_item_instance.total),  # Updated balance
+                client_id_id=invoice.client_id,  # Client ID
             )
         except:
-            return Response({"error": "error in storage saving!"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if permission_obj.payment == "نقدي":
+            try:
+                client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
+                models.StorageTransactionsTable.objects.create(
+                    reciept_no=f"ف.ب : {invoice_item.invoice_no}",
+                    transaction_date=timezone.now(),
+                    amount=Decimal(returned_item_instance.total),
+                    issued_for="اذن ترجيع",
+                    note=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                    account_type="عميل",
+                    transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                    place="مارين",
+                    section="ترجيع",
+                    subsection="ترجيع",
+                    person=client_object.name or "",
+                    payment= "نقدا" if permission_obj.payment == "نقدي" else "اجل",
+                    daily_status =False,
+                )
+            except:
+                return Response({"error": "error in storage saving!"}, status=status.HTTP_400_BAD_REQUEST)
         # Serialize and return the created object
         serializer = self.get_serializer(returned_item_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -2139,3 +2133,15 @@ def store_fcm_token(request):
 
         else:
             return Response({"error": "Invalid role. Role should be 'client' or 'employee'."}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def get_product_images(request, id):
+    try:
+        product = models.Mainitem.objects.get(pno=id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"error": "Product not found!"}, status=404)  # Added return and status
+
+    images = models.Imagetable.objects.filter(productid=product.fileid)  # Ensure `productid` is correct
+    serializer = serializers.productImageSerializer(images, many=True)
+
+    return Response(serializer.data)  # Added return statement

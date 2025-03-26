@@ -264,8 +264,8 @@ class Mainitem(models.Model):
     companyproduct = models.CharField(db_column='CompanyProduct', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     dateproduct = models.CharField(db_column='DateProduct', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     levelproduct = models.CharField(db_column='LevelProduct', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    itemvalue = models.IntegerField(db_column='ItemValue', blank=True, null=True)  # Field name made lowercase.
-    itemtemp = models.IntegerField(db_column='ItemTemp', blank=True, null=True)  # Field name made lowercase.
+    itemvalue = models.IntegerField(db_column='ItemValue', default=0)  # Field name made lowercase.
+    itemtemp = models.IntegerField(db_column='ItemTemp', default=0)  # Field name made lowercase.
     itemplace = models.CharField(db_column='ItemPlace', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     orderlastdate = models.DateTimeField(db_column='OrderLastDate', blank=True, null=True)  # Field name made lowercase.
     ordersource = models.CharField(db_column='OrderSource', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
@@ -884,12 +884,6 @@ class FeedbackMessage(models.Model):
     def __str__(self):
         return f"Message in Feedback {self.feedback.id}"
 
-class BlacklistedToken(models.Model):
-    token = models.TextField()  # Store the JWT token (string format)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.token
 
 class return_permission(models.Model):
     autoid = models.AutoField(primary_key=True)

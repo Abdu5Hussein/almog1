@@ -3,7 +3,15 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import SellinvoiceTable,AllClientsTable
 from .notifications import send_order_tracking_notification  # Import the new function
+from .models import SellinvoiceTable, EmployeeQueue
+from .Tasks import assign_orders
 
+@receiver(post_save, sender=SellinvoiceTable)
+def handle_order_creation(sender, instance, created, **kwargs):
+    if created:
+        # Example: Automatically assign orders when a new one is created
+        assign_orders() 
+        
 @receiver(post_save, sender=SellinvoiceTable)
 def order_tracking_invoice_status_change_notification(sender, instance, **kwargs):
     """

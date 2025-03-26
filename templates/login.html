@@ -28,7 +28,7 @@
                   class="logo mb-4"
                   style="position: relative; top: -35px;"
                 />
-              </div>  
+              </div>
               <h1 class="text-center">Login</h1>
 
               {% if messages %} {% for message in messages %}
@@ -80,7 +80,7 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.min.js' %}"></script>
-  
+
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("login-form").addEventListener("submit", async function (event) {
@@ -114,6 +114,16 @@
             const result = await response.json();
 
             if (response.ok) {
+              // Store session data in local storage
+              if (result.session_data) {
+                  localStorage.setItem("session_data@username", JSON.stringify(result.session_data.username));
+                  localStorage.setItem("session_data@name", JSON.stringify(result.session_data.name));
+                  localStorage.setItem("session_data@role", JSON.stringify(result.session_data.role));
+                  localStorage.setItem("session_data@user_id", JSON.stringify(result.session_data.user_id.replace(/"/g, '')));
+
+                  sessionStorage.setItem("session_data@access_token", JSON.stringify(result.access_token.replace(/"/g, '')));
+                  localStorage.setItem("session_data@refresh_token", JSON.stringify(result.refresh_token.replace(/"/g, '')));
+              }
               // Redirect to dashboard on success
               window.location.href = "/home"; // Change to your actual dashboard route
             } else {

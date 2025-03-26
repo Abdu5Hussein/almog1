@@ -1,0 +1,3208 @@
+import json
+import hashlib
+import logging
+from decimal import Decimal
+from datetime import datetime, timedelta
+from django.utils.dateparse import parse_date
+from django.db import transaction
+from django.db.models import F, Q, Sum, IntegerField
+from django.db.models.functions import Cast
+from django.utils.timezone import now, make_aware
+from django.shortcuts import redirect, render, get_object_or_404
+from django.http import JsonResponse, HttpResponse, Http404
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.core.paginator import Paginator
+from django.core.cache import cache
+from django.urls import reverse
+from django.conf import settings
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status, generics
+from rest_framework.exceptions import NotFound
+
+from django_q.tasks import async_task
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+from reportlab.lib.pagesizes import letter, A3, landscape
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics, TTFont
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT
+from reportlab.lib import colors
+
+from bidi.algorithm import get_display
+import arabic_reshaper
+import pandas as pd
+
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+# Local imports
+from .models import (
+    EmployeesTable, CartItem, AllClientsTable, OrderQueue, EmployeeQueue,
+    SupportChatConversation, FeedbackMessage, Feedback, SupportChatMessageSys,
+    Clientstable, AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable,
+    TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable,
+    Modeltable, Imagetable, Mainitem, MeasurementsTable, Maintypetable, Sectionstable,
+    StorageTransactionsTable, Subsectionstable, Subtypetable, Companytable, Manufaccountrytable,
+    Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable, CurrenciesTable, enginesTable, ChatMessage
+)
+from .serializers import (
+    MainitemSerializer, CartItemSerializer, SupportChatMessageSysSerializer,
+    SupportChatConversationSerializer, SupportChatConversationSerializer1, FeedbackSerializer,
+    BuyInvoiceItemsTableSerializer, BuyInvoiceSerializer, LostAndDamagedTableSerializer, TransactionsHistoryTableSerializer, BuyinvoiceCostsSerializer,
+    SellInvoiceSerializer, SellInvoiceItemsSerializer, ClientSerializer, SubsectionSerializer, ChatMessageSerializer, FeedbackMessageSerializer
+)
+
+import re
+import math
+from django.contrib.auth.hashers import make_password
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.views import APIView
+# Other necessary imports
+from .Tasks import assign_orders
+
+
+# Setup logger
+logger = logging.getLogger(__name__)
+
+
+@api_view(['GET'])
+def get_subsections(request):
+    section_id = request.GET.get('section_id')
+    subsections = Subsectionstable.objects.filter(sectionid_id=section_id)
+    serializer = SubsectionSerializer(subsections, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@csrf_exempt
+def create_buy_invoice(request):
+    try:
+        data = request.data
+
+        invoice_autoid = data.get("invoice_autoid")
+        org_invoice_id = data.get("org_invoice_id")
+        source_id = data.get("source")
+        invoice_date = parse_date(data.get("invoice_date")) if data.get("invoice_date") else None
+        arrive_date = parse_date(data.get("arrive_date")) if data.get("arrive_date") else None
+        order_no = data.get("order_no")
+        currency = data.get("currency")
+        currency_rate = data.get("currency_rate")
+        ready_date = parse_date(data.get("ready_date")) if data.get("ready_date") else None
+        reminder = data.get("reminder")
+        temp_flag = data.get("temp_flag", False)
+        multi_source_flag = data.get("multi_source_flag", False)
+        source = AllSourcesTable.objects.get(clientid=source_id)
+
+        last_id_response = json.loads(get_buyinvoice_no(request).content)
+        last_id_no = last_id_response.get("autoid")
+        next_id_no = int(last_id_no) + 1
+
+        # Create the invoice
+        invoice = Buyinvoicetable.objects.create(
+            invoice_no=next_id_no,
+            original_no=org_invoice_id,
+            source=source.name,
+            invoice_date=invoice_date,
+            arrive_date=arrive_date,
+            order_no=order_no,
+            amount=0,
+            discount=0,
+            expenses=0,
+            net_amount=0,
+            account_amount=0,
+            currency=currency,
+            exchange_rate=currency_rate,
+            ready_date=ready_date,
+            remind_before=reminder,
+            temp_flag=temp_flag,
+            multi_source_flag=multi_source_flag,
+        )
+
+        # Serialize and return the response
+        serializer = BuyInvoiceSerializer(invoice)
+        return Response({"success": True, "message": "Invoice created successfully.", "id": serializer.data['invoice_no']}, status=201)
+
+    except Exception as e:
+        return Response({"success": False, "error": str(e)}, status=400)
+
+
+@api_view(['GET'])
+def filter_clients(request):
+    try:
+        pno = request.GET.get('pno')
+
+        if not pno:
+            return Response({'error': 'Missing pno parameter'}, status=400)
+
+        clients = Clientstable.objects.filter(pno=pno)
+        serializer = ClientSerializer(clients, many=True)
+
+        return Response(serializer.data)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@csrf_exempt
+def delete_record(request):
+    try:
+        data = request.data
+        fileid = data.get('fileid')
+
+        if not fileid:
+            return Response({"success": False, "message": "No 'fileid' provided."}, status=400)
+
+        record = Mainitem.objects.get(fileid=fileid)
+        record.delete()
+
+        return Response({"success": True, "message": "Record deleted successfully."})
+
+    except Mainitem.DoesNotExist:
+        return Response({"success": False, "message": "Record not found."}, status=404)
+
+    except Exception as e:
+        return Response({"success": False, "message": str(e)}, status=500)
+
+# views.py
+
+
+
+@api_view(['POST'])
+@csrf_exempt
+def filter_items(request):
+    if request.method == "POST":
+        try:
+            # Get the filters from the request body
+            filters = request.data  # Decoding bytes and loading JSON
+            cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
+            cached_data = cache.get(cache_key)
+
+            if cached_data:
+                cached_data["cached_flag"] = True
+                return Response(cached_data, status=status.HTTP_200_OK)
+
+            # Initialize the base Q object for filtering
+            filters_q = Q()
+
+            # Build the query based on the filters
+            if filters.get('fileid'):
+               filters_q &= Q(fileid__icontains=filters['fileid'])
+            if filters.get('itemno'):
+                filters_q &= Q(itemno__icontains=filters['itemno'])
+            if filters.get('itemmain'):
+                filters_q &= Q(itemmain__icontains=filters['itemmain'])
+            if filters.get('itemsubmain'):
+                filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
+            if filters.get('engine_no'):
+               filters_q &= Q(engine_no__icontains=filters['engine_no'])
+            if filters.get('itemthird'):
+               filters_q &= Q(itemthird__icontains=filters['itemthird'])
+            if filters.get('companyproduct'):
+                filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
+            if filters.get('itemname'):
+                filters_q &= Q(itemname__icontains=filters['itemname'])
+            if filters.get('eitemname'):
+                filters_q &= Q(eitemname__icontains=filters['eitemname'])
+            if filters.get('companyno'):
+                filters_q &= Q(replaceno__icontains=filters['companyno'])
+            if filters.get('pno'):
+                filters_q &= Q(pno__icontains=filters['pno'])
+            if filters.get('source'):
+                filters_q &= Q(ordersource__icontains=filters['source'])
+            if filters.get('model'):
+                filters_q &= Q(itemthird__icontains=filters['model'])
+            if filters.get('country'):
+                filters_q &= Q(itemsize__icontains=filters['country'])
+            if filters.get('oem'):
+                filters_q &= Q(oem_numbers__icontains=filters['oem'])
+
+            # Apply checkbox filters using Q objects
+            if filters.get('itemvalue') == "0":
+                filters_q &= Q(itemvalue=0)
+            if filters.get('itemvalue') == ">0":
+                filters_q &= Q(itemvalue__gt=0)
+            if filters.get('resvalue') == ">0":
+                filters_q &= Q(resvalue__gt=0)
+            if filters.get('itemvalue_itemtemp') == "lte":
+                filters_q &= Q(itemvalue__lte=F('itemtemp'))  # Compare fields
+
+            # Apply date range filter on `orderlastdate`
+            fromdate = filters.get('fromdate', '').strip()
+            todate = filters.get('todate', '').strip()
+
+            if fromdate and todate:
+                try:
+                    from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                    to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                    filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
+                except ValueError:
+                    return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Now filter the queryset using the combined Q object
+            queryset = Mainitem.objects.filter(filters_q).order_by('itemname')
+
+            # Serialize the filtered data
+            serializer = MainitemSerializer(queryset, many=True)
+            items_data = serializer.data
+
+            # Initialize totals
+            total_itemvalue = total_itemvalueb = total_resvalue = total_cost = total_order = total_buy = 0
+
+            # Calculate totals
+            for item in items_data:
+                itemvalue = float(item.get('itemvalue', 0))
+                itemvalueb = float(item.get('itemvalueb', 0))
+                resvalue = float(item.get('resvalue', 0))
+                costprice = float(item.get('costprice', 0))
+                orderprice = float(item.get('orderprice', 0))
+                buyprice = float(item.get('buyprice', 0))
+
+                total_itemvalue += itemvalue
+                total_itemvalueb += itemvalueb
+                total_resvalue += resvalue
+                total_cost += itemvalue * costprice
+                total_order += itemvalue * orderprice
+                total_buy += itemvalue * buyprice
+
+            fullTable = filters.get('fullTable')
+            if fullTable:
+                response = {
+                    "data": items_data,
+                    "fullTable": True,
+                    "last_page": 1,
+                    "total_rows": queryset.count(),
+                    "page_no": 1,
+                    "total_itemvalue": total_itemvalue,
+                    "total_itemvalueb": total_itemvalueb,
+                    "total_resvalue": total_resvalue,
+                    "total_cost": total_cost,
+                    "total_order": total_order,
+                    "total_buy": total_buy,
+                }
+                return Response(response)
+
+            # Pagination
+            page_number = int(filters.get('page') or 1)
+            page_size = int(filters.get('size') or 20)
+            paginator = Paginator(items_data, page_size)
+            page_obj = paginator.get_page(page_number)
+
+            response = {
+                "data": list(page_obj),
+                "last_page": paginator.num_pages,
+                "total_rows": paginator.count,
+                "page_size": page_size,
+                "page_no": page_number,
+                "total_itemvalue": total_itemvalue,
+                "total_itemvalueb": total_itemvalueb,
+                "total_resvalue": total_resvalue,
+                "total_cost": total_cost,
+                "total_order": total_order,
+                "total_buy": total_buy,
+                "cached_flag": False,
+            }
+
+            cache.set(cache_key, response, timeout=300)
+            return Response(response)
+
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+@api_view(['POST'])
+def filter_clients_input(request):
+    try:
+        # Get the filters from the request body (DRF handles JSON parsing)
+        filters = request.data  # This will automatically parse the JSON into a dictionary
+
+        # Build the query based on the filters
+        queryset = Clientstable.objects.all()
+        filters_applied = False
+
+        # Apply filters if they exist in the request
+        if filters.get('itemno'):
+            queryset = queryset.filter(itemno__icontains=filters['itemno'])
+            filters_applied = True
+        if filters.get('maintype'):
+            queryset = queryset.filter(maintype__icontains=filters['maintype'])
+            filters_applied = True
+        if filters.get('itemname'):
+            queryset = queryset.filter(itemname__icontains=filters['itemname'])
+            filters_applied = True
+        if filters.get('clientname'):
+            queryset = queryset.filter(clientname__icontains=filters['clientname'])
+            filters_applied = True
+        if filters.get('pno'):
+            queryset = queryset.filter(pno__icontains=filters['pno'])
+            filters_applied = True
+
+        # Handle date filtering
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                # Parse the date range
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+
+                # Apply date range filter
+                queryset = queryset.filter(date__range=[from_date_obj, to_date_obj])
+                filters_applied = True
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # If no filters are applied, return an empty list
+        if not filters_applied:
+            return Response([], status=status.HTTP_200_OK)
+
+        # Serialize the filtered data
+        serializer = ClientSerializer(queryset, many=True)
+
+        # Return the filtered data as JSON
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except json.JSONDecodeError:
+        return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@csrf_exempt
+@api_view(['POST'])
+def process_excel_and_import(request):
+    if request.method == "POST":
+        # Debug: Log the start of the POST request
+        logger.debug("Received POST request at /import-tabulator-data/")
+
+        # Handle file upload (Excel)
+        if request.FILES.get("fileInput"):
+            excel_file = request.FILES["fileInput"]
+            try:
+                logger.debug(f"Processing file: {excel_file.name}")
+                # Read the Excel file into a DataFrame
+                data = pd.read_excel(excel_file, engine='openpyxl')
+                logger.debug(f"Excel data read: {data.head()}")  # Log the first few rows of the data
+
+                # Process the Excel data and insert into database
+                records = []
+                for index, row in data.iterrows():
+                    try:
+                        logger.debug(f"Processing row {index}: {row.to_dict()}")
+                        records.append(Mainitem(
+                            itemno=row.get("ItemNo", None),
+                            itemmain=row.get("ItemMain", None),
+                            itemsubmain=row.get("ItemSubMain", None),
+                            itemname=row.get("ItemName", "failed"),
+                            itemthird=row.get("ItemThird", None),
+                            itemsize=row.get("ItemSize", None),
+                            companyproduct=row.get("CompanyProduct", None),
+                            dateproduct=row.get("DateProduct", None),
+                            levelproduct=row.get("LevelProduct", None),
+                            itemvalue=row.get("ItemValue", None),
+                            itemtemp=row.get("ItemTemp", None),
+                            itemplace=row.get("ItemPlace", None),
+                            orderlastdate=row.get("OrderLastDate", None),
+                            ordersource=row.get("OrderSource", None),
+                            orderbillno=row.get("OrderBillNo", None),
+                            buylastdate=row.get("BuyLastDate", None),
+                            buysource=row.get("BuySource", None),
+                            buybillno=row.get("BuyBillNo", None),
+                            orgprice=row.get("OrgPrice", None),
+                            orderprice=row.get("OrderPrice", None),
+                            costprice=row.get("CostPrice", None),
+                            buyprice=row.get("BuyPrice", None),
+                            memo=row.get("Memo", None),
+                            orderstop=row.get("OrderStop", None),
+                            buystop=row.get("BuyStop", None),
+                            itemtrans=row.get("ItemTrans", None),
+                            itemvalueb=row.get("ItemValueB", None),
+                            replaceno=row.get("ReplaceNo", None),
+                            itemtype=row.get("ItemType", None),
+                            barcodeno=row.get("BarcodeNo", None),
+                            eitemname=row.get("EItemName", None),
+                            currtype=row.get("CurrType", None),
+                            lessprice=row.get("LessPrice", None),
+                            pno=row.get("PNo", None),
+                            currvalue=row.get("CurrValue", None),
+                            resvalue=row.get("resValue", None),
+                            itemperbox=row.get("ItemPerBox", None),
+                            cstate=row.get("CSTate", None),
+                        ))
+                    except Exception as row_error:
+                        logger.error(f"Error processing row {index}: {row_error}")
+                        continue
+
+                # Bulk create records in the database
+                Mainitem.objects.bulk_create(records)
+                logger.debug(f"Successfully inserted {len(records)} records into the database.")
+
+                return JsonResponse({"status": "success", "message": "Excel data imported successfully."}, status=200)
+
+            except Exception as e:
+                logger.error(f"Error processing file: {e}")
+                return JsonResponse({"status": "error", "message": f"Error: {str(e)}"})
+
+        # Handle imported Tabulator data
+        if request.data.get("data"):
+            data = request.data["data"]
+            try:
+                logger.debug(f"Received Tabulator data: {data}")
+                records = []
+                for item in data:
+                    try:
+                        records.append(Mainitem(
+                            itemno=item.get("ItemNo", None),
+                            itemmain=item.get("ItemMain", None),
+                            itemsubmain=item.get("ItemSubMain", None),
+                            itemname=item.get("ItemName", "failed"),
+                            itemthird=item.get("ItemThird", None),
+                            itemsize=item.get("ItemSize", None),
+                            companyproduct=item.get("CompanyProduct", None),
+                            dateproduct=item.get("DateProduct", None),
+                            levelproduct=item.get("LevelProduct", None),
+                            itemvalue=item.get("ItemValue", 0),
+                            itemtemp=item.get("ItemTemp", 0),
+                            itemplace=item.get("ItemPlace", None),
+                            orderlastdate=item.get("OrderLastDate", None),
+                            ordersource=item.get("OrderSource", None),
+                            orderbillno=item.get("OrderBillNo", None),
+                            buylastdate=item.get("BuyLastDate", None),
+                            buysource=item.get("BuySource", None),
+                            buybillno=item.get("BuyBillNo", None),
+                            orgprice=item.get("OrgPrice", 0),
+                            orderprice=item.get("OrderPrice", 0),
+                            costprice=item.get("CostPrice", 0),
+                            buyprice=item.get("BuyPrice", 0),
+                            memo=item.get("Memo", None),
+                            orderstop=item.get("OrderStop", None),
+                            buystop=item.get("BuyStop", None),
+                            itemtrans=item.get("ItemTrans", None),
+                            itemvalueb=item.get("ItemValueB", 0),
+                            replaceno=item.get("ReplaceNo", None),
+                            itemtype=item.get("ItemType", None),
+                            barcodeno=item.get("BarcodeNo", None),
+                            eitemname=item.get("EItemName", None),
+                            currtype=item.get("CurrType", None),
+                            lessprice=item.get("LessPrice", 0),
+                            pno=item.get("PNo", None),
+                            currvalue=item.get("CurrValue", None),
+                            resvalue=item.get("ResValue", 0),
+                            itemperbox=item.get("ItemPerBox", None),
+                            cstate=item.get("CSTate", None)
+                        ))
+
+                    except Exception as item_error:
+                        logger.error(f"Error processing item {item}: {item_error}")
+                        continue
+
+                Mainitem.objects.bulk_create(records)
+                logger.debug(f"Successfully inserted {len(records)} records from Tabulator data.")
+                return JsonResponse({"status": "success", "message": "Tabulator data imported successfully."})
+
+            except Exception as e:
+                logger.error(f"Error processing imported data: {e}")
+                return JsonResponse({"status": "error", "message": f"Error: {str(e)}"})
+
+        return JsonResponse({"status": "error", "message": "Invalid request or missing file."}, status=400)
+
+#until here
+
+# Register the Amiri font
+font_path = settings.BASE_DIR / 'staticfiles/Amiri-font/Amiri-Regular.ttf'
+pdfmetrics.registerFont(TTFont('Amiri', str(font_path)))
+
+# Regular expression to detect Arabic text
+ARABIC_CHAR_PATTERN = re.compile(r'[\u0600-\u06FF]')
+
+# Header mapping: English to Arabic
+HEADER_MAPPING = {
+    "fileid": "رقم الملف",
+    "itemno": "الرقم الاصلي",
+    "itemmain": "البيان الرئيسي",
+    "itemsubmain": "البيان الفرعي",
+    "itemname": "اسم الصنف",
+    "itemthird": "الموديل",
+    "itemsize": "بلد الصنع",
+    "companyproduct": "الشركة المنتجة",
+    "itemvalue": "الرصيد بالمخزن",
+    "itemtemp": "الرصيد الاحتياطي",
+    "itemplace": "الموقع",
+    "buyprice": "سعر البيع",
+    "memo": "المواصفات",
+    "replaceno": "رقم الشركة",
+    "barcodeno": "رقم الباركود",
+    "eitemname": "اسم العنصر (إنجليزي)",
+    "currtype": "نوع العملة",
+    "lessprice": "اقل سعر",
+    "pno": "الرقم الخاص",
+    "currvalue": "قيمة العملة",
+    "itemvalueb": "الرصيد المؤقت",
+    "costprice": "سعر التكلفة",
+    "resvalue": "الرصيد المحجوز",
+    "orderprice": "سعر الشراء",
+    "levelproduct": "مستوى المنتج",
+    "orderlastdate": "تاريخ آخر طلب",
+    "ordersource": "مصدر الطلب",
+    "orderbillno": "رقم فاتورة الطلب",
+    "buylastdate": "تاريخ آخر شراء",
+    "buysource": "مصدر الشراء",
+    "buybillno": "رقم فاتورة الشراء",
+    "orgprice": "سعر التوريد",
+    "orderstop": "إيقاف الطلب",
+    "buystop": "إيقاف الشراء",
+    "itemtrans": "انتقال العنصر",
+    "itemtype": "نوع العنصر",
+    "itemperbox": "عدد العناصر بالصندوق",
+    "cstate": "حالة العنصر",
+    "company": "الشركة المنتجة",
+    "companyno": "رقم الشركة",
+    "date": "التاريخ",
+    "quantity": "الكمية",
+    "pno_value": "رقم خاص (FK)",
+    "status": "الحالة",
+    "user": "المستخدم",
+    "name":"الاسم",
+    "balance":"الرصيد",
+    "loan_limit":"السقف",
+    "category":"التصنيف",
+    "clientid":"رقم العميل",
+    "paid_total":"اجمالي الدفوعات",
+    "last_transaction_amount":"قيمة اخر دفعة",
+    "last_transaction":"تاريخ اخر دفعة",
+}
+
+def format_arabic_text(text):
+    """
+    Reformat Arabic text for proper rendering in PDFs.
+    - Arabic reshaping ensures proper character joining.
+    - Bidi reordering ensures correct right-to-left display.
+    """
+    reshaped_text = arabic_reshaper.reshape(text)
+    return get_display(reshaped_text)
+
+@api_view(['POST'])
+def generate_pdf(request):
+    # Parse the incoming JSON data
+    data = request.data  # Using DRF's request.data instead of request.body
+    table_data = data.get('data', [])
+
+    if not table_data:  # Handle empty data case
+        return Response({'error': 'No data provided for PDF generation'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create a response object to return as a PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="tabulator_data.pdf"'
+
+    # Custom Tabloid size (11 x 17 inches)
+    TABLOID = (2992, 1224)
+    doc = SimpleDocTemplate(response, pagesize=landscape(TABLOID))
+
+    # Prepare column headers and row data with RTL ordering
+    if table_data:
+        original_headers = list(table_data[0].keys())
+        column_headers = [HEADER_MAPPING.get(header, header) for header in original_headers][::-1]  # Reverse headers
+    else:
+        original_headers = []
+        column_headers = []
+
+    # Prepare the table data with reversed headers
+    data_for_table = [column_headers]  # Add reversed headers as the first row
+    for row in table_data:
+        # Reverse each row to match RTL column order
+        data_for_table.append([row.get(header, '') for header in reversed(original_headers)])
+
+    # Define custom styles for Arabic and English text
+    arabic_style = ParagraphStyle(
+        name="Arabic",
+        fontName="Amiri",  # Use the registered Amiri font
+        fontSize=10,  # Font size
+        alignment=1,  # Align text to the right for RTL
+        leading=12,  # Line spacing
+    )
+
+    english_style = ParagraphStyle(
+        name="English",
+        fontName="Helvetica",  # Default font for English text
+        fontSize=10,  # Font size
+        alignment=0,  # Align text to the left for LTR
+        leading=12,  # Line spacing
+    )
+
+    # Convert table data to Paragraphs for proper rendering
+    formatted_data = []
+    for row_index, row in enumerate(data_for_table):
+        formatted_row = []
+        for cell in row:
+            if isinstance(cell, str):
+                # Detect Arabic text
+                if ARABIC_CHAR_PATTERN.search(cell) or row_index == 0:  # Headers assumed Arabic
+                    arabic_text = format_arabic_text(cell)
+                    formatted_row.append(Paragraph(arabic_text, arabic_style))
+                else:
+                    formatted_row.append(Paragraph(cell, english_style))
+            else:
+                formatted_row.append(cell)
+        formatted_data.append(formatted_row)
+
+    # Dynamically calculate column widths
+    page_width, _ = TABLOID
+    table_width = page_width - 72  # Leave 1-inch margin on each side
+    min_width = 50  # Minimum width in points
+    max_width = 350  # Maximum column width
+    max_column_widths = []
+
+    for header in column_headers:
+        max_length = max(len(str(row.get(header, ''))) for row in table_data) if table_data else 10
+        max_length = max(max_length, len(header))
+        computed_width = max(min_width, min(max_length * 7, max_width))
+        max_column_widths.append(computed_width)
+
+    total_width = sum(max_column_widths)
+
+    # Ensure total width fits within the page by scaling down if necessary
+    if total_width > table_width:
+        scale_factor = table_width / total_width
+        max_column_widths = [math.floor(width * scale_factor) for width in max_column_widths]
+
+    # Table style configuration
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),  # Header row background
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),  # Header text color
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Center align all cells
+        ('FONTNAME', (0, 0), (-1, -1), 'Amiri'),  # Use Amiri font
+        ('FONTSIZE', (0, 0), (-1, -1), 8),  # Font size
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),  # Header padding
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),  # Grid lines
+    ])
+
+    # Handle large data by streaming content in batches to avoid memory overload
+    max_rows_per_page = 50  # Limit to a number of rows per page to prevent memory issues
+    rows = len(formatted_data)
+    elements = []
+
+    for i in range(0, rows, max_rows_per_page):
+        page_data = formatted_data[i:i + max_rows_per_page]
+        if not page_data:
+            return Response({'error': 'No data provided for PDF generation'}, status=status.HTTP_400_BAD_REQUEST)
+        page_table = Table(page_data, colWidths=max_column_widths)
+        page_table.setStyle(table_style)
+
+        elements.append(page_table)
+
+        # Add page break if there are more rows
+        if i + max_rows_per_page < rows:
+            elements.append(PageBreak())
+
+    # Build the PDF document and return as response
+    doc.build(elements)
+
+    return response
+
+@api_view(['GET'])
+def get_item_data(request, fileid):
+    try:
+        # Retrieve the record from the database
+        item = Mainitem.objects.get(fileid=fileid)
+
+        # Serialize the item data
+        serializer = MainitemSerializer(item)
+
+        # Return the serialized data
+        return Response(serializer.data)
+
+    except Mainitem.DoesNotExist:
+        return Response({"error": "Item not found"}, status=404)
+
+@api_view(['PATCH'])
+def edit_main_item(request):
+    if request.method == 'PATCH':
+        try:
+            data = request.data  # DRF automatically parses JSON into a Python dict
+            fileid = data.get('fileid')
+            item = Mainitem.objects.get(fileid=fileid)
+
+            # Function to safely update a field
+            def safe_update(field_name, new_value):
+                if new_value not in [None, "", 0, "0"]:
+                    setattr(item, field_name, new_value)
+
+            # Update the model fields with the new data if not empty
+            safe_update('itemno', data.get('originalno'))
+            safe_update('itemmain', data.get('itemmain'))
+            safe_update('itemsubmain', data.get('itemsub'))
+            safe_update('itemname', data.get('pnamearabic'))
+            safe_update('short_name', data.get('shortname'))
+            safe_update('eitemname', data.get('pnameenglish'))
+            safe_update('companyproduct', data.get('company'))
+            safe_update('replaceno', data.get('companyno'))
+            safe_update('engine_no', data.get('engine'))
+            safe_update('barcodeno', data.get('barcode'))
+            safe_update('memo', data.get('description'))
+            safe_update('itemsize', data.get('country'))
+            safe_update('itemperbox', data.get('pieces4box'))
+            safe_update('itemthird', data.get('model'))
+            safe_update('itemvalue', data.get('storage'))
+            safe_update('itemtemp', data.get('backup'))
+            safe_update('itemvalueb', data.get('temp'))
+            safe_update('resvalue', data.get('reserved'))
+            safe_update('itemplace', data.get('location'))
+            safe_update('orgprice', data.get('originprice'))
+            safe_update('orderprice', data.get('buyprice'))
+            safe_update('costprice', data.get('expensesprice'))
+            safe_update('buyprice', data.get('sellprice'))
+            safe_update('lessprice', data.get('lessprice'))
+
+            item.save()  # Save the updated record
+
+            return Response({'success': True}, status=status.HTTP_200_OK)
+        except Mainitem.DoesNotExist:
+            return Response({'success': False, 'error': 'Record not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_mainItem_last_pno(request):
+    try:
+        # Get the last autoid by ordering the table by autoid in descending order
+        last_pno = Mainitem.objects.order_by('-pno').first()
+        if last_pno:
+            response_data = {'pno': last_pno.pno}
+        else:
+            # Handle the case where the table is empty
+            response_data = {'pno': 0, 'message': 'No invoices found'}
+    except Exception as e:
+        # Handle unexpected errors
+        response_data = {'error': str(e)}
+
+    return Response(response_data, status=status.HTTP_200_OK)
+
+
+
+@api_view(['POST'])
+@csrf_exempt
+def create_main_item(request):
+    if request.method == 'POST':
+        data = request.data
+
+        # Get the last PNO number
+        last_pno_response = json.loads(get_mainItem_last_pno(request).content)
+        last_pno_no = last_pno_response.get("pno")
+        next_pno_no = int(last_pno_no) + 1
+
+        # Map incoming data fields to model fields
+        mapped_data = {
+            "itemno": data.get('originalno') or None,
+            "itemmain": data.get('itemmain') or None,
+            "itemsubmain": data.get('itemsub') or None,
+            "itemname": data.get('pnamearabic'),
+            "eitemname": data.get('pnameenglish') or None,
+            "short_name": data.get('shortname') or None,
+            "companyproduct": data.get('company') or None,
+            "replaceno": data.get('companyno') or None,
+            "engine_no": data.get('engine') or None,
+            "pno": next_pno_no,
+            "barcodeno": data.get('barcode') or None,
+            "memo": data.get('description') or None,
+            "itemplace": data.get('location') or None,
+            "itemsize": data.get('country') or None,
+            "itemperbox": int(data.get('pieces4box', 0) or 0),
+            "itemthird": data.get('model') or None,
+            "itemvalue": int(data.get('storage', 0) or 0),
+            "itemtemp": int(data.get('backup', 0) or 0),
+            "itemvalueb": int(data.get('temp', 0) or 0),
+            "resvalue": int(data.get('reserved', 0) or 0),
+            "orgprice": float(data.get('originprice', 0) or 0),
+            "orderprice": float(data.get('buyprice', 0) or 0),
+            "costprice": float(data.get('expensesprice', 0) or 0),
+            "buyprice": float(data.get('sellprice', 0) or 0),
+            "lessprice": float(data.get('lessprice', 0) or 0),
+        }
+
+        # Use the serializer with the mapped data
+        serializer = MainitemSerializer(data=mapped_data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': 'success', 'message': 'Record created successfully!'}, status=status.HTTP_201_CREATED)
+
+        return Response({'status': 'error', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({'status': 'error', 'message': 'Invalid request method.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+def safe_int(value, default=0):
+    """Safely convert a value to an integer, or return the default if conversion fails."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+def safe_float(value, default=0.0):
+    """Safely convert a value to a float, or return the default if conversion fails."""
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
+
+@api_view(['GET'])
+def get_clients(request):
+    try:
+        # Query the database for all Clientstable entries
+        items = Clientstable.objects.all()
+        serializer = ClientSerializer(items, many=True)  # Serialize the queryset
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)         # Return error details in JSON
+
+
+@api_view(['GET'])
+def get_data(request):
+    try:
+        items = Mainitem.objects.all().order_by('itemname')
+        serializer = MainitemSerializer(items, many=True)
+
+        total_itemvalue = Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
+        total_itemvalueb = Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
+        total_resvalue = Mainitem.objects.aggregate(total=Sum('resvalue'))['total']
+        total_cost = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('costprice')))['total']
+        total_order = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('orderprice')))['total']
+        total_buy = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('buyprice')))['total']
+
+        fullTable = request.GET.get('fullTable', None)
+        if fullTable:
+            response = {
+                "data": serializer.data,
+                "fullTable": True,
+                "total_itemvalue": total_itemvalue,
+                "total_itemvalueb": total_itemvalueb,
+                "total_resvalue": total_resvalue,
+                "total_cost": total_cost,
+                "total_order": total_order,
+                "total_buy": total_buy,
+            }
+            return Response(response, status=status.HTTP_200_OK)
+
+        page_number = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('size', 20))
+        paginator = Paginator(items, page_size)
+        page_obj = paginator.get_page(page_number)
+        page_serializer = MainitemSerializer(page_obj, many=True)
+
+        response = {
+            "data": page_serializer.data,
+            "last_page": paginator.num_pages,
+            "total_rows": paginator.count,
+            "page_size": page_size,
+            "page_no": page_number,
+            "total_itemvalue": total_itemvalue,
+            "total_itemvalueb": total_itemvalueb,
+            "total_resvalue": total_resvalue,
+            "total_cost": total_cost,
+            "total_order": total_order,
+            "total_buy": total_buy,
+        }
+        return Response(response, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def update_itemvalue(request):
+    try:
+        data = request.data
+        fileid = data.get('fileid')
+        new_itemvalue = data.get('newItemValue')
+        old_itemvalue = 0
+
+        item = Mainitem.objects.get(fileid=fileid)
+        old_itemvalue = item.itemvalue
+        item.itemvalue = new_itemvalue
+        item.save()
+
+        movement_Record = Clientstable.objects.create(
+            itemno=item.itemno,
+            itemname=item.itemname,
+            maintype=item.itemmain,
+            currentbalance=item.itemvalue,
+            date=timezone.now(),
+            clientname="اعادة ترصيد",
+            description="اعادة ترصيد للصنف",
+            clientbalance=int(new_itemvalue - old_itemvalue) or 0,
+            pno_instance=item,
+            pno=item.pno
+        )
+
+        return Response({'success': True, 'message': 'Item value updated successfully.'}, status=status.HTTP_200_OK)
+    except Mainitem.DoesNotExist:
+        return Response({'success': False, 'message': 'Item not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+#until here
+
+@api_view(['POST'])
+def update_storage(request):
+    try:
+        data = request.data
+        fileid = data.get('fileid')
+        storage = data.get('storage')
+
+        item = Mainitem.objects.get(fileid=fileid)
+        item.itemplace = storage
+        item.save()
+
+        return Response({'success': True, 'message': 'Storage updated successfully.'}, status=status.HTTP_200_OK)
+    except Mainitem.DoesNotExist:
+        return Response({'success': False, 'message': 'Item not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def delete_lost_damaged(request):
+    try:
+        data = request.data
+        fileid = data.get('fileid')
+
+        if not fileid:
+            return Response({'success': False, 'message': 'fileid is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        record = LostAndDamagedTable.objects.get(fileid=fileid)
+        record.delete()
+        return Response({'success': True, 'message': 'Record deleted successfully.'}, status=status.HTTP_200_OK)
+    except LostAndDamagedTable.DoesNotExist:
+        return Response({'success': False, 'message': f'Record with fileid {fileid} does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def filter_lost_damaged(request):
+    try:
+        # Get the filters from the request body
+        filters = request.data  # DRF automatically parses JSON body
+
+        queryset = LostAndDamagedTable.objects.all()
+
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                # Parse dates
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+
+                # Apply date range filter
+                queryset = queryset.filter(date__range=[from_date_obj, to_date_obj])
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Serialize the filtered data
+        serializer = LostAndDamagedTableSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    except json.JSONDecodeError:
+        return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(str(e))
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def fetch_lost_damaged_data(request):
+    # Fetch all data from the model
+    data = LostAndDamagedTable.objects.all().values(
+        "fileid", "date", "itemno", "companyno", "itemname", "user", "quantity",
+        "company", "costprice", "pno", "pno_value", "status"
+    )
+    return Response(data)
+
+
+@api_view(['POST'])
+def add_lost_damaged(request):
+    try:
+        # Parse the JSON data from the request body
+        data = request.data  # DRF automatically parses JSON body
+
+        # Extract data from the request
+        itemno = data.get('itemno')
+        companyno = data.get('companyno')
+        company = data.get('company')
+        itemname = data.get('itemname')
+        costprice = data.get('costprice')
+        quantity = data.get('quantity')
+        pno_id = data.get('pno')  # Note that we expect an ID, not the instance itself
+        status = data.get('status')
+        date = data.get('date')
+        itemmain = data.get('itemmain')
+
+        # Validate required fields
+        if not all([itemno, companyno, company, itemname, costprice, quantity, pno_id, status]):
+            error_message = 'Missing required fields.'
+            logger.error(error_message)
+            return Response({'success': False, 'message': error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Attempt to fetch the Mainitem instance for the provided pno_id
+        try:
+            pno_instance = Mainitem.objects.get(pno=pno_id)
+            pno_instance.itemvalue -= int(data.get('quantity', 0)) or 0
+            pno_instance.save()
+        except Mainitem.DoesNotExist:
+            error_message = f'Mainitem with pno id {pno_id} does not exist.'
+            logger.error(error_message)
+            return Response({'success': False, 'message': error_message}, status=status.HTTP_404_NOT_FOUND)
+
+        # Save the record in the LostAndDamagedTable model
+        lost_damaged_record = LostAndDamagedTable.objects.create(
+            itemno=itemno,
+            companyno=companyno,
+            company=company,
+            itemname=itemname,
+            costprice=costprice,
+            quantity=quantity,
+            pno=pno_instance,  # Use the Mainitem instance, not the ID
+            pno_value=pno_instance.pno,  # Save the actual pno value
+            status=status,
+            date=date
+        )
+
+        movement_record = Clientstable.objects.create(
+            itemno=itemno,
+            itemname=itemname,
+            maintype=itemmain,
+            currentbalance=pno_instance.itemvalue,
+            date=date,
+            clientname=status,
+            description="فقد او تلف للصنف",
+            clientbalance=int(data.get('quantity', 0)) or 0,
+            pno_instance=pno_instance,
+            pno=pno_instance.pno
+        )
+
+        success_message = 'Record added successfully.'
+        logger.info(success_message)
+
+        return Response({'success': True, 'message': success_message, "new_balance": pno_instance.itemvalue})
+
+    except json.JSONDecodeError as e:
+        error_message = f'Invalid JSON format: {e}'
+        logger.error(error_message)
+        return Response({'success': False, 'message': 'Invalid JSON format.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        error_message = f'Unexpected error: {e}'
+        logger.error(error_message)
+        return Response({'success': False, 'message': 'An unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_all_clients(request):
+    try:
+        # Query the database for all clients
+        items = AllClientsTable.objects.all().values(
+            'clientid', 'name', 'address', 'email', 'website',
+            'phone', 'mobile', 'last_transaction', 'type',
+            'category', 'loan_period', 'loan_limit', 'loan_day',
+            'subtype', 'client_stop', 'curr_flag', 'permissions',
+            'other', 'accountcurr', 'last_transaction_amount'
+        )
+
+        # Prepare a list to include balance for each client
+        data = []
+
+        for item in items:
+            clientid = item['clientid']
+
+            # Calculate balance from TransactionsHistoryTable
+            balance_data = TransactionsHistoryTable.objects.filter(client_id_id=clientid).aggregate(
+                total_debt=Sum('debt'),
+                total_credit=Sum('credit')
+            )
+
+            total_debt = balance_data.get('total_debt') or 0
+            total_credit = balance_data.get('total_credit') or 0
+            balance = round(total_credit - total_debt, 2)  # Ensure two decimal digits
+
+            # Fetch total credit for specific client_id and where details = "دفعة على حساب"
+            specific_credit_data = TransactionsHistoryTable.objects.filter(
+                client_id_id=clientid, details="دفعة على حساب"
+            ).aggregate(total_specific_credit=Sum('credit'))
+
+            total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
+
+            # Add balance and specific credit to the client's data
+            item['balance'] = balance
+            item['paid_total'] = total_specific_credit  # Add the total specific credit
+            data.append(item)
+
+        # Pagination parameters from the request
+        page_number = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('size', 100))
+
+        # Create paginator
+        paginator = Paginator(data, page_size)
+        page_obj = paginator.get_page(page_number)
+
+        # Prepare the response
+        response = {
+            "data": list(page_obj),  # Convert the current page items to a list
+            "last_page": paginator.num_pages,  # Total number of pages
+            "total_rows": paginator.count,  # Total number of rows
+            "page_size": page_size,
+            "page_no": page_number,
+        }
+
+        return Response(response)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def create_client_record(request):
+    if request.method == 'POST':
+        data = request.data  # DRF will parse the JSON data automatically
+
+        # Validate required fields
+        if not data.get('phone') or not data.get('password'):
+            return Response({'status': 'error', 'message': 'Phone number and Password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if phone number already exists
+        existing_phones = User.objects.values_list('username', flat=True)
+        if data.get('phone') in existing_phones:
+            return Response({'status': 'error', 'message': 'Phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Encrypt the password
+        password = make_password(data.get('password'))
+
+        # Create the client record
+        try:
+            new_item = AllClientsTable.objects.create(
+                name=data.get('client_name', '').strip() or None,
+                address=data.get('address', '').strip() or None,
+                email=data.get('email', '').strip() or None,
+                website=data.get('website', '').strip() or None,
+                phone=data.get('phone', '').strip() or None,
+                mobile=data.get('mobile', '').strip() or None,
+                last_transaction_amount=data.get('last_transaction', '0').strip() or '0',
+                accountcurr=data.get('currency', '').strip() or None,
+                type="عميل",
+                category=data.get('sub_category', '').strip() or None,
+                loan_period=int(data.get('limit', '0')) if str(data.get('limit', '0')).isdigit() else None,
+                loan_limit=float(data.get('limit_value', '0.0')) if data.get('limit_value') else None,
+                loan_day=data.get('installments') or None,
+                subtype=data.get('types', '').strip() or None,
+                client_stop=True if str(data.get('client_stop', '0')).lower() in ['on', '1', 'true'] else False,
+                curr_flag=bool(int(data.get('curr_flag', '0'))) if str(data.get('curr_flag', '0')).isdigit() else False,
+                permissions=data.get('permissions', '').strip() or None,
+                other=data.get('other', '').strip() or None,
+                username=data.get('phone'),
+                password=password,
+            )
+
+            # Create User instance
+            user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=data.get('password'))
+            user.save()
+
+            return Response({'status': 'success', 'message': 'Record created successfully!'})
+
+        except ValidationError as e:
+            return Response({'status': 'error', 'message': f'Validation Error: {e.message_dict}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({'status': 'error', 'message': 'Invalid request method.'}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+def update_client_record(request):
+    if request.method == 'POST':
+        try:
+            data = request.data  # DRF will parse the JSON data automatically
+            client_id = data.get('client_id')
+
+            # Retrieve the client record
+            client = AllClientsTable.objects.get(clientid=client_id)
+
+            # Update client fields
+            client.name = data.get('client_name', client.name)
+            client.address = data.get('address', client.address)
+            client.email = data.get('email', client.email)
+            client.website = data.get('website', client.website)
+            client.phone = data.get('phone', client.phone)
+            client.mobile = data.get('mobile', client.mobile)
+            client.last_transaction = data.get('last_transaction', client.last_transaction)
+            client.accountcurr = data.get('currency', client.accountcurr)
+            client.type = data.get('account_type', client.type)
+            client.category = data.get('sub_category', client.category)
+            client.loan_period = (
+                int(data['limit']) if data.get('limit') and data['limit'].isdigit() else client.loan_period
+            )
+            client.loan_limit = float(data['limit_value']) if data.get('limit_value') else client.loan_limit
+            client.loan_day = data.get('installments', client.loan_day)
+            client.subtype = data.get('types', client.subtype)
+            client.client_stop = data.get('client_stop') in ['on', '1', True]
+            client.curr_flag = bool(int(data.get('curr_flag', 0)))
+            client.permissions = data.get('permissions', client.permissions)
+            client.other = data.get('other', client.other)
+            client.geo_location = data.get('geo_location') if data.get('geo_location') else None
+
+            client.save()
+
+            return Response({'status': 'success', 'message': 'Record updated successfully!'})
+
+        except AllClientsTable.DoesNotExist:
+            return Response({'status': 'error', 'message': 'Client record not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({'status': 'error', 'message': 'Invalid request method.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def delete_client_record(request):
+    try:
+        # Parse request data
+        data = request.data
+        client_id = data.get('client_id')
+
+        if not client_id:
+            return Response({'status': 'error', 'message': 'Client ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Retrieve the client instance
+        client = AllClientsTable.objects.get(clientid=client_id)
+
+        # Delete the client record
+        client.delete()
+
+        return Response({'status': 'success', 'message': 'Record deleted successfully!'}, status=status.HTTP_200_OK)
+
+    except AllClientsTable.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Client record not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    except json.JSONDecodeError:
+        return Response({'status': 'error', 'message': 'Invalid JSON in request body.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({'status': 'error', 'message': f'An error occurred: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['POST'])
+def filter_all_clients(request):
+    try:
+        filters = request.data  # Get the filters from the request body
+
+        # Default query
+        queryset = AllClientsTable.objects.all()
+
+        # Apply filters (ID, Name, Email, etc.)
+        if filters.get("id"):
+            queryset = queryset.filter(clientid__icontains=filters["id"])
+        if filters.get("name"):
+            queryset = queryset.filter(name__icontains=filters["name"])
+        if filters.get("email"):
+            queryset = queryset.filter(email__icontains=filters["email"])
+        if filters.get("phone"):
+            queryset = queryset.filter(phone__icontains=filters["phone"])
+        if filters.get("mobile"):
+            queryset = queryset.filter(mobile__icontains=filters["mobile"])
+        if filters.get("subtype"):
+            queryset = queryset.filter(category__icontains=filters["subtype"])
+
+        # Date range filter
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                # Parse dates
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+
+                # Apply date range filter
+                queryset = queryset.filter(last_transaction__range=[from_date_obj, to_date_obj])
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prepare the data
+        clients_data = []
+        for client in queryset:
+            client_id = client.clientid
+            balance_data = TransactionsHistoryTable.objects.filter(client_id_id=client_id).aggregate(
+                total_debt=Sum("debt"),
+                total_credit=Sum("credit"),
+            )
+            total_debt = balance_data.get("total_debt") or 0
+            total_credit = balance_data.get("total_credit") or 0
+            balance = round(total_credit - total_debt, 2)
+
+            # Apply balance filters (Paid, Debtor, Creditor)
+            filter_type = filters.get("filter")
+            if filter_type == "paid" and balance != 0:
+                continue  # Skip if balance is not zero
+            elif filter_type == "debtor" and balance >= 0:
+                continue  # Skip if balance is not negative
+            elif filter_type == "creditor" and balance <= 0:
+                continue  # Skip if balance is not positive
+            if fromdate and todate:
+                # Fetch total credit for specific client_id and where details = "دفعة على حساب"
+                specific_credit_data = TransactionsHistoryTable.objects.filter(
+                    client_id_id=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
+                ).aggregate(total_specific_credit=Sum('credit'))
+            else:
+                # Fetch total credit for specific client_id and where details = "دفعة على حساب"
+                specific_credit_data = TransactionsHistoryTable.objects.filter(
+                    client_id_id=client_id, details="دفعة على حساب"
+                ).aggregate(total_specific_credit=Sum('credit'))
+
+            total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
+
+            # Add the filtered client data
+            clients_data.append(
+                {
+                    "clientid": client.clientid,
+                    "loan_limit": client.loan_limit,
+                    "name": client.name,
+                    "address": client.address,
+                    "email": client.email,
+                    "phone": client.phone,
+                    "mobile": client.mobile,
+                    "subtype": client.subtype,
+                    "category": client.category,
+                    "last_transaction_amount": client.last_transaction_amount,
+                    "last_transaction": client.last_transaction,
+                    "balance": balance,
+                    "paid_total": total_specific_credit,
+                }
+            )
+
+        # Pagination parameters from the request
+        page_number = int(filters.get("page") or 1)
+        page_size = int(filters.get("size") or 100)
+
+        # Create paginator
+        paginator = Paginator(clients_data, page_size)
+        page_obj = paginator.get_page(page_number)
+
+        # Prepare the response
+        response = {
+            "data": list(page_obj),  # Convert the current page items to a list
+            "last_page": paginator.num_pages,  # Total number of pages
+            "total_rows": paginator.count,  # Total number of rows
+            "page_size": page_size,
+            "page_no": page_number,
+        }
+        return Response(response)
+
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": f"Internal Server Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['POST'])
+def create_storage_record(request):
+    try:
+        data = request.data  # Django REST framework automatically parses the JSON data
+
+        transaction_date = make_aware(datetime.strptime(data.get("transaction_date"), '%Y-%m-%d'))
+
+        new_record = StorageTransactionsTable(
+            reciept_no=data.get("reciept_no", ""),
+            transaction_date=transaction_date,
+            amount=data.get("amount"),
+            issued_for=data.get("for_what", ""),
+            note=data.get("note", ""),
+            account_type=data.get("type", ""),
+            transaction=data.get("transaction", ""),
+            place=data.get("place", ""),
+            section=data.get("section", ""),
+            subsection=data.get("subsection", ""),
+            person=data.get("for_who", ""),
+            payment=data.get("pay_method", ""),
+            daily_status=data.get("daily"),
+            bank=data.get("bank"),
+            check_no=data.get("checkno"),
+        )
+        new_record.save()
+
+        client_id = None
+        if data.get("for_who"):
+            client = AllClientsTable.objects.filter(name=data.get("for_who")).first()
+            if not client:
+                error_msg = f"Client '{data.get('for_who')}' not found"
+                return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+            client_id = client.clientid
+
+        last_balance = (
+            TransactionsHistoryTable.objects.filter(client_id_id=client_id)
+            .order_by("-registration_date")
+            .first()
+        )
+        last_balance_amount = last_balance.current_balance if last_balance else 0
+        updated_balance = round(last_balance_amount + data.get("amount"), 2)
+
+        account_statement = TransactionsHistoryTable(
+            credit=float(data.get("amount")),
+            debt=0.0,
+            transaction=data.get("section"),
+            details=f"{data.get('subsection')} / {data.get('reciept_no')}",
+            registration_date=transaction_date,
+            current_balance=updated_balance,  # Updated balance
+            client_id_id=client_id,  # Client ID
+        )
+        account_statement.save()
+
+        return Response({"message": "Record created successfully!"}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def delete_storage_record(request):
+    try:
+        storage_id = request.data.get("storage_id")
+
+        record = get_object_or_404(StorageTransactionsTable, storageid=storage_id)
+
+        # Delete the record
+        record.delete()
+
+        return Response({"message": "Record deleted successfully!"}, status=status.HTTP_200_OK)
+
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format."}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_all_storage(request):
+    try:
+        items = StorageTransactionsTable.objects.all().values(
+            'storageid', 'account_type', 'transaction', 'transaction_date',
+            'reciept_no', 'place', 'section', 'subsection', 'person', 'amount',
+            'issued_for', 'payment', 'done_by', 'bank', 'check_no', 'daily_status'
+        )
+
+        data = list(items)
+        return Response(data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def filter_all_storage(request):
+    try:
+        filters = request.data  # Django REST Framework automatically parses JSON data
+
+        # Default query
+        queryset = StorageTransactionsTable.objects.all()
+
+        # Apply filters
+        if filters.get("id"):
+            queryset = queryset.filter(storageid__icontains=filters["id"])
+
+        if filters.get("client"):
+            queryset = queryset.filter(person__icontains=filters["client"])
+        if filters.get("account_detail"):
+            queryset = queryset.filter(issued_for__icontains=filters["account_detail"])
+        if filters.get("section"):
+            queryset = queryset.filter(section__icontains=filters["section"])
+        if filters.get("subsection"):
+            queryset = queryset.filter(subsection__icontains=filters["subsection"])
+        if filters.get("type"):
+            queryset = queryset.filter(account_type__icontains=filters["type"])
+        if filters.get("transaction"):
+            queryset = queryset.filter(transaction__icontains=filters["transaction"])
+        if filters.get("payment"):
+            queryset = queryset.filter(payment__icontains=filters["payment"])
+        if filters.get("place"):
+            queryset = queryset.filter(place__icontains=filters["place"])
+
+        # Date range filter
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                # Parse dates
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+
+                # Apply date range filter
+                queryset = queryset.filter(transaction_date__range=[from_date_obj, to_date_obj])
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Return the filtered results as JSON
+        data = list(queryset.values())  # Use `values()` to return only the fields you need
+        return Response(data, status=status.HTTP_200_OK)
+
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_last_reciept_no(request):
+    transaction_type = request.GET.get('transactionType')  # Get the transaction type from the query parameter
+
+    if transaction_type in ['ايداع', 'صرف']:
+        # Cast `reciept_no` to an integer for proper ordering
+        last_transaction = StorageTransactionsTable.objects.annotate(
+            reciept_no_int=Cast('reciept_no', IntegerField())
+        ).filter(
+            transaction=transaction_type
+        ).order_by('-reciept_no_int').first()
+
+        last_reciept_no = last_transaction.reciept_no_int if last_transaction else 0
+        return Response({'lastRecieptNo': last_reciept_no}, status=status.HTTP_200_OK)
+
+    return Response({'error': 'Invalid transaction type'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_buyinvoice_no(request):
+    try:
+        # Get the last autoid by ordering the table by invoice_no in descending order
+        last_invoice = Buyinvoicetable.objects.order_by('-invoice_no').first()
+        if last_invoice:
+            response_data = {'autoid': last_invoice.invoice_no}
+        else:
+            # Handle the case where the table is empty
+            response_data = {'autoid': 0, 'message': 'No invoices found'}
+        return Response(response_data, status=status.HTTP_200_OK)
+    except Exception as e:
+        # Handle unexpected errors
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_account_statement(request):
+    client_id = request.GET.get('id')
+    if not client_id:
+        return Response({'error': 'Client ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        items = TransactionsHistoryTable.objects.filter(client_id_id=client_id)
+        serializer = TransactionsHistoryTableSerializer(items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def fetch_invoice_items(request):
+    invoice_no = request.GET.get("id")
+    if not invoice_no:
+        return Response({"error": "Invoice number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        items = BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_no)
+        serializer = BuyInvoiceItemsTableSerializer(items, many=True)
+        return Response(serializer.data if items else [], status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def format_number(number):
+    return f"{number:,.2f}"
+
+
+
+@api_view(['POST'])
+def create_cost_record(request):
+    try:
+        # Parse the incoming JSON data
+        data = request.data  # Django REST Framework handles the parsing automatically
+
+        # Extract the data fields
+        invoice = data.get("invoice")
+        cost_type = data.get("type")
+        cost = data.get("cost")
+        rate = data.get("rate")
+        dinar = data.get("dinar")
+
+        # Validate the data
+        if not invoice or not cost_type or not cost or not rate or not dinar:
+            return Response({"success": False, "message": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the invoice object
+        try:
+            invoice_obj = Buyinvoicetable.objects.get(invoice_no=invoice)
+        except Buyinvoicetable.DoesNotExist:
+            return Response({"success": False, "message": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create a new record in the BuyinvoiceCosts model
+        cost_record = BuyinvoiceCosts.objects.create(
+            invoice=invoice_obj,
+            cost_for=cost_type,
+            cost_price=cost,
+            exchange_rate=rate,
+            dinar_cost_price=dinar,
+            invoice_no=invoice
+        )
+
+        # Return a success response with the created cost record's ID
+        return Response({"success": True, "message": "Cost record created successfully", "data": {"id": cost_record.autoid}}, status=status.HTTP_201_CREATED)
+
+    except json.JSONDecodeError:
+        return Response({"success": False, "message": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def fetch_costs(request):
+    invoice_no = request.GET.get("id")
+
+    if not invoice_no:
+        return Response({"error": "Invoice number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Fetch the costs related to the invoice
+        costs = BuyinvoiceCosts.objects.filter(invoice_no=invoice_no)
+        if not costs:
+            return Response([], status=status.HTTP_200_OK)
+
+        # Serialize the results using the BuyinvoiceCostsSerializer
+        serializer = BuyinvoiceCostsSerializer(costs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['DELETE'])
+def delete_buyinvoice_cost(request, autoid):
+    try:
+        # Find the record and delete it
+        record = BuyinvoiceCosts.objects.get(autoid=autoid)
+        record.delete()
+        return Response({'status': 'success', 'message': 'Record deleted successfully!'}, status=status.HTTP_200_OK)
+
+    except BuyinvoiceCosts.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Record not found!'}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def calculate_cost(request):
+    try:
+        # Parse the incoming JSON data
+        data = request.data  # Django REST Framework handles the parsing automatically
+
+        cost_total = data.get("cost_total").replace(',', '')
+        invoice_total = data.get("invoice_total").replace(',', '')
+        invoice_id = data.get("invoice")
+
+        # Validate the data
+        if not cost_total or not invoice_total or not invoice_id:
+            return Response({"success": False, "message": "Missing required fields."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate the load percentage
+        load_percentage = Decimal(cost_total) / Decimal(invoice_total)
+
+        # Get the invoice object
+        try:
+            invoice = Buyinvoicetable.objects.get(invoice_no=invoice_id)
+        except Buyinvoicetable.DoesNotExist:
+            return Response({"success": False, "message": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the items associated with the invoice
+        items = BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_id)
+        for item in items:
+            # Update the cost price based on the load percentage
+            item.current_cost_price = item.dinar_unit_price * (1 + load_percentage)
+            item.cost_unit_price = item.dinar_unit_price * (1 + load_percentage)
+            item.cost_total_price = (item.dinar_unit_price * (1 + load_percentage)) * item.quantity
+            item.save()
+
+        # Serialize the updated items and return as response
+        serializer = BuyInvoiceItemsTableSerializer(items, many=True)
+        return Response({"success": True, "message": "Cost updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+@api_view(['POST'])
+def get_invoice_items(request):
+    try:
+        # Parse incoming data
+        data = request.data
+        invoice_id = data.get("id")
+
+        if not invoice_id:
+            return Response({"error": "Invoice id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch items related to the invoice
+        items = BuyInvoiceItemsTable.objects.filter(invoice_no=invoice_id)
+        if not items:
+            return Response({"error": "Invoice does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Serialize the items and return them as response
+        serializer = BuyInvoiceItemsTableSerializer(items, many=True)
+        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def process_data(request):
+    try:
+        # Parse the JSON data sent by the frontend
+        data = request.data
+
+        auto_id = data.get("id")
+        currency = data.get("currency")
+        rate = data.get("rate")
+
+        # Validate data
+        if not auto_id or not currency or not rate:
+            return Response({"success": False, "message": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Store data in session
+        request.session['auto_id'] = auto_id
+        request.session['currency'] = currency
+        request.session['rate'] = rate
+
+        # Redirect to the target page
+        return Response({"success": True, "message": "Data processed successfully"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def process_add_data(request):
+    try:
+        # Parse the JSON data sent by the frontend
+        data = request.data
+
+        source = data.get("source")
+        invoice = data.get("invoice")
+        date = data.get("date")
+        currency = data.get("currency")
+        rate = data.get("rate")
+        temp = data.get("temp")
+
+        # Validate data
+        if not invoice or not currency or not rate or not source or not date:
+            return Response({"success": False, "message": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Store data in session
+        request.session['data'] = data
+
+        # Redirect to the target page
+        return Response({"success": True, "message": "Data processed and stored in session"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['POST'])
+def delete_buy_invoice_item(request):
+    try:
+        # Parse the JSON data sent by the frontend
+        data = request.data
+
+        item_id = data.get("id")
+
+        # Validate if item_id is provided
+        if not item_id:
+            return Response({"success": False, "message": "Missing item ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Try to delete the item from the database
+        try:
+            item = BuyInvoiceItemsTable.objects.get(autoid=item_id)
+            item.delete()
+        except BuyInvoiceItemsTable.DoesNotExist:
+            return Response({"success": False, "message": "Item not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Return success response
+        return Response({"success": True, "message": "Item deleted successfully!"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Handle unexpected errors
+        return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def update_buyinvoiceitem(request):
+    try:
+        # Parse the JSON data sent by the frontend
+        data = request.data
+
+        id = data.get('id')
+        invoice_no = data.get('invoice_no')
+        org = Decimal(data.get('org'))
+        order = Decimal(data.get('order'))
+        quantity = int(data.get('quantity'))
+
+        # Find the item to update
+        try:
+            item = BuyInvoiceItemsTable.objects.get(autoid=id)
+        except BuyInvoiceItemsTable.DoesNotExist:
+            return Response({"success": False, "message": "Item not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get the related invoice and update the amount
+        try:
+            invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
+            invoice.amount -= item.dinar_total_price
+            invoice.amount += order * quantity
+            invoice.save()
+        except Buyinvoicetable.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the item with new values
+        item.org_unit_price = org
+        item.dinar_unit_price = order
+        item.org_total_price = org * quantity
+        item.dinar_total_price = order * quantity
+        item.quantity = quantity
+        item.save()
+
+        # Return success response with updated item
+        serializer = BuyInvoiceItemsTableSerializer(item)
+        return Response({"success": True, "message": "Item updated successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"success": False, "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+def excel_date_to_datetime(serial):
+    return datetime.datetime(1900, 1, 1) + datetime.timedelta(days=serial - 2)
+
+
+@api_view(['POST'])
+def process_buyInvoice_excel(request):
+    try:
+        # Debug: Log the start of the POST request
+        logger.debug("Received POST request at /process_buyInvoice_excel/")
+
+        # Parse the JSON data from the request body
+        body = request.data
+        data = json.loads(body['data'])  # Parse the 'data' stringified JSON
+        invoice_no = body.get('invoice_no')
+
+        if not invoice_no:
+            return Response({"status": "error", "message": "Invoice number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Attempt to retrieve the invoice from the database
+        try:
+            invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
+        except Buyinvoicetable.DoesNotExist:
+            return Response({"status": "error", "message": "Invoice not found in the database."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Process the data and insert it into the database
+        records = []
+        for item in data:
+            try:
+                # Create a BuyInvoiceItemsTable record for each item
+                records.append(BuyInvoiceItemsTable(
+                    invoice_no2=invoice_no,
+                    invoice_no=invoice,
+                    item_no=item.get("الرقم الاصلي"),
+                    main_cat=item.get("البيان الرئيسي"),
+                    sub_cat=item.get("البيان الفرعي"),
+                    name=item.get("اسم الصنف", "failed"),
+                    company=item.get("الشركة"),
+                    quantity=item.get("الكمية"),
+                    place=item.get("مكان التخزين"),
+                    buysource=item.get("المصدر"),
+                    org_unit_price=item.get("سعر التوريد"),
+                    org_total_price=Decimal(item.get("سعر التوريد", 0)) * Decimal(item.get("الكمية", 0)),
+                    dinar_unit_price=item.get("سعر الشراء"),
+                    dinar_total_price=Decimal(item.get("سعر الشراء", 0)) * Decimal(item.get("الكمية", 0)),
+                    cost_unit_price=item.get("سعر التكلفة"),
+                    cost_total_price=Decimal(item.get("سعر التكلفة", 0)) * Decimal(item.get("الكمية", 0)),
+                    current_buy_price=item.get("سعر البيع"),
+                    note=item.get("ملاحظات"),
+                    company_no=item.get("رقم الشركة"),
+                    barcodeno=item.get("رقم الباركود"),
+                    e_name=item.get("الاسم بالانجليزي"),
+                    currency=item.get("العملة"),
+                    current_less_price=item.get("اقل سعر للبيع"),
+                    pno=item.get("الرقم الخاص"),
+                    exchange_rate=item.get("سعر الصرف"),
+                    date=item.get("التاريخ"),
+                ))
+
+                # Check if item exists and create a MainItem if necessary
+                exists = item.get("exists")
+                if exists == 0:
+                    Mainitem.objects.create(
+                        itemno=item.get("الرقم الاصلي"),
+                        replaceno=item.get("رقم الشركة"),
+                        itemname=item.get("اسم الصنف", "failed"),
+                        companyproduct=item.get("الشركة"),
+                        eitemname=item.get("الاسم بالانجليزي"),
+                        orgprice=item.get("سعر التوريد", 0),
+                        orderprice=item.get("سعر الشراء", 0),
+                        costprice=item.get("سعر التكلفة", 0),
+                        itemvalue=item.get("الكمية", 0),
+                        itemmain=item.get("البيان الرئيسي"),
+                        itemsubmain=item.get("البيان الفرعي"),
+                        pno=item.get("الرقم الخاص"),
+                        barcodeno=item.get("رقم الباركود"),
+                        currtype=item.get("العملة"),
+                        lessprice=item.get("اقل سعر للبيع"),
+                        currvalue=item.get("سعر الصرف"),
+                        memo=item.get("ملاحظات"),
+                        itemplace=item.get("مكان التخزين"),
+                    )
+            except Exception as item_error:
+                logger.error(f"Error processing item {item}: {item_error}")
+                continue
+
+        # Bulk create records in the database
+        BuyInvoiceItemsTable.objects.bulk_create(records)
+        logger.debug(f"Successfully inserted {len(records)} records from Tabulator data.")
+        return Response({"status": "success", "message": "Tabulator data imported successfully."}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        logger.error(f"Error processing imported data: {e}")
+        return Response({"status": "error", "message": f"Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def check_items(request):
+    try:
+        # Step 1: Parse the incoming JSON data
+        data = request.data
+
+        # Step 2: Validate that the data is a list (since the request body is already an array of items)
+        if not isinstance(data, list):
+            return Response({"status": "error", "message": "Invalid data format. Expected an array."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Step 3: Check existence for each item
+        results = []
+        for item in data:
+            # Ensure the necessary field 'company_no' exists in the item
+            company_no = item.get("رقم الشركة")
+            if not company_no:
+                results.append({"message": "company_no is missing", "exists": 0})
+                continue
+
+            # Check if item exists in Mainitem model based on 'company_no'
+            exists = Mainitem.objects.filter(replaceno=company_no).exists()
+            results.append({"company_no": company_no, "exists": 1 if exists else 0})
+
+        return Response({"status": "success", "results": results}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def process_temp_confirm(request):
+    try:
+        # Step 1: Parse the JSON data from the request body
+        data = request.data
+
+        # Step 2: Get the invoice number and validate
+        invoice_no = data.get('invoice_no')
+
+        if not invoice_no:
+            return Response({'status': 'error', 'message': 'Invoice number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Step 3: Try to fetch invoice items for the given invoice number
+        try:
+            invoice_items = BuyInvoiceItemsTable.objects.filter(invoice_no=invoice_no)
+        except BuyInvoiceItemsTable.DoesNotExist:
+            return Response({'status': 'error', 'message': 'Invoice item not found in the BuyInvoiceItemsTable.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Step 4: Serialize invoice items into a list of dictionaries
+        items_data = []
+        for item in invoice_items:
+            items_data.append({
+                'item_no': item.item_no,
+                'company': item.company,
+                'company_no': item.company_no,
+                'name': item.name,
+                'dinar_unit_price': item.dinar_unit_price,
+                'dinar_total_price': item.dinar_total_price,
+                'quantity': item.quantity,
+                'note': item.note,
+                'cost_unit_price': item.cost_unit_price,
+                'org_unit_price': item.org_unit_price,
+            })
+
+        # Step 5: Fetch the invoice details from Buyinvoicetable
+        try:
+            invoice = Buyinvoicetable.objects.get(autoid=invoice_no)
+
+            # Prepare invoice details for response
+            invoice_details = {
+                'original': invoice.original_no,
+                'invoice_date': invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else None,
+                'arrive_date': invoice.arrive_date.strftime('%Y-%m-%d') if invoice.arrive_date else None,
+                'source': invoice.source,
+                'invoice_items': items_data,
+            }
+
+            return Response({'status': 'success', 'message': 'Invoice details fetched successfully.', 'data': invoice_details}, status=status.HTTP_200_OK)
+
+        except Buyinvoicetable.DoesNotExist:
+            return Response({'status': 'error', 'message': 'Invoice not found in the Buyinvoicetable.'}, status=status.HTTP_404_NOT_FOUND)
+
+    except ValueError:
+        return Response({'status': 'error', 'message': 'Invalid JSON data.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+def confirm_temp_invoice(request):
+    try:
+        # Parse the JSON data from the request body
+        data = request.data
+        invoice_no = data.get('invoice_no')
+        item_rows = data.get('table')
+
+        if not invoice_no:
+            return Response({'status': 'error', 'message': 'Invoice number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not item_rows or not isinstance(item_rows, list):
+            return Response({'status': 'error', 'message': 'Invalid or empty item rows.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Process Mainitem updates
+        success_count = 0
+        error_details = []
+
+        for item in item_rows:
+            try:
+                # Fetch the invoice using company_no
+                main = Mainitem.objects.get(replaceno=item['company_no'])
+
+                # Update fields
+                main.itemname = item['name']
+                main.itemvalue += int(item['quantity'] or 0)
+                main.orderprice = Decimal(item['dinar_unit_price'] or 0)
+                main.costprice = (main.costprice + Decimal(item['cost_unit_price'] or 0)) / 2
+                main.orgprice = Decimal(item['org_unit_price'] or 0)
+                main.itemno = item['item_no']
+                main.save()
+
+                movement_Record = Clientstable.objects.create(
+                    itemno=main.itemno,
+                    itemname=main.itemname,
+                    maintype=main.itemmain,
+                    currentbalance=main.itemvalue,
+                    date=timezone.now(),
+                    clientname="فاتورة شراء",
+                    billno=invoice_no,
+                    description="ترحيل فاتورة شراء",
+                    clientbalance=int(item['quantity'] or 0),
+                    pno_instance=main,
+                    pno=main.pno
+                )
+
+                success_count += 1
+
+            except Mainitem.DoesNotExist:
+                error_details.append({
+                    'company_no': item.get('company_no'),
+                    'message': 'Main item not found.'
+                })
+            except Exception as e:
+                error_details.append({
+                    'company_no': item.get('company_no'),
+                    'message': f'Error processing item: {str(e)}'
+                })
+
+        # Process Buyinvoicetable update
+        try:
+            invoice = Buyinvoicetable.objects.get(autoid=invoice_no)
+            invoice.temp_flag = 0
+            invoice.save()
+        except Buyinvoicetable.DoesNotExist:
+            return Response({'status': 'error', 'message': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Consolidate response
+        response = {
+            'status': 'success' if success_count > 0 else 'error',
+            'success_count': success_count,
+            'error_count': len(error_details),
+            'errors': error_details,
+            'message': f'{success_count} items updated successfully and invoice temp_flag set to 0.' if success_count > 0 else 'No items were updated.',
+        }
+        return Response(response, status=status.HTTP_200_OK)
+
+    except ValueError:
+        return Response({'status': 'error', 'message': 'Invalid JSON data.'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'status': 'error', 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def BuyInvoiceItemCreateView(request):
+    try:
+        # Parse the JSON data
+        data = request.data
+
+        # Validate required fields
+        required_fields = [
+            "invoice_id", "itemno", "pno", "itemname", "companyproduct",
+            "replaceno", "itemvalue", "currency", "itemplace", "source",
+            "orgprice", "buyprice", "orderprice", "lessprice"
+        ]
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            return Response(
+                {"error": f"Missing required fields: {', '.join(missing_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get the related invoice
+        try:
+            invoice = Buyinvoicetable.objects.get(invoice_no=data.get("invoice_id"))
+            invoice.amount += (Decimal(data.get("orderprice") or 0) * Decimal(data.get("itemvalue") or 0))
+            invoice.save()
+        except Buyinvoicetable.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            product = Mainitem.objects.get(pno=data.get("pno"))
+            submain = product.itemsubmain if product.itemsubmain else None
+        except Mainitem.DoesNotExist:
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create a new BuyInvoiceItemsTable instance
+        item = BuyInvoiceItemsTable.objects.create(
+            invoice_no=invoice,
+            invoice_no2=data.get("invoice_id"),
+            item_no=data.get("itemno"),
+            pno=data.get("pno"),
+            main_cat=data.get("main_cat"),
+            sub_cat=submain,
+            name=data.get("itemname"),
+            company=data.get("companyproduct"),
+            company_no=data.get("replaceno"),
+            quantity=int(data.get("itemvalue") or 0),
+            currency=data.get("currency"),
+            exchange_rate=float(data.get("rate") or 0) if data.get("rate") not in [None, '', 'null'] else 0,
+            date=data.get("date"),
+            place=data.get("itemplace"),
+            buysource=data.get("source"),
+            org_unit_price=float(data.get("orgprice") or 0),
+            org_total_price=float(data.get("orgprice") or 0) * int(data.get("itemvalue") or 0),
+            dinar_unit_price=float(data.get("orderprice") or 0),
+            dinar_total_price=float(data.get("orderprice") or 0) * int(data.get("itemvalue") or 0),
+            prev_quantity=int(data.get("prev_quantity") or 0),
+            prev_cost_price=float(data.get("prev_cost_price") or 0),
+            prev_buy_price=float(data.get("prev_buy_price") or 0),
+            prev_less_price=float(data.get("prev_less_price") or 0),
+            current_quantity=int(data.get("prev_quantity") or 0) + int(data.get("itemvalue") or 0),
+            current_buy_price=float(data.get("buyprice") or 0),
+            current_less_price=float(data.get("lessprice") or 0),
+        )
+
+        confirm_message = "not confirmed"
+        if data.get("isTemp") == 0:
+            main = Mainitem.objects.get(replaceno=data.get("replaceno"))
+            main.orgprice = float(data.get("orgprice") or 0)
+            main.lessprice = float(data.get("lessprice") or 0)
+            main.itemvalue += int(data.get("itemvalue") or 0)
+            main.itemtemp -= int(data.get("itemvalue") or 0)
+            main.itemplace = data.get("itemplace")
+            main.buyprice = float(data.get("buyprice") or 0)
+            main.save()
+            confirm_message = "confirmed"
+
+            movement_Record = Clientstable.objects.create(
+                itemno=main.itemno,
+                itemname=main.itemname,
+                maintype=main.itemmain,
+                currentbalance=main.itemvalue,
+                date=timezone.now(),
+                clientname="فاتورة شراء",
+                billno=data.get("invoice_id"),
+                description="فاتورة شراء",
+                clientbalance=int(data.get("itemvalue") or 0),
+                pno_instance=main,
+                pno=main.pno
+            )
+
+        return Response({"message": "Item created successfully", "item_id": item.autoid, "confirm_status": confirm_message}, status=status.HTTP_201_CREATED)
+
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON data"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def fetch_buyinvoices(request):
+    records = Buyinvoicetable.objects.all()
+    paginator = Paginator(records, int(request.GET.get('size', 100)))
+
+    page_number = int(request.GET.get('page', 1))
+    page_obj = paginator.get_page(page_number)
+
+    serializer = BuyInvoiceSerializer(page_obj, many=True)
+
+    total_amount = Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    response = {
+        "data": serializer.data,
+        "last_page": paginator.num_pages,
+        "total_rows": paginator.count,
+        "page_size": paginator.per_page,
+        "page_no": page_number,
+        "total_amount": total_amount,
+    }
+
+    return Response(response)
+
+
+@api_view(['POST'])
+def filter_buyinvoices(request):
+    try:
+        filters = request.data  # DRF automatically parses the JSON body
+        cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            cached_data["cached_flag"] = True
+            return Response(cached_data)
+
+        # Initialize the base Q object for filtering
+        filters_q = Q()
+
+        # Build the query based on the filters
+        if filters.get('invoice_no'):
+            filters_q &= Q(invoice_no__icontains=filters['invoice_no'])
+
+        if filters.get('source'):
+            filters_q &= Q(source__icontains=filters['source'])
+
+        # Apply date range filter on `orderlastdate`
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                # Parse dates
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+
+                # Apply date range filter
+                filters_q &= Q(invoice_date__range=[from_date_obj, to_date_obj])
+
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Now filter the queryset using the combined Q object
+        queryset = Buyinvoicetable.objects.filter(filters_q)
+
+        # Pagination parameters from the request
+        page_number = filters.get('page', 1)
+        page_size = filters.get('size', 20)
+
+        # Pagination setup
+        paginator = PageNumberPagination()
+        paginator.page_size = page_size
+        page_obj = paginator.paginate_queryset(queryset, request)
+
+        # Serialize the filtered data
+        serializer = BuyInvoiceSerializer(page_obj, many=True)
+
+        total_amount = queryset.aggregate(Sum('amount'))['amount__sum'] or 0
+
+        # Prepare the response
+        response = {
+            "data": serializer.data,
+            "last_page": paginator.page.paginator.num_pages,  # Total number of pages
+            "total_rows": paginator.page.paginator.count,  # Total number of rows
+            "page_size": page_size,
+            "page_no": page_number,
+            "cached_flag": False,
+            "total_amount": total_amount,
+        }
+
+        # Cache the response for future use
+        cache.set(cache_key, response, timeout=300)  # Cache for 5 minutes
+
+        # Return the filtered data as JSON
+        return Response(response)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+@api_view(['GET'])
+def get_sellinvoice_no(request):
+    try:
+        # Get the last autoid by ordering the table by invoice_no in descending order
+        last_invoice = SellinvoiceTable.objects.order_by('-invoice_no').first()
+        if last_invoice:
+            return Response({'autoid': last_invoice.invoice_no}, status=status.HTTP_200_OK)
+        else:
+            # Handle the case where the table is empty
+            return Response({'autoid': 0, 'message': 'No invoices found'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        # Handle unexpected errors
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+def create_sell_invoice(request):
+    if request.method == "POST":
+        try:
+            data = request.data
+            client_identifier = data.get("client")
+            if not client_identifier:
+                return Response({"success": False, "error": "Client is null"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Fetch client
+            try:
+                if isinstance(client_identifier, int) or (isinstance(client_identifier, str) and client_identifier.isdigit()):
+                    client_obj = AllClientsTable.objects.get(clientid=int(client_identifier))
+                else:
+                    client_obj = AllClientsTable.objects.get(name=client_identifier)
+
+                balance_data = TransactionsHistoryTable.objects.filter(client_id=client_obj).aggregate(
+                    total_debt=Sum('debt') or Decimal("0.0000"),
+                    total_credit=Sum('credit') or Decimal("0.0000")
+                )
+            except AllClientsTable.DoesNotExist:
+                return Response({"success": False, "error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+            total_debt = balance_data.get('total_debt') or Decimal('0.0000')
+            total_credit = balance_data.get('total_credit') or Decimal('0.0000')
+            client_balance = total_credit - total_debt
+
+            last_receipt_response = get_sellinvoice_no(request)
+            last_receipt_no = last_receipt_response.get("autoid", 0)
+            next_receipt_no = int(last_receipt_no) + 1
+
+            for_who = "application" if data.get("for_who") == "application" else None
+
+            # Prepare the data for creating a new invoice
+            invoice_data = {
+                'invoice_no': next_receipt_no,
+                'client_obj': client_obj,
+                'client_id': client_obj.clientid,
+                'client_name': client_obj.name,
+                'client_rate': client_obj.category,
+                'client_category': client_obj.subtype,
+                'client_limit': client_obj.loan_limit,
+                'client_balance': client_balance,
+                'invoice_date': data.get("invoice_date"),
+                'invoice_status': "لم تحضر",
+                'payment_status': data.get("payment_status"),
+                'for_who': for_who,
+                'date_time': timezone.now(),
+                'price_status': "",
+                'mobile': data.get("mobile") if data.get("mobile") else False,
+            }
+
+            # Use serializer to create the SellinvoiceTable record
+            serializer = SellInvoiceSerializer(data=invoice_data)
+            if serializer.is_valid():
+                serializer.save()
+
+                # Trigger background task
+                async_task('almogOil.Tasks.assign_orders')
+
+                return Response({
+                    "success": True,
+                    "message": "Sell invoice created and order assignment triggered!",
+                    "invoice_no": serializer.instance.invoice_no,
+                    "client_balance": serializer.instance.client_balance
+                }, status=status.HTTP_201_CREATED)
+
+            return Response({"success": False, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(["POST"])
+def Sell_invoice_create_item(request):
+    if request.method == "POST":
+        try:
+            data = request.data
+
+            required_fields = ["pno", "fileid", "invoice_id", "itemvalue", "sellprice"]
+            missing_fields = [field for field in required_fields if field not in data or not data[field]]
+            if missing_fields:
+                return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get the related product
+            try:
+                product = Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
+            except Mainitem.DoesNotExist:
+                return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Get the related invoice
+            try:
+                invoice = SellinvoiceTable.objects.get(invoice_no=data.get("invoice_id"))
+                invoice.amount += (Decimal(product.buyprice or 0) * Decimal(data.get("itemvalue") or 0))
+                invoice.save()
+            except SellinvoiceTable.DoesNotExist:
+                return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Check if sufficient quantity exists
+            item_value = int(data.get("itemvalue") or 0)
+            if product.itemvalue < item_value:
+                return Response({"error": "Insufficient product quantity"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Prepare the data for creating a new SellInvoiceItemsTable instance
+            item_data = {
+                'invoice_instance': invoice,
+                'invoice_no': data.get("invoice_id"),
+                'item_no': product.itemno,
+                'pno': data.get("pno"),
+                'main_cat': product.itemmain,
+                'sub_cat': product.itemsubmain,
+                'name': product.itemname,
+                'company': product.companyproduct,
+                'company_no': product.replaceno,
+                'quantity': item_value,
+                'date': timezone.now(),
+                'place': product.itemplace,
+                'dinar_unit_price': Decimal(product.buyprice or 0),
+                'dinar_total_price': Decimal(product.buyprice or 0) * item_value,
+                'prev_quantity': product.itemvalue,
+                'current_quantity': product.itemvalue - item_value,
+            }
+
+            # Use serializer to create the SellInvoiceItemsTable record
+            serializer = SellInvoiceItemsSerializer(data=item_data)
+            if serializer.is_valid():
+                serializer.save()
+
+                # Update the product quantity
+                product.itemvalue -= item_value
+                product.save()
+
+                return Response({
+                    "message": "Item created successfully",
+                    "item_id": serializer.instance.autoid,
+                    "confirm_status": "confirmed"
+                }, status=status.HTTP_201_CREATED)
+
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+
+@api_view(['GET'])
+def fetch_sell_invoice_items(request):
+    invoice_no = request.GET.get("id")
+
+    if not invoice_no:
+        return Response({"error": "Invoice number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    items = SellInvoiceItemsTable.objects.filter(invoice_no=invoice_no)
+    if not items.exists():
+        return Response([], status=status.HTTP_200_OK)
+
+    serializer = SellInvoiceItemsSerializer(items, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def fetch_sellinvoices(request):
+    try:
+        today = now().date()
+        records = SellinvoiceTable.objects.filter(invoice_date__date=today)
+        aggregates = SellinvoiceTable.objects.aggregate(
+            total_amount=Sum('amount'),
+            cash_amount=Sum('amount', filter=Q(payment_status="نقدي")),
+            loan_amount=Sum('amount', filter=Q(payment_status="اجل")),
+            total_discount=Sum('discount'),
+            total_returned=Sum('returned')
+        )
+
+        # Pagination logic
+        page_number = request.GET.get("page", 1)
+        page_size = request.GET.get("size", 100)
+
+        paginator = Paginator(records, page_size)
+        page_obj = paginator.get_page(page_number)
+
+        serializer = SellInvoiceSerializer(page_obj, many=True)
+
+        return Response({
+            "data": serializer.data,
+            "last_page": paginator.num_pages,
+            "total_rows": paginator.count,
+            "total_amount": aggregates["total_amount"] or 0,
+            "cash_amount": aggregates["cash_amount"] or 0,
+            "loan_amount": aggregates["loan_amount"] or 0,
+            "total_discount": aggregates["total_discount"] or 0,
+            "total_returned": aggregates["total_returned"] or 0,
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def filter_sellinvoices(request):
+    try:
+        filters = request.data
+
+        filters_q = Q()
+        if filters.get('client'):
+            filters_q &= Q(client_name__icontains=filters['client'])
+        if filters.get('client_rate'):
+            filters_q &= Q(client_rate__icontains=filters['client_rate'])
+        if filters.get('invoice_no'):
+            filters_q &= Q(invoice_no__icontains=filters['invoice_no'])
+        if filters.get('for_who'):
+            filters_q &= Q(for_who__icontains=filters['for_who'])
+        if filters.get('payment_status'):
+            filters_q &= Q(payment_status__icontains=filters['payment_status'])
+        if filters.get('price_status'):
+            filters_q &= Q(price_status__icontains=filters['price_status'])
+        if filters.get('invoice_status'):
+            filters_q &= Q(invoice_status__icontains=filters['invoice_status'])
+
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+            to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+            filters_q &= Q(invoice_date__range=[from_date_obj, to_date_obj])
+
+        invoices_qs = SellinvoiceTable.objects.filter(filters_q).order_by("-invoice_date")
+        totals = invoices_qs.aggregate(
+            total_amount=Sum('amount', default=0),
+            cash_amount=Sum('amount', filter=Q(payment_status="نقدي"), default=0),
+            loan_amount=Sum('amount', filter=Q(payment_status="اجل"), default=0),
+            total_discount=Sum('discount', default=0),
+            total_returned=Sum('returned', default=0)
+        )
+
+        page_number = int(filters.get('page') or 1)
+        page_size = int(filters.get('size') or 20)
+        paginator = Paginator(invoices_qs, page_size)
+        page_obj = paginator.get_page(page_number)
+
+        serializer = SellInvoiceSerializer(page_obj, many=True)
+
+        response = {
+            "data": serializer.data,
+            "last_page": paginator.num_pages,
+            "total_rows": paginator.count,
+            "page_size": page_size,
+            "page_no": page_number,
+            "total_amount": totals["total_amount"],
+            "cash_amount": totals["cash_amount"],
+            "loan_amount": totals["loan_amount"],
+            "total_discount": totals["total_discount"],
+            "total_returned": totals["total_returned"],
+        }
+
+        return Response(response, status=status.HTTP_200_OK)
+
+    except json.JSONDecodeError:
+        return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['POST'])
+def prepare_sell_invoice(request):
+    try:
+        # Get the data from the request body
+        data = request.data
+        name = data.get('name')
+        note = data.get('note')
+        invoice_id = data.get('invoice_id')
+
+        # Get the invoice object
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+
+        # Update invoice fields
+        invoice.preparer_name = name
+        invoice.preparer_note = note
+        invoice.invoice_status = "جاري التحضير"
+
+        # Save the updated invoice
+        invoice.save()
+
+        return Response({'status': 'success', 'message': 'Invoice updated successfully'}, status=status.HTTP_200_OK)
+
+    except SellinvoiceTable.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def validate_sell_invoice(request):
+    try:
+        # Get the data from the request body
+        data = request.data
+        reviewer = data.get('reviewer')
+        place = data.get('place')
+        invoice_no = data.get('invoice_id')
+        size = data.get('size')
+        final_note = data.get('final_note')
+
+        # Get the invoice object
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)
+
+        # Update invoice fields
+        invoice.reviewer_name = reviewer
+        invoice.place = place
+        invoice.quantity = size
+        invoice.notes = final_note
+        invoice.invoice_status = "روجعت"
+
+        # Save the updated invoice
+        invoice.save()
+
+        return Response({'status': 'success', 'message': 'Invoice updated successfully'}, status=status.HTTP_200_OK)
+
+    except SellinvoiceTable.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def deliver_sell_invoice(request):
+    try:
+        data = request.data
+        # Extract the data from the request.
+        biller = data.get('biller')
+        sent = data.get('sent')
+        office = data.get('office')
+        size = data.get('size')
+        deliverer = data.get('deliverer')
+        deliverer_date = data.get('deliverer_date', None)
+        invoice_id = data.get('invoice_id')
+        bill = data.get('bill')
+        status = data.get('status')
+        final_note = data.get('final_note')
+
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+
+        invoice.biller_name = biller
+        invoice.notes = final_note
+        invoice.sent_by = sent
+        invoice.office = office
+        invoice.delivered_quantity = size
+        invoice.deliverer_name = deliverer
+        invoice.delivered_date = deliverer_date or None
+        invoice.office_no = bill
+        invoice.invoice_status = status
+        invoice.delivery_status = "جاري التوصيل" if invoice.mobile else "في المحل"
+
+        invoice.save()
+
+        # Send notification to the user associated with this invoice.
+        user_id = invoice.client  # Make sure this field exists on your model.
+        room_group_name = f'user_{user_id}'
+        message = f"تم تحديث حالة الفاتورة رقم {invoice_id} إلى {status}."
+
+        # Send message to the user
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            room_group_name,
+            {
+                "type": "send_notification",
+                "message": message,
+            }
+        )
+
+        async_task('almogOil.Tasks.assign_orders')  # Adjust as needed
+
+        return Response({'status': 'success', 'message': 'Invoice updated successfully'}, status=status.HTTP_200_OK)
+
+    except SellinvoiceTable.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def cancel_sell_invoice(request):
+    try:
+        # Get the data from the request body
+        data = request.data
+        invoice_no = data.get('invoice_id')
+
+        # Get the invoice object
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)
+
+        # Update invoice fields to cancel the sell invoice
+        invoice.reviewer_name = None
+        invoice.place = None
+        invoice.quantity = 0
+        invoice.preparer_name = None
+        invoice.preparer_note = None
+        invoice.biller_name = None
+        invoice.sent_by = None
+        invoice.office = None
+        invoice.delivered_quantity = 0
+        invoice.deliverer_name = None
+        invoice.delivered_date = None
+        invoice.office_no = None
+        invoice.notes = None
+        invoice.invoice_status = "لم تحضر"
+
+        # Save the updated invoice
+        invoice.save()
+
+        return Response({'status': 'success', 'message': 'Invoice cancelled successfully'}, status=status.HTTP_200_OK)
+
+    except SellinvoiceTable.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_mainItem_last_pno(request):
+    try:
+        # Get the last pno by ordering the table by pno in descending order
+        last_pno = Mainitem.objects.order_by('-pno').first()
+        if last_pno:
+            response_data = {'pno': last_pno.pno}
+        else:
+            # Handle the case where the table is empty
+            response_data = {'pno': 0, 'message': 'No invoices found'}
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Handle unexpected errors
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SendMessageView(generics.CreateAPIView):
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+
+    def create(self, request, *args, **kwargs):
+
+     sender_id = request.data.get('sender')
+     receiver_id = request.data.get('receiver')
+     message_text = request.data.get('message')
+
+     if not sender_id or not receiver_id:
+        return Response({"error": "Sender and Receiver IDs are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+     try:
+        sender_id = int(sender_id)
+        receiver_id = int(receiver_id)
+     except ValueError:
+        return Response({"error": "Invalid sender or receiver ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+     sender = get_object_or_404(AllClientsTable, clientid=sender_id)
+     receiver = get_object_or_404(AllClientsTable, clientid=receiver_id)
+
+     chat_message = ChatMessage.objects.create(sender=sender, receiver=receiver, message=message_text)
+     serializer = self.get_serializer(chat_message)
+
+     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class GetChatMessagesView(generics.ListAPIView):
+    serializer_class = ChatMessageSerializer
+
+    def get_queryset(self):
+     sender_id = self.request.query_params.get('sender')
+     receiver_id = self.request.query_params.get('receiver')
+     return ChatMessage.objects.filter(sender__clientid=sender_id, receiver__clientid=receiver_id) | ChatMessage.objects.filter(sender__clientid=receiver_id, receiver__clientid=sender_id)
+
+class MarkMessageAsReadView(generics.UpdateAPIView):
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+
+    def update(self, request, *args, **kwargs):
+        message = self.get_object()
+        message.is_read = True
+        message.save()
+        return Response({"message": "Message marked as read"}, status=status.HTTP_200_OK)
+
+
+class SupportChatMessageView(APIView):
+    def post(self, request, *args, **kwargs):
+        conversation_id = request.data.get('conversation_id')
+        sender_id = request.data.get('sender_id')
+        sender_type = request.data.get('sender_type')
+        message = request.data.get('message')
+
+        try:
+            sender = AllClientsTable.objects.get(clientid=sender_id)
+            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
+        except AllClientsTable.DoesNotExist:
+            return Response({'error': 'Sender not found'}, status=status.HTTP_404_NOT_FOUND)
+        except SupportChatConversation.DoesNotExist:
+            return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create new message
+        new_message = SupportChatMessageSys(
+            conversation=conversation,
+            sender=sender,
+            sender_type=sender_type,
+            message=message,
+        )
+        new_message.save()
+
+        # Return the newly created message
+        serializer = SupportChatMessageSysSerializer(new_message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get(self, request, *args, **kwargs):
+        conversation_id = request.query_params.get('conversation_id')
+        try:
+            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
+        except SupportChatConversation.DoesNotExist:
+            return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        messages = SupportChatMessageSys.objects.filter(conversation=conversation).order_by('timestamp')
+        serializer = SupportChatMessageSysSerializer(messages, many=True)
+        return Response(serializer.data)
+
+@api_view(['POST'])
+def create_conversation(request):
+    client_id = request.data.get('client_id')
+    support_agent_id = request.data.get('support_agent_id')
+
+    try:
+        client = AllClientsTable.objects.get(clientid=client_id)
+        support_agent = AllClientsTable.objects.get(clientid=support_agent_id)
+    except AllClientsTable.DoesNotExist:
+        return Response({'error': 'Client or Support Agent not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    conversation = SupportChatConversation(client=client, support_agent=support_agent)
+    conversation.save()
+    return Response({'conversation_id': conversation.conversation_id}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def fetch_all_feedback(request):
+    try:
+        # Fetch all feedback and related sender data
+        feedbacks = Feedback.objects.select_related('sender').all()
+
+        # Group feedback by client ID
+        grouped_feedback = {}
+
+        for feedback in feedbacks:
+            client_id = feedback.sender.clientid  # Assuming sender is linked to AllClientsTable
+            if client_id not in grouped_feedback:
+                grouped_feedback[client_id] = {
+                    "client_name": feedback.sender.name,
+                    "feedbacks": []
+                }
+
+            # Append feedback data
+            grouped_feedback[client_id]["feedbacks"].append({
+                "id": feedback.id,
+                "feedback_text": feedback.feedback_text,
+                "employee_response": feedback.employee_response,
+                "is_resolved": feedback.is_resolved,
+                "response_at": feedback.response_at.strftime("%Y-%m-%d %H:%M") if feedback.response_at else None
+            })
+
+        return Response(grouped_feedback, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# @csrf_exempt
+# def fetch_all_feedback(request):
+#     """Fetch all feedbacks and their messages grouped by client ID."""
+#     feedbacks = Feedback.objects.select_related('sender').prefetch_related('messages').all()
+
+#     grouped_feedback = {}
+
+#     for feedback in feedbacks:
+#         client_id = feedback.sender.clientid
+#         if client_id not in grouped_feedback:
+#             grouped_feedback[client_id] = {
+#                 "client_name": feedback.sender.name,
+#                 "feedbacks": []
+#             }
+
+#         messages = [
+#             {
+#                 "id": message.id,
+#                 "sender_type": message.sender_type,
+#                 "message_text": message.message_text,
+#                 "sent_at": message.sent_at.strftime("%Y-%m-%d %H:%M")
+#             }
+#             for message in feedback.messages.all()
+#         ]
+
+#         grouped_feedback[client_id]["feedbacks"].append({
+#             "id": feedback.id,
+#             "feedback_text": feedback.feedback_text,
+#             "messages": messages,
+#             "created_at": feedback.created_at.strftime("%Y-%m-%d %H:%M"),
+#             "is_resolved": feedback.is_resolved  # Include the is_resolved field
+#         })
+
+#     return JsonResponse(grouped_feedback, safe=False)
+
+@api_view(['POST'])
+def add_message_to_feedback(request, feedback_id):
+    """Allow clients and employees to send multiple messages in a feedback thread."""
+    try:
+        feedback = Feedback.objects.get(id=feedback_id)
+    except Feedback.DoesNotExist:
+        return Response({"error": "Feedback not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get the data from the request body
+    data = request.data
+    message_text = data.get("message_text")
+    sender_type = data.get("sender_type")  # Can be "client" or "employee"
+
+    if not message_text:
+        return Response({"error": "Message text is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if sender_type not in ["client", "employee"]:
+        return Response({"error": "Invalid sender type."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the new message in the feedback thread
+    message = FeedbackMessage.objects.create(
+        feedback=feedback,
+        sender_type=sender_type,
+        message_text=message_text,
+        sent_at=timezone.now()
+    )
+
+    # Serialize the message and return the response
+    message_data = FeedbackMessageSerializer(message).data
+    return Response(message_data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def close_feedback(request, feedback_id):
+    """Close a feedback thread (mark as resolved)."""
+    try:
+        feedback = Feedback.objects.get(id=feedback_id)
+    except Feedback.DoesNotExist:
+        return Response({"error": "Feedback not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Check if the session role is "employee"
+    if request.session.get("role") == "employee":
+        feedback.is_resolved = True  # Mark as resolved
+        feedback.resolved_at = timezone.now()
+        feedback.save()
+        return Response({"message": "Feedback closed successfully."}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Only employees can close feedback."}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['DELETE'])
+def delete_feedback(request, feedback_id):
+    """Delete a feedback thread."""
+    try:
+        feedback = Feedback.objects.get(id=feedback_id)
+    except Feedback.DoesNotExist:
+        return Response({"error": "Feedback not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Check if the session role is "employee"
+    if request.session.get("role") == "employee":
+        feedback.delete()
+        return Response({"message": "Feedback deleted successfully."}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Only employees can delete feedback."}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['GET'])
+def feedback_by_user_id(request):
+    """Fetch feedback by client ID."""
+    clientid = request.GET.get('clientid')
+
+    if not clientid:
+        return Response({"detail": "Client ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Try to fetch the client
+    try:
+        client = AllClientsTable.objects.get(clientid=clientid)
+    except AllClientsTable.DoesNotExist:
+        return Response({"detail": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Fetch feedback for this client
+    feedbacks = Feedback.objects.filter(sender=client)
+
+    # If no feedback is found, return an empty list
+    if not feedbacks:
+        return Response([])
+
+    # Prepare the feedback data
+    feedback_data = []
+    for feedback in feedbacks:
+        feedback_data.append({
+            "id": feedback.id,
+            "sender": feedback.sender.name,  # Assuming `sender.name` is the client name
+            "feedback_text": feedback.feedback_text,
+            "created_at": feedback.created_at.isoformat(),
+            "employee_response": feedback.employee_response,
+            "is_resolved": feedback.is_resolved,
+            "response_at": feedback.response_at.isoformat() if feedback.response_at else None
+        })
+
+    return Response(feedback_data)
+
+@api_view(['GET'])
+def fetch_feedback_messages(request, feedback_id):
+    """Fetch messages in a feedback thread."""
+    feedback_messages = FeedbackMessage.objects.filter(feedback_id=feedback_id).order_by('sent_at')
+
+    messages_data = [
+        {
+            "id": msg.id,
+            "sender_type": msg.sender_type,
+            "message_text": msg.message_text,
+            "sent_at": msg.sent_at.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        for msg in feedback_messages
+    ]
+
+    return Response({"feedback_id": feedback_id, "messages": messages_data})
+
+
+
+
+@api_view(['POST'])
+def assign_order_manual(request):
+    """Assign an order manually to an employee."""
+    try:
+        data = request.data
+        employee_id = data.get('employee_id')
+        order_id = data.get('order_id')
+
+        if not employee_id or not order_id:
+            return Response({'error': 'Employee ID and Order ID are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            # Get the selected employee
+            employee_queue = get_object_or_404(EmployeeQueue, employee_id=employee_id, is_available=True, is_assigned=False)
+            employee = employee_queue.employee
+
+            # Get the order
+            order = get_object_or_404(SellinvoiceTable, invoice_no=order_id, is_assigned=False)
+
+            # Assign the order
+            employee.is_available = False
+            employee.has_active_order = True
+            employee.save()
+
+            order.delivery_status = 'جاري التوصيل'
+            order.is_assigned = True
+            order.save()
+
+            # Add to order queue
+            OrderQueue.objects.create(
+                employee=employee, order=order, is_accepted=False, is_assigned=True, assigned_at=now()
+            )
+
+            # Schedule confirmation check
+            async_task('app.tasks.check_order_confirmation', order_id=order_id)
+
+            # Update employee queue
+            employee_queue.is_assigned = True
+            employee_queue.is_available = False
+            employee_queue.assigned_time = now()
+            employee_queue.save()
+
+        return Response({'message': 'Order assigned successfully'}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_available_employees(request):
+    """Get a list of available employees."""
+    employees = EmployeeQueue.objects.filter(is_available=True, is_assigned=False).select_related('employee')
+    data = [{"id": emp.employee.id, "name": emp.employee.name} for emp in employees]
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_unassigned_orders(request):
+    """Get a list of unassigned orders."""
+    orders = SellinvoiceTable.objects.filter(is_assigned=False)
+    data = [{"invoice_no": order.invoice_no} for order in orders]
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_unassigned_orders_with_status(request):
+    """Get a list of unassigned orders with specific delivery status."""
+    orders = SellinvoiceTable.objects.filter(
+        invoice_status='سلمت',
+        delivery_status='جاري التوصيل'
+    )
+
+    if not orders.exists():
+        return Response({"error": "No matching orders found."}, status=status.HTTP_404_NOT_FOUND)
+
+    data = [{"invoice_no": order.invoice_no} for order in orders]
+    return Response(data, status=status.HTTP_200_OK)
+
+
+
+
+class AddToCartView(APIView):
+    def post(self, request):
+        client_id = request.data.get("clientid")
+        fileid = request.data.get("fileid")
+        itemname = request.data.get("itemname")
+        buyprice = request.data.get("buyprice")
+        quantity = int(request.data.get("quantity", 1))
+        image = request.data.get("image", "")
+        logo = request.data.get("logo", "")
+        pno = request.data.get("pno", "")
+        itemvalue = int(request.data.get("itemvalue", 0))
+
+        # Validate client existence
+        try:
+            client = AllClientsTable.objects.get(clientid=client_id)
+        except AllClientsTable.DoesNotExist:
+            return Response({"error": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the item already exists in the cart
+        cart_item, created = CartItem.objects.get_or_create(
+            client=client,
+            fileid=fileid,
+            defaults={
+                "itemname": itemname,
+                "buyprice": buyprice,
+                "quantity": quantity,
+                "image": image,
+                "logo": logo,
+                "pno": pno,
+                "itemvalue": itemvalue,
+            }
+        )
+
+        if not created:
+            if cart_item.quantity + quantity <= cart_item.itemvalue:
+                cart_item.quantity += quantity
+                cart_item.save()
+            else:
+                return Response({"error": f"Cannot add more than {cart_item.itemvalue} items."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
+

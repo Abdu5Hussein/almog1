@@ -1,5 +1,6 @@
 #import datetime
 from decimal import Decimal
+import hashlib
 from .Tasks import assign_orders
 import json
 import os
@@ -91,7 +92,7 @@ def send_push_notification(title, body, token):
         response = messaging.send(message)
         return response
     except Exception as e:
-        print(f"Error sending notification: {e}")
+        #print(f"Error sending notification: {e}")
         return None
 
 
@@ -130,6 +131,7 @@ def LogInView(request):
     else:
         return render(request, 'login.html')
 
+@login_required
 def StorageManagement(req):
     Clients= AllClientsTable.objects.all()
     sections = Sectionstable.objects.all()
@@ -141,6 +143,7 @@ def StorageManagement(req):
     }
     return render(req,'storage-management.html',context)
 
+@login_required
 def StorageReports(req):
     Clients= AllClientsTable.objects.all()
     sections = Sectionstable.objects.all()
@@ -157,30 +160,7 @@ def get_subsections(request):
     subsections = Subsectionstable.objects.filter(sectionid_id=section_id).values('autoid', 'subsection')
     return JsonResponse(list(subsections), safe=False)  # Return JSON response
 
-def TestView(request):
-    if request.method == 'POST':
-        # Assuming you're creating a new user or a similar entity
-        if request.POST.get('password') and request.POST.get('email'):
-            try:
-                # Replace with your new model instance
-                # user = YourCustomUserModel()  # Replace with your new model
-                # user.name = request.POST.get('name')
-                # user.email = request.POST.get('email')
-                # user.age = request.POST.get('age')  # If age is provided
-                # user.password = request.POST.get('password')  # Hash the password
-                # user.save()
-
-                # Add a success message
-                messages.success(request, 'User created successfully!')
-            except Exception as e:
-                # Add an error message if saving fails
-                messages.error(request, f'Error creating user: {e}')
-        else:
-            # Add an error message if required fields are missing
-            messages.error(request, 'Please fill in all required fields.')
-
-    return render(request, 'main.html')
-
+@login_required
 def MoreDetails(req):
     productId = req.GET.get('product_id')
     item = Mainitem.objects.filter(fileid=productId)
@@ -189,24 +169,8 @@ def MoreDetails(req):
     }
     return render(req,'more-details.html',context)
 
-def UsersView(request):
-    query = request.GET.get('q')  # Get search query from URL parameters
-    users = []  # Update this to reflect how you will fetch users if at all
-    # Example if you're using a new model
-    # if query:
-    #     users = YourCustomUserModel.objects.filter(name__icontains=query)
-    # else:
-    #     users = YourCustomUserModel.objects.all()
 
-    # Check if the request is AJAX by looking at the header
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        # Format user data as needed
-        user_list = []  # Replace with logic to fetch data
-        return JsonResponse({'users': user_list})  # Return JSON response
-
-    context = {'users': users}
-    return render(request, "users.html", context)
-
+@login_required
 def BuyInvoicesAdd(request):
     sources = AllSourcesTable.objects.all().values('clientid','name')
     Currency = CurrenciesTable.objects.all()
@@ -222,7 +186,7 @@ def create_buy_invoice(request):
     try:
         # Parse JSON data from the request
         data = json.loads(request.body.decode("utf-8"))
-        print(data)
+        #print(data)
 
         # Extract data from the request
         invoice_autoid = data.get("invoice_autoid")
@@ -270,7 +234,7 @@ def create_buy_invoice(request):
         # Handle errors and return a failure response
         return JsonResponse({"success": False, "error": str(e)}, status=400)
 
-
+@login_required
 def ImageView(request):
     # Retrieve all images to display in the template
     product_id = request.GET.get("product_id")
@@ -296,6 +260,7 @@ def ImageView(request):
     # Render the image table template
     return render(request, 'image-table.html', {'images': images})
 
+@login_required
 def ModelView(request):
     sub_types = Subtypetable.objects.all()
     models = Modeltable.objects.select_related('subtype_fk').all()
@@ -342,6 +307,7 @@ def ModelView(request):
 def HomeView(request):
     return render(request, 'home.html')
 
+@login_required
 def SectionAndSubSection(request):
     sections = Sectionstable.objects.all()
     subSections = Subsectionstable.objects.all()
@@ -394,7 +360,7 @@ def SectionAndSubSection(request):
 
 #until here
 
-
+@login_required
 def MainCat(request):
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -432,6 +398,7 @@ def MainCat(request):
     }
     return render(request, 'main-cat.html', context)
 
+@login_required
 def SubCat(request):
     main_types = Maintypetable.objects.all()
     subtypes = Subtypetable.objects.select_related('maintype_fk').all()
@@ -478,7 +445,7 @@ def SubCat(request):
         'subtypes': subtypes,
     })
 
-
+@login_required
 def manage_companies(request):
     if request.method == 'POST':
         action = request.POST.get('action')  # Get action: add, edit, delete
@@ -515,6 +482,7 @@ def manage_companies(request):
     }
     return render(request, 'company-table.html', context)
 
+@login_required
 def manage_countries(request):
     if request.method == "POST":
         action = request.POST.get("action")
@@ -601,6 +569,7 @@ COLUMN_TITLES = {
     "dateproduct":"date product"
 }
 
+@login_required
 def ProductsDetails(req):
     company = Companytable.objects.values('fileid', 'companyname')
     measurements = MeasurementsTable.objects.all()
@@ -620,7 +589,7 @@ def ProductsDetails(req):
         'buyprice':True,
         'itemplace':True,
     }
-    print(columns)  # Debugging to check the contents of columns
+    #print(columns)  # Debugging to check the contents of columns
 
     context = {
         'company': company,
@@ -657,6 +626,7 @@ def filter_clients(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 @csrf_exempt
 def OemNumbers(req):
     if req.method == 'GET':
@@ -768,7 +738,7 @@ def filter_items(request):
         try:
             # Get the filters from the request body
             filters = json.loads(request.body.decode('utf-8'))  # Decoding bytes and loading JSON
-            cache_key = f"filter_{str(filters)}"
+            cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
             cached_data = cache.get(cache_key)
 
             if cached_data:
@@ -839,12 +809,12 @@ def filter_items(request):
 
             # Now filter the queryset using the combined Q object
             queryset = Mainitem.objects.filter(filters_q).values(
-                    'pno', 'fileid', 'itemplace', 'itemmain', 'itemname',
-                    'companyproduct', 'itemno', 'pno', 'replaceno',
-                 'itemvalue', 'buyprice', 'itemperbox', 'resvalue',
-                      'oem_numbers', 'engine_no', 'itemthird'  # Add new fields
-                                   ).order_by('itemname')
-
+    'pno', 'fileid', 'itemplace', 'itemmain', 'itemname',
+    'companyproduct', 'itemno', 'pno', 'replaceno',
+    'itemvalue', 'buyprice', 'itemperbox', 'resvalue',
+    'oem_numbers', 'engine_no', 'short_name', 'itemthird',
+    'json_description', 'itemsize','memo','itemsubmain'  # Add json_description and itemsubmain here
+).order_by('itemname')
 
             # Serialize the filtered data
             items_data = list(queryset)  # Customize the fields to return as needed
@@ -1004,7 +974,7 @@ def process_excel_and_import(request):
             try:
                 logger.debug(f"Processing file: {excel_file.name}")
                 # Read the Excel file into a DataFrame
-                data = pd.read_excel(excel_file)
+                data = pd.read_excel(excel_file, engine='openpyxl')
 
                 logger.debug(f"Excel data read: {data.head()}")  # Log the first few rows of the data
 
@@ -1061,7 +1031,7 @@ def process_excel_and_import(request):
                 Mainitem.objects.bulk_create(records)
                 logger.debug(f"Successfully inserted {len(records)} records into the database.")
 
-                return JsonResponse({"status": "success", "message": "Excel data imported successfully."})
+                return JsonResponse({"status": "success", "message": "Excel data imported successfully."},status=200)
 
             except Exception as e:
                 logger.error(f"Error processing file: {e}")
@@ -1070,7 +1040,7 @@ def process_excel_and_import(request):
         # Handle imported data (Tabulator data)
         if request.POST.get("data"):
             data = json.loads(request.POST["data"])
-            print(f"tabulator data {data}")
+            #print(f"tabulator data {data}")
             try:
                 logger.debug(f"Received Tabulator data: {data}")
                 records = []
@@ -1328,10 +1298,11 @@ def generate_pdf(request):
     else:
         return HttpResponse(status=405)  # Method Not Allowed if not POST
 
-
+@login_required
 def ImportExcel(request):
     return render(request,'import-excel.html')
 
+@login_required
 def StoragePlaces(request):
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
@@ -1496,7 +1467,7 @@ def UpdateUserView(request):
 
     return JsonResponse({'message': 'Invalid request method.'}, status=405)
 
-
+@login_required
 def ProductsReports(req):
     if req.method == 'POST':
         return JsonResponse({'message': 'Invalid request method.'}, status=405)
@@ -1519,7 +1490,7 @@ def ProductsReports(req):
     }
 
 
-    print(columns)  # Debugging to check the contents of columns
+    #print(columns)  # Debugging to check the contents of columns
     context = {
         'company': company,
         'columns': columns,
@@ -1532,13 +1503,13 @@ def ProductsReports(req):
     }
     return render(req, 'products-reports.html', context)
 
-
+@login_required
 def PartialProductsReports(req):
     users = []  # Fetch users or relevant data from your new model if needed
     context = {'users': users}
     return render(req, 'products-reports.html', context)
 
-
+@login_required
 def ProductsMovementReport(req):
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
@@ -1569,7 +1540,7 @@ def get_clients(request):
 def get_data(request):
     try:
         # Fetch all records
-        print(request.body)
+        #print(request.body)
         # items = Mainitem.objects.all().values(
         #     'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname',
         #     'itemthird', 'itemsize', 'companyproduct', 'itemvalue',
@@ -1679,8 +1650,8 @@ def update_storage(request):
             data = json.loads(request.body)
             fileid = data.get('fileid')
             storage = data.get('storage')
-            print(fileid)
-            print(storage)
+            #print(fileid)
+            #print(storage)
 
             # Find the item using the fileid
             item = Mainitem.objects.get(fileid=fileid)
@@ -1698,6 +1669,7 @@ def update_storage(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
+@login_required
 def ProductsBalance(req):
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
@@ -1709,6 +1681,7 @@ def ProductsBalance(req):
         }
     return render(req, 'products-balance.html', context)
 
+@login_required
 def ClientsManagement(request):
     types = Clienttypestable.objects.all().values('fileid', 'tname')
     context = {
@@ -1716,7 +1689,7 @@ def ClientsManagement(request):
     }
     return render(request,'clients-management.html',context)
 
-
+@login_required
 def DataInventory(req):
     users = []  # Fetch users or relevant data from your new model if needed
     context = {'users': users}
@@ -1818,8 +1791,8 @@ def add_lost_damaged(request):
             # Parse the JSON data from the request body
             data = json.loads(request.body.decode('utf-8'))
 
-            # Print incoming data for debugging
-            print("Received data:", data)
+            # #print incoming data for debugging
+            #print("Received data:", data)
 
             # Extract data from the request
             itemno = data.get('itemno')
@@ -1837,7 +1810,7 @@ def add_lost_damaged(request):
             if not all([itemno, companyno, company, itemname, costprice, quantity, pno_id, status]):
                 error_message = 'Missing required fields.'
                 logger.error(error_message)
-                print(error_message)
+                #print(error_message)
                 return JsonResponse({'success': False, 'message': error_message}, status=400)
 
             # Attempt to fetch the Mainitem instance for the provided pno_id
@@ -1848,7 +1821,7 @@ def add_lost_damaged(request):
             except Mainitem.DoesNotExist:
                 error_message = f'Mainitem with pno id {pno_id} does not exist.'
                 logger.error(error_message)
-                print(error_message)
+                #print(error_message)
                 return JsonResponse({'success': False, 'message': error_message}, status=404)
 
             # Save the record in the LostAndDamagedTable model
@@ -1881,28 +1854,29 @@ def add_lost_damaged(request):
 
             success_message = 'Record added successfully.'
             logger.info(success_message)
-            print(success_message)
+            #print(success_message)
 
             return JsonResponse({'success': True, 'message': success_message,"new_balance":pno_instance.itemvalue})
 
         except json.JSONDecodeError as e:
             error_message = f'Invalid JSON format: {e}'
             logger.error(error_message)
-            print(error_message)
+            #print(error_message)
             return JsonResponse({'success': False, 'message': 'Invalid JSON format.'}, status=400)
 
         except Exception as e:
             error_message = f'Unexpected error: {e}'
             logger.error(error_message)
-            print(error_message)
+            #print(error_message)
             return JsonResponse({'success': False, 'message': 'An unexpected error occurred.'}, status=500)
 
     else:
         error_message = 'Invalid request method. Only POST is allowed.'
         logger.warning(error_message)
-        print(error_message)
+        #print(error_message)
         return JsonResponse({'success': False, 'message': error_message}, status=405)
 
+@login_required
 def LostDamaged(req):
     company = Companytable.objects.all()
     mainType = Maintypetable.objects.all()
@@ -2235,7 +2209,7 @@ def filter_all_clients(request):
                     }
                 )
 
-            print(clients_data)
+            #print(clients_data)
             # Pagination parameters from the request
             page_number = int(filters.get("page") or 1)
             page_size = int(filters.get("size") or 100)
@@ -2265,7 +2239,7 @@ def create_storage_record(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            print(data)
+            #print(data)
 
             transaction_date = make_aware(datetime.strptime(data.get("transaction_date"), '%Y-%m-%d'))
 
@@ -2293,7 +2267,7 @@ def create_storage_record(request):
                 client = AllClientsTable.objects.filter(name=data.get("for_who")).first()
                 if not client:
                     error_msg = f"Client '{data.get('for_who')}' not found"
-                    print("Client Error:", error_msg)
+                    #print("Client Error:", error_msg)
                     return JsonResponse({"error": error_msg}, status=400)
                 client_id = client.clientid
 
@@ -2316,7 +2290,7 @@ def create_storage_record(request):
                 client_id_id=client_id,  # Client ID
             )
             account_statement.save()
-            print(f"statement >>> {account_statement}")
+            #print(f"statement >>> {account_statement}")
 
             return JsonResponse({"message": "Record created successfully!"}, status=201)
         except Exception as e:
@@ -2370,7 +2344,7 @@ def filter_all_storage(request):
     if request.method == "POST":
         try:
             filters = json.loads(request.body.decode("utf-8"))  # Decode JSON payload
-            print(filters)
+            #print(filters)
             # Default query
             queryset = StorageTransactionsTable.objects.all()
 
@@ -2434,7 +2408,7 @@ def account_statement(request):
 
 def get_last_reciept_no(request):
     transaction_type = request.GET.get('transactionType')  # Get the transaction type from the query parameter
-    print(f"type: {transaction_type}")
+    #print(f"type: {transaction_type}")
 
     if transaction_type in ['ايداع', 'صرف']:
         # Cast `reciept_no` to an integer for proper ordering
@@ -2553,7 +2527,7 @@ def cost_management(request):
         try:
             # Parse the JSON data sent by the frontend
             data = json.loads(request.body)
-            print(data)
+            #print(data)
             invoice = data.get("invoice")
 
             # Validate data
@@ -2722,7 +2696,7 @@ def calculate_cost(request):
                 item.current_cost_price = item.dinar_unit_price * (1 + load_percentage)
                 item.cost_unit_price = item.dinar_unit_price * (1 + load_percentage)
                 item.cost_total_price= (item.dinar_unit_price * (1 + load_percentage))*item.quantity
-                print(f"order {item.dinar_unit_price} , cost {item.current_cost_price}")
+                #print(f"order {item.dinar_unit_price} , cost {item.current_cost_price}")
                 item.save()
 
             # Return a success response
@@ -2764,7 +2738,7 @@ def process_data(request):
         try:
             # Parse the JSON data sent by the frontend
             data = json.loads(request.body)
-            print(data)
+            #print(data)
             auto_id = data.get("id")
             currency = data.get("currency")
             rate = data.get("rate")
@@ -2794,7 +2768,7 @@ def process_add_data(request):
         try:
             # Parse the JSON data sent by the frontend
             data = json.loads(request.body)
-            print(data)
+            #print(data)
             source = data.get("source")
             invoice = data.get("invoice")
             date = data.get("date")
@@ -2915,7 +2889,7 @@ def buyInvoice_excell(request):
         try:
             # Parse the JSON data sent by the frontend
             data = json.loads(request.body)
-            print(data)
+            #print(data)
             invoice = data.get("invoice")
             org = data.get('org')
 
@@ -2980,7 +2954,7 @@ def process_buyInvoice_excel(request):
         # Parse the JSON data from the request body
         try:
             body = json.loads(request.body)
-            print(body)
+            #print(body)
             data = json.loads(body['data'])  # Parse the 'data' stringified JSON
             invoice_no = body.get('invoice_no')
 
@@ -3080,7 +3054,7 @@ def check_items(request):
             # Step 1: Decode the stringified JSON (if necessary)
             body = request.body.decode("utf-8")  # Decode the byte string to a regular string
             data = json.loads(body)
-            print(data)
+            #print(data)
 
             # Step 2: Validate that the data is a list (since the request body is already an array of items)
             if not isinstance(data, list):
@@ -3119,7 +3093,7 @@ def process_temp_confirm(request):
         try:
             # Parse the JSON data from the request body
             data = json.loads(request.body)
-            print(data)
+            #print(data)
             invoice_no = data.get('invoice_no')
 
             if not invoice_no:
@@ -3129,7 +3103,7 @@ def process_temp_confirm(request):
                 # Fetch invoice items for the given invoice number
                 invoice_items = BuyInvoiceItemsTable.objects.filter(invoice_no=invoice_no)
             except BuyInvoiceItemsTable.DoesNotExist:
-                return JsonResponse({'status': 'error', 'message': 'Invoice not found in the Buyinvoicetable.'}, status=404)
+                return JsonResponse({'status': 'error', 'message': 'Invoice item not found in the BuyInvoiceItemsTable.'}, status=404)
 
             # Serialize the invoice items (convert them to a list of dictionaries)
             items_data = []
@@ -3160,7 +3134,7 @@ def process_temp_confirm(request):
                     'invoice_items': items_data,  # Attach serialized invoice items
                 }
 
-                return JsonResponse({'status': 'success', 'message': 'Invoice details fetched successfully.', 'data': invoice_details})
+                return JsonResponse({'status': 'success', 'message': 'Invoice details fetched successfully.', 'data': invoice_details},status=200)
 
             except Buyinvoicetable.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Invoice not found in the Buyinvoicetable.'}, status=404)
@@ -3179,7 +3153,7 @@ def confirm_temp_invoice(request):
         try:
             # Parse the JSON data from the request body
             data = json.loads(request.body)
-            print(data)
+            #print(data)
             invoice_no = data.get('invoice_no')
             item_rows = data.get('table')
 
@@ -3197,7 +3171,7 @@ def confirm_temp_invoice(request):
                 try:
                     # Fetch the invoice using company_no
                     main = Mainitem.objects.get(replaceno=item['company_no'])
-                    print(f"old data: {main.itemname} {main.itemvalue} {main.orderprice} {main.costprice} {main.orgprice} {main.itemno}")
+                    #print(f"old data: {main.itemname} {main.itemvalue} {main.orderprice} {main.costprice} {main.orgprice} {main.itemno}")
 
                     # Update fields
                     main.itemname = item['name']
@@ -3222,7 +3196,7 @@ def confirm_temp_invoice(request):
                         pno=main.pno
                     )
 
-                    print(f"new data: {main.itemname} {main.itemvalue} {main.orderprice} {main.costprice} {main.orgprice} {main.itemno}")
+                    #print(f"new data: {main.itemname} {main.itemvalue} {main.orderprice} {main.costprice} {main.orgprice} {main.itemno}")
                     success_count += 1
 
                 except Mainitem.DoesNotExist:
@@ -3269,7 +3243,7 @@ def BuyInvoiceItemCreateView(request):
         try:
             # Parse the JSON data
             data = json.loads(request.body)
-            print(data)
+            #print(data)
 
             # Validate required fields
             required_fields = [
@@ -3337,7 +3311,7 @@ def BuyInvoiceItemCreateView(request):
             confirm_message = "not confirmed"
             if(data.get("isTemp")==0):
                 main = Mainitem.objects.get(replaceno=data.get("replaceno"))
-                print(f"old data: {main.orgprice} / {main.lessprice} /{main.itemvalue} /{main.itemtemp} /{main.itemplace} /{main.buyprice} /")
+                #print(f"old data: {main.orgprice} / {main.lessprice} /{main.itemvalue} /{main.itemtemp} /{main.itemplace} /{main.buyprice} /")
                 main.orgprice = float(data.get("orgprice") or 0)
                 main.lessprice=float(data.get("lessprice") or 0)
                 main.itemvalue+= int(data.get("itemvalue") or 0)
@@ -3346,7 +3320,7 @@ def BuyInvoiceItemCreateView(request):
                 main.buyprice=float(data.get("buyprice") or 0)
                 main.save()
                 confirm_message = "confirmed"
-                print(f"new data: {main.orgprice} / {main.lessprice} /{main.itemvalue} /{main.itemtemp} /{main.itemplace} /{main.buyprice} /")
+                #print(f"new data: {main.orgprice} / {main.lessprice} /{main.itemvalue} /{main.itemtemp} /{main.itemplace} /{main.buyprice} /")
 
                 movement_Record = Clientstable.objects.create(
                 itemno=main.itemno,
@@ -3372,6 +3346,7 @@ def BuyInvoiceItemCreateView(request):
     else:
         return JsonResponse({"error": "Invalid HTTP method. Use POST."}, status=405)
 
+#until here
 
 def Buyinvoice_management(request):
     #records = Buyinvoicetable.objects.all().values()
@@ -3413,7 +3388,7 @@ def filter_buyinvoices(request):
         try:
             # Get the filters from the request body
             filters = json.loads(request.body.decode('utf-8'))  # Decoding bytes and loading JSON
-            cache_key = f"filter_{str(filters)}"
+            cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
             cached_data = cache.get(cache_key)
 
             if cached_data:
@@ -3545,6 +3520,7 @@ def sell_invoice_management(request):
     }
     return render(request,'sell_invoice_management.html',context)
 
+#until here
 
 @csrf_exempt
 @api_view(["POST"])
@@ -3628,7 +3604,7 @@ def sell_invoice_add_items(request):
         try:
             # Parse the JSON data sent by the frontend
             data = json.loads(request.body)
-            print(data)
+            #print(data)
             invoice = data.get("invoice")
 
 
@@ -3673,7 +3649,7 @@ def Sell_invoice_create_item(request):
         try:
             # Parse the JSON data
             data = json.loads(request.body)
-            print(data)
+            #print(data)
 
             # Validate required fields
             required_fields = ["pno", "fileid", "invoice_id", "itemvalue", "sellprice"]
@@ -3993,6 +3969,7 @@ def filter_sellinvoices(request):
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+#until here
 
 def sell_invoice_prepare_report(request):
     client = AllClientsTable.objects.all().values("clientid","name")
@@ -4553,7 +4530,7 @@ def notifications_page(request):
 
 def return_items_view(request):
     clients = AllClientsTable.objects.all().values('clientid','name')
-    invoices = SellinvoiceTable.objects.all().values('invoice_no','client','client_name')
+    invoices = SellinvoiceTable.objects.all().values('invoice_no','client_id','client_name')
     context = {
         'clients':clients,
         'invoices':invoices,

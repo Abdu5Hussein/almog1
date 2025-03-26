@@ -62,6 +62,11 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         model = ChatMessage
         fields = ['id', 'sender', 'receiver', 'sender_username', 'receiver_username', 'message', 'timestamp', 'is_read']
 
+class FeedbackMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.FeedbackMessage
+        fields = fields = "__all__"
+        read_only_fields = ['id', 'sent_at']
 
 class SupportChatMessageSysSerializer(serializers.ModelSerializer):
     sender_username = serializers.CharField(source='sender.username')
@@ -178,4 +183,48 @@ class EmployeeWithOrderSerializer(serializers.ModelSerializer):
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
+        fields = '__all__'
+
+class productImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Imagetable
+        fields = '__all__'
+
+class SubsectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Subsectionstable
+        fields = '__all__'
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Clientstable
+        fields = '__all__'
+
+
+class TransactionsHistoryTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.TransactionsHistoryTable
+        fields = '__all__'
+
+class BuyInvoiceItemsTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.BuyInvoiceItemsTable
+        fields = '__all__'
+
+
+class CostTypesTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CostTypesTable
+        fields = '__all__'
+
+class BuyinvoiceCostsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.BuyinvoiceCosts
+        fields = '__all__'
+
+
+class LostAndDamagedTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.LostAndDamagedTable
         fields = '__all__'

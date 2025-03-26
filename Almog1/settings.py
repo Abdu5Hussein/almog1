@@ -67,8 +67,13 @@ INSTALLED_APPS = [
     'background_task',
     'django_q',
     "drf_spectacular",
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+
 ]
 
+# settings.py
+LOGIN_URL = '/'
 
 ASGI_APPLICATION = "Almog1.asgi.application"
 
@@ -98,15 +103,18 @@ SPECTACULAR_SETTINGS = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Adjust as needed
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,  # Rotate refresh tokens
-    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist the old refresh token
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # Adjust as needed
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,  # Enable blacklisting
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "TOKEN_BLACKLIST": "rest_framework_simplejwt.token_blacklist",
 }
 
 # Add IPs that are allowed to view the toolbar (typically local IP)
 INTERNAL_IPS = [
     "127.0.0.1",
+    "45.13.59.226",
 ]
 
 CORS_ALLOWED_ORIGINS = [
