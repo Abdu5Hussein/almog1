@@ -40,7 +40,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
-
 from django.contrib.auth import logout
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -48,6 +47,22 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
+from rest_framework import generics, mixins,viewsets
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from decimal import Decimal
+from . import models, serializers
+from .models import AllClientsTable, SellinvoiceTable
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.contrib.auth.hashers import make_password, check_password
+from firebase_admin import messaging
+from .models import EmployeesTable, AllClientsTable
+import firebase_admin
+from firebase_admin import credentials
+from django.db.models import Q
+
+""" Log Out,Login And Authentication Api's"""
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -167,7 +182,7 @@ def sign_in(request):
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+"""Drop Boxes"""
 @api_view(["GET"])
 def get_dropboxes(request):
     model = models.Modeltable.objects.all()
@@ -189,6 +204,11 @@ def get_dropboxes(request):
         'main_types': serialized_main.data,
         })
 
+
+
+class EnginesTableViewSet(viewsets.ModelViewSet):
+    queryset = models.enginesTable.objects.all()
+    serializer_class = serializers.EnginesTableSerializer
 
 
 @api_view(["GET"])
@@ -215,6 +235,19 @@ def get_sub_types(request):
     serialized_data = serializers.SubTypeSerializer(sub_types_data, many=True)
     return Response({'sub_types': serialized_data.data})
 
+""" Sell Invoice Api's """
+
+
+@api_view(['GET'])
+def get_invoice_data(request, autoid):
+    try:
+        # Fetch the data using the provided autoid (primary key)
+        invoice_data = SellinvoiceTable.objects.get(autoid=autoid)
+        serializer = OrderSerializer(invoice_data)
+        return Response(serializer.data)
+    except SellinvoiceTable.DoesNotExist:
+        return Response({"error": "Invoice not found"}, status=404)
+
 @api_view(['GET'])
 def GetClientInvoices(request, id):
     # Filter invoices based on the client ID
@@ -229,14 +262,258 @@ def GetClientInvoices(request, id):
 
     return Response(serializer.data, status=status.HTTP_200_OK)  # Return the serialized data
 
+
+# class InvoiceStatusViewSet(viewsets.ViewSet):
+#     """
+#     A viewset to handle updating invoice status or delivery status
+#     and send notifications when the status changes.
+#     """
+
+#     def update_status(self, request, pk=None):
+#         try:
+#             invoice_item = SellInvoiceItemsTable.objects.get(pk=pk)
+#             status_type = request.data.get('status_type')  # invoice_status or delivery_status
+#             new_status = request.data.get('new_status')  # The new status value
+
+#             if status_type not in ['invoice_status', 'delivery_status']:
+#                 return Response({"error": "Invalid status type"}, status=status.HTTP_400_BAD_REQUEST)
+
+#             # Update status based on type
+#             setattr(invoice_item, status_type, new_status)
+#             invoice_item.save()
+
+#             # Send notification based on status change
+#             # send_notification(invoice_item, status_type, new_status)
+
+#             return Response(
+#                 SellInvoiceSerializer(invoice_item).data,
+#                 status=status.HTTP_200_OK,
+#             )
+#         except SellInvoiceItemsTable.DoesNotExist:
+#             return Response({"error": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def update_invoice_status(request, invoice_no):
+    """Update invoice status and set delivered_date if status is 'تم التوصيل'."""
+    try:
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)  # Direct get()
+    except SellinvoiceTable.DoesNotExist:
+        return Response({"error": "Invoice not found."}, status=404)
+
+    new_status = request.data.get("delivery_status")
+
+    if new_status in ["جاري التوصيل", "تم التوصيل"]:
+        invoice.delivery_status = new_status
+        if new_status == "تم التوصيل":
+
+            invoice.delivered_date = now()  # Set the current timestamp
+        invoice.save()
+        send_invoice_notification(invoice, new_status)
+        return Response({"message": "Status updated successfully."})
+
+    return Response({"error": "Invalid status."}, status=400)
+
+@csrf_exempt
+@api_view(['GET'])
+def get_delivery_invoices(request):
+    """Fetch all invoices with status 'حضرت'."""
+    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
+    serializer = SellInvoiceSerializer(invoices, many=True)
+    return Response(serializer.data)
+
 #####################
 
 # API to list all support messages (for the support team)
-
+"""Pagination Related"""
 class CustomPagination(PageNumberPagination):
     page_size = 10  # Limit the results to 10 per page
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+""" Mainitem Api's """
+
+
+@api_view(['GET', 'POST'])
+def UpdateItemsItemmainApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        itemmain_list = item.itemmain.split(";") if item.itemmain else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in itemmain_list:
+                itemmain_list.append(value)
+                item.itemmain = ";".join(itemmain_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in itemmain_list:
+                itemmain_list.remove(value)
+                item.itemmain = ";".join(itemmain_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        itemmain = s_data['itemmain']
+        return Response({'itemmain': itemmain}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def UpdateItemsSubmainApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        itemsub_list = item.itemsubmain.split(";") if item.itemsubmain else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in itemsub_list:
+                itemsub_list.append(value)
+                item.itemsubmain = ";".join(itemsub_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in itemsub_list:
+                itemsub_list.remove(value)
+                item.itemsubmain = ";".join(itemsub_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        itemsubmain = s_data['itemsubmain']
+        return Response({'itemsub': itemsubmain}, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'POST'])
+def UpdateItemsModelApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        model_list = item.itemthird.split(";") if item.itemthird else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in model_list:
+                model_list.append(value)
+                item.itemthird = ";".join(model_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in model_list:
+                model_list.remove(value)
+                item.itemthird = ";".join(model_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        itemthird = s_data['itemthird']
+        return Response({'models': itemthird}, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'POST'])
+def UpdateItemsEngineApiView(request, item_id):
+    try:
+        # Retrieve the item by its ID
+        item = models.Mainitem.objects.get(pno=item_id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        # Add or remove values from itemmain based on action in request
+        action = request.data.get("action")  # "add" or "remove"
+        value = request.data.get("value")
+
+        # Make sure we have the action and value
+        if not action or not value:
+            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split the current itemmain into a list
+        engine_list = item.engine_no.split(";") if item.engine_no else []
+
+        if action == "add":
+            # Add value to list if not already present
+            if value not in engine_list:
+                engine_list.append(value)
+                item.engine_no = ";".join(engine_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        elif action == "remove":
+            # Remove value from list
+            if value in engine_list:
+                engine_list.remove(value)
+                item.engine_no = ";".join(engine_list)
+                item.save()
+                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+
+        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Default GET method to show current itemmain value
+    elif request.method == 'GET':
+        s_data = serializers.MainitemSerializer(item).data
+        engines = s_data['engine_no']
+        return Response({'engines': engines}, status=status.HTTP_200_OK)
+
 
 def filter_Items(request):
     # Extract the filter parameters from the request body
@@ -272,6 +549,47 @@ def filter_Items(request):
 
     # Return the paginated data as the response
     return paginator.get_paginated_response(serializer.data)
+
+@api_view(['GET'])
+def get_product_images(request, id):
+    try:
+        product = models.Mainitem.objects.get(pno=id)
+    except models.Mainitem.DoesNotExist:
+        return Response({"error": "Product not found!"}, status=404)  # Added return and status
+
+    images = models.Imagetable.objects.filter(productid=product.fileid)  # Ensure `productid` is correct
+    serializer = serializers.productImageSerializer(images, many=True)
+
+    return Response(serializer.data)  # Added return statement
+
+
+@api_view(['POST'])
+def mainitem_add_json_desc(request, id):
+    """Add JSON description to a Mainitem product"""
+    try:
+        data = request.data
+        json_data = data.get('json')
+
+        # Parse the JSON data
+        parsed_json = json.loads(json_data) if isinstance(json_data, str) else json_data
+
+        # Retrieve the product
+        product = models.Mainitem.objects.get(pno=id)
+        product.json_description = parsed_json  # Assuming this field is a JSONField
+        product.save()
+
+        return Response({"message": "JSON description updated successfully"}, status=status.HTTP_200_OK)
+
+    except models.Mainitem.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+""" Support Dashboard Api's """
 
 @api_view(['GET'])
 def support_conversations(request):
@@ -344,12 +662,6 @@ def send_message(request, conversation_id=None):
             'message_data': message_serializer.data
         }, status=status.HTTP_201_CREATED)
 
-@api_view(['GET'])
-def get_all_clients1(request,id=None):
-    if request.method == 'GET':
-        clients = AllClientsTable.objects.all().filter(clientid=id)
-        serializer = AllClientsTableSerializer(clients, many=True)
-        return Response({'clients': serializer.data})
 
 @api_view(['POST'])
 def start_conversation(request, client_id):
@@ -450,37 +762,17 @@ def respond_to_feedback(request, client_id):
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
+""" Client Related Api's """
 
-@csrf_exempt
-@api_view(['POST'])
-def update_invoice_status(request, invoice_no):
-    """Update invoice status and set delivered_date if status is 'تم التوصيل'."""
-    try:
-        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)  # Direct get()
-    except SellinvoiceTable.DoesNotExist:
-        return Response({"error": "Invoice not found."}, status=404)
-
-    new_status = request.data.get("delivery_status")
-
-    if new_status in ["جاري التوصيل", "تم التوصيل"]:
-        invoice.delivery_status = new_status
-        if new_status == "تم التوصيل":
-
-            invoice.delivered_date = now()  # Set the current timestamp
-        invoice.save()
-        send_invoice_notification(invoice, new_status)
-        return Response({"message": "Status updated successfully."})
-
-    return Response({"error": "Invalid status."}, status=400)
-
-@csrf_exempt
 @api_view(['GET'])
-def get_delivery_invoices(request):
-    """Fetch all invoices with status 'حضرت'."""
-    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
-    serializer = SellInvoiceSerializer(invoices, many=True)
-    return Response(serializer.data)
+def get_all_clients1(request,id=None):
+    if request.method == 'GET':
+        clients = AllClientsTable.objects.all().filter(clientid=id)
+        serializer = AllClientsTableSerializer(clients, many=True)
+        return Response({'clients': serializer.data})
 
+
+""" Delivery Related Api's """
 
 @api_view(['GET'])
 def get_employee_order(request, employee_id):
@@ -699,402 +991,6 @@ def skip_order(request, queue_id):
         return Response({"error": "Order queue entry not found."}, status=404)
 
 
-@api_view(['GET', 'POST'])
-def UpdateItemsItemmainApiView(request, item_id):
-    try:
-        # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
-        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'POST':
-        # Add or remove values from itemmain based on action in request
-        action = request.data.get("action")  # "add" or "remove"
-        value = request.data.get("value")
-
-        # Make sure we have the action and value
-        if not action or not value:
-            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Split the current itemmain into a list
-        itemmain_list = item.itemmain.split(";") if item.itemmain else []
-
-        if action == "add":
-            # Add value to list if not already present
-            if value not in itemmain_list:
-                itemmain_list.append(value)
-                item.itemmain = ";".join(itemmain_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        elif action == "remove":
-            # Remove value from list
-            if value in itemmain_list:
-                itemmain_list.remove(value)
-                item.itemmain = ";".join(itemmain_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Default GET method to show current itemmain value
-    elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
-        itemmain = s_data['itemmain']
-        return Response({'itemmain': itemmain}, status=status.HTTP_200_OK)
-
-
-@api_view(['GET', 'POST'])
-def UpdateItemsSubmainApiView(request, item_id):
-    try:
-        # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
-        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'POST':
-        # Add or remove values from itemmain based on action in request
-        action = request.data.get("action")  # "add" or "remove"
-        value = request.data.get("value")
-
-        # Make sure we have the action and value
-        if not action or not value:
-            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Split the current itemmain into a list
-        itemsub_list = item.itemsubmain.split(";") if item.itemsubmain else []
-
-        if action == "add":
-            # Add value to list if not already present
-            if value not in itemsub_list:
-                itemsub_list.append(value)
-                item.itemsubmain = ";".join(itemsub_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        elif action == "remove":
-            # Remove value from list
-            if value in itemsub_list:
-                itemsub_list.remove(value)
-                item.itemsubmain = ";".join(itemsub_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Default GET method to show current itemmain value
-    elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
-        itemsubmain = s_data['itemsubmain']
-        return Response({'itemsub': itemsubmain}, status=status.HTTP_200_OK)
-
-@api_view(['GET', 'POST'])
-def UpdateItemsModelApiView(request, item_id):
-    try:
-        # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
-        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'POST':
-        # Add or remove values from itemmain based on action in request
-        action = request.data.get("action")  # "add" or "remove"
-        value = request.data.get("value")
-
-        # Make sure we have the action and value
-        if not action or not value:
-            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Split the current itemmain into a list
-        model_list = item.itemthird.split(";") if item.itemthird else []
-
-        if action == "add":
-            # Add value to list if not already present
-            if value not in model_list:
-                model_list.append(value)
-                item.itemthird = ";".join(model_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        elif action == "remove":
-            # Remove value from list
-            if value in model_list:
-                model_list.remove(value)
-                item.itemthird = ";".join(model_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Default GET method to show current itemmain value
-    elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
-        itemthird = s_data['itemthird']
-        return Response({'models': itemthird}, status=status.HTTP_200_OK)
-
-@api_view(['GET', 'POST'])
-def UpdateItemsEngineApiView(request, item_id):
-    try:
-        # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
-        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'POST':
-        # Add or remove values from itemmain based on action in request
-        action = request.data.get("action")  # "add" or "remove"
-        value = request.data.get("value")
-
-        # Make sure we have the action and value
-        if not action or not value:
-            return Response({"detail": "Action and value are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Split the current itemmain into a list
-        engine_list = item.engine_no.split(";") if item.engine_no else []
-
-        if action == "add":
-            # Add value to list if not already present
-            if value not in engine_list:
-                engine_list.append(value)
-                item.engine_no = ";".join(engine_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        elif action == "remove":
-            # Remove value from list
-            if value in engine_list:
-                engine_list.remove(value)
-                item.engine_no = ";".join(engine_list)
-                item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
-
-        return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Default GET method to show current itemmain value
-    elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
-        engines = s_data['engine_no']
-        return Response({'engines': engines}, status=status.HTTP_200_OK)
-
-
-def send_invoice_notification(invoice, status_message):
-    """Send a notification when invoice status changes."""
-    channel_layer = get_channel_layer()
-
-    # Group send to 'notifications' channel group
-    async_to_sync(channel_layer.group_send)(
-        "notifications",  # The name of the WebSocket group
-        {
-            "type": "send_notification",  # This corresponds to a function in your consumer to handle the message
-            "message": f"Invoice {invoice.invoice_no} status changed to {status_message}",
-            "invoice_id": invoice.invoice_no,
-            "new_status": status_message
-        }
-    )
-
-
-from rest_framework import generics, mixins,viewsets
-
-
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from decimal import Decimal
-from . import models, serializers
-from .models import AllClientsTable, SellinvoiceTable
-
-class ReturnPermissionViewSet(viewsets.ModelViewSet):
-    queryset = models.return_permission.objects.all()
-    serializer_class = serializers.ReturnPermissionSerializer
-    lookup_field = 'autoid'
-
-    def create(self, request, *args, **kwargs):
-        data = request.data
-
-        # Convert and validate foreign keys
-        client_id = data.get("client")
-        invoice_id = data.get("invoice")
-
-        if not AllClientsTable.objects.filter(clientid=client_id).exists():
-            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
-            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Fetch related objects
-        client = AllClientsTable.objects.get(clientid=client_id)
-        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
-
-        # Create the return permission
-        return_permission_instance = models.return_permission.objects.create(
-            client=client,
-            employee=data.get("employee"),
-            invoice_obj=invoice,
-            invoice_no=invoice.invoice_no,
-            payment=data.get("payment", ""),  # Default to empty if not provided
-        )
-
-        # Serialize and return the created object
-        serializer = self.get_serializer(return_permission_instance)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-# class InvoiceStatusViewSet(viewsets.ViewSet):
-#     """
-#     A viewset to handle updating invoice status or delivery status
-#     and send notifications when the status changes.
-#     """
-
-#     def update_status(self, request, pk=None):
-#         try:
-#             invoice_item = SellInvoiceItemsTable.objects.get(pk=pk)
-#             status_type = request.data.get('status_type')  # invoice_status or delivery_status
-#             new_status = request.data.get('new_status')  # The new status value
-
-#             if status_type not in ['invoice_status', 'delivery_status']:
-#                 return Response({"error": "Invalid status type"}, status=status.HTTP_400_BAD_REQUEST)
-
-#             # Update status based on type
-#             setattr(invoice_item, status_type, new_status)
-#             invoice_item.save()
-
-#             # Send notification based on status change
-#             # send_notification(invoice_item, status_type, new_status)
-
-#             return Response(
-#                 SellInvoiceSerializer(invoice_item).data,
-#                 status=status.HTTP_200_OK,
-#             )
-#         except SellInvoiceItemsTable.DoesNotExist:
-#             return Response({"error": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
-    queryset = models.return_permission_items.objects.all()
-    serializer_class = serializers.ReturnPermissionItemsSerializer
-    lookup_field = 'autoid'
-
-    def create(self, request, *args, **kwargs):
-        data = request.data
-
-        # Convert and validate foreign keys
-        invoice_id = data.get("invoice_no")
-        pno = data.get("pno")
-        autoid = data.get("autoid")
-        permission = data.get("permission")
-
-        if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
-            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not models.SellInvoiceItemsTable.objects.filter(autoid=autoid).exists():
-            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Fetch related objects
-        invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
-        invoice_item = models.SellInvoiceItemsTable.objects.get(autoid=autoid)
-        permission_obj = models.return_permission.objects.get(autoid=permission)
-
-        if int(data.get("returned_quantity")) > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
-            return Response({"error": "Returned quantity greater than original quantity"}, status=status.HTTP_400_BAD_REQUEST)
-        # Create the return permission
-        returned_item_instance = models.return_permission_items.objects.create(
-            pno=invoice_item.pno,
-            company_no=invoice_item.company_no,
-            company=invoice_item.company,
-            item_name=invoice_item.name,
-            org_quantity=invoice.quantity,
-            returned_quantity=data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity,
-            price=invoice_item.dinar_unit_price,
-            invoice_obj=invoice,
-            invoice_no=invoice.invoice_no,
-            permission_obj=permission_obj,
-        )
-        permission_obj.amount += returned_item_instance.total
-        permission_obj.quantity+= int(data.get("returned_quantity")) if data.get("returned_quantity") else invoice.quantity
-        permission_obj.save()
-
-        if invoice_item.current_quantity_after_return is not None and invoice_item.current_quantity_after_return > 0:
-            # Decrease the current quantity after return
-            invoice_item.current_quantity_after_return -= int(data.get("returned_quantity"))
-            invoice_item.save()
-        elif invoice_item.current_quantity_after_return in (None, 0):
-            # Set the current quantity after return to the original quantity minus returned quantity
-            invoice_item.current_quantity_after_return = invoice_item.quantity - int(data.get("returned_quantity"))
-            invoice_item.save()
-
-        try:
-            mainitem = models.Mainitem.objects.get(pno=pno if pno else invoice_item.pno)
-            mainitem.itemvalue += data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity
-            mainitem.save()
-        except models.Mainitem.DoesNotExist:
-            return Response({"error": "Product not found in products"}, status=status.HTTP_400_BAD_REQUEST)
-        except models.Mainitem.MultipleObjectsReturned:
-            return Response({"error": "Api returned multiple objects for pno"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            return Response({"error": "Product in products caused an error!"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-        last_balance = (
-            models.TransactionsHistoryTable.objects.filter(client_id_id=invoice.client_id)
-            .order_by("-registration_date")
-            .first()
-        )
-        last_balance_amount = last_balance.current_balance if last_balance else 0
-
-        try:
-            models.TransactionsHistoryTable.objects.create(
-                credit=Decimal(returned_item_instance.total),
-                debt=0.0,
-                transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                details=f"ترجيع بضاتع - فاتورة رقم {invoice_item.invoice_no}",
-                registration_date=timezone.now(),
-                current_balance=round(last_balance_amount, 2) + Decimal(returned_item_instance.total),  # Updated balance
-                client_id_id=invoice.client_id,  # Client ID
-            )
-        except:
-            return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if permission_obj.payment == "نقدي":
-            try:
-                client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
-                models.StorageTransactionsTable.objects.create(
-                    reciept_no=f"ف.ب : {invoice_item.invoice_no}",
-                    transaction_date=timezone.now(),
-                    amount=Decimal(returned_item_instance.total),
-                    issued_for="اذن ترجيع",
-                    note=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                    account_type="عميل",
-                    transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                    place="مارين",
-                    section="ترجيع",
-                    subsection="ترجيع",
-                    person=client_object.name or "",
-                    payment= "نقدا" if permission_obj.payment == "نقدي" else "اجل",
-                    daily_status =False,
-                )
-            except:
-                return Response({"error": "error in storage saving!"}, status=status.HTTP_400_BAD_REQUEST)
-        # Serialize and return the created object
-        serializer = self.get_serializer(returned_item_instance)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class EnginesTableViewSet(viewsets.ModelViewSet):
-    queryset = models.enginesTable.objects.all()
-    serializer_class = serializers.EnginesTableSerializer
-
-@api_view(['GET'])
-def get_invoice_returned_items(request,id):
-    returned_items = models.return_permission_items.objects.filter(invoice_no=id)
-    invoice = SellinvoiceTable.objects.get(invoice_no=id)
-    serializer = serializers.ReturnPermissionItemsSerializer(returned_items,many=True)
-    return Response({
-        'data':serializer.data,
-        'invoice_total':invoice.amount,
-        'invoice_paid':invoice.paid_amount,
-        }, status=status.HTTP_200_OK)
-
 
 @csrf_exempt
 @api_view(['POST'])
@@ -1203,12 +1099,6 @@ def pending_orders(request):
     return Response(serializer.data, status=200)
 
 
-# 📌 View all available employees
-@api_view(['GET'])
-def available_employees(request):
-    employees = EmployeesTable.objects.filter(is_available=True)
-    serializer = EmployeeSerializer(employees, many=True)
-    return Response(serializer.data, status=200)
 
 
 
@@ -1305,33 +1195,6 @@ def clear_queue(request):
         "deleted_order_queue_entries": deleted_order_queue,
 
     }, status=status.HTTP_200_OK)
-
-
-
-
-@api_view(['POST'])
-def mainitem_add_json_desc(request, id):
-    """Add JSON description to a Mainitem product"""
-    try:
-        data = request.data
-        json_data = data.get('json')
-
-        # Parse the JSON data
-        parsed_json = json.loads(json_data) if isinstance(json_data, str) else json_data
-
-        # Retrieve the product
-        product = models.Mainitem.objects.get(pno=id)
-        product.json_description = parsed_json  # Assuming this field is a JSONField
-        product.save()
-
-        return Response({"message": "JSON description updated successfully"}, status=status.HTTP_200_OK)
-
-    except models.Mainitem.DoesNotExist:
-        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
-    except json.JSONDecodeError:
-        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["GET"])
@@ -1806,15 +1669,6 @@ def get_employee_confirmed_orders(request):
 
     return Response(data, status=200)
 
-@api_view(['GET'])
-def get_invoice_data(request, autoid):
-    try:
-        # Fetch the data using the provided autoid (primary key)
-        invoice_data = SellinvoiceTable.objects.get(autoid=autoid)
-        serializer = OrderSerializer(invoice_data)
-        return Response(serializer.data)
-    except SellinvoiceTable.DoesNotExist:
-        return Response({"error": "Invoice not found"}, status=404)
 
 
 @api_view(["GET"])
@@ -1844,6 +1698,222 @@ def get_archived_orders(request, employee_id):
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+
+""" Return invoice Api's """
+
+class ReturnPermissionViewSet(viewsets.ModelViewSet):
+    queryset = models.return_permission.objects.all()
+    serializer_class = serializers.ReturnPermissionSerializer
+    lookup_field = 'autoid'
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Convert and validate foreign keys
+        client_id = data.get("client")
+        invoice_id = data.get("invoice")
+
+        if not AllClientsTable.objects.filter(clientid=client_id).exists():
+            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
+            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch related objects
+        client = AllClientsTable.objects.get(clientid=client_id)
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+
+        # Create the return permission
+        return_permission_instance = models.return_permission.objects.create(
+            client=client,
+            employee=data.get("employee"),
+            invoice_obj=invoice,
+            invoice_no=invoice.invoice_no,
+            payment=data.get("payment", ""),  # Default to empty if not provided
+        )
+
+        # Serialize and return the created object
+        serializer = self.get_serializer(return_permission_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
+class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
+    queryset = models.return_permission_items.objects.all()
+    serializer_class = serializers.ReturnPermissionItemsSerializer
+    lookup_field = 'autoid'
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Convert and validate foreign keys
+        invoice_id = data.get("invoice_no")
+        pno = data.get("pno")
+        autoid = data.get("autoid")
+        permission = data.get("permission")
+
+        if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
+            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not models.SellInvoiceItemsTable.objects.filter(autoid=autoid).exists():
+            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch related objects
+        invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
+        invoice_item = models.SellInvoiceItemsTable.objects.get(autoid=autoid)
+        permission_obj = models.return_permission.objects.get(autoid=permission)
+
+        if int(data.get("returned_quantity")) > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
+            return Response({"error": "Returned quantity greater than original quantity"}, status=status.HTTP_400_BAD_REQUEST)
+        # Create the return permission
+        returned_item_instance = models.return_permission_items.objects.create(
+            pno=invoice_item.pno,
+            company_no=invoice_item.company_no,
+            company=invoice_item.company,
+            item_name=invoice_item.name,
+            org_quantity=invoice.quantity,
+            returned_quantity=data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity,
+            price=invoice_item.dinar_unit_price,
+            invoice_obj=invoice,
+            invoice_no=invoice.invoice_no,
+            permission_obj=permission_obj,
+        )
+        permission_obj.amount += returned_item_instance.total
+        permission_obj.quantity+= int(data.get("returned_quantity")) if data.get("returned_quantity") else invoice.quantity
+        permission_obj.save()
+
+        if invoice_item.current_quantity_after_return is not None and invoice_item.current_quantity_after_return > 0:
+            # Decrease the current quantity after return
+            invoice_item.current_quantity_after_return -= int(data.get("returned_quantity"))
+            invoice_item.save()
+        elif invoice_item.current_quantity_after_return in (None, 0):
+            # Set the current quantity after return to the original quantity minus returned quantity
+            invoice_item.current_quantity_after_return = invoice_item.quantity - int(data.get("returned_quantity"))
+            invoice_item.save()
+
+        try:
+            mainitem = models.Mainitem.objects.get(pno=pno if pno else invoice_item.pno)
+            mainitem.itemvalue += data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity
+            mainitem.save()
+        except models.Mainitem.DoesNotExist:
+            return Response({"error": "Product not found in products"}, status=status.HTTP_400_BAD_REQUEST)
+        except models.Mainitem.MultipleObjectsReturned:
+            return Response({"error": "Api returned multiple objects for pno"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"error": "Product in products caused an error!"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        last_balance = (
+            models.TransactionsHistoryTable.objects.filter(client_id_id=invoice.client_id)
+            .order_by("-registration_date")
+            .first()
+        )
+        last_balance_amount = last_balance.current_balance if last_balance else 0
+
+        try:
+            models.TransactionsHistoryTable.objects.create(
+                credit=Decimal(returned_item_instance.total),
+                debt=0.0,
+                transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                details=f"ترجيع بضاتع - فاتورة رقم {invoice_item.invoice_no}",
+                registration_date=timezone.now(),
+                current_balance=round(last_balance_amount, 2) + Decimal(returned_item_instance.total),  # Updated balance
+                client_id_id=invoice.client_id,  # Client ID
+            )
+        except:
+            return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if permission_obj.payment == "نقدي":
+            try:
+                client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
+                models.StorageTransactionsTable.objects.create(
+                    reciept_no=f"ف.ب : {invoice_item.invoice_no}",
+                    transaction_date=timezone.now(),
+                    amount=Decimal(returned_item_instance.total),
+                    issued_for="اذن ترجيع",
+                    note=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                    account_type="عميل",
+                    transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                    place="مارين",
+                    section="ترجيع",
+                    subsection="ترجيع",
+                    person=client_object.name or "",
+                    payment= "نقدا" if permission_obj.payment == "نقدي" else "اجل",
+                    daily_status =False,
+                )
+            except:
+                return Response({"error": "error in storage saving!"}, status=status.HTTP_400_BAD_REQUEST)
+        # Serialize and return the created object
+        serializer = self.get_serializer(returned_item_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
+@api_view(['GET'])
+def get_invoice_returned_items(request,id):
+    returned_items = models.return_permission_items.objects.filter(invoice_no=id)
+    invoice = SellinvoiceTable.objects.get(invoice_no=id)
+    serializer = serializers.ReturnPermissionItemsSerializer(returned_items,many=True)
+    return Response({
+        'data':serializer.data,
+        'invoice_total':invoice.amount,
+        'invoice_paid':invoice.paid_amount,
+        }, status=status.HTTP_200_OK)
+
+
+
+@api_view(["POST"])
+def filter_return_reqs(request):
+    try:
+        filters = request.data  # DRF automatically parses the JSON body
+        query_filter = Q()  # Initialize an empty Q object for combining filters
+
+        # Apply client-name filter if provided
+        if 'client' in filters:
+            query_filter &= Q(client__clientid__icontains=filters['client'])
+
+        # Apply payment filter if provided
+        if 'payment' in filters:
+            query_filter &= Q(payment__icontains=filters['payment'])
+
+        # Apply date range filter if fromdate and todate are provided
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                query_filter &= Q(date__range=[from_date_obj, to_date_obj])
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Query the model with the combined filters
+        queryset = models.return_permission.objects.filter(query_filter)
+        serializer = serializers.ReturnPermissionSerializer(queryset,many=True)
+
+        # If no matching records, return an empty list
+        if not queryset.exists():
+            return Response([], status=status.HTTP_200_OK)
+
+        # Serialize and return the filtered data
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+""" Employee Related Api's """
+# 📌 View all available employees
+@api_view(['GET'])
+def available_employees(request):
+    employees = EmployeesTable.objects.filter(is_available=True)
+    serializer = EmployeeSerializer(employees, many=True)
+    return Response(serializer.data, status=200)
+
+
+
+""" Payment Request Api's """
 
 
 @api_view(["POST"])
@@ -1914,49 +1984,8 @@ def accept_payment_req(request, id):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+""" Sources Related Api's """
 
-from django.db.models import Q
-
-
-@api_view(["POST"])
-def filter_return_reqs(request):
-    try:
-        filters = request.data  # DRF automatically parses the JSON body
-        query_filter = Q()  # Initialize an empty Q object for combining filters
-
-        # Apply client-name filter if provided
-        if 'client' in filters:
-            query_filter &= Q(client__clientid__icontains=filters['client'])
-
-        # Apply payment filter if provided
-        if 'payment' in filters:
-            query_filter &= Q(payment__icontains=filters['payment'])
-
-        # Apply date range filter if fromdate and todate are provided
-        fromdate = filters.get('fromdate', '').strip()
-        todate = filters.get('todate', '').strip()
-
-        if fromdate and todate:
-            try:
-                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
-                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
-                query_filter &= Q(date__range=[from_date_obj, to_date_obj])
-            except ValueError:
-                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Query the model with the combined filters
-        queryset = models.return_permission.objects.filter(query_filter)
-        serializer = serializers.ReturnPermissionSerializer(queryset,many=True)
-
-        # If no matching records, return an empty list
-        if not queryset.exists():
-            return Response([], status=status.HTTP_200_OK)
-
-        # Serialize and return the filtered data
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def create_source_record(request):
@@ -2019,18 +2048,11 @@ def create_source_record(request):
 
 
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from django.contrib.auth.hashers import make_password, check_password
-from firebase_admin import messaging
-from .models import EmployeesTable, AllClientsTable
-import firebase_admin
-from firebase_admin import credentials
-
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
+""" Notifications Related Api's """
 
 @api_view(['POST'])
 def register_fcm_token(request):
@@ -2094,7 +2116,20 @@ def send_notification(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+def send_invoice_notification(invoice, status_message):
+    """Send a notification when invoice status changes."""
+    channel_layer = get_channel_layer()
 
+    # Group send to 'notifications' channel group
+    async_to_sync(channel_layer.group_send)(
+        "notifications",  # The name of the WebSocket group
+        {
+            "type": "send_notification",  # This corresponds to a function in your consumer to handle the message
+            "message": f"Invoice {invoice.invoice_no} status changed to {status_message}",
+            "invoice_id": invoice.invoice_no,
+            "new_status": status_message
+        }
+    )
 
 @api_view(['POST'])
 def store_fcm_token(request):
@@ -2134,14 +2169,3 @@ def store_fcm_token(request):
         else:
             return Response({"error": "Invalid role. Role should be 'client' or 'employee'."}, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
-def get_product_images(request, id):
-    try:
-        product = models.Mainitem.objects.get(pno=id)
-    except models.Mainitem.DoesNotExist:
-        return Response({"error": "Product not found!"}, status=404)  # Added return and status
-
-    images = models.Imagetable.objects.filter(productid=product.fileid)  # Ensure `productid` is correct
-    serializer = serializers.productImageSerializer(images, many=True)
-
-    return Response(serializer.data)  # Added return statement

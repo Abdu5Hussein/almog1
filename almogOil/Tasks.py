@@ -55,7 +55,7 @@ def assign_orders():
 
 
 def check_order_confirmation(order_id):
-    expiration_time = now() - timedelta(minutes=5)
+    expiration_time = now() - timedelta(minutes=1)
     try:
         with transaction.atomic():
             order_queue = OrderQueue.objects.select_for_update().get(order__invoice_no=order_id, is_accepted=False)
@@ -69,7 +69,7 @@ def check_order_confirmation(order_id):
 
                 # Mark employee queue entry as available again
                 employee_queue = EmployeeQueue.objects.get(employee=employee)
-                employee_queue.is_available = True
+                employee_queue.is_available = False
                 employee_queue.is_assigned = False
                 employee_queue.save()
 
