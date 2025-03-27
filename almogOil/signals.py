@@ -2,8 +2,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import SellinvoiceTable,AllClientsTable
-from .notifications import send_order_tracking_notification  # Import the new function
-from .models import SellinvoiceTable, EmployeeQueue
+from .notifications import send_order_tracking_notification , send_order_assigned_notification# Import the new function
+from .models import SellinvoiceTable, EmployeeQueue,EmployeesTable
 from .Tasks import assign_orders
 
 @receiver(post_save, sender=SellinvoiceTable)
@@ -36,3 +36,28 @@ def order_tracking_invoice_status_change_notification(sender, instance, **kwargs
                     print(f"Error sending notification: {str(e)}")
             else:
                 print(f"Client with ID '{client_id}' not found.")
+
+
+@receiver(post_save, sender=EmployeeQueue)
+def order_assigned_notification(sender, instance, created, **kwargs):
+    """
+    Sends a notification to the employee whenever an order is assigned to them.
+    """
+    if instance.is_assigned:  # Check if the order is assigned
+        title = "Order Assigned"
+        body = f"An order has been assigned to you. Go directly to the warehouse."
+
+        # Fetch the employee using the ForeignKey relationship
+        if instance.employee:
+            employee = instance.employee  # Accessing the employee object
+
+            # Now directly access the employee's fcm_token
+            if employee.fcm_token:
+                try:
+                    # Send notification to the employee
+                    send_order_assigned_notification(employee.fcm_token, title, body)
+                except ValueError as e:
+                    print(f"Error sending notification: {str(e)}")
+            else:
+                print(f"Employee with ID '{employee.employee_id}' does not have an FCM token.")
+

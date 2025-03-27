@@ -14,7 +14,6 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse,Http404
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from .models import  EmployeesTable,CartItem,AllClientsTable,OrderQueue,EmployeeQueue,SupportChatConversation, FeedbackMessage,Feedback,SupportChatMessageSys,  Clientstable,AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable, TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable, Modeltable,Imagetable, Mainitem,MeasurementsTable,Maintypetable, Sectionstable, StorageTransactionsTable, Subsectionstable,Subtypetable,Companytable,Manufaccountrytable,Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable,CurrenciesTable, enginesTable
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
@@ -36,7 +35,6 @@ from django.db import transaction
 from io import BytesIO
 import pandas as pd
 from django.http import JsonResponse
-from .models import Mainitem
 import logging
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
@@ -56,7 +54,6 @@ from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
-from .models import ChatMessage
 from rest_framework.exceptions import NotFound
 from django.http import JsonResponse
 import firebase_admin
@@ -133,9 +130,9 @@ def LogInView(request):
 
 @login_required
 def StorageManagement(req):
-    Clients= AllClientsTable.objects.all()
-    sections = Sectionstable.objects.all()
-    subSections = Subsectionstable.objects.all()
+    Clients= models.AllClientsTable.objects.all()
+    sections = models.Sectionstable.objects.all()
+    subSections = models.Subsectionstable.objects.all()
     context = {
         'clients': Clients,
         'sections': sections,
@@ -145,9 +142,9 @@ def StorageManagement(req):
 
 @login_required
 def StorageReports(req):
-    Clients= AllClientsTable.objects.all()
-    sections = Sectionstable.objects.all()
-    subSections = Subsectionstable.objects.all()
+    Clients= models.AllClientsTable.objects.all()
+    sections = models.Sectionstable.objects.all()
+    subSections = models.Subsectionstable.objects.all()
     context = {
         'clients': Clients,
         'sections': sections,
@@ -157,13 +154,13 @@ def StorageReports(req):
 
 def get_subsections(request):
     section_id = request.GET.get('section_id')  # Get selected section ID from request
-    subsections = Subsectionstable.objects.filter(sectionid_id=section_id).values('autoid', 'subsection')
+    subsections = models.Subsectionstable.objects.filter(sectionid_id=section_id).values('autoid', 'subsection')
     return JsonResponse(list(subsections), safe=False)  # Return JSON response
 
 @login_required
 def MoreDetails(req):
     productId = req.GET.get('product_id')
-    item = Mainitem.objects.filter(fileid=productId)
+    item = models.Mainitem.objects.filter(fileid=productId)
     context = {
         'item':item
     }
@@ -172,8 +169,8 @@ def MoreDetails(req):
 
 @login_required
 def BuyInvoicesAdd(request):
-    sources = AllSourcesTable.objects.all().values('clientid','name')
-    Currency = CurrenciesTable.objects.all()
+    sources = models.AllSourcesTable.objects.all().values('clientid','name')
+    Currency = models.CurrenciesTable.objects.all()
     context ={
         'sources':sources,
         'currency': Currency
@@ -201,13 +198,13 @@ def create_buy_invoice(request):
         reminder = data.get("reminder")
         temp_flag = data.get("temp_flag", False)
         multi_source_flag = data.get("multi_source_flag", False)
-        source = AllSourcesTable.objects.get(clientid=source_id)
+        source = models.AllSourcesTable.objects.get(clientid=source_id)
         # Create a new record in the Buyinvoicetable model
         last_id_response = json.loads(get_buyinvoice_no(request).content)  # Get response data
         last_id_no = last_id_response.get("autoid")
         next_id_no = int(last_id_no) + 1
 
-        invoice = Buyinvoicetable.objects.create(
+        invoice = models.Buyinvoicetable.objects.create(
             invoice_no=next_id_no,
             original_no=org_invoice_id,
             source=source.name,
@@ -238,12 +235,12 @@ def create_buy_invoice(request):
 def ImageView(request):
     # Retrieve all images to display in the template
     product_id = request.GET.get("product_id")
-    images = Imagetable.objects.filter(productid=product_id)
+    images = models.Imagetable.objects.filter(productid=product_id)
 
     if request.method == 'POST':
         if 'delete-id' in request.POST:  # Check if it's a delete request
             delete_id = request.POST.get('delete-id')
-            image_to_delete = get_object_or_404(Imagetable, fileid=delete_id)
+            image_to_delete = get_object_or_404(models.Imagetable, fileid=delete_id)
             image_to_delete.delete()
             return JsonResponse({'status': 'success', 'message': 'Image deleted successfully.'})
 
@@ -253,7 +250,7 @@ def ImageView(request):
 
         if image and product_id:
             # Create a new Imagetable object
-            Imagetable.objects.create(productid=product_id, image=image, image_obj=image)
+            models.Imagetable.objects.create(productid=product_id, image=image, image_obj=image)
             # Redirect to the same view with the product_id in the query string
             return HttpResponseRedirect(f"{reverse('images')}?product_id={product_id}")
 
@@ -262,8 +259,8 @@ def ImageView(request):
 
 @login_required
 def ModelView(request):
-    sub_types = Subtypetable.objects.all()
-    models = Modeltable.objects.select_related('subtype_fk').all()
+    sub_types = models.Subtypetable.objects.all()
+    models = models.Modeltable.objects.select_related('subtype_fk').all()
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -273,15 +270,15 @@ def ModelView(request):
 
         if action == 'add':
             if model_name and sub_type_id:
-                sub_type = get_object_or_404(Subtypetable, fileid=sub_type_id)
-                Modeltable.objects.create(model_name=model_name, subtype_fk=sub_type)
+                sub_type = get_object_or_404(models.Subtypetable, fileid=sub_type_id)
+                models.Modeltable.objects.create(model_name=model_name, subtype_fk=sub_type)
                 messages.success(request, "Model added successfully!")
             else:
                 messages.error(request, "All fields are required.")
 
         elif action == 'edit':
             if model_id and model_name:
-                model = get_object_or_404(Modeltable, fileid=model_id)
+                model = get_object_or_404(models.Modeltable, fileid=model_id)
                 model.model_name = model_name
                 model.save()
                 messages.success(request, "Model updated successfully!")
@@ -290,7 +287,7 @@ def ModelView(request):
 
         elif action == 'delete':
             if model_id:
-                model = get_object_or_404(Modeltable, fileid=model_id)
+                model = get_object_or_404(models.Modeltable, fileid=model_id)
                 model.delete()
                 messages.success(request, "Model deleted successfully!")
             else:
@@ -309,8 +306,8 @@ def HomeView(request):
 
 @login_required
 def SectionAndSubSection(request):
-    sections = Sectionstable.objects.all()
-    subSections = Subsectionstable.objects.all()
+    sections = models.Sectionstable.objects.all()
+    subSections = models.Subsectionstable.objects.all()
 
     # Handle POST requests for both sections and subsections
     if request.method == "POST":
@@ -323,13 +320,13 @@ def SectionAndSubSection(request):
 
 
             if action == "add" and section_name:
-                Sectionstable.objects.create(section=section_name)
+                models.Sectionstable.objects.create(section=section_name)
             elif action == "edit" and section_id and section_name:
-                section = Sectionstable.objects.get(autoid=section_id)
+                section = models.Sectionstable.objects.get(autoid=section_id)
                 section.section = section_name
                 section.save()
             elif action == "delete" and section_id:
-                Sectionstable.objects.filter(autoid=section_id).delete()
+                models.Sectionstable.objects.filter(autoid=section_id).delete()
 
         # Handle Subsection actions
         elif "subsection" in request.POST:
@@ -338,15 +335,15 @@ def SectionAndSubSection(request):
             section_fk = request.POST.get("key")
 
             if action == "add" and subsection_name:
-                section_instance = Sectionstable.objects.get(autoid=section_fk)  # Assuming autoid is the primary key field
+                section_instance = models.Sectionstable.objects.get(autoid=section_fk)  # Assuming autoid is the primary key field
 
-                Subsectionstable.objects.create(subsection=subsection_name,sectionid=section_instance)
+                models.Subsectionstable.objects.create(subsection=subsection_name,sectionid=section_instance)
             elif action == "edit" and subsection_id and subsection_name:
-                subsection = Subsectionstable.objects.get(autoid=subsection_id)
+                subsection = models.Subsectionstable.objects.get(autoid=subsection_id)
                 subsection.subsection = subsection_name
                 subsection.save()
             elif action == "delete" and subsection_id:
-                Subsectionstable.objects.filter(autoid=subsection_id).delete()
+                models.Subsectionstable.objects.filter(autoid=subsection_id).delete()
 
         # Redirect to the same page after action
         return redirect('sections-and-subsections')  # Replace with the actual URL name
@@ -369,21 +366,21 @@ def MainCat(request):
 
         try:
             if action == 'add':
-                Maintypetable.objects.create(typename=name)
+                models.Maintypetable.objects.create(typename=name)
             elif action == 'edit' and main_id:
                 # Correctly fetch the object using `objects.get`
-                maintypetable = Maintypetable.objects.get(fileid=main_id)
+                maintypetable = models.Maintypetable.objects.get(fileid=main_id)
                 maintypetable.typename = name  # Update the typename field
                 maintypetable.save()
             elif action == 'delete' and main_id:
                 # Correctly fetch the object and delete it
-                maintypetable = Maintypetable.objects.get(fileid=main_id)
+                maintypetable = models.Maintypetable.objects.get(fileid=main_id)
                 maintypetable.delete()
             else:
                 # Handle invalid action or missing data
                 raise ValueError("Invalid action or missing ID.")
 
-        except Maintypetable.DoesNotExist:
+        except models.Maintypetable.DoesNotExist:
             # Handle the case where the object with the given ID does not exist
             messages.error(request, "The specified measurement does not exist.")
         except Exception as e:
@@ -392,7 +389,7 @@ def MainCat(request):
 
         return redirect('maintype')
 
-    mainType = Maintypetable.objects.all()
+    mainType = models.Maintypetable.objects.all()
     context = {
         'mainType': mainType,
     }
@@ -400,8 +397,8 @@ def MainCat(request):
 
 @login_required
 def SubCat(request):
-    main_types = Maintypetable.objects.all()
-    subtypes = Subtypetable.objects.select_related('maintype_fk').all()
+    main_types = models.Maintypetable.objects.all()
+    subtypes = models.Subtypetable.objects.select_related('maintype_fk').all()
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -412,15 +409,15 @@ def SubCat(request):
         try:
             if action == 'add':
                 if sub_type_name and main_type_id:
-                    main_type = get_object_or_404(Maintypetable, fileid=int(main_type_id))
-                    Subtypetable.objects.create(subtypename=sub_type_name, maintype_fk=main_type)
+                    main_type = get_object_or_404(models.Maintypetable, fileid=int(main_type_id))
+                    models.Subtypetable.objects.create(subtypename=sub_type_name, maintype_fk=main_type)
                     messages.success(request, "Subtype added successfully!")
                 else:
                     messages.error(request, "All fields are required.")
 
             elif action == 'edit':
                 if sub_type_id and sub_type_name:
-                    sub_type = get_object_or_404(Subtypetable, fileid=int(sub_type_id))
+                    sub_type = get_object_or_404(models.Subtypetable, fileid=int(sub_type_id))
                     sub_type.subtypename = sub_type_name
                     sub_type.save()
                     messages.success(request, "Subtype updated successfully!")
@@ -429,7 +426,7 @@ def SubCat(request):
 
             elif action == 'delete':
                 if sub_type_id:
-                    sub_type = get_object_or_404(Subtypetable, fileid=int(sub_type_id))
+                    sub_type = get_object_or_404(models.Subtypetable, fileid=int(sub_type_id))
                     sub_type.delete()
                     messages.success(request, "Subtype deleted successfully!")
                 else:
@@ -455,17 +452,17 @@ def manage_companies(request):
         try:
             if action == 'add':
                 # Add a new company
-                Companytable.objects.create(companyname=name)
+                models.Companytable.objects.create(companyname=name)
                 messages.success(request, "تمت إضافة الشركة بنجاح.")
             elif action == 'edit' and company_id:
                 # Edit an existing company
-                company = get_object_or_404(Companytable, pk=company_id)
+                company = get_object_or_404(models.Companytable, pk=company_id)
                 company.companyname = name
                 company.save()
                 messages.success(request, "تم تعديل الشركة بنجاح.")
             elif action == 'delete' and company_id:
                 # Delete an existing company
-                company = get_object_or_404(Companytable, pk=company_id)
+                company = get_object_or_404(models.Companytable, pk=company_id)
                 company.delete()
                 messages.success(request, "تم حذف الشركة بنجاح.")
             else:
@@ -476,7 +473,7 @@ def manage_companies(request):
         return redirect('manage_companies')  # Redirect to the same page
 
     # Fetch all company records for display
-    companyTable = Companytable.objects.all()
+    companyTable = models.Companytable.objects.all()
     context = {
         'companyTable': companyTable,
     }
@@ -490,21 +487,21 @@ def manage_countries(request):
         country_name = request.POST.get("name")
 
         if action == "add" and country_name:
-            Manufaccountrytable.objects.create(countryname=country_name)
+            models.Manufaccountrytable.objects.create(countryname=country_name)
 
         elif action == "edit" and country_id and country_name:
-            country = Manufaccountrytable.objects.filter(fileid=country_id).first()
+            country = models.Manufaccountrytable.objects.filter(fileid=country_id).first()
             if country:
                 country.countryname = country_name
                 country.save()
 
         elif action == "delete" and country_id:
-            Manufaccountrytable.objects.filter(fileid=country_id).delete()
+            models.Manufaccountrytable.objects.filter(fileid=country_id).delete()
 
         return redirect('manage_countries')
 
     # Fetch all countries for display
-    countries = Manufaccountrytable.objects.all().order_by('countryname')
+    countries = models.Manufaccountrytable.objects.all().order_by('countryname')
     return render(request, 'countries-table.html', {'countries': countries})
 
 def Measurements(request):
@@ -514,17 +511,17 @@ def Measurements(request):
         measurement_id = request.POST.get('id')
 
         if action == 'add':
-            MeasurementsTable.objects.create(name=name)
+            models.MeasurementsTable.objects.create(name=name)
         elif action == 'edit' and measurement_id:
-            measurement = MeasurementsTable.objects.get(id=measurement_id)
+            measurement = models.MeasurementsTable.objects.get(id=measurement_id)
             measurement.name = name
             measurement.save()
         elif action == 'delete' and measurement_id:
-            MeasurementsTable.objects.get(id=measurement_id).delete()
+            models.MeasurementsTable.objects.get(id=measurement_id).delete()
 
         return redirect('measurements')
 
-    measurements = MeasurementsTable.objects.all()
+    measurements = models.MeasurementsTable.objects.all()
     return render(request, 'measurements.html', {'measurements': measurements})
 
 COLUMN_TITLES = {
@@ -571,14 +568,14 @@ COLUMN_TITLES = {
 
 @login_required
 def ProductsDetails(req):
-    company = Companytable.objects.values('fileid', 'companyname')
-    measurements = MeasurementsTable.objects.all()
-    engines = enginesTable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
-    countries = Manufaccountrytable.objects.all()
-    models = Modeltable.objects.all()
-    columns = [field.name for field in Mainitem._meta.fields]
+    company = models.Companytable.objects.values('fileid', 'companyname')
+    measurements = models.MeasurementsTable.objects.all()
+    engines = models.enginesTable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
+    countries = models.Manufaccountrytable.objects.all()
+    models = models.Modeltable.objects.all()
+    columns = [field.name for field in models.Mainitem._meta.fields]
     column_visibility = {
         'pno':True,
         'companyproduct':True,
@@ -615,7 +612,7 @@ def filter_clients(request):
             return JsonResponse({'error': 'Missing pno parameter'}, status=400)
 
         # Filter Clients based on 'pno'
-        clients = Clientstable.objects.filter(pno=pno).values(
+        clients = models.Clientstable.objects.filter(pno=pno).values(
             'fileid', 'itemno', 'maintype','itemname','currentbalance','date','clientname','billno','description', 'clientbalance','pno'
         )
 
@@ -633,7 +630,7 @@ def OemNumbers(req):
         company_name = req.session.get('oem_company_name')
         company_no = req.session.get('oem_company_no')
         fileid = req.session.get('oem_file_id')
-        oemstring = Mainitem.objects.get(fileid=fileid, replaceno=company_no).oem_numbers
+        oemstring = models.Mainitem.objects.get(fileid=fileid, replaceno=company_no).oem_numbers
         oem_numbers = oemstring.split(';') if oemstring else []
 
         context = {
@@ -654,7 +651,7 @@ def OemNumbers(req):
 
         if action == 'add' and file_id and oem_no:
             # Add a new record
-            record = Mainitem.objects.get(fileid=file_id)
+            record = models.Mainitem.objects.get(fileid=file_id)
             if record.oem_numbers:
                 record.oem_numbers += f";{oem_no}"
             else:
@@ -664,27 +661,27 @@ def OemNumbers(req):
         elif action == 'edit' and file_id and oem_no:
             # Edit an existing OEM number (replace the old one with the new one)
             try:
-                record = Mainitem.objects.get(fileid=file_id)
+                record = models.Mainitem.objects.get(fileid=file_id)
                 # Split the oem_numbers into a list, replace the old oem_no, and rejoin
                 oem_list = record.oem_numbers.split(';')
                 if oem_no in oem_list:
                     oem_list[oem_list.index(oem_no)] = oem_no  # Modify the OEM number if needed
                 record.oem_numbers = ';'.join(oem_list)
                 record.save()
-            except Mainitem.DoesNotExist:
+            except models.Mainitem.DoesNotExist:
                 pass
 
         elif action == 'delete' and file_id and oem_no:
             # Delete a specific OEM number from the oem_numbers string
             try:
-                record = Mainitem.objects.get(fileid=file_id)
+                record = models.Mainitem.objects.get(fileid=file_id)
                 # Split the oem_numbers into a list and remove the specified oem_no
                 oem_list = record.oem_numbers.split(';')
                 if oem_no in oem_list:
                     oem_list.remove(oem_no)
                     record.oem_numbers = ';'.join(oem_list)
                     record.save()
-            except Mainitem.DoesNotExist:
+            except models.Mainitem.DoesNotExist:
                 pass
         # Redirect to the same page to reflect the changes
         return redirect('/oem/')
@@ -711,14 +708,14 @@ def delete_record(request):
                 return JsonResponse({"success": False, "message": "No 'fileid' provided."}, status=400)
 
             # Try to get the object from the database
-            record = Mainitem.objects.get(fileid=fileid)
+            record = models.Mainitem.objects.get(fileid=fileid)
 
             # Delete the record
             record.delete()
 
             return JsonResponse({"success": True, "message": "Record deleted successfully."})
 
-        except Mainitem.DoesNotExist:
+        except models.Mainitem.DoesNotExist:
             return JsonResponse({"success": False, "message": "Record not found."}, status=404)
 
         except Exception as e:
@@ -808,7 +805,7 @@ def filter_items(request):
                     return JsonResponse({'error': 'Invalid date format'}, status=400)
 
             # Now filter the queryset using the combined Q object
-            queryset = Mainitem.objects.filter(filters_q).values(
+            queryset = models.Mainitem.objects.filter(filters_q).values(
     'pno', 'fileid', 'itemplace', 'itemmain', 'itemname',
     'companyproduct', 'itemno', 'pno', 'replaceno',
     'itemvalue', 'buyprice', 'itemperbox', 'resvalue',
@@ -906,7 +903,7 @@ def filter_clients_input(request):
             filters = json.loads(request.body.decode('utf-8'))  # Decoding bytes and loading JSON
 
             # Build the query based on the filters
-            queryset = Clientstable.objects.all()
+            queryset = models.Clientstable.objects.all()
 
             # Check if any filters are applied
             filters_applied = False
@@ -983,7 +980,7 @@ def process_excel_and_import(request):
                 for index, row in data.iterrows():
                     try:
                         logger.debug(f"Processing row {index}: {row.to_dict()}")
-                        records.append(Mainitem(
+                        records.append(models.Mainitem(
                             itemno=row.get("ItemNo", None),
                             itemmain=row.get("ItemMain", None),
                             itemsubmain=row.get("ItemSubMain", None),
@@ -1028,7 +1025,7 @@ def process_excel_and_import(request):
                         continue
 
                 # Bulk create records in the database
-                Mainitem.objects.bulk_create(records)
+                models.Mainitem.objects.bulk_create(records)
                 logger.debug(f"Successfully inserted {len(records)} records into the database.")
 
                 return JsonResponse({"status": "success", "message": "Excel data imported successfully."},status=200)
@@ -1046,7 +1043,7 @@ def process_excel_and_import(request):
                 records = []
                 for item in data:
                     try:
-                        records.append(Mainitem(
+                        records.append(models.Mainitem(
                         itemno=item.get("ItemNo", None),
                         itemmain=item.get("ItemMain", None),
                         itemsubmain=item.get("ItemSubMain", None),
@@ -1091,7 +1088,7 @@ def process_excel_and_import(request):
                         logger.error(f"Error processing item {item}: {item_error}")
                         continue
 
-                Mainitem.objects.bulk_create(records)
+                models.Mainitem.objects.bulk_create(records)
                 logger.debug(f"Successfully inserted {len(records)} records from Tabulator data.")
                 return JsonResponse({"status": "success", "message": "Tabulator data imported successfully."})
 
@@ -1304,9 +1301,9 @@ def ImportExcel(request):
 
 @login_required
 def StoragePlaces(request):
-    company = Companytable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
     context = {
         'company': company,
         'mainType': mainType,
@@ -1319,7 +1316,7 @@ def StoragePlaces(request):
 def get_item_data(request, fileid):
     try:
         # Retrieve the record from the database
-        item = Mainitem.objects.get(fileid=fileid)
+        item = models.Mainitem.objects.get(fileid=fileid)
 
         # Serialize the item data
         serializer = MainitemSerializer(item)
@@ -1327,7 +1324,7 @@ def get_item_data(request, fileid):
         # Return the serialized data
         return Response(serializer.data)
 
-    except Mainitem.DoesNotExist:
+    except models.Mainitem.DoesNotExist:
         return Response({"error": "Item not found"}, status=404)
 
 @csrf_exempt
@@ -1336,7 +1333,7 @@ def edit_main_item(request):
         try:
             data = json.loads(request.body)
             fileid = data.get('fileid')
-            item = Mainitem.objects.get(fileid=fileid)
+            item = models.Mainitem.objects.get(fileid=fileid)
 
             # Function to safely update a field
             def safe_update(field_name, new_value):
@@ -1373,7 +1370,7 @@ def edit_main_item(request):
             item.save()  # Save the updated record
 
             return JsonResponse({'success': True})
-        except Mainitem.DoesNotExist:
+        except models.Mainitem.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Record not found'}, status=404)
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
@@ -1391,7 +1388,7 @@ def create_main_item(request):
         next_pno_no = int(last_pno_no) + 1
 
         # Create a new MainItem instance
-        new_item = Mainitem(
+        new_item = models.Mainitem(
                 itemno=data.get('originalno') or None,
                 itemmain=data.get('itemmain') or None,
                 itemsubmain=data.get('itemsub') or None,
@@ -1471,12 +1468,12 @@ def UpdateUserView(request):
 def ProductsReports(req):
     if req.method == 'POST':
         return JsonResponse({'message': 'Invalid request method.'}, status=405)
-    company = Companytable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
-    countries = Manufaccountrytable.objects.all()
-    models = Modeltable.objects.all()
-    columns = [field.name for field in Mainitem._meta.fields]
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
+    countries = models.Manufaccountrytable.objects.all()
+    models = models.Modeltable.objects.all()
+    columns = [field.name for field in models.Mainitem._meta.fields]
     column_visibility = {
     'pno':True,
     'companyproduct':True,
@@ -1511,9 +1508,9 @@ def PartialProductsReports(req):
 
 @login_required
 def ProductsMovementReport(req):
-    company = Companytable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
     context = {
         'company': company,
         'mainType':mainType,
@@ -1528,7 +1525,7 @@ def ProductsMovementReport(req):
 def get_clients(request):
     try:
         # Query the database for all Mainitem entries
-        items = Clientstable.objects.all().values(
+        items = models.Clientstable.objects.all().values(
             'fileid', 'itemno', 'maintype','itemname','currentbalance','date','clientname','billno','description', 'clientbalance','pno'
         )# List the fields you need
         data = list(items)  # Convert QuerySet to a list
@@ -1541,7 +1538,7 @@ def get_data(request):
     try:
         # Fetch all records
         #print(request.body)
-        # items = Mainitem.objects.all().values(
+        # items = models.Mainitem.objects.all().values(
         #     'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname',
         #     'itemthird', 'itemsize', 'companyproduct', 'itemvalue',
         #     'itemtemp', 'itemplace', 'buyprice', 'memo', 'replaceno',
@@ -1550,14 +1547,14 @@ def get_data(request):
         #     'orderlastdate', 'ordersource', 'orderbillno',
         #     'buylastdate', 'buysource', 'buybillno', 'orgprice','itemperbox','oem_numbers','short_name'
         # ).order_by('itemname')
-        items = Mainitem.objects.all().values().order_by('itemname')
+        items = models.Mainitem.objects.all().values().order_by('itemname')
 
-        total_itemvalue = Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
-        total_itemvalueb = Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
-        total_resvalue = Mainitem.objects.aggregate(total=Sum('resvalue'))['total']
-        total_cost = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('costprice')))['total']
-        total_order = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('orderprice')))['total']
-        total_buy = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('buyprice')))['total']
+        total_itemvalue = models.Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
+        total_itemvalueb = models.Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
+        total_resvalue = models.Mainitem.objects.aggregate(total=Sum('resvalue'))['total']
+        total_cost = models.Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('costprice')))['total']
+        total_order = models.Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('orderprice')))['total']
+        total_buy = models.Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('buyprice')))['total']
 
         fullTable = request.GET.get('fullTable', None)
         if fullTable:
@@ -1611,13 +1608,13 @@ def update_itemvalue(request):
             old_itemvalue = 0
 
             # Find the item using the fileid
-            item = Mainitem.objects.get(fileid=fileid)
+            item = models.Mainitem.objects.get(fileid=fileid)
             old_itemvalue = item.itemvalue
             # Update the item value
             item.itemvalue = new_itemvalue
             item.save()
 
-            movement_Record = Clientstable.objects.create(
+            movement_Record = models.Clientstable.objects.create(
                 itemno=item.itemno,
                 itemname=item.itemname,
                 maintype=item.itemmain,
@@ -1633,7 +1630,7 @@ def update_itemvalue(request):
 
             # Return a successful response
             return JsonResponse({'success': True, 'message': 'Item value updated successfully.'})
-        except Mainitem.DoesNotExist:
+        except models.Mainitem.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Item not found.'},status=404)
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
@@ -1654,7 +1651,7 @@ def update_storage(request):
             #print(storage)
 
             # Find the item using the fileid
-            item = Mainitem.objects.get(fileid=fileid)
+            item = models.Mainitem.objects.get(fileid=fileid)
 
             # Update the item value
             item.itemplace = storage
@@ -1662,7 +1659,7 @@ def update_storage(request):
 
             # Return a successful response
             return JsonResponse({'success': True, 'message': 'storage updated successfully.'})
-        except Mainitem.DoesNotExist:
+        except models.Mainitem.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Item not found.'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
@@ -1671,9 +1668,9 @@ def update_storage(request):
 
 @login_required
 def ProductsBalance(req):
-    company = Companytable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
     context = {
         'company': company,
         'mainType': mainType,
@@ -1683,7 +1680,7 @@ def ProductsBalance(req):
 
 @login_required
 def ClientsManagement(request):
-    types = Clienttypestable.objects.all().values('fileid', 'tname')
+    types = models.Clienttypestable.objects.all().values('fileid', 'tname')
     context = {
         'types': list(types),
     }
@@ -1815,10 +1812,10 @@ def add_lost_damaged(request):
 
             # Attempt to fetch the Mainitem instance for the provided pno_id
             try:
-                pno_instance = Mainitem.objects.get(pno=pno_id)
+                pno_instance = models.Mainitem.objects.get(pno=pno_id)
                 pno_instance.itemvalue -= int(data.get('quantity',0)) or 0
                 pno_instance.save()
-            except Mainitem.DoesNotExist:
+            except models.Mainitem.DoesNotExist:
                 error_message = f'Mainitem with pno id {pno_id} does not exist.'
                 logger.error(error_message)
                 #print(error_message)
@@ -1838,7 +1835,7 @@ def add_lost_damaged(request):
                 date=date
             )
 
-            movement_Record = Clientstable.objects.create(
+            movement_Record = models.Clientstable.objects.create(
                 itemno=itemno,
                 itemname=itemname,
                 maintype=itemmain,
@@ -1878,9 +1875,9 @@ def add_lost_damaged(request):
 
 @login_required
 def LostDamaged(req):
-    company = Companytable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
     context = {
         'company': company,
         'mainType': mainType,
@@ -1889,7 +1886,7 @@ def LostDamaged(req):
     return render(req, 'lost-and-damaged.html', context)
 
 def ClientsReports(req):
-    types = Clienttypestable.objects.all()
+    types = models.Clienttypestable.objects.all()
     context = {
        'types':types,
     }
@@ -1921,7 +1918,7 @@ def AddUserView(request):
 def get_all_clients(request):
     try:
         # Query the database for all MainItem entries
-        items = AllClientsTable.objects.all().values(
+        items = models.AllClientsTable.objects.all().values(
             'clientid', 'name', 'address', 'email', 'website',
             'phone', 'mobile', 'last_transaction', 'type',
             'category', 'loan_period', 'loan_limit', 'loan_day',
@@ -1936,7 +1933,7 @@ def get_all_clients(request):
             clientid = item['clientid']
 
             # Calculate balance from TransactionsHistoryTable
-            balance_data = TransactionsHistoryTable.objects.filter(client_id_id=clientid).aggregate(
+            balance_data = models.TransactionsHistoryTable.objects.filter(client_id_id=clientid).aggregate(
                 total_debt=Sum('debt'),
                 total_credit=Sum('credit')
             )
@@ -1946,7 +1943,7 @@ def get_all_clients(request):
             balance = round(total_credit - total_debt, 2)  # Ensure two decimal digits
 
             # Fetch total credit for specific client_id and where details = "دفعة على حساب"
-            specific_credit_data = TransactionsHistoryTable.objects.filter(
+            specific_credit_data = models.TransactionsHistoryTable.objects.filter(
                 client_id_id=clientid, details="دفعة على حساب"
             ).aggregate(total_specific_credit=Sum('credit'))
 
@@ -1995,7 +1992,7 @@ def create_client_record(request):
         is_correct = check_password(data.get('password'), password)  # Verify the hash
 
         # Create a new MainItem instance
-        new_item = AllClientsTable(
+        new_item = models.AllClientsTable(
             name=data.get('client_name', '').strip() or None,  # Ensure name is not empty
             address=data.get('address', '').strip() or None,
             email=data.get('email', '').strip() or None,
@@ -2048,7 +2045,7 @@ def update_client_record(request):
             data = json.loads(request.body)
             client_id = data.get('client_id')
             # update client instance
-            client = AllClientsTable.objects.get(clientid = client_id)
+            client = models.AllClientsTable.objects.get(clientid = client_id)
 
             # Update the client fields
             client.name = data.get('client_name', client.name)
@@ -2077,7 +2074,7 @@ def update_client_record(request):
 
             return JsonResponse({'status': 'success', 'message': 'Record updated successfully!'})
 
-        except AllClientsTable.DoesNotExist:
+        except models.AllClientsTable.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Client record not found.'})
 
         except Exception as e:
@@ -2096,14 +2093,14 @@ def delete_client_record(request):
                 return JsonResponse({'status': 'error', 'message': 'Client ID is required.'})
 
             # Retrieve the client instance
-            client = AllClientsTable.objects.get(clientid=client_id)
+            client = models.AllClientsTable.objects.get(clientid=client_id)
 
             # Delete the client record
             client.delete()
 
             return JsonResponse({'status': 'success', 'message': 'Record deleted successfully!'})
 
-        except AllClientsTable.DoesNotExist:
+        except models.AllClientsTable.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Client record not found.'})
 
         except json.JSONDecodeError:
@@ -2126,7 +2123,7 @@ def filter_all_clients(request):
             filters = json.loads(request.body.decode("utf-8"))  # Decode JSON payload
 
             # Default query
-            queryset = AllClientsTable.objects.all()
+            queryset = models.AllClientsTable.objects.all()
 
             # Apply filters (ID, Name, Email, etc.)
             if filters.get("id"):
@@ -2161,7 +2158,7 @@ def filter_all_clients(request):
             clients_data = []
             for client in queryset:
                 client_id = client.clientid
-                balance_data = TransactionsHistoryTable.objects.filter(client_id_id=client_id).aggregate(
+                balance_data = models.TransactionsHistoryTable.objects.filter(client_id_id=client_id).aggregate(
                     total_debt=Sum("debt"),
                     total_credit=Sum("credit"),
                 )
@@ -2179,12 +2176,12 @@ def filter_all_clients(request):
                     continue  # Skip if balance is not positive
                 if fromdate and todate:
                     # Fetch total credit for specific client_id and where details = "دفعة على حساب"
-                    specific_credit_data = TransactionsHistoryTable.objects.filter(
+                    specific_credit_data = models.TransactionsHistoryTable.objects.filter(
                         client_id_id=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
                     ).aggregate(total_specific_credit=Sum('credit'))
                 else:
                     # Fetch total credit for specific client_id and where details = "دفعة على حساب"
-                    specific_credit_data = TransactionsHistoryTable.objects.filter(
+                    specific_credit_data = models.TransactionsHistoryTable.objects.filter(
                         client_id_id=client_id, details="دفعة على حساب"
                     ).aggregate(total_specific_credit=Sum('credit'))
 
@@ -2243,7 +2240,7 @@ def create_storage_record(request):
 
             transaction_date = make_aware(datetime.strptime(data.get("transaction_date"), '%Y-%m-%d'))
 
-            new_record = StorageTransactionsTable(
+            new_record = models.StorageTransactionsTable(
                 reciept_no=data.get("reciept_no", ""),
                 transaction_date=transaction_date,
                 amount=data.get("amount"),
@@ -2264,7 +2261,7 @@ def create_storage_record(request):
 
             client_id = None
             if data.get("for_who"):
-                client = AllClientsTable.objects.filter(name=data.get("for_who")).first()
+                client = models.AllClientsTable.objects.filter(name=data.get("for_who")).first()
                 if not client:
                     error_msg = f"Client '{data.get('for_who')}' not found"
                     #print("Client Error:", error_msg)
@@ -2272,7 +2269,7 @@ def create_storage_record(request):
                 client_id = client.clientid
 
             last_balance = (
-                TransactionsHistoryTable.objects.filter(client_id_id=client_id)
+                models.TransactionsHistoryTable.objects.filter(client_id_id=client_id)
                 .order_by("-registration_date")
                 .first()
             )
@@ -2280,7 +2277,7 @@ def create_storage_record(request):
             updated_balance =  round(last_balance_amount + data.get("amount"), 2)
 
             # Create a new `TransactionsHistoryTable` record
-            account_statement = TransactionsHistoryTable(
+            account_statement = models.TransactionsHistoryTable(
                 credit=float(data.get("amount")),
                 debt=0.0,
                 transaction=data.get("section"),
@@ -2307,7 +2304,7 @@ def delete_storage_record(request):
             storage_id = data.get("storage_id")
 
             # Fetch the record or return a 404 response automatically
-            record = get_object_or_404(StorageTransactionsTable, storageid=storage_id)
+            record = get_object_or_404(models.StorageTransactionsTable, storageid=storage_id)
 
             # Delete the record
             record.delete()
@@ -2328,7 +2325,7 @@ def delete_storage_record(request):
 def get_all_storage(request):
     try:
         # Query the database for all Mainitem entries
-        items = StorageTransactionsTable.objects.all().values(
+        items = models.StorageTransactionsTable.objects.all().values(
             'storageid', 'account_type', 'transaction','transaction_date'
             ,'reciept_no','place','section','subsection','person', 'amount'
             ,'issued_for','payment','done_by','bank','check_no','daily_status'
@@ -2346,7 +2343,7 @@ def filter_all_storage(request):
             filters = json.loads(request.body.decode("utf-8"))  # Decode JSON payload
             #print(filters)
             # Default query
-            queryset = StorageTransactionsTable.objects.all()
+            queryset = models.StorageTransactionsTable.objects.all()
 
             # Apply filters
             if filters.get("id"):
@@ -2398,8 +2395,8 @@ def filter_all_storage(request):
 
 def account_statement(request):
     client_id = request.GET['id']
-    records = TransactionsHistoryTable.objects.filter(client_id_id=client_id)
-    client = AllClientsTable.objects.get(clientid=client_id)
+    records = models.TransactionsHistoryTable.objects.filter(client_id_id=client_id)
+    client = models.AllClientsTable.objects.get(clientid=client_id)
     context = {
         'records':records,
         'client':client,
@@ -2412,7 +2409,7 @@ def get_last_reciept_no(request):
 
     if transaction_type in ['ايداع', 'صرف']:
         # Cast `reciept_no` to an integer for proper ordering
-        last_transaction = StorageTransactionsTable.objects.annotate(
+        last_transaction = models.StorageTransactionsTable.objects.annotate(
             reciept_no_int=Cast('reciept_no', IntegerField())
         ).filter(
             transaction=transaction_type
@@ -2427,7 +2424,7 @@ def get_last_reciept_no(request):
 def get_buyinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by autoid in descending order
-        last_invoice = Buyinvoicetable.objects.order_by('-invoice_no').first()
+        last_invoice = models.Buyinvoicetable.objects.order_by('-invoice_no').first()
         if last_invoice:
             response_data = {'autoid': last_invoice.invoice_no}
         else:
@@ -2444,7 +2441,7 @@ def get_account_statement(request):
     client_id = request.GET['id']
     try:
          # Query TransactionsHistoryTable with selected fields
-        items = TransactionsHistoryTable.objects.filter(client_id_id=client_id).values(
+        items = models.TransactionsHistoryTable.objects.filter(client_id_id=client_id).values(
             'autoid',
             'transaction',
             'debt',
@@ -2465,11 +2462,11 @@ def get_account_statement(request):
 
 
 def BuyInvoiceItemsView(request):
-    company = Companytable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
-    model = Modeltable.objects.all()
-    country = Manufaccountrytable.objects.all()
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
+    model = models.Modeltable.objects.all()
+    country = models.Manufaccountrytable.objects.all()
     data = request.session.get('data')
     # Convert data to JSON string
     json_data = json.dumps(data)
@@ -2494,7 +2491,7 @@ def fetch_invoice_items(request):
 
         # Fetch all data from the model
         items = list(
-            BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_no).values(
+            models.BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_no).values(
                 "autoid",
                 "invoice_no",
                 "item_no",
@@ -2555,13 +2552,13 @@ def cost_management(request):
 
         try:
             # Attempt to retrieve the invoice from the database
-            invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
+            invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_no)
 
-        except Buyinvoicetable.DoesNotExist:
+        except models.Buyinvoicetable.DoesNotExist:
             return JsonResponse({"success": False, "message": "Invoice not found in the database"}, status=404)
 
         org_total = Decimal(invoice.amount)/Decimal(invoice.exchange_rate)
-        costs = CostTypesTable.objects.all()
+        costs = models.CostTypesTable.objects.all()
         context = {
             "invoice_no": invoice_no,
             "dinar_total": format_number(invoice.amount),
@@ -2592,13 +2589,13 @@ def create_cost_record(request):
             rate = data.get("rate")
             dinar = data.get("dinar")
 
-            invoice_obj = Buyinvoicetable.objects.get(invoice_no=invoice)
+            invoice_obj = models.Buyinvoicetable.objects.get(invoice_no=invoice)
             # Validate the data
             if not invoice or not type or not cost or not rate or not dinar:
                 return JsonResponse({"success": False, "message": "All fields are required."}, status=400)
 
             # Create a new record in the CostType model
-            cost_record = BuyinvoiceCosts.objects.create(
+            cost_record = models.BuyinvoiceCosts.objects.create(
                 invoice=invoice_obj,
                 cost_for=type,
                 cost_price=cost,
@@ -2630,7 +2627,7 @@ def fetch_costs(request):
 
         # Fetch all data from the model
         items = list(
-            BuyinvoiceCosts.objects.filter(invoice_no= invoice_no).values(
+            models.BuyinvoiceCosts.objects.filter(invoice_no= invoice_no).values(
                 "autoid",
                 "invoice_no",
                 "cost_for",
@@ -2653,10 +2650,10 @@ def delete_buyinvoice_cost(request, autoid):
     if request.method == 'DELETE':
         try:
             # Find and delete the record with the given autoid
-            record = BuyinvoiceCosts.objects.get(autoid=autoid)
+            record = models.BuyinvoiceCosts.objects.get(autoid=autoid)
             record.delete()
             return JsonResponse({'status': 'success', 'message': 'Record deleted successfully!'},status=200)
-        except BuyinvoiceCosts.DoesNotExist:
+        except models.BuyinvoiceCosts.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Record not found!'},status=404)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'},status=405)
 
@@ -2685,12 +2682,12 @@ def calculate_cost(request):
 
             # Get the invoice object
             try:
-                invoice = Buyinvoicetable.objects.get(invoice_no=invoice_id)
-            except Buyinvoicetable.DoesNotExist:
+                invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_id)
+            except models.Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"success": False, "message": "Invoice not found."}, status=404)
 
             # Update the items associated with the invoice
-            items = BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_id)
+            items = models.BuyInvoiceItemsTable.objects.filter(invoice_no2=invoice_id)
             for item in items:
                 # Update the costprice based on the load percentage
                 item.current_cost_price = item.dinar_unit_price * (1 + load_percentage)
@@ -2717,7 +2714,7 @@ def get_invoice_items(request):
         if not invoice_id:
             return JsonResponse({"error":"Invoice id is required"},status=400)
 
-        items = BuyInvoiceItemsTable.objects.filter(invoice_no = invoice_id)
+        items = models.BuyInvoiceItemsTable.objects.filter(invoice_no = invoice_id)
         if not items:
             return JsonResponse({"error":"Invoice does not exist"},status=400)
         response_data = list(items.values())
@@ -2800,7 +2797,7 @@ def manage_buy_invoice(request):
     currency = request.session.get('currency')
     rate = request.session.get('rate')
 
-    item = BuyInvoiceItemsTable.objects.get(autoid=auto_id)
+    item = models.BuyInvoiceItemsTable.objects.get(autoid=auto_id)
 
     context = {
         'auto_id': auto_id,
@@ -2824,13 +2821,13 @@ def delete_buy_invoice_item(request):
                 return JsonResponse({"success": False, "message": "Missing item ID"}, status=400)
 
             # Try to delete the item from the database
-            item = BuyInvoiceItemsTable.objects.get(autoid=item_id)  # Adjust the query based on your model
+            item = models.BuyInvoiceItemsTable.objects.get(autoid=item_id)  # Adjust the query based on your model
             item.delete()
 
             # Return success response
             return JsonResponse({"success": True, "message": "Item deleted successfully!"}, status=200)
 
-        except BuyInvoiceItemsTable.DoesNotExist:
+        except models.BuyInvoiceItemsTable.DoesNotExist:
             # Item not found
             return JsonResponse({"success": False, "message": "Item not found"}, status=404)
         except Exception as e:
@@ -2854,16 +2851,16 @@ def update_buyinvoiceitem(request):
 
 
             # Find the item to update (you can use an ID or another identifier)
-            item = BuyInvoiceItemsTable.objects.get(autoid=id)
+            item = models.BuyInvoiceItemsTable.objects.get(autoid=id)
 
               # Get the related invoice
             try:
-                invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
+                invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_no)
                 invoice.amount -= item.dinar_total_price
                 invoice.amount += order * quantity
 
                 invoice.save()
-            except Buyinvoicetable.DoesNotExist:
+            except models.Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"error": "Invoice not found"}, status=404)
 
             # Update the item with new values
@@ -2876,7 +2873,7 @@ def update_buyinvoiceitem(request):
 
             return JsonResponse({"success": True, "message": "Item updated successfully"},status=200)
 
-        except BuyInvoiceItemsTable.DoesNotExist:
+        except models.BuyInvoiceItemsTable.DoesNotExist:
             return JsonResponse({"success": False, "message": "Item not found"},status=404)
         except Exception as e:
             return JsonResponse({"success": False, "message": str(e)},status=400)
@@ -2920,9 +2917,9 @@ def buyInvoice_excell(request):
 
         try:
             # Attempt to retrieve the invoice from the database
-            invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
+            invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_no)
 
-        except Buyinvoicetable.DoesNotExist:
+        except models.Buyinvoicetable.DoesNotExist:
             return JsonResponse({"success": False, "message": "Invoice not found in the database"}, status=404)
 
         context = {
@@ -2967,15 +2964,15 @@ def process_buyInvoice_excel(request):
 
             try:
                 # Attempt to retrieve the invoice from the database
-                invoice = Buyinvoicetable.objects.get(invoice_no=invoice_no)
-            except Buyinvoicetable.DoesNotExist:
+                invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_no)
+            except models.Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"status": "error", "message": "Invoice not found in the database."}, status=404)
 
             # Process the data and insert it into the database
             records = []
             for item in data:
                 try:
-                    records.append(BuyInvoiceItemsTable(
+                    records.append(models.BuyInvoiceItemsTable(
                         invoice_no2=invoice_no,
                         invoice_no=invoice,
                         item_no=item.get("الرقم الاصلي", None),
@@ -3010,7 +3007,7 @@ def process_buyInvoice_excel(request):
                     # If the 'exists' value is 0, add item to the MainItem model
                     if exists == 0:
                         # Create a MainItem record for the item
-                        Mainitem.objects.create(
+                        models.Mainitem.objects.create(
                             itemno=item.get("الرقم الاصلي", None),
                             replaceno=item.get("رقم الشركة", None),
                             itemname=item.get("اسم الصنف", "failed"),
@@ -3036,7 +3033,7 @@ def process_buyInvoice_excel(request):
                     continue
 
             # Bulk create records in the database
-            BuyInvoiceItemsTable.objects.bulk_create(records)
+            models.BuyInvoiceItemsTable.objects.bulk_create(records)
             logger.debug(f"Successfully inserted {len(records)} records from Tabulator data.")
             return JsonResponse({"status": "success", "message": "Tabulator data imported successfully."})
 
@@ -3070,7 +3067,7 @@ def check_items(request):
                     continue
 
                 # Check if item exists in Mainitem model based on 'company_no'
-                exists = Mainitem.objects.filter(replaceno=company_no).exists()
+                exists = models.Mainitem.objects.filter(replaceno=company_no).exists()
                 results.append({"company_no": company_no, "exists": 1 if exists else 0})
 
             return JsonResponse({"status": "success", "results": results})
@@ -3081,7 +3078,7 @@ def check_items(request):
         return JsonResponse({"status": "error", "message": "Invalid request method."}, status=405)
 
 def temp_confirm(request):
-    invoices = Buyinvoicetable.objects.filter(temp_flag=1)
+    invoices = models.Buyinvoicetable.objects.filter(temp_flag=1)
     context={
         "invoices":invoices,
     }
@@ -3101,8 +3098,8 @@ def process_temp_confirm(request):
 
             try:
                 # Fetch invoice items for the given invoice number
-                invoice_items = BuyInvoiceItemsTable.objects.filter(invoice_no=invoice_no)
-            except BuyInvoiceItemsTable.DoesNotExist:
+                invoice_items = models.BuyInvoiceItemsTable.objects.filter(invoice_no=invoice_no)
+            except models.BuyInvoiceItemsTable.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Invoice item not found in the BuyInvoiceItemsTable.'}, status=404)
 
             # Serialize the invoice items (convert them to a list of dictionaries)
@@ -3123,7 +3120,7 @@ def process_temp_confirm(request):
 
             # Fetch the invoice details from the Buyinvoicetable
             try:
-                invoice = Buyinvoicetable.objects.get(autoid=invoice_no)
+                invoice = models.Buyinvoicetable.objects.get(autoid=invoice_no)
 
                 # Prepare invoice details for response
                 invoice_details = {
@@ -3136,7 +3133,7 @@ def process_temp_confirm(request):
 
                 return JsonResponse({'status': 'success', 'message': 'Invoice details fetched successfully.', 'data': invoice_details},status=200)
 
-            except Buyinvoicetable.DoesNotExist:
+            except models.Buyinvoicetable.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Invoice not found in the Buyinvoicetable.'}, status=404)
 
         except ValueError:
@@ -3170,7 +3167,7 @@ def confirm_temp_invoice(request):
             for item in item_rows:
                 try:
                     # Fetch the invoice using company_no
-                    main = Mainitem.objects.get(replaceno=item['company_no'])
+                    main = models.Mainitem.objects.get(replaceno=item['company_no'])
                     #print(f"old data: {main.itemname} {main.itemvalue} {main.orderprice} {main.costprice} {main.orgprice} {main.itemno}")
 
                     # Update fields
@@ -3182,7 +3179,7 @@ def confirm_temp_invoice(request):
                     main.itemno = item['item_no']
                     main.save()
 
-                    movement_Record = Clientstable.objects.create(
+                    movement_Record = models.Clientstable.objects.create(
                         itemno=main.itemno,
                         itemname=main.itemname,
                         maintype=main.itemmain,
@@ -3199,7 +3196,7 @@ def confirm_temp_invoice(request):
                     #print(f"new data: {main.itemname} {main.itemvalue} {main.orderprice} {main.costprice} {main.orgprice} {main.itemno}")
                     success_count += 1
 
-                except Mainitem.DoesNotExist:
+                except models.Mainitem.DoesNotExist:
                     error_details.append({
                         'company_no': item.get('company_no'),
                         'message': 'Main item not found.'
@@ -3212,10 +3209,10 @@ def confirm_temp_invoice(request):
 
             # Process Buyinvoicetable update
             try:
-                invoice = Buyinvoicetable.objects.get(autoid=invoice_no)
+                invoice = models.Buyinvoicetable.objects.get(autoid=invoice_no)
                 invoice.temp_flag = 0
                 invoice.save()
-            except Buyinvoicetable.DoesNotExist:
+            except models.Buyinvoicetable.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Invoice not found.'}, status=404)
 
             # Consolidate response
@@ -3260,20 +3257,20 @@ def BuyInvoiceItemCreateView(request):
 
             # Get the related invoice
             try:
-                invoice = Buyinvoicetable.objects.get(invoice_no=data.get("invoice_id"))
+                invoice = models.Buyinvoicetable.objects.get(invoice_no=data.get("invoice_id"))
                 invoice.amount += (Decimal(data.get("orderprice") or 0) * Decimal(data.get("itemvalue") or 0))
                 invoice.save()
-            except Buyinvoicetable.DoesNotExist:
+            except models.Buyinvoicetable.DoesNotExist:
                 return JsonResponse({"error": "Invoice not found"}, status=404)
 
             try:
-                product = Mainitem.objects.get(pno=data.get("pno"))
+                product = models.Mainitem.objects.get(pno=data.get("pno"))
                 submain = product.itemsubmain if product.itemsubmain else None
-            except Mainitem.DoesNotExist:
+            except models.Mainitem.DoesNotExist:
                 return JsonResponse({"error": "product not found"}, status=404)
 
             # Create a new BuyInvoiceItemsTable instance
-            item = BuyInvoiceItemsTable.objects.create(
+            item = models.BuyInvoiceItemsTable.objects.create(
                 invoice_no=invoice,
                 invoice_no2=data.get("invoice_id"),
                 item_no=data.get("itemno"),
@@ -3310,7 +3307,7 @@ def BuyInvoiceItemCreateView(request):
 
             confirm_message = "not confirmed"
             if(data.get("isTemp")==0):
-                main = Mainitem.objects.get(replaceno=data.get("replaceno"))
+                main = models.Mainitem.objects.get(replaceno=data.get("replaceno"))
                 #print(f"old data: {main.orgprice} / {main.lessprice} /{main.itemvalue} /{main.itemtemp} /{main.itemplace} /{main.buyprice} /")
                 main.orgprice = float(data.get("orgprice") or 0)
                 main.lessprice=float(data.get("lessprice") or 0)
@@ -3322,7 +3319,7 @@ def BuyInvoiceItemCreateView(request):
                 confirm_message = "confirmed"
                 #print(f"new data: {main.orgprice} / {main.lessprice} /{main.itemvalue} /{main.itemtemp} /{main.itemplace} /{main.buyprice} /")
 
-                movement_Record = Clientstable.objects.create(
+                movement_Record = models.Clientstable.objects.create(
                 itemno=main.itemno,
                 itemname=main.itemname,
                 maintype=main.itemmain,
@@ -3349,10 +3346,10 @@ def BuyInvoiceItemCreateView(request):
 #until here
 
 def Buyinvoice_management(request):
-    #records = Buyinvoicetable.objects.all().values()
-    #total_amount = Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    #records = models.Buyinvoicetable.objects.all().values()
+    #total_amount = models.Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
     #json_data = json.dumps(list(records), default=str)
-    sources = AllSourcesTable.objects.all().values('clientid','name')
+    sources = models.AllSourcesTable.objects.all().values('clientid','name')
     context = {
         "sources":sources,
         #"data":json_data,
@@ -3362,8 +3359,8 @@ def Buyinvoice_management(request):
 
 def fetch_buyinvoices(request):
     # Fetch all records from Buyinvoicetable
-    records = Buyinvoicetable.objects.all().values()
-    total_amount = Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    records = models.Buyinvoicetable.objects.all().values()
+    total_amount = models.Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
     page_number = int(request.GET.get('page', 1)) #int(filters.get("page") or 1)
     page_size = int(request.GET.get('size', 100)) #int(filters.get("size") or 100)
 
@@ -3423,7 +3420,7 @@ def filter_buyinvoices(request):
                     return JsonResponse({'error': 'Invalid date format'}, status=400)
 
             # Now filter the queryset using the combined Q object
-            queryset = Buyinvoicetable.objects.filter(filters_q).values()
+            queryset = models.Buyinvoicetable.objects.filter(filters_q).values()
 
             # Serialize the filtered data
             items_data = list(queryset)  # Customize the fields to return as needed
@@ -3470,12 +3467,12 @@ def buy_invoice_add_items(request):
 
     invoice_id = request.session.get('invoice_id')
     try:
-        invoice = Buyinvoicetable.objects.get(autoid=invoice_id)
+        invoice = models.Buyinvoicetable.objects.get(autoid=invoice_id)
         invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else ''
         arrive_date = invoice.arrive_date.strftime('%Y-%m-%d') if invoice.arrive_date else ''
         ready_date = invoice.ready_date.strftime('%Y-%m-%d') if invoice.ready_date else ''
 
-    except Buyinvoicetable.DoesNotExist:
+    except models.Buyinvoicetable.DoesNotExist:
         invoice = None
         invoice_date = None
         arrive_date = None
@@ -3492,10 +3489,10 @@ def buy_invoice_add_items(request):
     return render(request,'buy-invoice-add-items.html',context)
 
 def sell_invoice_search_storage(request):
-    company = Companytable.objects.all()
-    mainType = Maintypetable.objects.all()
-    subType = Subtypetable.objects.all()
-    countries = Manufaccountrytable.objects.all()
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
+    countries = models.Manufaccountrytable.objects.all()
     context = {
         "company":company,
         "mainType":mainType,
@@ -3505,15 +3502,15 @@ def sell_invoice_search_storage(request):
     return render(request,'sell_invoice_search_products.html',context)
 
 def sell_invoice_add_invoice(request):
-    Clients= AllClientsTable.objects.all().values()
+    Clients= models.AllClientsTable.objects.all().values()
     context = {
         "clients":Clients,
     }
     return render(request,'sell_invoice_add_invoice.html',context)
 
 def sell_invoice_management(request):
-    clients =AllClientsTable.objects.all().values('clientid','name')
-    client_types = Clienttypestable.objects.all()
+    clients =models.AllClientsTable.objects.all().values('clientid','name')
+    client_types = models.Clienttypestable.objects.all()
     context = {
         "clients":clients,
         "types":client_types,
@@ -3541,16 +3538,16 @@ def create_sell_invoice(request):
         # Fetch client as a model instance
         try:
             if isinstance(client_identifier, int) or (isinstance(client_identifier, str) and client_identifier.isdigit()):
-                client_obj = AllClientsTable.objects.get(clientid=int(client_identifier))
+                client_obj = models.AllClientsTable.objects.get(clientid=int(client_identifier))
             else:
-                client_obj = AllClientsTable.objects.get(name=client_identifier)
+                client_obj = models.AllClientsTable.objects.get(name=client_identifier)
 
             # Get total debt and credit from TransactionsHistoryTable
-            balance_data = TransactionsHistoryTable.objects.filter(client_id=client_obj).aggregate(
+            balance_data = models.TransactionsHistoryTable.objects.filter(client_id=client_obj).aggregate(
                 total_debt=Sum('debt') or Decimal("0.0000"),
                 total_credit=Sum('credit') or Decimal("0.0000")
             )
-        except AllClientsTable.DoesNotExist:
+        except models.AllClientsTable.DoesNotExist:
             return JsonResponse({"success": False, "error": "Client not found"}, status=400)
 
         # Extract balance values
@@ -3567,7 +3564,7 @@ def create_sell_invoice(request):
         for_who = "application" if data.get("for_who") == "application" else None
 
         # Create the SellInvoice record
-        sell_invoice = SellinvoiceTable.objects.create(
+        sell_invoice = models.SellinvoiceTable.objects.create(
             invoice_no=next_receipt_no,
             client_obj=client_obj,
             client_id=client_obj.clientid,  # Ensure client is a model instance
@@ -3631,7 +3628,7 @@ def sell_invoice_add_items(request):
 def get_sellinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by autoid in descending order
-        last_invoice = SellinvoiceTable.objects.order_by('-invoice_no').first()
+        last_invoice = models.SellinvoiceTable.objects.order_by('-invoice_no').first()
         if last_invoice:
             response_data = {'autoid': last_invoice.invoice_no}
         else:
@@ -3662,18 +3659,18 @@ def Sell_invoice_create_item(request):
 
             # Get the related product
             try:
-                product = Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
-            except Mainitem.DoesNotExist:
+                product = models.Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
+            except models.Mainitem.DoesNotExist:
                 return JsonResponse({"error": "Product not found"}, status=404)
 
             # Get the related invoice
             try:
-                invoice = SellinvoiceTable.objects.get(invoice_no=data.get("invoice_id"))
+                invoice = models.SellinvoiceTable.objects.get(invoice_no=data.get("invoice_id"))
                 invoice.amount += (
                     Decimal(product.buyprice or 0) * Decimal(data.get("itemvalue") or 0)
                 )
                 invoice.save()
-            except SellinvoiceTable.DoesNotExist:
+            except models.SellinvoiceTable.DoesNotExist:
                 return JsonResponse({"error": "Invoice not found"}, status=404)
 
 
@@ -3684,7 +3681,7 @@ def Sell_invoice_create_item(request):
 
             # Create a new SellInvoiceItemsTable instance
             sell_price = Decimal(product.buyprice or 0)
-            item = SellInvoiceItemsTable.objects.create(
+            item = models.SellInvoiceItemsTable.objects.create(
                 invoice_instance=invoice,
                 invoice_no=data.get("invoice_id"),
                 item_no=product.itemno,
@@ -3708,7 +3705,7 @@ def Sell_invoice_create_item(request):
             product.save()
 
             # Record the movement
-            Clientstable.objects.create(
+            models.Clientstable.objects.create(
                 itemno=product.itemno,
                 itemname=product.itemname,
                 maintype=product.itemmain,
@@ -3727,7 +3724,7 @@ def Sell_invoice_create_item(request):
             except:
                 return JsonResponse({"error": "client not found"}, status=400)
 
-            StorageTransactionsTable.objects.create(
+            models.StorageTransactionsTable.objects.create(
                 reciept_no=f"ف.ب : {data.get('invoice_id')}",
                 transaction_date=timezone.now(),
                 amount=sell_price * item_value,
@@ -3744,14 +3741,14 @@ def Sell_invoice_create_item(request):
             )
 
             last_balance = (
-                TransactionsHistoryTable.objects.filter(client_id=invoice.client_obj)
+                models.TransactionsHistoryTable.objects.filter(client_id=invoice.client_obj)
                 .order_by("-registration_date")
                 .first()
             )
             last_balance_amount = last_balance.current_balance if last_balance else 0
             updated_balance =  round(last_balance_amount - (sell_price * item_value), 2)
 
-            account_statement = TransactionsHistoryTable.objects.create(
+            account_statement = models.TransactionsHistoryTable.objects.create(
                 credit=0.0,
                 debt=Decimal(sell_price * item_value),
                 transaction=f" شراء بضائع - ر.خ : {data.get('pno')}",
@@ -3762,7 +3759,7 @@ def Sell_invoice_create_item(request):
             )
 
             if invoice.payment_status == "نقدي":
-                TransactionsHistoryTable.objects.create(
+                models.TransactionsHistoryTable.objects.create(
                 credit=Decimal(sell_price * item_value),
                 debt=0.0,
                 transaction=f"دفع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
@@ -3773,7 +3770,7 @@ def Sell_invoice_create_item(request):
                 )
 
             if invoice.mobile == True:
-                TransactionsHistoryTable.objects.create(
+                models.TransactionsHistoryTable.objects.create(
                 credit=Decimal(sell_price * item_value)*Decimal(0.10),
                 debt=0.0,
                 transaction=f"نسبة بيع مقابل شراء بضائع - ر.خ : {data.get('pno')}",
@@ -3809,7 +3806,7 @@ def fetch_sell_invoice_items(request):
 
         # Fetch all data from the model
         items = list(
-            SellInvoiceItemsTable.objects.filter(invoice_no= invoice_no).values()
+            models.SellInvoiceItemsTable.objects.filter(invoice_no= invoice_no).values()
         )
         if not items:
             return JsonResponse([], safe=False)
@@ -3824,10 +3821,10 @@ def fetch_sellinvoices(request):
     try:
         today = now().date()
         # Fetch all sell invoice records
-        records = SellinvoiceTable.objects.filter(invoice_date__date=today).values()
+        records = models.SellinvoiceTable.objects.filter(invoice_date__date=today).values()
 
         # Aggregate total, cash, and loan amounts in a single query for efficiency
-        aggregates = SellinvoiceTable.objects.aggregate(
+        aggregates = models.SellinvoiceTable.objects.aggregate(
             total_amount=Sum('amount'),
             cash_amount=Sum('amount', filter=Q(payment_status="نقدي")),
             loan_amount=Sum('amount', filter=Q(payment_status="اجل")),
@@ -3926,7 +3923,7 @@ def filter_sellinvoices(request):
                     return JsonResponse({'error': 'Invalid date format'}, status=400)
 
             # Filter queryset
-            invoices_qs = SellinvoiceTable.objects.filter(filters_q).values().order_by("-invoice_date")
+            invoices_qs = models.SellinvoiceTable.objects.filter(filters_q).values().order_by("-invoice_date")
 
             # Aggregate total amounts
             totals = invoices_qs.aggregate(
@@ -3972,7 +3969,7 @@ def filter_sellinvoices(request):
 #until here
 
 def sell_invoice_prepare_report(request):
-    client = AllClientsTable.objects.all().values("clientid","name")
+    client = models.AllClientsTable.objects.all().values("clientid","name")
     context = {
         "clients":client,
     }
@@ -3980,8 +3977,8 @@ def sell_invoice_prepare_report(request):
 
 def sell_invoice_storage_management(request):
     id = request.GET.get("inv")
-    invoice = SellinvoiceTable.objects.get(invoice_no=id)
-    employees =  EmployeesTable.objects.filter(active=True).values('employee_id','name')
+    invoice = models.SellinvoiceTable.objects.get(invoice_no=id)
+    employees =  models.EmployeesTable.objects.filter(active=True).values('employee_id','name')
     context = {
         "employees": employees,
         "invoice_no": invoice.invoice_no,
@@ -4004,10 +4001,10 @@ def sell_invoice_storage_management(request):
     return render(request,'sell_invoice_storage_management.html',context)
 
 def sell_invoice_profile(request, id):
-    invoice = get_object_or_404(SellinvoiceTable, invoice_no=id)
+    invoice = get_object_or_404(models.SellinvoiceTable, invoice_no=id)
 
     serializer = serializers.SellInvoiceSerializer(invoice)
-    clients = AllClientsTable.objects.all().values()
+    clients = models.AllClientsTable.objects.all().values()
 
     context = {
         "clients": clients,
@@ -4026,7 +4023,7 @@ def prepare_sell_invoice(request):
             invoice_id = data.get('invoice_id')
 
             # Get the invoice object
-            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+            invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
 
             # Update invoice fields
             invoice.preparer_name = name
@@ -4054,7 +4051,7 @@ def validate_sell_invoice(request):
             final_note = data.get('final_note')
 
             # Get the invoice object
-            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)
+            invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_no)
 
            # Update invoice fields
             invoice.reviewer_name = reviewer
@@ -4089,7 +4086,7 @@ def deliver_sell_invoice(request):
             status = data.get('status')
             final_note = data.get('final_note')
 
-            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_id)
+            invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
 
             invoice.biller_name = biller
             invoice.notes = final_note
@@ -4122,7 +4119,7 @@ def deliver_sell_invoice(request):
 
             return JsonResponse({'status': 'success', 'message': 'Invoice updated successfully'})
 
-        except SellinvoiceTable.DoesNotExist:
+        except models.SellinvoiceTable.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Invoice not found'}, status=404)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -4137,7 +4134,7 @@ def cancel_sell_invoice(request):
             invoice_no = data.get('invoice_id')
 
             # Get the invoice object
-            invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)
+            invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_no)
 
            # Update invoice fields
             invoice.reviewer_name = None
@@ -4167,7 +4164,7 @@ def cancel_sell_invoice(request):
 def get_mainItem_last_pno(request):
     try:
         # Get the last autoid by ordering the table by autoid in descending order
-        last_pno = Mainitem.objects.order_by('-pno').first()
+        last_pno = models.Mainitem.objects.order_by('-pno').first()
         if last_pno:
             response_data = {'pno': last_pno.pno}
         else:
@@ -4180,7 +4177,7 @@ def get_mainItem_last_pno(request):
     return JsonResponse(response_data)
 
 class SendMessageView(generics.CreateAPIView):
-    queryset = ChatMessage.objects.all()
+    queryset = models.ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
 
     def create(self, request, *args, **kwargs):
@@ -4198,10 +4195,10 @@ class SendMessageView(generics.CreateAPIView):
      except ValueError:
         return Response({"error": "Invalid sender or receiver ID"}, status=status.HTTP_400_BAD_REQUEST)
 
-     sender = get_object_or_404(AllClientsTable, clientid=sender_id)
-     receiver = get_object_or_404(AllClientsTable, clientid=receiver_id)
+     sender = get_object_or_404(models.AllClientsTable, clientid=sender_id)
+     receiver = get_object_or_404(models.AllClientsTable, clientid=receiver_id)
 
-     chat_message = ChatMessage.objects.create(sender=sender, receiver=receiver, message=message_text)
+     chat_message = models.ChatMessage.objects.create(sender=sender, receiver=receiver, message=message_text)
      serializer = self.get_serializer(chat_message)
 
      return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -4212,10 +4209,10 @@ class GetChatMessagesView(generics.ListAPIView):
     def get_queryset(self):
      sender_id = self.request.query_params.get('sender')
      receiver_id = self.request.query_params.get('receiver')
-     return ChatMessage.objects.filter(sender__clientid=sender_id, receiver__clientid=receiver_id) | ChatMessage.objects.filter(sender__clientid=receiver_id, receiver__clientid=sender_id)
+     return models.ChatMessage.objects.filter(sender__clientid=sender_id, receiver__clientid=receiver_id) | models.ChatMessage.objects.filter(sender__clientid=receiver_id, receiver__clientid=sender_id)
 
 class MarkMessageAsReadView(generics.UpdateAPIView):
-    queryset = ChatMessage.objects.all()
+    queryset = models.ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
 
     def update(self, request, *args, **kwargs):
@@ -4233,15 +4230,15 @@ class SupportChatMessageView(APIView):
         message = request.data.get('message')
 
         try:
-            sender = AllClientsTable.objects.get(clientid=sender_id)
-            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
-        except AllClientsTable.DoesNotExist:
+            sender = models.AllClientsTable.objects.get(clientid=sender_id)
+            conversation = models.SupportChatConversation.objects.get(conversation_id=conversation_id)
+        except models.AllClientsTable.DoesNotExist:
             return Response({'error': 'Sender not found'}, status=status.HTTP_404_NOT_FOUND)
-        except SupportChatConversation.DoesNotExist:
+        except models.SupportChatConversation.DoesNotExist:
             return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
 
         # Create new message
-        new_message = SupportChatMessageSys(
+        new_message = models.SupportChatMessageSys(
             conversation=conversation,
             sender=sender,
             sender_type=sender_type,
@@ -4256,11 +4253,11 @@ class SupportChatMessageView(APIView):
     def get(self, request, *args, **kwargs):
         conversation_id = request.query_params.get('conversation_id')
         try:
-            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
-        except SupportChatConversation.DoesNotExist:
+            conversation = models.SupportChatConversation.objects.get(conversation_id=conversation_id)
+        except models.SupportChatConversation.DoesNotExist:
             return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        messages = SupportChatMessageSys.objects.filter(conversation=conversation).order_by('timestamp')
+        messages = models.SupportChatMessageSys.objects.filter(conversation=conversation).order_by('timestamp')
         serializer = SupportChatMessageSysSerializer(messages, many=True)
         return Response(serializer.data)
 
@@ -4270,25 +4267,25 @@ def create_conversation(request):
     support_agent_id = request.data.get('support_agent_id')
 
     try:
-        client = AllClientsTable.objects.get(clientid=client_id)
-        support_agent = AllClientsTable.objects.get(clientid=support_agent_id)
-    except AllClientsTable.DoesNotExist:
+        client = models.AllClientsTable.objects.get(clientid=client_id)
+        support_agent = models.AllClientsTable.objects.get(clientid=support_agent_id)
+    except models.AllClientsTable.DoesNotExist:
         return Response({'error': 'Client or Support Agent not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    conversation = SupportChatConversation(client=client, support_agent=support_agent)
+    conversation = models.SupportChatConversation(client=client, support_agent=support_agent)
     conversation.save()
     return Response({'conversation_id': conversation.conversation_id}, status=status.HTTP_201_CREATED)
 
 
 def support_dashboard(request):
     # Fetch all clients
-    clients = AllClientsTable.objects.all()
+    clients = models.AllClientsTable.objects.all()
 
     # Prepare a list of conversations for each client
     clients_with_conversations = []
     for client in clients:
         # Get conversations associated with each client
-        conversations = SupportChatConversation.objects.filter(client=client)
+        conversations = models.SupportChatConversation.objects.filter(client=client)
         conversations_serializer = SupportChatConversationSerializer1(conversations, many=True)
 
         # Add conversations to each client
@@ -4303,14 +4300,14 @@ def support_dashboard(request):
 
 def support_dashboard(request):
     # Fetch all feedbacks
-    feedbacks = Feedback.objects.all()  # Get all feedback records from the database
+    feedbacks = models.Feedback.objects.all()  # Get all feedback records from the database
 
     # Pass the feedbacks to the template context
     return render(request, 'support_dashboard.html', {'feedbacks': feedbacks})
 
 def fetch_all_feedback(request):
     """Fetch all feedback and group them by client ID."""
-    feedbacks = Feedback.objects.select_related('sender').all()
+    feedbacks = models.Feedback.objects.select_related('sender').all()
 
     grouped_feedback = {}
 
@@ -4336,7 +4333,7 @@ def fetch_all_feedback(request):
 @csrf_exempt
 def fetch_all_feedback(request):
     """Fetch all feedbacks and their messages grouped by client ID."""
-    feedbacks = Feedback.objects.select_related('sender').prefetch_related('messages').all()
+    feedbacks = models.Feedback.objects.select_related('sender').prefetch_related('messages').all()
 
     grouped_feedback = {}
 
@@ -4373,8 +4370,8 @@ def fetch_all_feedback(request):
 def add_message_to_feedback(request, feedback_id):
     """Allow clients and employees to send multiple messages in a feedback thread."""
     try:
-        feedback = Feedback.objects.get(id=feedback_id)
-    except Feedback.DoesNotExist:
+        feedback = models.Feedback.objects.get(id=feedback_id)
+    except models.Feedback.DoesNotExist:
         return JsonResponse({"error": "Feedback not found."}, status=404)
 
     data = json.loads(request.body)
@@ -4386,7 +4383,7 @@ def add_message_to_feedback(request, feedback_id):
     if sender_type not in ["client", "employee"]:
         return JsonResponse({"error": "Invalid sender type."}, status=400)
 
-    message = FeedbackMessage.objects.create(
+    message = models.FeedbackMessage.objects.create(
         feedback=feedback,
         sender_type=sender_type,
         message_text=message_text,
@@ -4404,8 +4401,8 @@ def add_message_to_feedback(request, feedback_id):
 def close_feedback(request, feedback_id):
     """Close a feedback thread (mark as resolved)."""
     try:
-        feedback = Feedback.objects.get(id=feedback_id)
-    except Feedback.DoesNotExist:
+        feedback = models.Feedback.objects.get(id=feedback_id)
+    except models.Feedback.DoesNotExist:
         return JsonResponse({"error": "Feedback not found."}, status=404)
 
     # Check if the session role is "employee"
@@ -4422,8 +4419,8 @@ def close_feedback(request, feedback_id):
 def delete_feedback(request, feedback_id):
     """Delete a feedback thread."""
     try:
-        feedback = Feedback.objects.get(id=feedback_id)
-    except Feedback.DoesNotExist:
+        feedback = models.Feedback.objects.get(id=feedback_id)
+    except models.Feedback.DoesNotExist:
         return JsonResponse({"error": "Feedback not found."}, status=404)
 
     # Check if the session role is "employee"
@@ -4442,12 +4439,12 @@ def feedback_by_user_id(request):
 
     # Try to fetch the client
     try:
-        client = AllClientsTable.objects.get(clientid=clientid)
-    except AllClientsTable.DoesNotExist:
+        client = models.AllClientsTable.objects.get(clientid=clientid)
+    except models.AllClientsTable.DoesNotExist:
         return JsonResponse({"detail": "Client not found."}, status=404)
 
     # Fetch feedback for this client
-    feedbacks = Feedback.objects.filter(sender=client)
+    feedbacks = models.Feedback.objects.filter(sender=client)
 
     # If no feedback is found, return an empty list
     if not feedbacks:
@@ -4471,7 +4468,7 @@ def feedback_by_user_id(request):
 @csrf_exempt
 def feedback_details(request, feedback_id):
     # Get the feedback object
-    feedback = get_object_or_404(Feedback, id=feedback_id)
+    feedback = get_object_or_404(models.Feedback, id=feedback_id)
 
     # Access the client (sender) from the feedback model
     client = feedback.sender  # This is the related AllClientsTable object
@@ -4481,7 +4478,7 @@ def feedback_details(request, feedback_id):
 
 @csrf_exempt
 def fetch_feedback_messages(request, feedback_id):
-    feedback_messages = FeedbackMessage.objects.filter(feedback_id=feedback_id).order_by('sent_at')
+    feedback_messages = models.FeedbackMessage.objects.filter(feedback_id=feedback_id).order_by('sent_at')
 
     messages_data = [
         {
@@ -4498,17 +4495,17 @@ def fetch_feedback_messages(request, feedback_id):
 
 
 def addMoreCatView(request,id):
-    item = Mainitem.objects.get(pno=id)
+    item = models.Mainitem.objects.get(pno=id)
 
     mains = item.itemmain.split(';') if item.itemmain else []
     subs = item.itemsubmain.split(';') if item.itemsubmain else []
     models = item.itemthird.split(';') if item.itemthird else []
     engines = item.engine_no.split(';') if item.engine_no else []
 
-    main_select = Maintypetable.objects.all().values()
-    sub_select = Subtypetable.objects.all().values()
-    model_select = Modeltable.objects.all().values()
-    engine_select = enginesTable.objects.all().values()
+    main_select = models.Maintypetable.objects.all().values()
+    sub_select = models.Subtypetable.objects.all().values()
+    model_select = models.Modeltable.objects.all().values()
+    engine_select = models.enginesTable.objects.all().values()
 
     context = {
         'mains':mains,
@@ -4529,8 +4526,8 @@ def notifications_page(request):
 
 
 def return_items_view(request):
-    clients = AllClientsTable.objects.all().values('clientid','name')
-    invoices = SellinvoiceTable.objects.all().values('invoice_no','client_id','client_name')
+    clients = models.AllClientsTable.objects.all().values('clientid','name')
+    invoices = models.SellinvoiceTable.objects.all().values('invoice_no','client_id','client_name')
     context = {
         'clients':clients,
         'invoices':invoices,
@@ -4538,7 +4535,7 @@ def return_items_view(request):
     return render(request, 'return-permission-add.html',context)
 
 def return_items_report_view(request):
-    clients = AllClientsTable.objects.all().values('clientid','name')
+    clients = models.AllClientsTable.objects.all().values('clientid','name')
     context = {
         'clients':clients,
     }
@@ -4546,9 +4543,9 @@ def return_items_report_view(request):
 
 
 def engines_view(request):
-    engines = enginesTable.objects.values('fileid', 'engine_name','subtype_str','maintype_str')
-    subtypes =   Subtypetable.objects.all().values()
-    maintypes =   Maintypetable.objects.all().values()
+    engines = models.enginesTable.objects.values('fileid', 'engine_name','subtype_str','maintype_str')
+    subtypes =   models.Subtypetable.objects.all().values()
+    maintypes =   models.Maintypetable.objects.all().values()
 
     return render(request, 'engines-table.html', {
         'engines': engines,
@@ -4626,11 +4623,11 @@ def assign_order_manual(request):
 
         with transaction.atomic():
             # Get the selected employee
-            employee_queue = get_object_or_404(EmployeeQueue, employee_id=employee_id, is_available=True, is_assigned=False)
+            employee_queue = get_object_or_404(models.EmployeeQueue, employee_id=employee_id, is_available=True, is_assigned=False)
             employee = employee_queue.employee
 
             # Get the order
-            order = get_object_or_404(SellinvoiceTable, invoice_no=order_id, is_assigned=True)
+            order = get_object_or_404(models.SellinvoiceTable, invoice_no=order_id, is_assigned=True)
 
             # Assign the order
             employee.is_available = False
@@ -4642,7 +4639,7 @@ def assign_order_manual(request):
             order.save()
 
             # Add to order queue
-            OrderQueue.objects.create(
+            models.OrderQueue.objects.create(
                 employee=employee, order=order, is_accepted=False, is_assigned=True, assigned_at=now()
             )
 
@@ -4665,12 +4662,12 @@ def assign_order_manual(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 def get_available_employees(request):
-    employees = EmployeeQueue.objects.filter(is_available=True, is_assigned=False).select_related('employee')
+    employees = models.EmployeeQueue.objects.filter(is_available=True, is_assigned=False).select_related('employee')
     data = [{"id": emp.employee.id, "name": emp.employee.name} for emp in employees]
     return JsonResponse(data, safe=False)
 
 def get_unassigned_orders(request):
-    orders = SellinvoiceTable.objects.filter(
+    orders = models.SellinvoiceTable.objects.filter(
         invoice_status='سلمت',
         delivery_status='جاري التوصيل'
     )
@@ -4683,7 +4680,7 @@ def get_unassigned_orders(request):
 
 
 def get_unassigned_orders(request):
-    orders = SellinvoiceTable.objects.filter(is_assigned=False)
+    orders = models.SellinvoiceTable.objects.filter(is_assigned=False)
     data = [{"invoice_no": order.invoice_no} for order in orders]
     return JsonResponse(data, safe=False)
 
@@ -4706,10 +4703,10 @@ def sources_management_View(request):
 #def test_send_notification(request):
   #  try:
         # Fetch the client you want to notify (example: client with id=14)
-  #      client = AllClientsTable.objects.get(clientid=14)  # Ensure 'clientid' is correct
+  #      client = models.AllClientsTable.objects.get(clientid=14)  # Ensure 'clientid' is correct
 
         # Create a mock invoice to simulate a status change
-   #     invoice = SellinvoiceTable.objects.create(
+   #     invoice = models.SellinvoiceTable.objects.create(
     #        client=client,
      #       invoice_no="12345",
       #      invoice_status="تم التوصيل"
@@ -4725,7 +4722,7 @@ def sources_management_View(request):
             #return JsonResponse({"status": "Notification sent"})
         #else:
          #   return JsonResponse({"status": "Client FCM token not available"}, status=400)
-    #except AllClientsTable.DoesNotExist:
+    #except models.AllClientsTable.DoesNotExist:
      #   return JsonResponse({"status": "Client not found"}, status=404)
 class AddToCartView(APIView):
     def post(self, request):
@@ -4741,12 +4738,12 @@ class AddToCartView(APIView):
 
         # Validate client existence
         try:
-            client = AllClientsTable.objects.get(clientid=client_id)
-        except AllClientsTable.DoesNotExist:
+            client = models.AllClientsTable.objects.get(clientid=client_id)
+        except models.AllClientsTable.DoesNotExist:
             return Response({"error": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the item already exists in the cart
-        cart_item, created = CartItem.objects.get_or_create(
+        cart_item, created = models.CartItem.objects.get_or_create(
             client=client,
             fileid=fileid,
             defaults={
