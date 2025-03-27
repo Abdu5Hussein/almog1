@@ -45,7 +45,6 @@ from django.db.models.functions import Cast
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.cache import cache
 from rest_framework.response import Response
-from .serializers import MainitemSerializer, CartItemSerializer,SupportChatMessageSysSerializer, SupportChatConversationSerializer,SupportChatConversationSerializer1,FeedbackSerializer
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -260,7 +259,7 @@ def ImageView(request):
 @login_required
 def ModelView(request):
     sub_types = models.Subtypetable.objects.all()
-    models = models.Modeltable.objects.select_related('subtype_fk').all()
+    models_ = models.Modeltable.objects.select_related('subtype_fk').all()
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -297,7 +296,7 @@ def ModelView(request):
 
     return render(request, 'model-table.html', {
         'subType': sub_types,
-        'models': models,
+        'models': models_,
     })
 
 @login_required
@@ -574,7 +573,7 @@ def ProductsDetails(req):
     mainType = models.Maintypetable.objects.all()
     subType = models.Subtypetable.objects.all()
     countries = models.Manufaccountrytable.objects.all()
-    models = models.Modeltable.objects.all()
+    models_ = models.Modeltable.objects.all()
     columns = [field.name for field in models.Mainitem._meta.fields]
     column_visibility = {
         'pno':True,
@@ -597,7 +596,7 @@ def ProductsDetails(req):
         'subType':subType,
         'engines':engines,
         'countries':countries,
-        'models':models,
+        'models':models_,
         'column_titles': COLUMN_TITLES,
     }
     return render(req, 'products-details.html', context)
@@ -1319,7 +1318,7 @@ def get_item_data(request, fileid):
         item = models.Mainitem.objects.get(fileid=fileid)
 
         # Serialize the item data
-        serializer = MainitemSerializer(item)
+        serializer = serializers.MainitemSerializer(item)
 
         # Return the serialized data
         return Response(serializer.data)
@@ -1472,7 +1471,7 @@ def ProductsReports(req):
     mainType = models.Maintypetable.objects.all()
     subType = models.Subtypetable.objects.all()
     countries = models.Manufaccountrytable.objects.all()
-    models = models.Modeltable.objects.all()
+    models_ = models.Modeltable.objects.all()
     columns = [field.name for field in models.Mainitem._meta.fields]
     column_visibility = {
     'pno':True,
@@ -1496,7 +1495,7 @@ def ProductsReports(req):
         'countries':countries,
         'column_titles': COLUMN_TITLES,
         'column_visibility': column_visibility,
-        'models':models
+        'models':models_
     }
     return render(req, 'products-reports.html', context)
 
@@ -4247,7 +4246,7 @@ class SupportChatMessageView(APIView):
         new_message.save()
 
         # Return the newly created message
-        serializer = SupportChatMessageSysSerializer(new_message)
+        serializer = serializers.SupportChatMessageSysSerializer(new_message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request, *args, **kwargs):
@@ -4258,7 +4257,7 @@ class SupportChatMessageView(APIView):
             return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
 
         messages = models.SupportChatMessageSys.objects.filter(conversation=conversation).order_by('timestamp')
-        serializer = SupportChatMessageSysSerializer(messages, many=True)
+        serializer = serializers.SupportChatMessageSysSerializer(messages, many=True)
         return Response(serializer.data)
 
 @api_view(['POST'])
@@ -4286,7 +4285,7 @@ def support_dashboard(request):
     for client in clients:
         # Get conversations associated with each client
         conversations = models.SupportChatConversation.objects.filter(client=client)
-        conversations_serializer = SupportChatConversationSerializer1(conversations, many=True)
+        conversations_serializer = serializers.SupportChatConversationSerializer1(conversations, many=True)
 
         # Add conversations to each client
         clients_with_conversations.append({
@@ -4499,7 +4498,7 @@ def addMoreCatView(request,id):
 
     mains = item.itemmain.split(';') if item.itemmain else []
     subs = item.itemsubmain.split(';') if item.itemsubmain else []
-    models = item.itemthird.split(';') if item.itemthird else []
+    models_ = item.itemthird.split(';') if item.itemthird else []
     engines = item.engine_no.split(';') if item.engine_no else []
 
     main_select = models.Maintypetable.objects.all().values()
@@ -4510,7 +4509,7 @@ def addMoreCatView(request,id):
     context = {
         'mains':mains,
         'subs':subs,
-        'models':models,
+        'models':models_,
         'engines':engines,
 
         'main_select':main_select,
@@ -4764,7 +4763,7 @@ class AddToCartView(APIView):
             else:
                 return Response({"error": f"Cannot add more than {cart_item.itemvalue} items."}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
+        return Response(serializers.CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
 
 def return_permission_profile(request, id):
     return_permission = get_object_or_404(models.return_permission, autoid=id)

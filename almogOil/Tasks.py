@@ -92,7 +92,7 @@ def schedule_assign_orders():
         schedule(
             'app.tasks.assign_orders',
             schedule_type=Schedule.MINUTES,
-            minutes=0.5,  # Run every 1 minute
+            minutes=1,  # Run every 1 minute
             repeats=-1,
             next_run=now()
         )

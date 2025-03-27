@@ -20,8 +20,6 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import Mainitem,OrderArchive,OrderQueue,EmployeeQueue,SupportChatConversation,SellinvoiceTable,SupportChatMessageSys, AllClientsTable,Feedback,EmployeesTable
-from .serializers import MainitemSerializer,EmployeeWithOrderSerializer,EmployeeSerializer,OrderSerializer,SupportChatConversationSerializer1,SellInvoiceSerializer, SupportChatMessageSysSerializer1, AllClientsTableSerializer,FeedbackSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
@@ -243,7 +241,7 @@ def get_invoice_data(request, autoid):
     try:
         # Fetch the data using the provided autoid (primary key)
         invoice_data = SellinvoiceTable.objects.get(autoid=autoid)
-        serializer = OrderSerializer(invoice_data)
+        serializer = serializers.OrderSerializer(invoice_data)
         return Response(serializer.data)
     except SellinvoiceTable.DoesNotExist:
         return Response({"error": "Invoice not found"}, status=404)
@@ -322,7 +320,7 @@ def update_invoice_status(request, invoice_no):
 def get_delivery_invoices(request):
     """Fetch all invoices with status 'حضرت'."""
     invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
-    serializer = SellInvoiceSerializer(invoices, many=True)
+    serializer = serializers.SellInvoiceSerializer(invoices, many=True)
     return Response(serializer.data)
 
 #####################
@@ -341,8 +339,8 @@ class CustomPagination(PageNumberPagination):
 @api_view(['GET'])
 def support_conversations(request):
     if request.method == 'GET':
-        conversations = SupportChatConversation.objects.all()
-        serializer = SupportChatConversationSerializer1(conversations, many=True)
+        conversations = models.SupportChatConversation.objects.all()
+        serializer = serializers.SupportChatConversationSerializer1(conversations, many=True)
         return Response({'conversations': serializer.data})
 
 # Get Messages in a Conversation
@@ -350,11 +348,11 @@ def support_conversations(request):
 def get_conversation_messages(request, conversation_id):
     if request.method == 'GET':
         try:
-            conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
-            messages = SupportChatMessageSys.objects.filter(conversation=conversation)
-            serializer = SupportChatMessageSysSerializer1(messages, many=True)
+            conversation = models.SupportChatConversation.objects.get(conversation_id=conversation_id)
+            messages = models.SupportChatMessageSys.objects.filter(conversation=conversation)
+            serializer = serializers.SupportChatMessageSysSerializer1(messages, many=True)
             return Response({'messages': serializer.data})
-        except SupportChatConversation.DoesNotExist:
+        except models.SupportChatConversation.DoesNotExist:
             return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
 
 # Create a New Message in a Conversation
@@ -376,8 +374,8 @@ def send_message(request, conversation_id=None):
         # If conversation_id is provided, fetch the existing conversation
         if conversation_id:
             try:
-                conversation = SupportChatConversation.objects.get(conversation_id=conversation_id)
-            except SupportChatConversation.DoesNotExist:
+                conversation = models.SupportChatConversation.objects.get(conversation_id=conversation_id)
+            except models.SupportChatConversation.DoesNotExist:
                 return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
         else:
             # If no conversation_id, create a new conversation (assuming client sends message)
@@ -385,7 +383,7 @@ def send_message(request, conversation_id=None):
             try:
                 client = AllClientsTable.objects.get(clientid=client_id)
                 # Create a new conversation without support agent
-                conversation = SupportChatConversation.objects.create(
+                conversation = models.SupportChatConversation.objects.create(
                     client=client,
                     support_agent=None  # No support agent in this conversation
                 )
@@ -393,7 +391,7 @@ def send_message(request, conversation_id=None):
                 return Response({'error': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
 
         # Create the message
-        message = SupportChatMessageSys.objects.create(
+        message = models.SupportChatMessageSys.objects.create(
             conversation=conversation,
             sender=conversation.client,  # Only the client is sending the message
             sender_type='client',  # 'client' is the sender type
@@ -402,7 +400,7 @@ def send_message(request, conversation_id=None):
             is_read=False
         )
 
-        message_serializer = SupportChatMessageSysSerializer1(message)
+        message_serializer = serializers.SupportChatMessageSysSerializer1(message)
 
         return Response({
             'message': 'Message sent successfully',
@@ -418,12 +416,12 @@ def start_conversation(request, client_id):
             client = AllClientsTable.objects.get(clientid=client_id)
 
             # Check if there's already an existing conversation with the client
-            existing_conversation = SupportChatConversation.objects.filter(client=client)
+            existing_conversation = models.SupportChatConversation.objects.filter(client=client)
             if existing_conversation.exists():
                 return Response({'error': 'Conversation already exists with this client'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Create a new conversation with the support agent (request.user)
-            conversation = SupportChatConversation.objects.create(
+            conversation = models.SupportChatConversation.objects.create(
                 client=client,
                 support_agent=request.user
             )
@@ -434,7 +432,7 @@ def start_conversation(request, client_id):
                 return Response({'error': 'Message is required to start a conversation'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Create the first message in the conversation
-            message = SupportChatMessageSys.objects.create(
+            message = models.SupportChatMessageSys.objects.create(
                 conversation=conversation,
                 sender=request.user,  # Assuming the support agent is the sender
                 sender_type='support',  # Type 'support' for the agent
@@ -443,7 +441,7 @@ def start_conversation(request, client_id):
                 is_read=False
             )
 
-            message_serializer = SupportChatMessageSysSerializer1(message)
+            message_serializer = serializers.SupportChatMessageSysSerializer1(message)
 
             return Response({
                 'message': 'Conversation started successfully',
@@ -473,11 +471,11 @@ def send_feedback(request):
         return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
 
     # Create the feedback entry
-    feedback = Feedback(sender=client, feedback_text=feedback_text)
+    feedback = models.Feedback(sender=client, feedback_text=feedback_text)
     feedback.save()
 
     # Return the created feedback data in response
-    return Response(FeedbackSerializer(feedback).data, status=status.HTTP_201_CREATED)
+    return Response(serializers.FeedbackSerializer(feedback).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -485,8 +483,8 @@ def respond_to_feedback(request, client_id):
     if request.method == 'POST':
         try:
             client = AllClientsTable.objects.get(id=client_id)
-            feedback = Feedback.objects.filter(sender=client).last()  # Get latest feedback
-        except (AllClientsTable.DoesNotExist, Feedback.DoesNotExist):
+            feedback = models.Feedback.objects.filter(sender=client).last()  # Get latest feedback
+        except (AllClientsTable.DoesNotExist, models.Feedback.DoesNotExist):
             return JsonResponse({"error": "Client or Feedback not found."}, status=404)
 
         # Parse JSON request body
@@ -515,7 +513,7 @@ def respond_to_feedback(request, client_id):
 def get_all_clients1(request,id=None):
     if request.method == 'GET':
         clients = AllClientsTable.objects.all().filter(clientid=id)
-        serializer = AllClientsTableSerializer(clients, many=True)
+        serializer = serializers.AllClientsTableSerializer(clients, many=True)
         return Response({'clients': serializer.data})
 
 
@@ -577,7 +575,7 @@ def get_employee_order(request, employee_id):
         assigned_order.save()
 
         # Create an order queue record and automatically accept it
-        order_queue = OrderQueue.objects.create(employee=employee, order=assigned_order, is_accepted=True)
+        order_queue = models.OrderQueue.objects.create(employee=employee, order=assigned_order, is_accepted=True)
 
         return Response({
             "message": "Order assigned successfully.",
@@ -601,7 +599,7 @@ def get_employee_order(request, employee_id):
 def accept_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
-        order_queue = OrderQueue.objects.get(id=queue_id)
+        order_queue = models.OrderQueue.objects.get(id=queue_id)
 
         # Mark the order as accepted
         order_queue.is_accepted = True
@@ -626,7 +624,7 @@ def accept_order(request, queue_id):
             "delivery_status": order.delivery_status
         })
 
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
 
@@ -634,7 +632,7 @@ def accept_order(request, queue_id):
 def decline_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
-        order_queue = OrderQueue.objects.get(id=queue_id)
+        order_queue = models.OrderQueue.objects.get(id=queue_id)
 
         if order_queue.is_accepted or order_queue.is_completed:
             return Response({"message": "Order has already been accepted or completed."}, status=400)
@@ -653,7 +651,7 @@ def decline_order(request, queue_id):
 
         if next_available_employee:
             # Assign the order to the next available employee
-            OrderQueue.objects.create(employee=next_available_employee, order=order)
+            models.OrderQueue.objects.create(employee=next_available_employee, order=order)
 
         # Mark the employee as available again and reset the active order flag
         employee = order_queue.employee
@@ -665,14 +663,14 @@ def decline_order(request, queue_id):
             "message": "Order declined. The next available employee will take it."
         })
 
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
 @api_view(['POST'])
 def deliver_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
-        order_queue = OrderQueue.objects.get(id=queue_id)
+        order_queue = models.OrderQueue.objects.get(id=queue_id)
 
         # Check if the order has already been delivered or is in the process of being delivered
         if order_queue.order.delivery_status == 'تم التوصيل':
@@ -701,7 +699,7 @@ def deliver_order(request, queue_id):
             "delivery_status": order.delivery_status
         })
 
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
@@ -710,7 +708,7 @@ def deliver_order(request, queue_id):
 def skip_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
-        order_queue = OrderQueue.objects.get(id=queue_id)
+        order_queue = models.OrderQueue.objects.get(id=queue_id)
 
         # Skip the order and mark the order queue entry as completed
         order_queue.is_completed = True
@@ -728,13 +726,13 @@ def skip_order(request, queue_id):
             return Response({"message": "No available employees to take the order."}, status=400)
 
         # Reassign the order to the next employee in the queue
-        OrderQueue.objects.create(employee=next_available_employee, order=order_queue.order)
+        models.OrderQueue.objects.create(employee=next_available_employee, order=order_queue.order)
 
         return Response({
             "message": "Order skipped. The next available employee will take it."
         })
 
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
 
@@ -763,17 +761,17 @@ def update_delivery_availability(request):
     # If the employee is available, add them to the queue
     if employee.is_available:
         # Check if the employee is already in the queue
-        if not EmployeeQueue.objects.filter(employee=employee).exists():
+        if not models.EmployeeQueue.objects.filter(employee=employee).exists():
             # Get the number of available employees in the queue to set the position
-            queue_position = EmployeeQueue.objects.filter(is_available=True).count() + 1
+            queue_position = models.EmployeeQueue.objects.filter(is_available=True).count() + 1
             # Add to queue
-            EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
+            models.EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
             message = f"Employee {employee.employee_id} is now available and added to the queue as position {queue_position}."
         else:
             message = f"Employee {employee.employee_id} is already in the queue."
     else:
         # If the employee is unavailable, remove them from the queue
-        queue_entry = EmployeeQueue.objects.filter(employee=employee, is_available=True).first()
+        queue_entry = models.EmployeeQueue.objects.filter(employee=employee, is_available=True).first()
         if queue_entry:
             queue_entry.delete()
             message = f"Employee {employee.employee_id} is now unavailable and removed from the queue."
@@ -842,7 +840,7 @@ def complete_delivery(request, invoice_id):
 @api_view(['GET'])
 def pending_orders(request):
     orders = SellinvoiceTable.objects.filter(delivery_status="معلقة")
-    serializer = OrderSerializer(orders, many=True)
+    serializer = serializers.OrderSerializer(orders, many=True)
     return Response(serializer.data, status=200)
 
 
@@ -870,13 +868,13 @@ def set_available(request):
     employee.save()
 
     # Check if the employee is already in the queue
-    if EmployeeQueue.objects.filter(employee=employee).exists():
+    if models.EmployeeQueue.objects.filter(employee=employee).exists():
         # If employee is already in the queue, stop the process and return the message
         return Response({"message": f"Employee {employee.employee_id} is already in the queue."})
 
     # Add to queue if not already present
-    queue_position = EmployeeQueue.objects.filter(is_available=True).count() + 1
-    EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
+    queue_position = models.EmployeeQueue.objects.filter(is_available=True).count() + 1
+    models.EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
 
     return Response({
         "message": f"Employee {employee.employee_id} is now available and added to the queue at position {queue_position}.",
@@ -906,7 +904,7 @@ def set_unavailable(request):
     employee.save()
 
     # Remove from queue
-    queue_entry = EmployeeQueue.objects.filter(employee=employee, is_available=True).first()
+    queue_entry = models.EmployeeQueue.objects.filter(employee=employee, is_available=True).first()
     if queue_entry:
         queue_entry.delete()
         message = f"Employee {employee.employee_id} is now unavailable and removed from the queue."
@@ -924,10 +922,10 @@ def clear_queue(request):
     """Clear all employees and orders from the queue, set all employees as unavailable, and reset invoice assignments."""
 
     # Clear employee queue
-    deleted_employee_queue, _ = EmployeeQueue.objects.all().delete()
+    deleted_employee_queue, _ = models.EmployeeQueue.objects.all().delete()
 
     # Clear order queue
-    deleted_order_queue, _ = OrderQueue.objects.all().delete()
+    deleted_order_queue, _ = models.OrderQueue.objects.all().delete()
 
     # Set all employees as unavailable
     EmployeesTable.objects.filter(is_available=True).update(is_available=False)
@@ -953,7 +951,7 @@ def get_employee_orders(request, employee_id):
             return Response({"error": "Employee not found."}, status=404)
 
         # Get the latest assigned active order for the employee
-        order = OrderQueue.objects.filter(
+        order = models.OrderQueue.objects.filter(
             employee=employee,
             is_accepted=True,
             order__delivery_status='جاري التوصيل'
@@ -981,7 +979,7 @@ def get_employee_orders(request, employee_id):
 def complete_order(request, autoid):
     try:
         # Get the OrderQueue using the autoid field of the related order
-        order_queue = OrderQueue.objects.get(order__autoid=autoid)
+        order_queue = models.OrderQueue.objects.get(order__autoid=autoid)
         employee = order_queue.employee
 
         # Update order status
@@ -997,13 +995,13 @@ def complete_order(request, autoid):
         employee.has_active_order = False
 
         # Remove the employee from the EmployeeQueue
-        EmployeeQueue.objects.filter(employee=employee).delete()
+        models.EmployeeQueue.objects.filter(employee=employee).delete()
 
         # Save the employee model
         employee.save()
 
         # Archive the order in the OrderArchive model
-        OrderArchive.objects.create(
+        models.OrderArchive.objects.create(
             order=order_queue.order,  # Store the original order
             employee=employee,  # Store the employee who completed the order
             delivery_status=order_queue.order.delivery_status,  # 'تم التسليم'
@@ -1012,7 +1010,7 @@ def complete_order(request, autoid):
 
         return Response({"message": "Order completed successfully and archived."})
 
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order not found."}, status=404)
 
     except Exception as e:
@@ -1027,7 +1025,7 @@ def get_available_employees(request):
     available_employees = EmployeesTable.objects.filter(is_available=True)
 
     # Serialize the employee data along with their orders
-    serializer = EmployeeWithOrderSerializer(available_employees, many=True)
+    serializer = serializers.EmployeeWithOrderSerializer(available_employees, many=True)
 
     # Return the serialized data in the response
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1044,10 +1042,10 @@ def check_assign_status(request):
     pending_orders = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', is_assigned=False)
 
     # Get orders that have been assigned
-    assigned_orders = OrderQueue.objects.filter(is_assigned=True)
+    assigned_orders = models.OrderQueue.objects.filter(is_assigned=True)
 
     # Get orders that have been accepted but not assigned
-    accepted_orders = OrderQueue.objects.filter(is_accepted=True)
+    accepted_orders = models.OrderQueue.objects.filter(is_accepted=True)
 
     # Prepare the response data
     data = {
@@ -1094,7 +1092,7 @@ def check_assign_statusss(request, employee_id):
             return Response({"error": "Employee not found."}, status=404)
 
         # Fetch assigned orders for this employee
-        assigned_orders = OrderQueue.objects.filter(employee=employee, is_accepted=True).select_related('order')
+        assigned_orders = models.OrderQueue.objects.filter(employee=employee, is_accepted=True).select_related('order')
 
         # Prepare response data
         data = {
@@ -1125,7 +1123,7 @@ def check_assign_statusss(request, employee_id):
 def confirm_order(request, order_id):
     try:
         # Get the order queue where the order is not accepted
-        order_queue = OrderQueue.objects.get(order_id=order_id, is_accepted=False)
+        order_queue = models.OrderQueue.objects.get(order_id=order_id, is_accepted=False)
 
         # Update the order queue to mark it as accepted
         order_queue.is_accepted = True
@@ -1139,7 +1137,7 @@ def confirm_order(request, order_id):
         # Return success response
         return Response({"success": True, "message": "Order confirmed successfully and invoice status updated."})
 
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order not found or already confirmed."}, status=404)
 
     except SellinvoiceTable.DoesNotExist:
@@ -1152,7 +1150,7 @@ def confirm_order(request, order_id):
 def decline_order(request, order_id):
     try:
         # Get the order queue that is not yet accepted
-        order_queue = OrderQueue.objects.get(order_id=order_id, is_accepted=False)
+        order_queue = models.OrderQueue.objects.get(order_id=order_id, is_accepted=False)
         employee = order_queue.employee
         assigned_order = order_queue.order
 
@@ -1162,7 +1160,7 @@ def decline_order(request, order_id):
         employee.save()
 
         # Remove the employee from the EmployeeQueue, regardless of their assignment status
-        EmployeeQueue.objects.filter(employee=employee).delete()
+        models.EmployeeQueue.objects.filter(employee=employee).delete()
 
         # Mark the assigned order as unassigned and move it to pending
         assigned_order.is_assigned = False
@@ -1178,7 +1176,7 @@ def decline_order(request, order_id):
 
         return Response({"success": True, "message": "Order declined, employee marked as available, and reassignment triggered."})
 
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order not found or already processed."}, status=404)
 
 
@@ -1194,7 +1192,7 @@ def monitor_order_assignments(request):
         pending_orders = SellinvoiceTable.objects.filter(invoice_status='سلمت', delivery_status='جاري التوصيل', is_assigned=False)
 
         # Fetch all assigned orders
-        assigned_orders = OrderQueue.objects.select_related('employee', 'order').all()
+        assigned_orders = models.OrderQueue.objects.select_related('employee', 'order').all()
 
         # Split assigned orders into confirmed and unconfirmed
         confirmed_orders = []
@@ -1252,7 +1250,7 @@ def employee_order_info(request, employee_id):
         employee = EmployeesTable.objects.get(employee_id=employee_id)
 
         # Fetch the employee's assigned orders
-        assigned_orders = OrderQueue.objects.filter(employee=employee).select_related('order')
+        assigned_orders = models.OrderQueue.objects.filter(employee=employee).select_related('order')
 
         # Prepare a list to hold order details
         order_details = []
@@ -1296,7 +1294,7 @@ def employee_current_order_info(request, employee_id):
         employee = EmployeesTable.objects.get(employee_id=employee_id)
 
         # Fetch the employee's assigned orders excluding those with "تم التوصيل" delivery status
-        assigned_orders = OrderQueue.objects.filter(employee=employee).select_related('order').order_by('assigned_at')
+        assigned_orders = models.OrderQueue.objects.filter(employee=employee).select_related('order').order_by('assigned_at')
         assigned_orders = assigned_orders.exclude(order__delivery_status="تم التسليم")
 
         # Get the current order for the employee
@@ -1305,7 +1303,7 @@ def employee_current_order_info(request, employee_id):
             current_order = assigned_orders.first()  # The first assigned order is considered the "current" order
 
         # Get the position of the employee in the queue
-        employee_position_in_queue = OrderQueue.objects.filter(is_accepted=False).count() + 1
+        employee_position_in_queue = models.OrderQueue.objects.filter(is_accepted=False).count() + 1
 
         if current_order:
             order = current_order.order
@@ -1348,7 +1346,7 @@ def employee_current_order_info(request, employee_id):
 def confirm_order_arrival(request, order_id):
     try:
         # Find the order in the queue which is assigned but not confirmed
-        order_queue = OrderQueue.objects.get(order_id=order_id, is_accepted=True)
+        order_queue = models.OrderQueue.objects.get(order_id=order_id, is_accepted=True)
 
         # Find the actual order linked to this queue entry
         order = order_queue.order
@@ -1370,7 +1368,7 @@ def confirm_order_arrival(request, order_id):
         order_queue.delete()
 
         return Response({"success": True, "message": "Order confirmed as arrived."}, status=200)
-    except OrderQueue.DoesNotExist:
+    except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order not found or already confirmed."}, status=404)
 
 
@@ -1422,7 +1420,7 @@ def get_employee_confirmed_orders(request):
 def get_archived_orders(request, employee_id):
     try:
         # Fetch the orders archived for the specific employee
-        archived_orders = OrderArchive.objects.filter(employee_id=employee_id)
+        archived_orders = models.OrderArchive.objects.filter(employee_id=employee_id)
 
         # If no archived orders found
         if not archived_orders:
@@ -1655,7 +1653,7 @@ def filter_return_reqs(request):
 @api_view(['GET'])
 def available_employees(request):
     employees = EmployeesTable.objects.filter(is_available=True)
-    serializer = EmployeeSerializer(employees, many=True)
+    serializer = serializers.EmployeeSerializer(employees, many=True)
     return Response(serializer.data, status=200)
 
 
