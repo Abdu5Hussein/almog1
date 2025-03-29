@@ -40,13 +40,26 @@
           <tr>
             <td>{{ x.fileid }}</td>
             <td>{{ x.companyname }}</td>
-            <td>
-              <button
-                type="button"
-                id="logo-{{ x.fileid }}"
-                onclick="openWindow('companies/{{ x.fileid }}/logo')"
-                class="btn btn-success"
-              >اضافة لوقو</button>
+            <td class="text-center">
+              {% if x.logo_obj %}
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <img src="{{ x.logo_obj.url }}" alt="Logo" width="50" height="50">
+                  <button
+                    type="button"
+                    id="logo-{{ x.fileid }}"
+                    onclick="openWindow('companies/{{ x.fileid }}/logo')"
+                    class="btn btn-success"
+                    style="font-size: 12px;"
+                  >تعديل</button>
+                </div>
+              {% else %}
+                <button
+                  type="button"
+                  id="logo-{{ x.fileid }}"
+                  onclick="openWindow('maintypes/{{ x.fileid }}/logo')"
+                  class="btn btn-success"
+                >اضافة لوقو</button>
+              {% endif %}
             </td>
           </tr>
           {% empty %}

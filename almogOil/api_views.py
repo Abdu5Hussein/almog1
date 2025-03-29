@@ -1570,6 +1570,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         except:
             return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
 
+
         if permission_obj.payment == "نقدي":
             try:
                 client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
@@ -1590,6 +1591,26 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
                 )
             except:
                 return Response({"error": "error in storage saving!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            movement_Record = models.Clientstable.objects.create(
+                itemno=mainitem.itemno,
+                itemname=mainitem.itemname,
+                maintype=mainitem.itemmain,
+                currentbalance=mainitem.itemvalue,
+                date=timezone.now(),
+                clientname=client_object.name or "",
+                #billno="",
+                description="ترجيع صنف من فاتورة بيع",
+                clientbalance=int(data.get("returned_quantity")) or 0,
+                pno_instance=mainitem,
+                pno=mainitem.pno,
+            )
+        except Exception as e:
+            return Response({
+                "message": "Error in product history saving!",
+                "error": str(e)  # Convert the exception to a string for better readability
+            }, status=status.HTTP_400_BAD_REQUEST)
         # Serialize and return the created object
         serializer = self.get_serializer(returned_item_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1953,3 +1974,79 @@ def upload_company_logo(request, id):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_today_storage(request):
+    try:
+        # Fetch records from StorageTransactionsTable where transaction_date is today
+        today = now().date()
+        items = models.StorageTransactionsTable.objects.filter(transaction_date=today)
+
+        # Serialize data
+        serializer = serializers.StorageTransactionSerializer(items, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_all_storage(request):
+    try:
+        # Fetch records from StorageTransactionsTable where transaction_date is today
+        today = now().date()
+        items = models.StorageTransactionsTable.objects.all()
+
+        # Serialize data
+        serializer = serializers.StorageTransactionSerializer(items, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def filter_all_storage(request):
+    try:
+        filters = request.data  # Decode JSON payload
+        query = Q()
+
+        # Apply filters dynamically
+        if filters.get("id"):
+            query &= Q(storageid__icontains=filters["id"])
+        if filters.get("client"):
+            query &= Q(person__icontains=filters["client"])
+        if filters.get("account_detail"):
+            query &= Q(issued_for__icontains=filters["account_detail"])
+        if filters.get("section"):
+            query &= Q(section__icontains=filters["section"])
+        if filters.get("subsection"):
+            query &= Q(subsection__icontains=filters["subsection"])
+        if filters.get("type"):
+            query &= Q(account_type__icontains=filters["type"])
+        if filters.get("transaction"):
+            query &= Q(transaction__icontains=filters["transaction"])
+        if filters.get("payment"):
+            query &= Q(payment__icontains=filters["payment"])
+        if filters.get("place"):
+            query &= Q(place__icontains=filters["place"])
+
+        # Date range filter
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+        if fromdate and todate:
+            try:
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                query &= Q(transaction_date__range=[from_date_obj, to_date_obj])
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch filtered results
+        queryset = models.StorageTransactionsTable.objects.filter(query)
+
+        # Serialize data
+        serializer = serializers.StorageTransactionSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

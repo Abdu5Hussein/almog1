@@ -24,7 +24,7 @@ from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
 from almogOil import consumers
-from almogOil import api_views,views,mainitem_api_views
+from almogOil import api_views,views,mainitem_api_views,api_temp
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework.routers import DefaultRouter
@@ -96,10 +96,11 @@ urlpatterns = [
     path('api/filter-all-clients', views.filter_all_clients, name='filter-all-clients'),
     path('clients-reports', views.ClientsReports, name='clients-reports'),
     path('storage-records', views.StorageManagement, name='storage-records'),
-    path("api/create-storage-record", views.create_storage_record, name="create_storage_record"),
+    path("api/create-storage-record", api_temp.create_storage_record, name="create_storage_record"),
     path("api/delete-storage-record", views.delete_storage_record, name="delete_storage_record"),
-    path('api/get-all-storage', views.get_all_storage, name='get-all-storage'),
-    path('api/filter-all-storage', views.filter_all_storage, name='filter-all-storage'),
+    path('api/get-all-storage', api_views.get_all_storage, name='get-all-storage'),
+    path('api/get-today-storage', api_views.get_today_storage, name='get-today-storage'),
+    path('api/filter-all-storage', api_views.filter_all_storage, name='filter-all-storage'),
     path('get-subsections/', views.get_subsections, name='get_subsections'),
     path('account-statements', views.account_statement, name='account-statements'),
     path('get-account-statement', views.get_account_statement, name='get_account_statement'),
@@ -250,7 +251,7 @@ urlpatterns = [
     path('users/management', views.users_management,name="users_management"),
     path('maintypes/<int:id>/logo',views.maintype_logo_view,name="maintype_logo_view"),
     path('assign-orders-page/<str:invoice_id>/', views.assign_orders_page, name='assign_orders_page'),
-
+    path('assign-order-employee/<str:invoice_id>/', views.assign_order_to_employee, name='assign_order_to_employee'),
     path('maintypes/<int:id>/upload/logo',api_views.upload_maintype_logo,name="upload_maintype_logo_api"),
 
     path('companies/<int:id>/logo',views.company_logo_view,name="company_logo_view"),

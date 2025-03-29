@@ -43,6 +43,12 @@ class MainTypeSerializer(serializers.ModelSerializer):
         model = models.Maintypetable
         fields = "__all__"
 
+class StorageTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.StorageTransactionsTable
+        fields = "__all__"
+
+
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Modeltable

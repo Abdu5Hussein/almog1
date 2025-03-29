@@ -3,111 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assign Order</title>
+    <title>تعيين الموظف</title>
     <style>
-        /* Modal styling */
-        #employeeModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
+        /* General body styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f1f1f1;
+            color: #333;
+            margin: 0;
+            padding: 0;
         }
-        #employeeModal > div {
+
+        /* Centered container with a border */
+        .container {
+            max-width: 400px;
+            margin: 50px auto;
             background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            border-radius: 5px;
-            width: 50%;
-            max-width: 500px;
+            text-align: center;
         }
+
+        /* Header styles */
+        h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        /* Employee list styling */
         #employeeList {
             list-style-type: none;
             padding: 0;
+            margin: 0;
         }
+
         #employeeList li {
-            padding: 10px;
-            background-color: #f0f0f0;
-            margin-bottom: 5px;
+            padding: 12px;
+            background-color: #f9f9f9;
+            margin-bottom: 8px;
+            border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
+
         #employeeList li:hover {
-            background-color: #ddd;
+            background-color: #e0f7fa;
+        }
+
+        #employeeList li.selected {
+            background-color: #00bcd4;
+            color: white;
+        }
+
+        /* Button styling */
+        button {
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #0097a7;
+        }
+
+        /* Confirm button in Navy Blue */
+        #confirmButton {
+            background-color: #003366;  /* Navy Blue */
+        }
+
+        #confirmButton:hover {
+            background-color: #002244;  /* Darker Navy Blue */
+        }
+
+        /* Close button styling */
+        #closeButton {
+            background-color: #f44336;
+        }
+
+        #closeButton:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            button {
+                padding: 8px 15px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <h2>تعيين الطلب</h2>
-    
-    <!-- Button to trigger modal -->
-    <button id="assignOrderBtn">تعيين الطلب</button>
+    <div class="container">
+        <h2>تعيين الموظف للطلب</h2>
 
-    <!-- Modal for available employees -->
-    <div id="employeeModal">
         <div>
             <h3>الموظفون المتاحون</h3>
             <ul id="employeeList"></ul>
-            <button id="closeModal">إغلاق</button>
         </div>
+
+        <button id="confirmButton" style="display:none;">تأكيد التعيين</button>
+        <button id="closeButton">إغلاق</button>
     </div>
 
     <script>
-        // Show the modal when the button is clicked
-        document.getElementById("assignOrderBtn").addEventListener("click", function() {
-            // Open the modal to show available employees
-            document.getElementById("employeeModal").style.display = "flex";
+        let selectedEmployeeId = null;
 
-            // Fetch available employees from the backend
-            fetch('/api/available-employees/')
-                .then(response => response.json())
-                .then(data => {
-                    const employeeList = document.getElementById("employeeList");
-                    employeeList.innerHTML = '';  // Clear the list first
-                    data.employees.forEach(employee => {
-                        const li = document.createElement('li');
-                        li.textContent = employee.name;
-                        li.setAttribute('data-id', employee.id);  // Store employee id in the data-id attribute
-                        li.addEventListener('click', function() {
-                            assignOrderToEmployee(employee.id);  // Call the function to assign the order
-                        });
-                        employeeList.appendChild(li);
-                    });
-                })
-                .catch(error => console.error('Error fetching employees:', error));
-        });
-
-        // Close the modal when the close button is clicked
-        document.getElementById("closeModal").addEventListener("click", function() {
-            document.getElementById("employeeModal").style.display = "none";
-        });
-
-        // Function to assign the order to the selected employee
-        function assignOrderToEmployee(employeeId) {
-            const invoiceId = '{{ invoice_id }}';  // Pass invoice_id from context
-
-            fetch(`/assign-order/${invoiceId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ employee_id: employeeId }),
-            })
+        // Fetch available employees from the backend
+        fetch('/api/available-employees/')
             .then(response => response.json())
             .then(data => {
-                if (data.message) {
-                    alert(data.message);  // Notify success
-                } else {
-                    alert(data.error);  // Show error message
-                }
-                // Close the modal after assigning the order
-                document.getElementById("employeeModal").style.display = "none";
+                const employeeList = document.getElementById("employeeList");
+                data.forEach(employee => {
+                    const li = document.createElement('li');
+                    li.textContent = employee.name;
+                    li.setAttribute('data-id', employee.employee_id);
+
+                    // Add click event to select an employee
+                    li.addEventListener('click', function() {
+                        // Toggle selection
+                        const currentlySelected = document.querySelector('#employeeList .selected');
+                        if (currentlySelected) {
+                            currentlySelected.classList.remove('selected');
+                        }
+                        li.classList.add('selected');
+                        selectedEmployeeId = employee.employee_id;
+                        document.getElementById("confirmButton").style.display = 'inline';  // Show the Confirm button
+                    });
+
+                    employeeList.appendChild(li);
+                });
             })
-            .catch(error => console.error('Error assigning order:', error));
-        }
+            .catch(error => console.error('Error fetching employees:', error));
+
+        // Handle confirm button click to assign order
+        document.getElementById("confirmButton").addEventListener("click", function() {
+            if (selectedEmployeeId !== null) {
+                const invoiceId = '{{ invoice_id }}';  // Pass invoice_id from context
+
+                // Send the selected employee_id to the backend to assign the order
+                fetch(`/assign-order-employee/${invoiceId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ employee_id: selectedEmployeeId }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert(data.message);  // Notify success
+                    } else {
+                        alert(data.error);  // Show error message
+                    }
+                    // Close the page after confirming
+                    window.close();
+                })
+                .catch(error => console.error('Error assigning order:', error));
+            } else {
+                alert('يرجى اختيار موظف أولاً');
+            }
+        });
+
+        // Close the page when "Close" button is clicked
+        document.getElementById("closeButton").addEventListener("click", function() {
+            window.close();
+        });
     </script>
 
 </body>

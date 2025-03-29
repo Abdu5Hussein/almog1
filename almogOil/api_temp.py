@@ -32,7 +32,7 @@ from asgiref.sync import async_to_sync
 
 from reportlab.lib.pagesizes import letter, A3, landscape
 from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics, TTFont
+#from reportlab.pdfbase import pdfmetrics, TTFont
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_RIGHT, TA_LEFT
@@ -361,7 +361,7 @@ def process_excel_and_import(request):
 
 # Register the Amiri font
 font_path = settings.BASE_DIR / 'staticfiles/Amiri-font/Amiri-Regular.ttf'
-pdfmetrics.registerFont(TTFont('Amiri', str(font_path)))
+#pdfmetrics.registerFont(TTFont('Amiri', str(font_path)))
 
 # Regular expression to detect Arabic text
 ARABIC_CHAR_PATTERN = re.compile(r'[\u0600-\u06FF]')
@@ -1069,7 +1069,7 @@ def create_storage_record(request):
             details=f"{data.get('subsection')} / {data.get('reciept_no')}",
             registration_date=transaction_date,
             current_balance=updated_balance,  # Updated balance
-            client_id_id=client_id,  # Client ID
+            client_id=client_id,  # Client ID
         )
         account_statement.save()
 

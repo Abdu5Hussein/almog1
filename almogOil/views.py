@@ -2335,7 +2335,7 @@ def get_all_storage(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)  # Return error details in JSON
 
-
+@csrf_exempt
 def filter_all_storage(request):
     if request.method == "POST":
         try:
@@ -4798,3 +4798,49 @@ def company_logo_view(request, id):
 def assign_orders_page(request, invoice_id):
     # You can pass any additional context here if needed, e.g., the invoice_id
     return render(request, 'assign_orders.html', {'invoice_id': invoice_id})
+
+
+@csrf_exempt
+def assign_order_to_employee(request, invoice_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        employee_id = data.get('employee_id')
+
+        with transaction.atomic():
+            # Get the selected employee
+            employee_queue = get_object_or_404(models.EmployeeQueue, employee_id=employee_id, is_available=True, is_assigned=False)
+            employee = employee_queue.employee
+
+            # Get the selected order using the invoice_id from the URL
+            order = get_object_or_404(models.SellinvoiceTable, invoice_no=invoice_id, is_assigned=False)
+
+            # Assign the order to the employee
+            employee.is_available = False
+            employee.has_active_order = True
+            employee.save()
+
+            order.delivery_status = 'جاري التوصيل'
+            order.is_assigned = True
+            order.save()
+
+            # Add to the order queue
+            models.OrderQueue.objects.create(
+                employee=employee, order=order, is_accepted=False, is_assigned=True, assigned_at=datetime.now()
+            )
+
+            # Update the employee queue
+            employee_queue.is_assigned = True
+            employee_queue.is_available = False
+            employee_queue.assigned_time = datetime.now()
+            employee_queue.save()
+
+        return JsonResponse({'message': 'Order assigned successfully'}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

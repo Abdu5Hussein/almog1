@@ -23,6 +23,27 @@
     <script src="{% static 'pdfmake-master/vfs_fonts.js'%}"></script>
 
     <style>
+      #contextMenu {
+        display: none;
+        /* Hidden by default */
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        min-width: 150px;
+      }
+
+      #contextMenu div:hover {
+        background-color: #f0f0f0;
+      }
+      #contextMenu div {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+
       .dropdown {
         display: none;
         /* Initially hidden */
@@ -63,7 +84,7 @@
       }
 
       .page-link-active {
-          background-color: #0d6efd;         
+          background-color: #0d6efd;
           color:rgb(255, 255, 255);
       }
       .button-row .btn {
@@ -227,6 +248,12 @@
     </style>
   </head>
   <body>
+    <!-- Right-click context menu for operations -->
+    <div id="contextMenu">
+      <div onclick="performAction('Edit')">سعر التكلفة</div>
+      <div onclick="performAction('Delete')">اقل سعر للبيع</div>
+      <div onclick="performAction('View Details')">صورة الصنف</div>
+    </div>
     <div class="container">
       <div class="custom-form">
         <div class="title-container mb-1">
@@ -296,12 +323,12 @@
                   {% endfor %}
                 </select>
               </div>
-              
+
             </div>
 
             <!-- Second column -->
             <div class="col-md-4">
-              
+
               <div class="mb-1 d-flex align-items-center">
                 <div style="width: 100px">
                   <label for="company" class="form-label">الشركة المنتجة</label>
@@ -364,7 +391,7 @@
                   required
                 />
               </div>
-              
+
               <div class="mb-1 d-flex align-items-center">
                 <div style="width: 100px">
                   <label for="company-no" class="form-label">رقم الشركة</label>
@@ -406,7 +433,7 @@
         Show/Hide Columns
       </button>
       <nav aria-label="Page navigation example">
-        <ul class="pagination h-1"> 
+        <ul class="pagination h-1">
         <p id="page-total" class="page-link item-disabled">total of x pages</p>
           <li class="page-first"><a class="page-link" href="#">First</a></li>
           <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
@@ -421,7 +448,7 @@
         </ul>
       </nav>
       </div>
-      
+
       <!-- Dropdown menu for column visibility -->
       <div id="column-menu" class="dropdown" style="display: none">
         {% for column in columns %}
@@ -437,7 +464,7 @@
 
         {% endfor %}
       </div>
-      
+
       <!-- Table Section -->
       <div class="custom-table mb-1">
         <div
@@ -474,7 +501,7 @@
                   readonly
                 />
               </div>
-              
+
             </div>
 
             <!-- Second column -->
@@ -493,7 +520,7 @@
                   readonly
                 />
               </div>
-              
+
             </div>
 
             <!-- Third column -->
@@ -502,7 +529,7 @@
               <input type="checkbox" id="photo-export" style="margin-left: 5px" />
               <label for="photo-export">التصدير يتضمن صورة الصنف</label>
               </div>
-              
+
             </div>
           </div>
         </form>
@@ -554,7 +581,7 @@
               </div>
             </div>
           </div>
-          
+
 
           <!-- Adjusted column sizes for buttons -->
           <div class="col-auto m-1">
@@ -854,7 +881,7 @@
           };
           console.log("filter values: ",filterValues);
 
-          // Add additional filter conditions based on checkboxes 
+          // Add additional filter conditions based on checkboxes
           if (filterElements.check4.checked) filterValues.itemvalue = ">0";
           //if (filterElements.check3.checked) filterValues.itemvalue_itemtemp = "lte";
 
@@ -915,7 +942,7 @@
 
               // Update summary inputs
               //updateIntegerInput("#itemvalue", data.total_itemvalue);
-              
+
             })
             .catch((error) => {
               console.error("Error fetching filtered data:", error.message);
@@ -964,7 +991,7 @@
             debouncedApplyFilters();
         });
         });
-        /////////// 
+        ///////////
 
   let currentPage = 1; // Tracks the current page
   let lastPage = false; // Indicates if the last page is reached
@@ -1009,7 +1036,7 @@
   };
   function fetchDataFromServer({ page = 1, size = 100 }) {
     //if (isLoading) return; // Prevent fetch if already loading
-    //isLoading = true; // Set loading flag before initiating fetch  
+    //isLoading = true; // Set loading flag before initiating fetch
 
     // Use the URL in your fetch request
 
@@ -1073,7 +1100,7 @@
   // Apply debounce to applyFilters with a 300ms delay
   //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
   fetchDataFromServer({ page: 1, size: 100 });
-  
+
       function showLoader() {
         const loader = document.getElementById("loader-element");
         loader.classList.remove("d-none"); // Show the loader by removing d-none
@@ -1083,7 +1110,7 @@
 
       function hideLoader() {
         const loader = document.getElementById("loader-element");
-              
+
         // Set a delay (e.g., 2000ms = 2 seconds)
         setTimeout(function() {
           loader.classList.remove("d-flex"); // Remove d-flex
@@ -1159,17 +1186,17 @@
       // Event listener for page links
       document.querySelector(".pagination").addEventListener("click", function (event) {
         const target = event.target;
-        if (target.classList.contains("page-link") && 
-            !target.parentNode.classList.contains("disabled") && 
+        if (target.classList.contains("page-link") &&
+            !target.parentNode.classList.contains("disabled") &&
             !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
             event.preventDefault();
             const selectedPage = parseInt(target.getAttribute("data-page"), 10);
             const selectedPageSize = document.getElementById("page-size").value;
 
             if(lastPage){
-              return 
+              return
             }
-            
+
             // Fetch data for selected page
             console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
             if(active_url=="server_filtered_data"){
@@ -1178,7 +1205,7 @@
             }else{
                 currentPage = selectedPage;
                 fetchDataFromServer({page: selectedPage,size: selectedPageSize});
-            }       
+            }
         }
      });
 
@@ -1197,7 +1224,74 @@
         }
       });
         ///////////////////
+
+        $("#users-table").on("contextmenu", function (e) {
+    e.preventDefault(); // Prevent default right-click menu on table
+  });
+
+  // Handle right-click on row
+  table.on("rowContext", function (e, row) {
+    e.preventDefault();
+    window.currentRow = row; // Save row for later use in performAction
+    const contextMenu = document.getElementById("contextMenu");
+    contextMenu.style.left = `${e.pageX}px`;
+    contextMenu.style.top = `${e.pageY}px`;
+    contextMenu.style.display = "block";
+  });
+
+  // Hide custom context menu when clicking outside
+  document.addEventListener("click", function (e) {
+    const contextMenu = document.getElementById("contextMenu");
+    if (!e.target.closest("#contextMenu") && !e.target.closest("#users-table")) {
+      contextMenu.style.display = "none"; // Hide context menu
+    }
+  });
+
+  // Perform actions on context menu
+  window.performAction = function (action) {
+    if (!window.currentRow) return;
+
+    const rowData = window.currentRow.getData();
+    switch (action) {
+      case "Edit":
+        alert(`سعر التكلفة: ${rowData.costprice}`);
+        break;
+      case "Delete":
+        alert(`اقل سعر للبيع: ${rowData.lessprice}`);
+        break;
+      case "View Details":
+        openWindow(`/images/?product_id=${rowData.fileid}`);
+        break;
+      default:
+        console.log("Action not recognized");
+    }
+    document.getElementById("contextMenu").style.display = "none"; // Hide context menu after action
+    };
+    let windows = {}; // Object to keep track of opened windows
+
+      // Function to open a new window or focus an existing one
+      function openWindow(url, name, width = 1100, height = 700) {
+        // Check if the window is already open
+        if (windows[name] && !windows[name].closed) {
+          windows[name].focus(); // Bring the existing window to the front
+        } else {
+          // Get the screen width and height
+          const screenWidth = window.innerWidth;
+          const screenHeight = window.innerHeight;
+
+          // Calculate the position to center the window
+          const left = (screenWidth - width) / 2;
+          const top = (screenHeight - height) / 2;
+
+          // Open the window with the specified or default dimensions, centered
+          windows[name] = window.open(
+            url,
+            name,
+            `width=${width},height=${height},left=${left},top=${top}`
+          );
+        }
+      }
     </script>
-   
+
   </body>
 </html>

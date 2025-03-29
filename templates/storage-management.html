@@ -954,7 +954,7 @@
         });
         refreshTable();
        function refreshTable(){
-         fetch("api/get-all-storage")
+         fetch("api/get-today-storage")
           .then((response) => response.json())
           .then((data) => {
             console.log("Fetched Data:", data);
