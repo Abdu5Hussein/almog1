@@ -4625,10 +4625,10 @@ def assign_order_manual(request):
             employee_queue = get_object_or_404(models.EmployeeQueue, employee_id=employee_id, is_available=True, is_assigned=False)
             employee = employee_queue.employee
 
-            # Get the order
-            order = get_object_or_404(models.SellinvoiceTable, invoice_no=order_id, is_assigned=True)
+            # Get the selected order
+            order = get_object_or_404(models.SellinvoiceTable, invoice_no=order_id, is_assigned=False)
 
-            # Assign the order
+            # Assign the order to the employee
             employee.is_available = False
             employee.has_active_order = True
             employee.save()
@@ -4637,19 +4637,15 @@ def assign_order_manual(request):
             order.is_assigned = True
             order.save()
 
-            # Add to order queue
+            # Add to the order queue
             models.OrderQueue.objects.create(
-                employee=employee, order=order, is_accepted=False, is_assigned=True, assigned_at=now()
+                employee=employee, order=order, is_accepted=False, is_assigned=True, assigned_at=datetime.now()
             )
 
-            # Schedule confirmation check
-            from django_q.tasks import async_task
-            async_task('app.tasks.check_order_confirmation', order_id=order_id)
-
-            # Update employee queue
+            # Update the employee queue
             employee_queue.is_assigned = True
             employee_queue.is_available = False
-            employee_queue.assigned_time = now()
+            employee_queue.assigned_time = datetime.now()
             employee_queue.save()
 
         return JsonResponse({'message': 'Order assigned successfully'}, status=200)

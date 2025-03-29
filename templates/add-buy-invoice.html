@@ -984,12 +984,18 @@
           rate: rate,
         };
 
+        //const jwtToken_access = localStorage.getItem("session_data@access_token");
+        //console.log("jwt access token: " + jwtToken_access);
+        /*if (!jwtToken_access) {
+          console.error("JWT Token is missing!");
+        }*/
         // Make a POST request to the server
         fetch("/process-edit-invoice", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
+            //"Authorization": "Bearer " + jwtToken_access,
           },
           body: JSON.stringify(data),
         })
@@ -1282,7 +1288,7 @@
                 console.error("Error during fetch:", error);
                 alert("An error occurred: " + error.message);
               });
-          
+
         });
       // Helper function to get the value of an input field by ID
       function getInputValue(id) {
@@ -1341,8 +1347,8 @@
             document.getElementById("expenses").value =  parseFloat(netcost).toFixed(2) + " دل";
             document.getElementById("org-price").value =
               calculateColumnSum("org_total_price").toFixed(2);
-             let netTotal = totalPrice + netcost; 
-            document.getElementById("net-total").value = parseFloat(netTotal).toFixed(2) + " دل "; 
+             let netTotal = totalPrice + netcost;
+            document.getElementById("net-total").value = parseFloat(netTotal).toFixed(2) + " دل ";
             const paidValue = parseFloat(document.getElementById("paid").value);
             let remainingValue = isNaN(paidValue)? netTotal: netTotal - paidValue;
             document.getElementById("remaining").value = parseFloat(remainingValue).toFixed(2) + " دل ";

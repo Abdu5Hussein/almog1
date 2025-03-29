@@ -121,7 +121,7 @@
                   localStorage.setItem("session_data@role", JSON.stringify(result.session_data.role));
                   localStorage.setItem("session_data@user_id", JSON.stringify(result.session_data.user_id.replace(/"/g, '')));
 
-                  sessionStorage.setItem("session_data@access_token", JSON.stringify(result.access_token.replace(/"/g, '')));
+                  localStorage.setItem("session_data@access_token", JSON.stringify(result.access_token.replace(/"/g, '')));
                   localStorage.setItem("session_data@refresh_token", JSON.stringify(result.refresh_token.replace(/"/g, '')));
               }
               // Redirect to dashboard on success
