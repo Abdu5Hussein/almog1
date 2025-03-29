@@ -4658,24 +4658,16 @@ def assign_order_manual(request):
 
 def get_available_employees(request):
     employees = models.EmployeeQueue.objects.filter(is_available=True, is_assigned=False).select_related('employee')
-    data = [{"id": emp.employee.id, "name": emp.employee.name} for emp in employees]
+    data = [{"id": emp.employee.employee_id, "name": emp.employee.name} for emp in employees]
     return JsonResponse(data, safe=False)
+
+
+
 
 def get_unassigned_orders(request):
     orders = models.SellinvoiceTable.objects.filter(
-        invoice_status='سلمت',
-        delivery_status='جاري التوصيل'
-    )
-
-    if not orders.exists():
-        return JsonResponse({"error": "No matching orders found."}, status=404)
-
-    data = [{"invoice_no": order.invoice_no} for order in orders]
-    return JsonResponse(data, safe=False)
-
-
-def get_unassigned_orders(request):
-    orders = models.SellinvoiceTable.objects.filter(is_assigned=False)
+    Q(is_assigned=False) & ~Q(invoice_status="سلمت")
+)
     data = [{"invoice_no": order.invoice_no} for order in orders]
     return JsonResponse(data, safe=False)
 
@@ -4769,3 +4761,40 @@ def return_permission_profile(request, id):
         "client_name": return_permission.client.name,
     }
     return render(request, 'return_permission_profile.html', context)
+
+
+def users_management(request):
+    context = {}
+    return render(request,"users-management.html",context)
+
+def maintype_logo_view(request, id):
+    # Retrieve the specific Maintypetable entry
+    maintype = get_object_or_404(models.Maintypetable, fileid=id)
+
+    # Ensure the logo exists before trying to access .url
+    image_url = maintype.logo_obj.url if maintype.logo_obj else None
+
+    context = {
+        "logo": image_url,
+        "id":id,
+        "maintype": maintype.typename,
+    }
+    return render(request, "maintype_logo_upload.html", context)
+
+def company_logo_view(request, id):
+    # Retrieve the specific Maintypetable entry
+    company = get_object_or_404(models.Companytable, fileid=id)
+
+    # Ensure the logo exists before trying to access .url
+    image_url = company.logo_obj.url if company.logo_obj else None
+
+    context = {
+        "logo": image_url,
+        "id":id,
+        "company": company.companyname,
+    }
+    return render(request, "company_logo_upload.html", context)
+
+def assign_orders_page(request, invoice_id):
+    # You can pass any additional context here if needed, e.g., the invoice_id
+    return render(request, 'assign_orders.html', {'invoice_id': invoice_id})

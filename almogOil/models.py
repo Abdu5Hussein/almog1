@@ -216,7 +216,7 @@ class Clientstable(models.Model):
 class Companytable(models.Model):
     fileid = models.BigAutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
     companyname = models.CharField(db_column='CompanyName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-
+    logo_obj = models.ImageField(upload_to='logos/', blank=True, null=True)
     class Meta:
         managed = True
         db_table = 'CompanyTable'
@@ -627,6 +627,7 @@ class DjangoSession(models.Model):
 class Maintypetable(models.Model):
     fileid = models.BigAutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
     typename = models.CharField(db_column='TypeName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    logo_obj = models.ImageField(upload_to='logos/', blank=True, null=True)
 
     class Meta:
         managed = True

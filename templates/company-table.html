@@ -32,6 +32,7 @@
           <tr>
             <th>#</th>
             <th>اسم الشركة</th>
+            <th>لوقو</th>
           </tr>
         </thead>
         <tbody>
@@ -39,6 +40,14 @@
           <tr>
             <td>{{ x.fileid }}</td>
             <td>{{ x.companyname }}</td>
+            <td>
+              <button
+                type="button"
+                id="logo-{{ x.fileid }}"
+                onclick="openWindow('companies/{{ x.fileid }}/logo')"
+                class="btn btn-success"
+              >اضافة لوقو</button>
+            </td>
           </tr>
           {% empty %}
           <tr>

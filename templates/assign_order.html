@@ -40,46 +40,56 @@
 
     // Fetch Employees & Orders
     async function fetchData() {
-        try {
-            const employeesRes = await axios.get(`${API_BASE}/api/available-employees/`);
-            const ordersRes = await axios.get(`${API_BASE}/api/orders/`);
+    try {
+        const employeesRes = await axios.get(`${API_BASE}/api/available-employees/`);
+        const ordersRes = await axios.get(`${API_BASE}/api/orders/`);
 
-            const employees = employeesRes.data;
-            const orders = ordersRes.data;
+        console.log("Employees API Response:", employeesRes.data);  // Debugging
+        console.log("Orders API Response:", ordersRes.data);  // Debugging
 
-            let empOptions = employees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('');
-            let orderOptions = orders.map(order => `<option value="${order.invoice_no}">Order #${order.invoice_no}</option>`).join('');
+        const employees = employeesRes.data;
+        const orders = ordersRes.data;
 
-            document.getElementById('employeeSelect').innerHTML = empOptions;
-            document.getElementById('orderSelect').innerHTML = orderOptions;
-        } catch (error) {
-            console.error("Error loading data:", error);
-        }
+        // Use "employee_id" instead of "id"
+        let empOptions = employees.map(emp => `<option value="${emp.employee_id}">${emp.name}</option>`).join('');
+        let orderOptions = orders.map(order => `<option value="${order.invoice_no}">Order #${order.invoice_no}</option>`).join('');
+
+        document.getElementById('employeeSelect').innerHTML = `<option value="">Select an Employee</option>` + empOptions;
+        document.getElementById('orderSelect').innerHTML = `<option value="">Select an Order</option>` + orderOptions;
+    } catch (error) {
+        console.error("Error loading data:", error);
     }
+}
+
 
     // Assign Order
+    // Assign Order
     document.getElementById('assignBtn').addEventListener('click', async () => {
-        const employeeId = document.getElementById('employeeSelect').value;
-        const orderId = document.getElementById('orderSelect').value;
-        const messageBox = document.getElementById('messageBox');
+    const employeeId = document.getElementById('employeeSelect').value;
+    const orderId = document.getElementById('orderSelect').value;
+    const messageBox = document.getElementById('messageBox');
 
-        if (!employeeId || !orderId) {
-            messageBox.innerHTML = '<div class="alert alert-warning">Please select both an employee and an order.</div>';
-            return;
-        }
+    if (!employeeId || !orderId) {
+        messageBox.innerHTML = '<div class="alert alert-warning">Please select both an employee and an order.</div>';
+        return;
+    }
 
-        try {
-            const response = await axios.post(`${API_BASE}/assign-order-manual/`, {
-                employee_id: employeeId,
-                order_id: orderId
-            });
+    const requestBody = {
+        employee_id: parseInt(employeeId), // Ensure it's sent as an integer
+        order_id: orderId
+    };
 
-            messageBox.innerHTML = '<div class="alert alert-success">Order assigned successfully!</div>';
-            fetchData();  // Refresh the dropdowns
-        } catch (error) {
-            messageBox.innerHTML = `<div class="alert alert-danger">Error: ${error.response?.data?.error || "Something went wrong"}</div>`;
-        }
-    });
+    console.log("Request Body:", requestBody);  // Debugging
+
+    try {
+        const response = await axios.post(`${API_BASE}/assign-order-manual/`, requestBody);
+        messageBox.innerHTML = '<div class="alert alert-success">Order assigned successfully!</div>';
+        fetchData();  // Refresh the dropdowns
+    } catch (error) {
+        messageBox.innerHTML = `<div class="alert alert-danger">Error: ${error.response?.data?.error || "Something went wrong"}</div>`;
+    }
+});
+
 
     // Load employees & orders on page load
     fetchData();

@@ -59,6 +59,7 @@ from .models import EmployeesTable, AllClientsTable
 import firebase_admin
 from firebase_admin import credentials
 from django.db.models import Q
+from rest_framework.parsers import MultiPartParser, FormParser
 
 """ Log Out,Login And Authentication Api's"""
 
@@ -1914,3 +1915,41 @@ def store_fcm_token(request):
         else:
             return Response({"error": "Invalid role. Role should be 'client' or 'employee'."}, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+def upload_maintype_logo(request, id):
+    if 'logo' not in request.FILES:
+        return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+
+    image = request.FILES['logo']
+
+    try:
+        maintype = models.Maintypetable.objects.get(fileid=id)
+        maintype.logo_obj = image  # Assign the file object directly
+        maintype.save()
+        return Response({"message": "Logo uploaded successfully!"}, status=status.HTTP_200_OK)
+
+    except models.Maintypetable.DoesNotExist:
+        return Response({"error": "Maintypetable entry not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def upload_company_logo(request, id):
+    if 'logo' not in request.FILES:
+        return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+
+    image = request.FILES['logo']
+
+    try:
+        company = models.Companytable.objects.get(fileid=id)
+        company.logo_obj = image  # Assign the file object directly
+        company.save()
+        return Response({"message": "Logo uploaded successfully!"}, status=status.HTTP_200_OK)
+
+    except models.Companytable.DoesNotExist:
+        return Response({"error": "Companytable entry not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

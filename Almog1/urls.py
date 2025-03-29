@@ -247,6 +247,11 @@ urlpatterns = [
     path('api/create_source',api_views.create_source_record,name="create_source_record"),
     path('return-permissions/<int:id>/profile/',views.return_permission_profile,name="return_permission-profile"),
     path('api/products/<int:id>/get-images',mainitem_api_views.get_product_images,name="product-get-images"),
+    path('users/management', views.users_management,name="users_management"),
+    path('maintypes/<int:id>/logo',views.maintype_logo_view,name="maintype_logo_view"),
+    path('assign-orders-page/<str:invoice_id>/', views.assign_orders_page, name='assign_orders_page'),
+
+    path('maintypes/<int:id>/upload/logo',api_views.upload_maintype_logo,name="upload_maintype_logo_api"),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
