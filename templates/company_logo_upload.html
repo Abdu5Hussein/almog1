@@ -26,7 +26,7 @@
             </div>
              <div class="mb-3">
                 <label for="product-name" class="form-label">اسم الشركة</label>
-                <input type="text" value="{{ maintype }}" class="form-control" id="product-name" name="product-name" readonly />
+                <input type="text" value="{{ company }}" class="form-control" id="product-name" name="product-name" readonly />
             </div>
             <div class="mb-3">
                 <label for="logo-image" class="form-label">اختر لوقو</label>
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData();
         formData.append('logo', imageInput.files[0]);
 
-        fetch(`/maintypes/${productId}/upload/logo`, {
+        fetch(`/companies/${productId}/upload/logo`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}'

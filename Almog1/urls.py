@@ -253,6 +253,9 @@ urlpatterns = [
 
     path('maintypes/<int:id>/upload/logo',api_views.upload_maintype_logo,name="upload_maintype_logo_api"),
 
+    path('companies/<int:id>/logo',views.company_logo_view,name="company_logo_view"),
+    path('companies/<int:id>/upload/logo',api_views.upload_company_logo,name="upload_company_logo_api"),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode
