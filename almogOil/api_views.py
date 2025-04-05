@@ -113,19 +113,19 @@ def sign_in(request):
                     except models.AllClientsTable.DoesNotExist:
                         return Response({"error": "لم يتم التعرف على العميل", "message": "لم يتم التعرف على العميل"}, status=status.HTTP_404_NOT_FOUND)
 
-                elif role == "employee":
-                    try:
-                        user = models.EmployeesTable.objects.get(username=username)
-                        user_id = f"e-{user.employee_id}"
-                    except models.EmployeesTable.DoesNotExist:
-                        return Response({"error": "لم يتم التعرف على الموظف", "message": "لم يتم التعرف على الموظف"}, status=status.HTTP_404_NOT_FOUND)
+                # elif role == "employee":
+                #     try:
+                #         user = models.EmployeesTable.objects.get(username=username)
+                #         user_id = f"e-{user.employee_id}"
+                #     except models.EmployeesTable.DoesNotExist:
+                #         return Response({"error": "لم يتم التعرف على الموظف", "message": "لم يتم التعرف على الموظف"}, status=status.HTTP_404_NOT_FOUND)
 
-                elif role == "source":
-                    try:
-                        user = models.AllSourcesTable.objects.get(username=username)
-                        user_id = f"s-{user.clientid}"
-                    except models.AllSourcesTable.DoesNotExist:
-                        return Response({"error": "لم يتم التعرف على المصدر", "message": "لم يتم التعرف على المصدر"}, status=status.HTTP_404_NOT_FOUND)
+                # elif role == "source":
+                #     try:
+                #         user = models.AllSourcesTable.objects.get(username=username)
+                #         user_id = f"s-{user.clientid}"
+                #     except models.AllSourcesTable.DoesNotExist:
+                #         return Response({"error": "لم يتم التعرف على المصدر", "message": "لم يتم التعرف على المصدر"}, status=status.HTTP_404_NOT_FOUND)
 
                 else:
                     return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
@@ -819,19 +819,36 @@ def complete_delivery(request, invoice_id):
     with transaction.atomic():
         try:
             order = SellinvoiceTable.objects.get(autoid=invoice_id)
+            order_queue = models.OrderQueue.objects.filter(order=order, is_accepted=True, is_completed=False).first()
+
+            if not order_queue:
+                return Response({"error": "Order has not been accepted yet."}, status=400)
+
+            # Mark order as completed
+            order_queue.is_completed = True
+            order_queue.save()
+
             order.delivery_status = "تم التوصيل"  # Mark as delivered
             order.save()
 
+            # Archive order
+            models.OrderArchive.objects.create(
+                order=order,
+                employee=order_queue.employee,
+                delivery_status="تم التوصيل",
+                is_completed=True,
+                completion_date=timezone.now()
+            )
+
             # Make the employee available again
-            employee = EmployeesTable.objects.filter(name=order.deliverer_name).first()
-            if employee:
-                employee.is_available = True
-                employee.save()
+            employee = order_queue.employee
+            employee.is_available = True
+            employee.save()
 
             # Assign new orders to available employees
             assign_orders(request)
 
-            return Response({"message": f"Order {invoice_id} marked as delivered and new orders assigned."}, status=200)
+            return Response({"message": f"Order {invoice_id} marked as delivered, archived, and new orders assigned."}, status=200)
 
         except SellinvoiceTable.DoesNotExist:
             return Response({"error": "Order not found."}, status=404)
@@ -978,44 +995,47 @@ def get_employee_orders(request, employee_id):
 
 @api_view(["POST"])
 def complete_order(request, autoid):
-    try:
-        # Get the OrderQueue using the autoid field of the related order
-        order_queue = models.OrderQueue.objects.get(order__autoid=autoid)
-        employee = order_queue.employee
+    with transaction.atomic():
+        try:
+            # Get the OrderQueue using the autoid field of the related order
+            order_queue = models.OrderQueue.objects.filter(order__autoid=autoid, is_accepted=True, is_completed=False).first()
 
-        # Update order status
-        order_queue.order.delivery_status = 'تم التسليم'
-        order_queue.is_completed = True
+            if not order_queue:
+                return Response({"error": "Order has not been accepted or is already completed."}, status=400)
 
-        # Save the updated order and order queue
-        order_queue.order.save()
-        order_queue.save()
+            employee = order_queue.employee
 
-        # Update employee status
-        employee.is_available = False  # Mark as available for new orders
-        employee.has_active_order = False
+            # Update order status
+            order_queue.order.delivery_status = 'تم التسليم'
+            order_queue.is_completed = True
+            order_queue.order.save()
+            order_queue.save()
 
-        # Remove the employee from the EmployeeQueue
-        models.EmployeeQueue.objects.filter(employee=employee).delete()
+            # Update employee status
+            employee.is_available = False  # Mark as available for new orders
+            employee.has_active_order = False
+            employee.save()
 
-        # Save the employee model
-        employee.save()
+            # Remove the employee from the EmployeeQueue
+            models.EmployeeQueue.objects.filter(employee=employee).delete()
 
-        # Archive the order in the OrderArchive model
-        models.OrderArchive.objects.create(
-            order=order_queue.order,  # Store the original order
-            employee=employee,  # Store the employee who completed the order
-            delivery_status=order_queue.order.delivery_status,  # 'تم التسليم'
-            is_completed=True,  # The order is completed
-        )
+            # Archive the order in the OrderArchive model
+            models.OrderArchive.objects.create(
+                order=order_queue.order,  # Store the original order
+                employee=employee,  # Store the employee who completed the order
+                delivery_status=order_queue.order.delivery_status,  # 'تم التوصيل'
+                is_completed=True,  # The order is completed
+                completion_date=timezone.now()
+            )
 
-        return Response({"message": "Order completed successfully and archived."})
+            return Response({"message": "Order completed successfully and archived."}, status=200)
 
-    except models.OrderQueue.DoesNotExist:
-        return Response({"error": "Order not found."}, status=404)
+        except models.OrderQueue.DoesNotExist:
+            return Response({"error": "Order not found."}, status=404)
 
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 
 
 
@@ -2050,3 +2070,114 @@ def filter_all_storage(request):
         return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def employee_detail_get(request, employee_id):
+    """
+    Retrieve an employee's basic information by employee_id.
+    URL pattern: /employee-detail/<employee_id>/
+    """
+    try:
+        employee = EmployeesTable.objects.get(employee_id=employee_id)
+    except EmployeesTable.DoesNotExist:
+        return Response({'error': 'Employee not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = serializers.BasicEmployeeSerializer(employee)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def mobile_sign_in(request):
+    try:
+        if request.method == "POST":
+            try:
+                # Parse JSON request body
+                body = json.loads(request.body)
+
+                # Extract fields
+                username = body.get("username")
+                password = body.get("password")
+                role = body.get("role")
+
+                # Check required fields
+                if not username or not password or not role:
+                    return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Role-based authentication
+                user = None  # Default value
+                user_id = None
+
+                if role == "client":
+                    try:
+                        user = models.AllClientsTable.objects.get(username=username)
+                        user_id = f"c-{user.clientid}"
+                    except models.AllClientsTable.DoesNotExist:
+                        return Response({"error": "لم يتم التعرف على العميل", "message": "لم يتم التعرف على العميل"}, status=status.HTTP_404_NOT_FOUND)
+
+                elif role == "employee":
+                    try:
+                        user = models.EmployeesTable.objects.get(username=username)
+                        user_id = f"e-{user.employee_id}"
+                    except models.EmployeesTable.DoesNotExist:
+                        return Response({"error": "لم يتم التعرف على الموظف", "message": "لم يتم التعرف على الموظف"}, status=status.HTTP_404_NOT_FOUND)
+
+                # elif role == "source":
+                #     try:
+                #         user = models.AllSourcesTable.objects.get(username=username)
+                #         user_id = f"s-{user.clientid}"
+                #     except models.AllSourcesTable.DoesNotExist:
+                #         return Response({"error": "لم يتم التعرف على المصدر", "message": "لم يتم التعرف على المصدر"}, status=status.HTTP_404_NOT_FOUND)
+
+                else:
+                    return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Verify user in Django's auth_user table
+                try:
+                    auth_user = User.objects.get(username=username)
+                    if not check_password(password, auth_user.password):
+                        return Response({"error": "Incorrect password", "message": "كلمة السر غير صحيحة"}, status=status.HTTP_400_BAD_REQUEST)
+                except User.DoesNotExist:
+                    return Response({"error": "User not found in authentication system", "message": "المستخدم غير مسجل"}, status=status.HTTP_404_NOT_FOUND)
+
+                # Generate JWT tokens
+                refresh = RefreshToken.for_user(auth_user)
+                access_token = str(refresh.access_token)
+
+                # Log the user in
+                login(request, auth_user)  # ✅ Fix: Using `auth_user` instead of `authed_user`
+
+                # Store session variables
+                request.session["username"] = user.username
+                request.session["name"] = user.name
+                request.session["role"] = role  # Store role for later use
+                request.session["user_id"] = user_id
+                request.session["is_authenticated"] = True  # Useful for templates
+                request.session.set_expiry(3600)  # ✅ Optional: Set session expiry (1 hour)
+
+                # Successful response with token
+                return Response({
+                    "message": "Signed in successfully",
+                    "role": role,
+                    "access_token": access_token,
+                    "refresh_token": str(refresh),
+                    "session_data": {
+                        "username": request.session.get("username"),
+                        "name": request.session.get("name"),
+                        "role": request.session.get("role"),
+                        "user_id": request.session.get("user_id"),
+                        "is_authenticated": request.session.get("is_authenticated")
+                    }
+                }, status=status.HTTP_200_OK)
+
+
+            except json.JSONDecodeError:
+                return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"error": "Only POST method is allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    except FieldError:
+        return Response({"error": "Field does not exist in the model"}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

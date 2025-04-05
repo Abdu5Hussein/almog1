@@ -234,3 +234,24 @@ class LostAndDamagedTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.LostAndDamagedTable
         fields = '__all__'
+
+
+
+class BasicEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeesTable
+        # List only the basic, non-sensitive fields.
+        fields = [
+            'employee_id', 
+            'name', 
+            'salary', 
+            'start_date', 
+            'end_date', 
+            'active', 
+            'category', 
+            'notes', 
+            'phone', 
+            'address',
+            'is_available',
+            'has_active_order'
+        ]

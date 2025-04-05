@@ -48,6 +48,7 @@ urlpatterns = [
 
     path('', views.LogInView, name='login'),
     path('process-login', api_views.sign_in, name='login-process'),
+    path('mobile/login', api_views.mobile_sign_in, name='mobile-login'),
     path('api/user/logout', api_views.logout_view, name='logout'),
 
     path('home', views.HomeView, name='home'),
@@ -253,7 +254,7 @@ urlpatterns = [
     path('assign-orders-page/<str:invoice_id>/', views.assign_orders_page, name='assign_orders_page'),
     path('assign-order-employee/<str:invoice_id>/', views.assign_order_to_employee, name='assign_order_to_employee'),
     path('maintypes/<int:id>/upload/logo',api_views.upload_maintype_logo,name="upload_maintype_logo_api"),
-
+    path('employee-detail/<int:employee_id>/', api_views.employee_detail_get, name='employee-detail-get'),
     path('companies/<int:id>/logo',views.company_logo_view,name="company_logo_view"),
     path('companies/<int:id>/upload/logo',api_views.upload_company_logo,name="upload_company_logo_api"),
 
