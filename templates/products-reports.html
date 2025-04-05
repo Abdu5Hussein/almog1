@@ -63,7 +63,7 @@
       }
 
       .page-link-active {
-          background-color: #0d6efd;         
+          background-color: #0d6efd;
           color:rgb(255, 255, 255);
       }
       .button-row .btn {
@@ -439,7 +439,7 @@
         Show/Hide Columns
       </button>
       <nav aria-label="Page navigation example">
-        <ul class="pagination h-1"> 
+        <ul class="pagination h-1">
         <p id="page-total" class="page-link item-disabled">total of x pages</p>
           <li class="page-first"><a class="page-link" href="#">First</a></li>
           <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
@@ -454,7 +454,7 @@
         </ul>
       </nav>
       </div>
-      
+
       <!-- Dropdown menu for column visibility -->
       <div id="column-menu" class="dropdown" style="display: none">
         {% for column in columns %}
@@ -470,7 +470,7 @@
 
         {% endfor %}
       </div>
-      
+
       <!-- Table Section -->
       <div class="custom-table mb-1">
         <div
@@ -682,6 +682,8 @@
 
     <script>
       $(document).ready(function () {
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         let active_url = null;
         document
           .getElementById("clear-btn")
@@ -940,13 +942,13 @@
           //console.log("page no: ",pageNumber);
             //console.log("page size: ",pageSize); // Fetch data for the new page
         });*/
-        function fetchDataFromServer({page=1,size=100}){  
+        function fetchDataFromServer({page=1,size=100}){
               //if (isLoading) return; // Prevent fetch if already loading
-              //isLoading = true; // Set loading flag before initiating fetch  
+              //isLoading = true; // Set loading flag before initiating fetch
 
               // Use the URL in your fetch request
               console.time("fetchData"); // Start timer
-              
+
               fetch(`api/get-data/?page=${page}&size=${size}`)
                 .then((response) => response.json())
                 .then((data) => {
@@ -972,13 +974,13 @@
                     console.log("data added to the table");
                     //console.log("getDataCount: ", table.getDataCount());
                   }
-                  console.timeEnd("tableTime"); 
+                  console.timeEnd("tableTime");
 
                   // Update lastPage flag
                   lastPage = data.page_no == data.last_page ? true : false;
                   console.time("PaginationTime");
                   updatePagination(data.last_page, data.page_no);
-                  console.timeEnd("PaginationTime"); 
+                  console.timeEnd("PaginationTime");
 
                   // Update the respective input fields with calculated sums
                   updateIntegerInput("#itemvalue", data.total_itemvalue);
@@ -1072,16 +1074,16 @@
           console.log("Data filtered in the table");
 
           // Fetch the filtered data
-         
+
         });
 
         // You can also add event listeners to handle updates if rows are updated or added
         table.on("rowAdded", function () {
-          
+
         });
 
         table.on("rowDeleted", function () {
-          
+
         });*/
 
         function fetchAllData() {
@@ -1377,7 +1379,7 @@
               });
             });
         }
-      
+
       function updatePagination(lastPage, currentPage) {
          const pagination = document.querySelector(".pagination");
           const existingPageLinks = pagination.querySelectorAll(".page-item:not(:first-child):not(:last-child):not(#page-size)");
@@ -1446,17 +1448,17 @@
       // Event listener for page links
       document.querySelector(".pagination").addEventListener("click", function (event) {
     const target = event.target;
-    if (target.classList.contains("page-link") && 
-        !target.parentNode.classList.contains("disabled") && 
+    if (target.classList.contains("page-link") &&
+        !target.parentNode.classList.contains("disabled") &&
         !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
         event.preventDefault();
         const selectedPage = parseInt(target.getAttribute("data-page"), 10);
         const selectedPageSize = document.getElementById("page-size").value;
 
         if(lastPage){
-          return 
+          return
         }
-        
+
         // Fetch data for selected page
         console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
         if(active_url=="server_filtered_data"){
@@ -1465,7 +1467,7 @@
         }else{
             currentPage = selectedPage;
             fetchDataFromServer({page: selectedPage,size: selectedPageSize});
-        }       
+        }
     }
 });
 
@@ -1493,7 +1495,7 @@
 
       function hideLoader() {
         const loader = document.getElementById("loader-element");
-              
+
         // Set a delay (e.g., 2000ms = 2 seconds)
         setTimeout(function() {
           loader.classList.remove("d-flex"); // Remove d-flex

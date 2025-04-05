@@ -699,6 +699,8 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
+      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
       const cost_table = new Tabulator("#cost-table", {
         index: "fileid", // Use "fileid" as the unique row identifier
         height: "auto", // Adjust height or set a fixed height
@@ -753,7 +755,7 @@
       function deleteRecord(autoid) {
       // Confirm before sending the delete request
       const confirmDelete = confirm("هل أنت متأكد أنك تريد حذف السجل رقم: " + autoid);
-      
+
       if (confirmDelete) {
           // Send a DELETE request to the Django backend
           fetch(`/delete-buyinvoice-cost/${autoid}/`, {
@@ -887,7 +889,7 @@
       function refresh_teble_calc() {
         document.getElementById("cost-total").value = formatNumber(calculateColumnSum("cost_price"));
 
-        document.getElementById("cost-dinar").value = formatNumber(calculateColumnSum("dinar_cost_price")) + " دل "; 
+        document.getElementById("cost-dinar").value = formatNumber(calculateColumnSum("dinar_cost_price")) + " دل ";
       }
       const items_table = new Tabulator("#item-cost-table", {
         index: "fileid", // Use "fileid" as the unique row identifier
@@ -929,7 +931,7 @@
         .addEventListener("change", function () {
           const cost_price = document.getElementById("cost-price").value;
           const rate = document.getElementById("exchange_rate").value;
-          document.getElementById("cost-price-dinar").value = 
+          document.getElementById("cost-price-dinar").value =
             formatNumber((parseFloat(cost_price) * parseFloat(rate))) + " دل ";
         });
 

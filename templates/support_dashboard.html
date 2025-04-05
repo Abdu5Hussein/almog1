@@ -190,6 +190,8 @@
 
 <script>
     $(document).ready(function() {
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         // Function to load feedbacks
         function loadFeedbacks() {
             $.get("/fetch_all_feedback/", function(data) {
@@ -211,8 +213,8 @@
         <small>${feedbacks.length} ملاحظات</small> <!-- Arabic text for 'Feedbacks' -->
     </div>
     <div class="header-buttons">
-        ${openFeedbackCount > 0 ? 
-            `<span class="badge badge-open">ملاحظات مفتوحة (${openFeedbackCount})</span>` 
+        ${openFeedbackCount > 0 ?
+            `<span class="badge badge-open">ملاحظات مفتوحة (${openFeedbackCount})</span>`
             : ''}
         <!-- Only the icon for toggling feedback -->
         <button class="toggle-feedback-btn" data-toggle="collapse" data-target="#feedback-client-${clientId}" aria-expanded="false" aria-controls="feedback-client-${clientId}">
@@ -257,7 +259,7 @@
 
                         feedbackHtml += `
                                     </ul>
-                                    ${!isResolved ? 
+                                    ${!isResolved ?
                                         `<form class="response-form mt-3" data-feedback-id="${feedback.id}">
                                             <div class="input-group">
                                                 <input type="text" name="message_text" class="form-control" placeholder="أدخل ردك..." required> <!-- Arabic placeholder -->
@@ -340,7 +342,7 @@
                     form.find("input[name='message_text']").val(""); // Clear input
                 },
                 error: function(xhr) {
-                    alert("خطأ: " + xhr.responseJSON.error); 
+                    alert("خطأ: " + xhr.responseJSON.error);
                 }
             });
         });
@@ -353,19 +355,19 @@
         type: "POST",
         success: function(response) {
             alert(response.message);
-            
+
             // Update the badge status in the UI
             let feedbackThread = $(`#messages-${feedbackId}`).closest('.feedback-item');
             feedbackThread.find("h5 span.badge").removeClass("badge-open").addClass("badge-closed").text("مغلق");
 
             // Disable the response form
             feedbackThread.find(".response-form").remove();
-            
+
             // Remove the "Close Feedback" button
             feedbackThread.find("button.btn-warning").remove();
         },
         error: function(xhr) {
-            alert("خطأ: " + xhr.responseJSON.error); 
+            alert("خطأ: " + xhr.responseJSON.error);
         }  // This was missing
     });
 }
@@ -381,7 +383,7 @@
 
     // Delete Feedback
     function deleteFeedback(feedbackId) {
-        if (confirm("هل أنت متأكد أنك تريد حذف هذه الملاحظة؟ هذه العملية لا يمكن التراجع عنها.")) { 
+        if (confirm("هل أنت متأكد أنك تريد حذف هذه الملاحظة؟ هذه العملية لا يمكن التراجع عنها.")) {
             $.ajax({
                 url: `/delete_feedback/${feedbackId}/`,
                 type: "POST",
@@ -391,7 +393,7 @@
                     $(`#feedback-details-${feedbackId}`).closest('.feedback-item').remove();
                 },
                 error: function(xhr) {
-                    alert("خطأ: " + xhr.responseJSON.error); 
+                    alert("خطأ: " + xhr.responseJSON.error);
                 }
             });
         }

@@ -583,7 +583,7 @@
                   class="form-control text-center"
                   style="width: calc(100% - 150px)"
                 >
-                 
+
                   <option selected value="{{ invoice.currency|default:'empty' }}">
                     {{ invoice.currency }}
                   </option>
@@ -823,7 +823,7 @@
             type="button"
             id="save-btn"
             class="btn btn-primary m-1"
-            
+
           >
             حفظ</button
           ><button type="button" class="btn btn-primary m-1" id="excell-btn">
@@ -832,14 +832,14 @@
             type="button"
             class="btn btn-primary m-1"
             id="source-btn"
-            
+
           >
             الموردين</button
           ><button
             type="button"
             class="btn btn-primary m-1"
             id="cost-btn"
-            
+
           >
             ح. التكلفة</button
           ><button
@@ -847,7 +847,7 @@
             class="btn btn-primary m-1"
             onclick="openWindow('payment-installments')"
             id="pay-btn"
-            
+
           >
             قيود الدفع
           </button>
@@ -879,6 +879,7 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
+    const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
     get_invoice_items();
       function updateExchangeRate() {
         const currencyDropdown = document.getElementById("currency");
@@ -898,7 +899,7 @@
             ].innerText.trim();
         }
       }
-      
+
       // Initialize Tabulator table
       const table = new Tabulator("#users-table", {
         index: "fileid", // Use "fileid" as the unique row identifier
@@ -1090,7 +1091,7 @@
 
         return parseFloat(sum);
       }
-      
+
 
         document.getElementById("addProductsButton").addEventListener("click", function(){
           tempcheck = document.getElementById("temp-flag");
@@ -1148,7 +1149,7 @@
                 console.error("Error during fetch:", error);
                 alert("An error occurred: " + error.message);
               });
-          
+
         });
       // Helper function to get the value of an input field by ID
       function getInputValue(id) {
@@ -1207,8 +1208,8 @@
             document.getElementById("expenses").value =  parseFloat(netcost).toFixed(2) + " دل";
             document.getElementById("org-price").value =
               calculateColumnSum("org_total_price").toFixed(2);
-             let netTotal = totalPrice + netcost; 
-            document.getElementById("net-total").value = parseFloat(netTotal).toFixed(2) + " دل "; 
+             let netTotal = totalPrice + netcost;
+            document.getElementById("net-total").value = parseFloat(netTotal).toFixed(2) + " دل ";
             const paidValue = parseFloat(document.getElementById("paid").value);
             let remainingValue = isNaN(paidValue)? netTotal: netTotal - paidValue;
             document.getElementById("remaining").value = parseFloat(remainingValue).toFixed(2) + " دل ";
@@ -1226,7 +1227,7 @@
       }
       function getSelectedText(selectId) {
         const select = document.getElementById(selectId);
-        return select 
+        return select
           ? select.value
           : "";
       }

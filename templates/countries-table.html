@@ -100,6 +100,8 @@
     <!-- Bootstrap JS (optional) -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script>
+      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
       // Handle row click to pre-fill the form for editing
       document.querySelectorAll("table tbody tr").forEach((row) => {
         row.addEventListener("click", () => {

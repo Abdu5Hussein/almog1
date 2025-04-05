@@ -480,7 +480,7 @@
       }
 
       .page-link-active {
-          background-color: #0d6efd;         
+          background-color: #0d6efd;
           color:rgb(255, 255, 255);
       }
     </style>
@@ -606,7 +606,7 @@
       </div>
       <div class="d-flex justify-content-around">
         <nav aria-label="Page navigation example">
-          <ul class="pagination h-1"> 
+          <ul class="pagination h-1">
             <p id="page-total" class="page-link item-disabled">total of x pages</p>
             <li class="page-first"><a class="page-link" href="#">First</a></li>
             <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
@@ -708,6 +708,8 @@
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
       $(document).ready(function () {
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         // Initialize Tabulator
         const table = new Tabulator("#users-table", {
           index: "fileid", // Use "fileid" as the unique row identifier
@@ -1062,7 +1064,7 @@
           selects.forEach((select) => {
             if(select.id!=="page-size"){
               select.selectedIndex = 0; // Reset to first option
-            } 
+            }
           });
 
           refreshTable();
@@ -1300,7 +1302,7 @@
             }
           });
 
-                /////////// 
+                ///////////
 
   let currentPage = 1; // Tracks the current page
   let lastPage = false; // Indicates if the last page is reached
@@ -1343,7 +1345,7 @@
       fetchNextPage();
     }
   };
- 
+
   // Attach the scroll event listener
   tableContainer.addEventListener("scroll", handleScroll);
 
@@ -1359,7 +1361,7 @@
   // Apply debounce to applyFilters with a 300ms delay
   //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
   refreshTable({ page: 1, size: 100 });
-  
+
       function showLoader() {
         const loader = document.getElementById("loader-element");
         loader.classList.remove("d-none"); // Show the loader by removing d-none
@@ -1369,7 +1371,7 @@
 
       function hideLoader() {
         const loader = document.getElementById("loader-element");
-              
+
         // Set a delay (e.g., 2000ms = 2 seconds)
         setTimeout(function() {
           loader.classList.remove("d-flex"); // Remove d-flex
@@ -1445,17 +1447,17 @@
       // Event listener for page links
       document.querySelector(".pagination").addEventListener("click", function (event) {
         const target = event.target;
-        if (target.classList.contains("page-link") && 
-            !target.parentNode.classList.contains("disabled") && 
+        if (target.classList.contains("page-link") &&
+            !target.parentNode.classList.contains("disabled") &&
             !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
             event.preventDefault();
             const selectedPage = parseInt(target.getAttribute("data-page"), 10);
             const selectedPageSize = document.getElementById("page-size").value;
 
             if(lastPage){
-              return 
+              return
             }
-            
+
             // Fetch data for selected page
             console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
             if(active_url=="server_filtered_data"){
@@ -1464,7 +1466,7 @@
             }else{
                 currentPage = selectedPage;
                 refreshTable({page: selectedPage,size: selectedPageSize});
-            }       
+            }
         }
      });
 
@@ -1488,5 +1490,4 @@
   </body>
 </html>
 
-          
-         
+

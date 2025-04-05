@@ -180,6 +180,8 @@ aria-hidden="true"
     <!-- Link Bootstrap JS (for modal, dropdowns, etc.) -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script>
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         document.addEventListener('DOMContentLoaded', function () {
           const deleteForms = document.querySelectorAll('.delete-form');
           const successMessageDiv = document.getElementById('success-message');

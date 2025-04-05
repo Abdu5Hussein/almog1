@@ -45,7 +45,7 @@
       }
 
       .page-link-active {
-          background-color: #0d6efd;         
+          background-color: #0d6efd;
           color:rgb(255, 255, 255);
       }
       .choices {
@@ -614,7 +614,7 @@
       </div>
       <div class="d-flex justify-content-around">
           <nav aria-label="Page navigation example">
-            <ul class="pagination h-1"> 
+            <ul class="pagination h-1">
             <p id="page-total" class="page-link item-disabled">total of x pages</p>
               <li class="page-first"><a class="page-link" href="#">First</a></li>
               <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
@@ -766,13 +766,14 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
+      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
       /*const contextData = {
         data: JSON.parse("{{ data|escapejs }}"),
       };
-      
+
       console.log(contextData.data);*/
       // Fetch client ID from the URL query string
-     
+
       // Initialize Tabulator table
       const table = new Tabulator("#users-table", {
         index: "fileid", // Use "fileid" as the unique row identifier
@@ -922,7 +923,7 @@ function openWindow(url,width = 600,height = 700) {
           });
       });
       //table.setData(contextData.data);
-      /////////// 
+      ///////////
 
   let currentPage = 1; // Tracks the current page
   let lastPage = false; // Indicates if the last page is reached
@@ -967,7 +968,7 @@ function openWindow(url,width = 600,height = 700) {
   };
   function fetchDataFromServer({ page = 1, size = 100 }) {
     //if (isLoading) return; // Prevent fetch if already loading
-    //isLoading = true; // Set loading flag before initiating fetch  
+    //isLoading = true; // Set loading flag before initiating fetch
 
     // Use the URL in your fetch request
 
@@ -1034,7 +1035,7 @@ function openWindow(url,width = 600,height = 700) {
   // Apply debounce to applyFilters with a 300ms delay
   //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
   fetchDataFromServer({ page: 1, size: 100 });
-  
+
       function showLoader() {
         const loader = document.getElementById("loader-element");
         loader.classList.remove("d-none"); // Show the loader by removing d-none
@@ -1044,7 +1045,7 @@ function openWindow(url,width = 600,height = 700) {
 
       function hideLoader() {
         const loader = document.getElementById("loader-element");
-              
+
         // Set a delay (e.g., 2000ms = 2 seconds)
         setTimeout(function() {
           loader.classList.remove("d-flex"); // Remove d-flex
@@ -1120,17 +1121,17 @@ function openWindow(url,width = 600,height = 700) {
       // Event listener for page links
       document.querySelector(".pagination").addEventListener("click", function (event) {
     const target = event.target;
-    if (target.classList.contains("page-link") && 
-        !target.parentNode.classList.contains("disabled") && 
+    if (target.classList.contains("page-link") &&
+        !target.parentNode.classList.contains("disabled") &&
         !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
         event.preventDefault();
         const selectedPage = parseInt(target.getAttribute("data-page"), 10);
         const selectedPageSize = document.getElementById("page-size").value;
 
         if(lastPage){
-          return 
+          return
         }
-        
+
         // Fetch data for selected page
         console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
         if(active_url=="server_filtered_data"){
@@ -1139,7 +1140,7 @@ function openWindow(url,width = 600,height = 700) {
         }else{
             currentPage = selectedPage;
             fetchDataFromServer({page: selectedPage,size: selectedPageSize});
-        }       
+        }
     }
 });
 
@@ -1308,16 +1309,16 @@ function openWindow(url,width = 600,height = 700) {
           const dinar_paid = parseFloat(document.getElementById("dinar-paid").value); // Assuming dinar_paid is another input field
           const number = total_dinar.replace(/[^\d.]/g, '');
           const total_amount = parseFloat(number);
-          
+
           // Calculate the net amount
           const net_amount = total_amount - dinar_paid;
-          
+
           // Format the net amount with commas and two decimal places
-          const formatted_net_amount = new Intl.NumberFormat('en-US', { 
-              minimumFractionDigits: 2, 
-              maximumFractionDigits: 2 
+          const formatted_net_amount = new Intl.NumberFormat('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
           }).format(net_amount);
-          
+
           // Set the formatted value with "دل"
           document.getElementById("dinar-net").value = formatted_net_amount + " دل";
         }

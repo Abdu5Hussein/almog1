@@ -20,7 +20,7 @@ from django.core.cache import cache
 from django.urls import reverse
 from django.conf import settings
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status, generics
 from rest_framework.exceptions import NotFound
@@ -44,6 +44,8 @@ import pandas as pd
 
 import firebase_admin
 from firebase_admin import credentials, messaging
+from rest_framework.permissions import IsAuthenticated
+
 
 # Local imports
 from .models import (
@@ -77,6 +79,7 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_subsections(request):
     section_id = request.GET.get('section_id')
     subsections = Subsectionstable.objects.filter(sectionid_id=section_id)
@@ -85,6 +88,7 @@ def get_subsections(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def create_buy_invoice(request):
     try:
@@ -138,6 +142,7 @@ def create_buy_invoice(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def filter_clients(request):
     try:
         pno = request.GET.get('pno')
@@ -160,6 +165,7 @@ def filter_clients(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def filter_clients_input(request):
     try:
         # Get the filters from the request body (DRF handles JSON parsing)
@@ -221,6 +227,7 @@ def filter_clients_input(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def process_excel_and_import(request):
     if request.method == "POST":
         # Debug: Log the start of the POST request
@@ -433,6 +440,7 @@ def format_arabic_text(text):
     return get_display(reshaped_text)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def generate_pdf(request):
     # Parse the incoming JSON data
     data = request.data  # Using DRF's request.data instead of request.body
@@ -566,6 +574,7 @@ def safe_float(value, default=0.0):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_clients(request):
     try:
         # Query the database for all Clientstable entries
@@ -577,6 +586,7 @@ def get_clients(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def delete_lost_damaged(request):
     try:
         data = request.data
@@ -595,6 +605,7 @@ def delete_lost_damaged(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def filter_lost_damaged(request):
     try:
         # Get the filters from the request body
@@ -628,6 +639,7 @@ def filter_lost_damaged(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_lost_damaged_data(request):
     # Fetch all data from the model
     data = LostAndDamagedTable.objects.all().values(
@@ -638,6 +650,7 @@ def fetch_lost_damaged_data(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def add_lost_damaged(request):
     try:
         # Parse the JSON data from the request body
@@ -714,6 +727,7 @@ def add_lost_damaged(request):
         return Response({'success': False, 'message': 'An unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_all_clients(request):
     try:
         # Query the database for all clients
@@ -776,6 +790,7 @@ def get_all_clients(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_client_record(request):
     if request.method == 'POST':
         data = request.data  # DRF will parse the JSON data automatically
@@ -832,6 +847,7 @@ def create_client_record(request):
     return Response({'status': 'error', 'message': 'Invalid request method.'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def update_client_record(request):
     if request.method == 'POST':
         try:
@@ -878,6 +894,7 @@ def update_client_record(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def delete_client_record(request):
     try:
         # Parse request data
@@ -907,6 +924,7 @@ def delete_client_record(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def filter_all_clients(request):
     try:
         filters = request.data  # Get the filters from the request body
@@ -1021,6 +1039,7 @@ def filter_all_clients(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_storage_record(request):
     try:
         data = request.data  # Django REST framework automatically parses the JSON data
@@ -1080,6 +1099,7 @@ def create_storage_record(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def delete_storage_record(request):
     try:
         storage_id = request.data.get("storage_id")
@@ -1099,6 +1119,7 @@ def delete_storage_record(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_all_storage(request):
     try:
         items = StorageTransactionsTable.objects.all().values(
@@ -1114,6 +1135,7 @@ def get_all_storage(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def filter_all_storage(request):
     try:
         filters = request.data  # Django REST Framework automatically parses JSON data
@@ -1167,6 +1189,7 @@ def filter_all_storage(request):
         return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_last_reciept_no(request):
     transaction_type = request.GET.get('transactionType')  # Get the transaction type from the query parameter
 
@@ -1185,6 +1208,7 @@ def get_last_reciept_no(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_buyinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by invoice_no in descending order
@@ -1201,6 +1225,7 @@ def get_buyinvoice_no(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_account_statement(request):
     client_id = request.GET.get('id')
     if not client_id:
@@ -1214,6 +1239,7 @@ def get_account_statement(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_invoice_items(request):
     invoice_no = request.GET.get("id")
     if not invoice_no:
@@ -1233,6 +1259,7 @@ def format_number(number):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_cost_record(request):
     try:
         # Parse the incoming JSON data
@@ -1274,6 +1301,7 @@ def create_cost_record(request):
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_costs(request):
     invoice_no = request.GET.get("id")
 
@@ -1309,6 +1337,7 @@ def delete_buyinvoice_cost(request, autoid):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def calculate_cost(request):
     try:
         # Parse the incoming JSON data
@@ -1347,6 +1376,7 @@ def calculate_cost(request):
     except Exception as e:
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def get_invoice_items(request):
     try:
         # Parse incoming data
@@ -1369,6 +1399,7 @@ def get_invoice_items(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def process_data(request):
     try:
         # Parse the JSON data sent by the frontend
@@ -1394,6 +1425,7 @@ def process_data(request):
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def process_add_data(request):
     try:
         # Parse the JSON data sent by the frontend
@@ -1422,6 +1454,7 @@ def process_add_data(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def delete_buy_invoice_item(request):
     try:
         # Parse the JSON data sent by the frontend
@@ -1448,6 +1481,7 @@ def delete_buy_invoice_item(request):
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def update_buyinvoiceitem(request):
     try:
         # Parse the JSON data sent by the frontend
@@ -1496,6 +1530,7 @@ def excel_date_to_datetime(serial):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def process_buyInvoice_excel(request):
     try:
         # Debug: Log the start of the POST request
@@ -1589,6 +1624,7 @@ def process_buyInvoice_excel(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def process_temp_confirm(request):
     try:
         # Step 1: Parse the JSON data from the request body
@@ -1646,6 +1682,7 @@ def process_temp_confirm(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def confirm_temp_invoice(request):
     try:
         # Parse the JSON data from the request body
@@ -1728,6 +1765,7 @@ def confirm_temp_invoice(request):
         return Response({'status': 'error', 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def BuyInvoiceItemCreateView(request):
     try:
         # Parse the JSON data
@@ -1824,6 +1862,7 @@ def BuyInvoiceItemCreateView(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_buyinvoices(request):
     records = Buyinvoicetable.objects.all()
     paginator = Paginator(records, int(request.GET.get('size', 100)))
@@ -1847,6 +1886,7 @@ def fetch_buyinvoices(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def filter_buyinvoices(request):
     try:
         filters = request.data  # DRF automatically parses the JSON body
@@ -1924,6 +1964,7 @@ def filter_buyinvoices(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_sellinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by invoice_no in descending order
@@ -1939,6 +1980,7 @@ def get_sellinvoice_no(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_sell_invoice(request):
     if request.method == "POST":
         try:
@@ -2013,6 +2055,7 @@ def create_sell_invoice(request):
     return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def Sell_invoice_create_item(request):
     if request.method == "POST":
         try:
@@ -2087,6 +2130,7 @@ def Sell_invoice_create_item(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_sell_invoice_items(request):
     invoice_no = request.GET.get("id")
 
@@ -2102,6 +2146,7 @@ def fetch_sell_invoice_items(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_sellinvoices(request):
     try:
         today = now().date()
@@ -2137,6 +2182,7 @@ def fetch_sellinvoices(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def filter_sellinvoices(request):
     try:
         filters = request.data
@@ -2204,6 +2250,7 @@ def filter_sellinvoices(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def prepare_sell_invoice(request):
     try:
         # Get the data from the request body
@@ -2232,6 +2279,7 @@ def prepare_sell_invoice(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def validate_sell_invoice(request):
     try:
         # Get the data from the request body
@@ -2264,6 +2312,7 @@ def validate_sell_invoice(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def deliver_sell_invoice(request):
     try:
         data = request.data
@@ -2320,6 +2369,7 @@ def deliver_sell_invoice(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def cancel_sell_invoice(request):
     try:
         # Get the data from the request body
@@ -2357,6 +2407,7 @@ def cancel_sell_invoice(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_mainItem_last_pno(request):
     try:
         # Get the last pno by ordering the table by pno in descending order
@@ -2460,6 +2511,7 @@ class SupportChatMessageView(APIView):
         return Response(serializer.data)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_conversation(request):
     client_id = request.data.get('client_id')
     support_agent_id = request.data.get('support_agent_id')
@@ -2475,6 +2527,7 @@ def create_conversation(request):
     return Response({'conversation_id': conversation.conversation_id}, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_all_feedback(request):
     try:
         # Fetch all feedback and related sender data
@@ -2542,6 +2595,7 @@ def fetch_all_feedback(request):
 #     return JsonResponse(grouped_feedback, safe=False)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def add_message_to_feedback(request, feedback_id):
     """Allow clients and employees to send multiple messages in a feedback thread."""
     try:
@@ -2573,6 +2627,7 @@ def add_message_to_feedback(request, feedback_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def close_feedback(request, feedback_id):
     """Close a feedback thread (mark as resolved)."""
     try:
@@ -2605,6 +2660,7 @@ def delete_feedback(request, feedback_id):
         return Response({"error": "Only employees can delete feedback."}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def feedback_by_user_id(request):
     """Fetch feedback by client ID."""
     clientid = request.GET.get('clientid')
@@ -2641,6 +2697,7 @@ def feedback_by_user_id(request):
     return Response(feedback_data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_feedback_messages(request, feedback_id):
     """Fetch messages in a feedback thread."""
     feedback_messages = FeedbackMessage.objects.filter(feedback_id=feedback_id).order_by('sent_at')
@@ -2661,6 +2718,7 @@ def fetch_feedback_messages(request, feedback_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def assign_order_manual(request):
     """Assign an order manually to an employee."""
     try:
@@ -2708,6 +2766,7 @@ def assign_order_manual(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_available_employees(request):
     """Get a list of available employees."""
     employees = EmployeeQueue.objects.filter(is_available=True, is_assigned=False).select_related('employee')
@@ -2715,6 +2774,7 @@ def get_available_employees(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_unassigned_orders(request):
     """Get a list of unassigned orders."""
     orders = SellinvoiceTable.objects.filter(is_assigned=False)
@@ -2722,6 +2782,7 @@ def get_unassigned_orders(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_unassigned_orders_with_status(request):
     """Get a list of unassigned orders with specific delivery status."""
     orders = SellinvoiceTable.objects.filter(

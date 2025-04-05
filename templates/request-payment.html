@@ -6,6 +6,8 @@
     <title>طلب قيمة</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script>
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         function getCSRFToken() {
             // Get the CSRF token from the cookie or from the meta tag
             let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;

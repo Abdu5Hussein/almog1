@@ -817,6 +817,8 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
+      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
       // Fetch client ID from the URL query string
       const urlParams = new URLSearchParams(window.location.search);
       const clientid = urlParams.get("id"); // Retrieve the client ID from the URL (e.g., ?id=123)

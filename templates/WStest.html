@@ -28,6 +28,8 @@
     </div>
 
     <script>
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         // WebSocket connection URL (adjust to your Django WebSocket endpoint)
         const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         const wsUrl = 'ws://45.13.59.226:8000/ws/notifications/';
@@ -60,7 +62,7 @@
         // Function to display notification
         function displayNotification(message) {
             const notificationContainer = document.getElementById('notifications-container');
-            
+
             const notificationElement = document.createElement('div');
             notificationElement.classList.add('notification', 'new');
             notificationElement.textContent = message;

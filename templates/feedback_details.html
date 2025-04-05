@@ -120,13 +120,14 @@
 
 <script>
     $(document).ready(function() {
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
         const feedbackId = '{{ feedback.id }}';
 
         function loadMessages() {
             $.get(`/fetch_messages/${feedbackId}/`, function(data) {
                 let messageList = $("#message-list");
-                messageList.empty(); 
-                $("#loading-text").remove(); 
+                messageList.empty();
+                $("#loading-text").remove();
 
                 $.each(data.messages, function(i, message) {
                     let sender = message.sender_type === "client" ? "عميل" : "موظف";

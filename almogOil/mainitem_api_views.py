@@ -42,6 +42,7 @@ from django.core.paginator import Paginator
 """ Mainitem / Products Api's """
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def UpdateItemsItemmainApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -87,6 +88,7 @@ def UpdateItemsItemmainApiView(request, item_id):
 
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def UpdateItemsSubmainApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -131,6 +133,7 @@ def UpdateItemsSubmainApiView(request, item_id):
         return Response({'itemsub': itemsubmain}, status=status.HTTP_200_OK)
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def UpdateItemsModelApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -175,6 +178,7 @@ def UpdateItemsModelApiView(request, item_id):
         return Response({'models': itemthird}, status=status.HTTP_200_OK)
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def UpdateItemsEngineApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -264,6 +268,7 @@ class CustomPagination(PageNumberPagination):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_product_images(request, id):
     try:
         product = models.Mainitem.objects.get(pno=id)
@@ -277,6 +282,7 @@ def get_product_images(request, id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def mainitem_add_json_desc(request, id):
     """Add JSON description to a Mainitem product"""
     try:
@@ -304,6 +310,7 @@ def mainitem_add_json_desc(request, id):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_item_data(request, fileid):
     try:
         # Retrieve the record from the database
@@ -319,6 +326,7 @@ def get_item_data(request, fileid):
         return Response({"error": "Item not found"}, status=404)
 
 @api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
 def edit_main_item(request):
     if request.method == 'PATCH':
         try:
@@ -366,6 +374,7 @@ def edit_main_item(request):
             return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_mainItem_last_pno(request):
     try:
         # Get the last autoid by ordering the table by autoid in descending order
@@ -384,6 +393,7 @@ def get_mainItem_last_pno(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def create_main_item(request):
     if request.method == 'POST':
@@ -451,6 +461,7 @@ def safe_float(value, default=0.0):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_data(request):
     try:
         items = Mainitem.objects.all().order_by('itemname')
@@ -502,6 +513,7 @@ def get_data(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def update_itemvalue(request):
     try:
         data = request.data
@@ -537,6 +549,7 @@ def update_itemvalue(request):
 #until here
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def update_storage(request):
     try:
         data = request.data
@@ -554,6 +567,7 @@ def update_storage(request):
         return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def check_items(request):
     try:
         # Step 1: Parse the incoming JSON data
@@ -583,6 +597,7 @@ def check_items(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def delete_record(request):
     try:
@@ -606,6 +621,7 @@ def delete_record(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def web_filter_items(request):
     if request.method == "POST":

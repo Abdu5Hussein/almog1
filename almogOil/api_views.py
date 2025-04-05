@@ -106,19 +106,19 @@ def sign_in(request):
                 user = None  # Default value
                 user_id = None
 
-                if role == "client":
-                    try:
-                        user = models.AllClientsTable.objects.get(username=username)
-                        user_id = f"c-{user.clientid}"
-                    except models.AllClientsTable.DoesNotExist:
-                        return Response({"error": "لم يتم التعرف على العميل", "message": "لم يتم التعرف على العميل"}, status=status.HTTP_404_NOT_FOUND)
-
-                # elif role == "employee":
+                # if role == "client":
                 #     try:
-                #         user = models.EmployeesTable.objects.get(username=username)
-                #         user_id = f"e-{user.employee_id}"
-                #     except models.EmployeesTable.DoesNotExist:
-                #         return Response({"error": "لم يتم التعرف على الموظف", "message": "لم يتم التعرف على الموظف"}, status=status.HTTP_404_NOT_FOUND)
+                #         user = models.AllClientsTable.objects.get(username=username)
+                #         user_id = f"c-{user.clientid}"
+                #     except models.AllClientsTable.DoesNotExist:
+                #         return Response({"error": "لم يتم التعرف على العميل", "message": "لم يتم التعرف على العميل"}, status=status.HTTP_404_NOT_FOUND)
+
+                if role == "employee":
+                    try:
+                        user = models.EmployeesTable.objects.get(username=username)
+                        user_id = f"e-{user.employee_id}"
+                    except models.EmployeesTable.DoesNotExist:
+                        return Response({"error": "لم يتم التعرف على الموظف", "message": "لم يتم التعرف على الموظف"}, status=status.HTTP_404_NOT_FOUND)
 
                 # elif role == "source":
                 #     try:
@@ -183,6 +183,7 @@ def sign_in(request):
 
 """Drop Boxes"""
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_dropboxes(request):
     model = models.Modeltable.objects.all()
     serialized_model = serializers.ModelSerializer(model, many=True)
@@ -205,11 +206,13 @@ def get_dropboxes(request):
 
 
 
+@permission_classes([IsAuthenticated])
 class EnginesTableViewSet(viewsets.ModelViewSet):
     queryset = models.enginesTable.objects.all()
     serializer_class = serializers.EnginesTableSerializer
 
 
+@permission_classes([IsAuthenticated])
 @api_view(["GET"])
 def get_models(request):
     models_data = models.Modeltable.objects.all()
@@ -217,18 +220,21 @@ def get_models(request):
     return Response({'models': serialized_data.data})
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_engines(request):
     engines_data = models.enginesTable.objects.all()
     serialized_data = serializers.EngineSerializer(engines_data, many=True)
     return Response({'engines': serialized_data.data})
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_main_types(request):
     main_types_data = models.Maintypetable.objects.all()
     serialized_data = serializers.MainTypeSerializer(main_types_data, many=True)
     return Response({'main_types': serialized_data.data})
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_sub_types(request):
     sub_types_data = models.Subtypetable.objects.all()
     serialized_data = serializers.SubTypeSerializer(sub_types_data, many=True)
@@ -238,6 +244,7 @@ def get_sub_types(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_invoice_data(request, autoid):
     try:
         # Fetch the data using the provided autoid (primary key)
@@ -248,6 +255,7 @@ def get_invoice_data(request, autoid):
         return Response({"error": "Invoice not found"}, status=404)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def GetClientInvoices(request, id):
     # Filter invoices based on the client ID
     str_id = str(id)
@@ -260,7 +268,22 @@ def GetClientInvoices(request, id):
     serializer = serializers.SellInvoiceSerializer(invoices, many=True)
 
     return Response(serializer.data, status=status.HTTP_200_OK)  # Return the serialized data
+######
 
+@api_view(['GET'])
+#@permission_classes([IsAuthenticated])
+def GetClientInvoicesByInvoiceNo(request, id):
+    # Filter invoices based on the client ID
+    str_id = str(id)
+    invoices = models.SellinvoiceTable.objects.filter(invoice_no=str_id)
+
+    if not invoices.exists():
+        return Response({'error': 'No invoices found for the provided client ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Serialize the invoices
+    serializer = serializers.SellInvoiceSerializer(invoices, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)  # Return the serialized data
 
 # class InvoiceStatusViewSet(viewsets.ViewSet):
 #     """
@@ -296,6 +319,7 @@ def GetClientInvoices(request, id):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def update_invoice_status(request, invoice_no):
     """Update invoice status and set delivered_date if status is 'تم التوصيل'."""
     try:
@@ -318,6 +342,7 @@ def update_invoice_status(request, invoice_no):
 
 @csrf_exempt
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_delivery_invoices(request):
     """Fetch all invoices with status 'حضرت'."""
     invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
@@ -338,6 +363,7 @@ class CustomPagination(PageNumberPagination):
 """ Support Dashboard Api's """
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def support_conversations(request):
     if request.method == 'GET':
         conversations = models.SupportChatConversation.objects.all()
@@ -346,6 +372,7 @@ def support_conversations(request):
 
 # Get Messages in a Conversation
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_conversation_messages(request, conversation_id):
     if request.method == 'GET':
         try:
@@ -358,7 +385,7 @@ def get_conversation_messages(request, conversation_id):
 
 # Create a New Message in a Conversation
 @api_view(['POST'])
-@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def send_message(request, conversation_id=None):
     if request.method == 'POST':
         message_text = request.data.get('message')
@@ -410,6 +437,7 @@ def send_message(request, conversation_id=None):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def start_conversation(request, client_id):
     if request.method == 'POST':
         try:
@@ -455,6 +483,7 @@ def start_conversation(request, client_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def send_feedback(request):
     client_id = request.data.get('client_id')
     feedback_text = request.data.get('feedback_text')
@@ -480,6 +509,7 @@ def send_feedback(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def respond_to_feedback(request, client_id):
     if request.method == 'POST':
         try:
@@ -511,6 +541,7 @@ def respond_to_feedback(request, client_id):
 """ Client Related Api's """
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_all_clients1(request,id=None):
     if request.method == 'GET':
         clients = AllClientsTable.objects.all().filter(clientid=id)
@@ -521,6 +552,7 @@ def get_all_clients1(request,id=None):
 """ Delivery Related Api's """
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_employee_order(request, employee_id):
     """Assign an order directly to an employee while ensuring a fair and accurate queue system."""
     try:
@@ -597,6 +629,7 @@ def get_employee_order(request, employee_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def accept_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -630,6 +663,7 @@ def accept_order(request, queue_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def decline_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -668,6 +702,7 @@ def decline_order(request, queue_id):
         return Response({"error": "Order queue entry not found."}, status=404)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def deliver_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -706,6 +741,7 @@ def deliver_order(request, queue_id):
         return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def skip_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -740,6 +776,7 @@ def skip_order(request, queue_id):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def update_delivery_availability(request):
     """Toggle the availability of the delivery person based on their employee ID and update their queue position."""
 
@@ -786,6 +823,7 @@ def update_delivery_availability(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def assign_orders(request):
     with transaction.atomic():
         available_employees = EmployeesTable.objects.filter(is_available=True)
@@ -815,6 +853,7 @@ def assign_orders(request):
 
 # 📌 Complete a delivery and assign a new order
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def complete_delivery(request, invoice_id):
     with transaction.atomic():
         try:
@@ -856,6 +895,7 @@ def complete_delivery(request, invoice_id):
 
 # 📌 View all pending orders
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def pending_orders(request):
     orders = SellinvoiceTable.objects.filter(delivery_status="معلقة")
     serializer = serializers.OrderSerializer(orders, many=True)
@@ -866,6 +906,7 @@ def pending_orders(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def set_available(request):
     """Mark employee as available and add to queue"""
     delivery_person_id = request.data.get('employee_id')
@@ -902,6 +943,7 @@ def set_available(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def set_unavailable(request):
     """Mark employee as unavailable and remove from queue"""
     delivery_person_id = request.data.get('employee_id')
@@ -936,6 +978,7 @@ def set_unavailable(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def clear_queue(request):
     """Clear all employees and orders from the queue, set all employees as unavailable, and reset invoice assignments."""
 
@@ -961,6 +1004,7 @@ def clear_queue(request):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_employee_orders(request, employee_id):
     try:
         # Fetch the employee
@@ -994,6 +1038,7 @@ def get_employee_orders(request, employee_id):
         return Response({"error": str(e)}, status=500)
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def complete_order(request, autoid):
     with transaction.atomic():
         try:
@@ -1040,6 +1085,7 @@ def complete_order(request, autoid):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_available_employees(request):
     # Get all employees who are available
 
@@ -1052,6 +1098,7 @@ def get_available_employees(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def check_assign_status(request):
     # Run asynchronous task to assign orders
     async_task('almogOil.Tasks.assign_orders')
@@ -1102,6 +1149,7 @@ def check_assign_status(request):
     return Response(data)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def check_assign_statusss(request, employee_id):
     try:
         # Get the employee
@@ -1141,6 +1189,7 @@ def check_assign_statusss(request, employee_id):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def confirm_order(request, order_id):
     try:
         # Get the order queue where the order is not accepted
@@ -1168,6 +1217,7 @@ def confirm_order(request, order_id):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def decline_order(request, order_id):
     try:
         # Get the order queue that is not yet accepted
@@ -1204,6 +1254,7 @@ def decline_order(request, order_id):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def monitor_order_assignments(request):
     try:
         # Fetch available employees
@@ -1265,6 +1316,7 @@ def monitor_order_assignments(request):
         return Response({"error": str(e)}, status=500)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def employee_order_info(request, employee_id):
     try:
         # Get employee object by employee_id
@@ -1309,6 +1361,7 @@ def employee_order_info(request, employee_id):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def employee_current_order_info(request, employee_id):
     try:
         # Get employee object by employee_id
@@ -1364,6 +1417,7 @@ def employee_current_order_info(request, employee_id):
 # views.py
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def confirm_order_arrival(request, order_id):
     try:
         # Find the order in the queue which is assigned but not confirmed
@@ -1394,6 +1448,7 @@ def confirm_order_arrival(request, order_id):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_all_confirmed_orders(request):
     confirmed_orders = SellinvoiceTable.objects.filter(delivery_status='تم التوصيل')
 
@@ -1413,6 +1468,7 @@ def get_all_confirmed_orders(request):
     return Response(data, status=200)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_employee_confirmed_orders(request):
     # Get all orders that have been confirmed as arrived by the employee
     confirmed_orders = SellinvoiceTable.objects.filter(
@@ -1438,6 +1494,7 @@ def get_employee_confirmed_orders(request):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_archived_orders(request, employee_id):
     try:
         # Fetch the orders archived for the specific employee
@@ -1638,6 +1695,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_invoice_returned_items(request,id):
     returned_items = models.return_permission_items.objects.filter(invoice_no=id)
     invoice = SellinvoiceTable.objects.get(invoice_no=id)
@@ -1650,7 +1708,8 @@ def get_invoice_returned_items(request,id):
 
 
 
-@api_view(["POST"])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def filter_return_reqs(request):
     try:
         filters = request.data  # DRF automatically parses the JSON body
@@ -1693,6 +1752,7 @@ def filter_return_reqs(request):
 """ Employee Related Api's """
 # 📌 View all available employees
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def available_employees(request):
     employees = EmployeesTable.objects.filter(is_available=True)
     serializer = serializers.EmployeeSerializer(employees, many=True)
@@ -1703,7 +1763,8 @@ def available_employees(request):
 """ Payment Request Api's """
 
 
-@api_view(["POST"])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def accept_payment_req(request, id):
     """Accept or reject a payment request from a client."""
     try:
@@ -1775,6 +1836,7 @@ def accept_payment_req(request, id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_source_record(request):
     data = request.data  # Use DRF's request.data
 
@@ -1842,6 +1904,7 @@ firebase_admin.initialize_app(cred)
 """ Notifications Related Api's """
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def register_fcm_token(request):
     """
     Register an FCM token for a user (Employee or Client).
@@ -1869,6 +1932,7 @@ def register_fcm_token(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def send_notification(request):
     """
     Send an FCM notification to an Employee or Client.
@@ -1919,6 +1983,7 @@ def send_invoice_notification(invoice, status_message):
     )
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def store_fcm_token(request):
     if request.method == 'POST':
         # Extract the data from the request
@@ -1958,6 +2023,7 @@ def store_fcm_token(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def upload_maintype_logo(request, id):
     if 'logo' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1977,6 +2043,7 @@ def upload_maintype_logo(request, id):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def upload_company_logo(request, id):
     if 'logo' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1996,6 +2063,7 @@ def upload_company_logo(request, id):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_today_storage(request):
     try:
         # Fetch records from StorageTransactionsTable where transaction_date is today
@@ -2010,6 +2078,7 @@ def get_today_storage(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_all_storage(request):
     try:
         # Fetch records from StorageTransactionsTable where transaction_date is today
@@ -2024,6 +2093,7 @@ def get_all_storage(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def filter_all_storage(request):
     try:
         filters = request.data  # Decode JSON payload
@@ -2073,6 +2143,7 @@ def filter_all_storage(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def employee_detail_get(request, employee_id):
     """
     Retrieve an employee's basic information by employee_id.
@@ -2181,3 +2252,21 @@ def mobile_sign_in(request):
 
     except Exception as e:
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+#@permission_classes([IsAuthenticated])
+def get_logo_by_pno(request, id):
+    try:
+        product = get_object_or_404(models.Mainitem, pno=id)
+        company = get_object_or_404(models.Companytable, companyname=product.companyproduct)
+
+        logo = company.logo_obj
+        if logo:
+            logo_url = request.build_absolute_uri(logo.url)  # 👈 Full URL
+            return Response({"logo_url": logo_url}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Logo not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

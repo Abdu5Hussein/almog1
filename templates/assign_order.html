@@ -15,7 +15,7 @@
 
 <div class="container">
     <h3 class="text-center text-primary">Assign Order to Employee</h3>
-    
+
     <div class="mb-3">
         <label for="employeeSelect" class="form-label">Select Employee</label>
         <select id="employeeSelect" class="form-select">
@@ -36,6 +36,7 @@
 </div>
 
 <script>
+    const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
     const API_BASE = "http://45.13.59.226"; // Change to your Django API URL
 
     // Fetch Employees & Orders

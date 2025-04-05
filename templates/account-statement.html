@@ -851,8 +851,15 @@
       function fetchData(clientid) {
         const url = `get-account-statement?id=${clientid}`;
 
-        fetch(url)
-          .then((response) => response.json())
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+        console.log("jwt access token: " + jwtToken_access);
+        fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+          }
+        }).then((response) => response.json())
           .then((data) => {
             table.setData(data); // Load data into Tabulator
             refreshShowInputs(); // Recalculate and display column sums

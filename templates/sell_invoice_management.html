@@ -1233,6 +1233,8 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         const toggler = document.getElementById('more-info-toggler');
         const moreInfo = document.getElementById('more-info');
 

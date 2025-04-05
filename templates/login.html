@@ -48,7 +48,7 @@
                     required
                   />
                 </div>
-                <div class="mb-2">
+                <div class="mb-4">
                   <label for="password" class="form-label">Password</label>
                   <input
                     type="password"
@@ -58,14 +58,6 @@
                     placeholder="Enter your password: password1"
                     required
                   />
-                </div>
-                <div class="mb-2">
-                  <label for="username" class="form-label">Role</label>
-                  <select name="role" id="role" class="form-control">
-                    <option value="client">عميل</option>
-                    <option value="source">مصدر</option>
-                    <option value="employee">موظف</option>
-                  </select>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
                   Login
@@ -83,6 +75,8 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+
         document.getElementById("login-form").addEventListener("submit", async function (event) {
           event.preventDefault(); // Prevent default form submission
 
@@ -90,7 +84,7 @@
           // Get form values
           const username = document.getElementById("username").value;
           const password = document.getElementById("password").value;
-          const role = document.getElementById("role").value;
+          const role = "employee";
 
           // Prepare the request payload
           const payload = {
