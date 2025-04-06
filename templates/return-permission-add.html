@@ -808,7 +808,8 @@ async function createPermission() {
         const response = await fetch("http://45.13.59.226/permissions/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(requestData)
         });
@@ -977,6 +978,7 @@ function fetchData(){
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
           });
 

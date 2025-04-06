@@ -716,7 +716,13 @@
 
     function fetchData(){
          // Fetch data from the API endpoint
-        fetch("/permissions/")
+        fetch("/permissions/", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+          })
             .then(response => response.json()) // Parse JSON data from response
             .then(data => {
                 // Initialize Tabulator with the fetched data
@@ -841,6 +847,7 @@
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
+            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(activeFilters),
         })

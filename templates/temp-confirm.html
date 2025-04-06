@@ -664,6 +664,7 @@
               headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": "{{ csrf_token }}", // CSRF token for security
+                'Authorization': `Bearer ${jwtToken_access}`,
               },
               body: JSON.stringify(data), // Send the stringified data and invoice number
             })
@@ -751,6 +752,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": "{{ csrf_token }}", // CSRF token for security
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data), // Send the stringified data and invoice number
           })

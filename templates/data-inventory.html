@@ -517,7 +517,13 @@
     //console.log("isLoading: ",isLoading);
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`)
+    fetch(`api/get-data/?page=${page}&size=${size}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched Data:", data);

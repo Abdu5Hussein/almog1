@@ -142,6 +142,7 @@
                 headers: {
                   "Content-Type": "application/json",
                   "X-CSRFToken": "{{ csrf_token }}", // Add CSRF token for security
+                  'Authorization': `Bearer ${jwtToken_access}`,
                 },
                 body: JSON.stringify(jsonData), // Send JSON data
               })
@@ -266,6 +267,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": "{{ csrf_token }}", // CSRF token for security
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify({
               data: JSON.stringify(data), // Stringify the data as expected by the server

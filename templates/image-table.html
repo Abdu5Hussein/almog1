@@ -199,6 +199,7 @@ aria-hidden="true"
                   headers: {
                     'X-CSRFToken': csrfToken,
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': `Bearer ${jwtToken_access}`,
                   },
                   body: new URLSearchParams({ 'delete-id': deleteId })
                 })

@@ -129,7 +129,13 @@
         let selectedEmployeeId = null;
 
         // Fetch available employees from the backend
-        fetch('/api/available-employees/')
+        fetch('/api/available-employees/', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+          }
+        })
             .then(response => response.json())
             .then(data => {
                 const employeeList = document.getElementById("employeeList");
@@ -165,6 +171,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${jwtToken_access}`,
                     },
                     body: JSON.stringify({ employee_id: selectedEmployeeId }),
                 })

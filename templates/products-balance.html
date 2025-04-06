@@ -534,7 +534,13 @@
             console.log("Clicked Pno:", clickedPno);
 
             // Fetch data for clients_table
-            fetch(`api/get-clients/?pno=${clickedPno}`)
+            fetch(`api/get-clients/?pno=${clickedPno}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
               .then((response) => response.json())
               .then((data) => {
                 console.log("Fetched Data for Clients Table:", data);
@@ -611,6 +617,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -686,7 +693,13 @@
         // Function to fetch item data and populate input fields
         function fetchItemData(fileid) {
           // Make an AJAX request to the Django backend
-          fetch(`/get_item_data/${fileid}/`)
+          fetch(`/get_item_data/${fileid}/`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
             .then((response) => response.json())
             .then((data) => {
               if (data.error) {
@@ -853,6 +866,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(body),
           })
@@ -871,7 +885,13 @@
             });
         });
         function fetchAllData() {
-          fetch("api/get-data/")
+          fetch("api/get-data/", {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
             .then((response) => response.json()) // Parse the response as JSON
             .then((data) => {
               console.log("Fetched Data:", data); // Log the fetched data (optional)
@@ -934,7 +954,13 @@
 
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`)
+    fetch(`api/get-data/?page=${page}&size=${size}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched Data:", data);

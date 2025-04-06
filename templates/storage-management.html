@@ -887,7 +887,13 @@
         });
         // Assuming you have a function to fetch the last reciept_no for the 'ايداع' transaction
         function fetchLastRecieptNo(type = "ايداع", callback) {
-          fetch(`api/get-last-reciept-no?transactionType=${type}`)
+          fetch(`api/get-last-reciept-no?transactionType=${type}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+          })
             .then((response) => {
               if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -955,7 +961,13 @@
         });
         refreshTable();
        function refreshTable(){
-         fetch("api/get-today-storage")
+         fetch("api/get-today-storage", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+          })
           .then((response) => response.json())
           .then((data) => {
             console.log("Fetched Data:", data);
@@ -1260,6 +1272,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1304,6 +1317,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1374,6 +1388,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(activeFilters),
           })
@@ -1414,7 +1429,13 @@
               '<option value="" selected>اختر</option>';
 
             if (sectionId) {
-              fetch(`/get-subsections/?section_id=${sectionId}`)
+              fetch(`/get-subsections/?section_id=${sectionId}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+          })
                 .then((response) => response.json())
                 .then((data) => {
                   data.forEach((item) => {

@@ -317,6 +317,7 @@
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken(),
+                'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(body),
         })

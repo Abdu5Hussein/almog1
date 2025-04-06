@@ -1,6 +1,9 @@
 console.log("Script Loaded");
 
 document.addEventListener("DOMContentLoaded", function () {
+  const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+  console.log("jwt access token: " + jwtToken_access);
+
   function EmptyRequiredFields() {
     const fields = [
       //document.getElementById('pno'),
@@ -82,8 +85,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
       console.log("Fetching full table");
       console.time("fetchData"); // Start timer
-      fetch(`api/get-data/?fullTable=${full}`)
-        .then((response) => response.json())
+
+      fetch(`api/get-data/?fullTable=${full}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+        }
+      }).then((response) => response.json())
         .then((data) => {
           console.log("Fetched Data:", data);
 
@@ -111,7 +120,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Use the URL in your fetch request
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`)
+    fetch(`api/get-data/?page=${page}&size=${size}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+      }
+    })
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched Data:", data);
@@ -447,6 +462,7 @@ document.addEventListener("DOMContentLoaded", function () {
       headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
+        'Authorization': `Bearer ${jwtToken_access}`,
       },
       body: JSON.stringify(data),
     })
@@ -527,6 +543,7 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCSRFToken(),
+          'Authorization': `Bearer ${jwtToken_access}`,
         },
         body: JSON.stringify(data),
       })
@@ -567,6 +584,7 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCSRFToken(),
+          'Authorization': `Bearer ${jwtToken_access}`,
         },
         body: JSON.stringify(data),
       })
@@ -768,6 +786,7 @@ document.addEventListener("DOMContentLoaded", function () {
       headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": csrfToken,
+        'Authorization': `Bearer ${jwtToken_access}`,
       },
       body: JSON.stringify(filterValues),
     })
@@ -900,6 +919,7 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,  // Add CSRF token here
+          'Authorization': `Bearer ${jwtToken_access}`,
         },
         body: JSON.stringify({ fileid: fileid }), // Send the fileid or any unique identifier for the record
       })
@@ -927,7 +947,13 @@ document.addEventListener("DOMContentLoaded", function () {
   function fetchItemData(fileid) {
     console.log("item with file id: ", fileid);
     // Make an AJAX request to the Django backend
-    fetch(`/get_item_data/${fileid}/`)
+    fetch(`/get_item_data/${fileid}/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+      }
+    })
       .then(response => response.json())
       .then(data => {
         if (data.error) {
@@ -1006,7 +1032,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const url = document.getElementById('users-table').getAttribute('data-url');  // Get the URL from the table's data-url attribute
 
     // Use the URL in your fetch request
-    fetch(url)
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+      }
+    })
       .then((response) => response.json())  // Parse the response as JSON
       .then((data) => {
         console.log("Fetched Data:", data);  // Log the fetched data (optional)
@@ -1282,6 +1314,7 @@ editableCells.forEach((cell) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        'Authorization': `Bearer ${jwtToken_access}`,
       },
       body: JSON.stringify({
         id: userId,

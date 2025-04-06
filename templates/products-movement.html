@@ -736,7 +736,13 @@
             console.log("Clicked Pno:", clickedPno);
 
             // Fetch data for clients_table
-            fetch(`api/get-clients/?pno=${clickedPno}`)
+            fetch(`api/get-clients/?pno=${clickedPno}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
               .then((response) => response.json())
               .then((data) => {
                 console.log("Fetched Data for Clients Table:", data);
@@ -909,7 +915,13 @@
 
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`)
+    fetch(`api/get-data/?page=${page}&size=${size}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched Data:", data);
@@ -1166,6 +1178,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -1246,7 +1259,13 @@
           console.log("Clicked Pno:", clickedPno);
 
           // Fetch data for clients_table
-          fetch(`api/filter-clients/?pno=${clickedPno}`)
+          fetch(`api/filter-clients/?pno=${clickedPno}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
             .then((response) => response.json())
             .then((data) => {
               console.log("Fetched Data for Clients Table:", data);
@@ -1307,6 +1326,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -1347,7 +1367,13 @@
             .addEventListener("input", applyFiltersForClients);
         });
         function fetchAllData() {
-          fetch("api/get-data/")
+          fetch("api/get-data/", {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
             .then((response) => response.json()) // Parse the response as JSON
             .then((data) => {
               console.log("Fetched Data:", data); // Log the fetched data (optional)
@@ -1385,6 +1411,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify({
               data: tableData,

@@ -893,6 +893,7 @@ function openWindow(url,width = 600,height = 700) {
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
+            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(data),
         })
@@ -975,7 +976,13 @@ function openWindow(url,width = 600,height = 700) {
 
     console.time("fetchData"); // Start timer
 
-    fetch(`fetch-buyinvoices?page=${page}&size=${size}`)
+    fetch(`fetch-buyinvoices?page=${page}&size=${size}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+          }
+        })
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched Data:", data);
@@ -1202,6 +1209,7 @@ function openWindow(url,width = 600,height = 700) {
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })

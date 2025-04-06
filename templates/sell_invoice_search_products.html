@@ -910,6 +910,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -1045,7 +1046,13 @@
 
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`)
+    fetch(`api/get-data/?page=${page}&size=${size}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+          })
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched Data:", data);

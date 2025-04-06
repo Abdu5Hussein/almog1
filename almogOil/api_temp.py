@@ -86,6 +86,9 @@ def get_subsections(request):
     serializer = SubsectionSerializer(subsections, many=True)
     return Response(serializer.data)
 
+def get_next_buyinvoice_no():
+    last_invoice = Buyinvoicetable.objects.last()
+    return (last_invoice.invoice_no if last_invoice else 0) + 1
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -108,9 +111,7 @@ def create_buy_invoice(request):
         multi_source_flag = data.get("multi_source_flag", False)
         source = AllSourcesTable.objects.get(clientid=source_id)
 
-        last_id_response = json.loads(get_buyinvoice_no(request).content)
-        last_id_no = last_id_response.get("autoid")
-        next_id_no = int(last_id_no) + 1
+        next_id_no = get_next_buyinvoice_no()
 
         # Create the invoice
         invoice = Buyinvoicetable.objects.create(

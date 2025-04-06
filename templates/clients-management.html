@@ -927,7 +927,13 @@
 
           function refreshTable({ page = 1, size = 100 } = {}){
             console.time("fetchData"); // Start timer
-            fetch(`api/get-all-clients?page=${page}&size=${size}`)
+            fetch(`api/get-all-clients?page=${page}&size=${size}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+              }
+            })
             .then((response) => response.json())
             .then((data) => {
                 console.log("Fetched Data:", data);
@@ -1272,6 +1278,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1370,6 +1377,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1407,6 +1415,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1492,6 +1501,7 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })

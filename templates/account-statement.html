@@ -14,6 +14,7 @@
     <!-- Bootstrap JS -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
     <link
@@ -853,11 +854,11 @@
 
         const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
         console.log("jwt access token: " + jwtToken_access);
-        fetch(url, {
+        customFetch(url, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+            'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
           }
         }).then((response) => response.json())
           .then((data) => {
@@ -910,7 +911,7 @@
         console.log(tableData);
 
         // Sending the data to Django backend using fetch
-        fetch("/generate-pdf/", {
+        customFetch("/generate-pdf/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

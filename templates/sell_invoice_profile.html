@@ -1012,6 +1012,7 @@ get_invoice_items();
               headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken(),
+                'Authorization': `Bearer ${jwtToken_access}`,
               },
               body: JSON.stringify(data),
             })
@@ -1107,6 +1108,7 @@ get_invoice_items();
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(), // Ensure CSRF token is included
+            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(data),
         })
@@ -1249,6 +1251,7 @@ get_invoice_items();
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
             },
           });
 

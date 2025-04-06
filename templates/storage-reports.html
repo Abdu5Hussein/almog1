@@ -883,7 +883,13 @@
             '<option value="" selected>اختر</option>';
 
           if (sectionId) {
-            fetch(`/get-subsections/?section_id=${sectionId}`)
+            fetch(`/get-subsections/?section_id=${sectionId}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+          })
               .then((response) => response.json())
               .then((data) => {
                 data.forEach((item) => {
@@ -975,7 +981,13 @@
       function fetchData() {
         const url = `api/get-all-storage`;
 
-        fetch(url)
+        fetch(url, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+          })
           .then((response) => response.json())
           .then((data) => {
             table.setData(data); // Load data into Tabulator
@@ -1027,6 +1039,7 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify({
             data: tableData,
@@ -1112,6 +1125,7 @@
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
+            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(activeFilters),
         })
