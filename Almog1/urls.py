@@ -166,8 +166,10 @@ urlpatterns = [
     path('api/get-drop-lists', api_views.get_dropboxes, name='get-drop-lists'),
     path('fetch_messages/<int:feedback_id>/', views.fetch_feedback_messages, name='fetch_feedback_messages'),
     path("add_message_to_feedback/<int:feedback_id>/", views.add_message_to_feedback, name="add_message_to_feedback"),
+
     path('api/get/tokken', TokenObtainPairView.as_view(), name='get_tokken'),
     path('api/get/tokken/refresh', TokenRefreshView.as_view(), name='refresh_tokken'),
+
     path('send-message/', views.SendMessageView.as_view(), name='send-message'),
     path('get-messages/', views.GetChatMessagesView.as_view(), name='get-messages'),
     path('api/create-conversation/', views.create_conversation, name='create_conversation'),
