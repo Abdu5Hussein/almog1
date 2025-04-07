@@ -14,6 +14,7 @@
     <!-- Bootstrap JS -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
     <link
@@ -991,7 +992,7 @@
           console.error("JWT Token is missing!");
         }
         // Make a POST request to the server
-        fetch("/process-edit-invoice", {
+        customFetch("/process-edit-invoice", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1038,7 +1039,7 @@
       function fetchLastRecieptNo(callback) {
         const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
         console.log("jwt access token: " + jwtToken_access);
-        fetch(`get-last-buyinvoice-id`, {
+        customFetch(`get-last-buyinvoice-id`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -1198,7 +1199,7 @@
             };
 
             // Make a POST request to the server
-            fetch("/process-add-invoice", {
+            customFetch("/process-add-invoice", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -1264,7 +1265,7 @@
             };
 
             // Make a POST request to the server
-            fetch("/process-add-invoice", {
+            customFetch("/process-add-invoice", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -1321,7 +1322,7 @@
         console.log("jwt access token: " + jwtToken_access);
 
         try {
-          const response = await fetch(url, {
+          const response = await customFetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -1410,7 +1411,7 @@
         console.log("Data to be sent:", data);
 
         // Sending the data to the API
-        fetch("api/create-buy-invoice-record", {
+        customFetch("api/create-buy-invoice-record", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1455,7 +1456,7 @@
             };
 
             // Make a POST request to the server
-            fetch("/cost-management", {
+            customFetch("/cost-management", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -1503,7 +1504,7 @@
           };
           console.log(data);
           // Make a POST request to the server
-          fetch("/invoice_excell", {
+          customFetch("/invoice_excell", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1569,7 +1570,7 @@
           console.log(tableData);
 
           // Sending the data to Django backend using fetch
-          fetch("/generate-pdf/", {
+          customFetch("/generate-pdf/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

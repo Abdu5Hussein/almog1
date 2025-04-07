@@ -846,7 +846,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
-
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
       $(document).ready(function () {
@@ -887,7 +887,7 @@
         });
         // Assuming you have a function to fetch the last reciept_no for the 'ايداع' transaction
         function fetchLastRecieptNo(type = "ايداع", callback) {
-          fetch(`api/get-last-reciept-no?transactionType=${type}`, {
+          customFetch(`api/get-last-reciept-no?transactionType=${type}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -961,7 +961,7 @@
         });
         refreshTable();
        function refreshTable(){
-         fetch("api/get-today-storage", {
+         customFetch("api/get-today-storage", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -1267,7 +1267,7 @@
           };
           console.log("Data to be sent:", data);
 
-          fetch("api/create-storage-record", {
+          customFetch("api/create-storage-record", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1312,7 +1312,7 @@
             storage_id: id,
           };
 
-          fetch("api/delete-storage-record", {
+          customFetch("api/delete-storage-record", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1383,7 +1383,7 @@
             return csrfInput ? csrfInput.value : "";
           }
 
-          fetch("api/filter-all-storage", {
+          customFetch("api/filter-all-storage", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1429,7 +1429,7 @@
               '<option value="" selected>اختر</option>';
 
             if (sectionId) {
-              fetch(`/get-subsections/?section_id=${sectionId}`, {
+              customFetch(`/get-subsections/?section_id=${sectionId}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",

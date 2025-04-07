@@ -365,6 +365,7 @@
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <script>
         const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -484,7 +485,7 @@ function openWindow(url,width = 600,height = 700) {
         openWindow("sell_invoice_storage_manage?inv="+ id,1000,700);
 
         /*// Make a POST request to the server
-        fetch("buy_invoice_add_items", {
+        customFetch("buy_invoice_add_items", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -575,7 +576,7 @@ function openWindow(url,width = 600,height = 700) {
 
     console.time("fetchData"); // Start timer
 
-    fetch(`fetch-sellinvoices?page=${page}&size=${size}`, {
+    customFetch(`fetch-sellinvoices?page=${page}&size=${size}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -804,7 +805,7 @@ function openWindow(url,width = 600,height = 700) {
 
           console.time("FilterTime");
 
-          fetch("filter-sellinvoices", {
+          customFetch("filter-sellinvoices", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -945,7 +946,7 @@ function openWindow(url,width = 600,height = 700) {
           //console.log(tableData);
 
           // Sending the data to Django backend using fetch
-          fetch("/generate-pdf/", {
+          customFetch("/generate-pdf/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -993,7 +994,7 @@ function openWindow(url,width = 600,height = 700) {
           invoice_status: status, // Fixed object syntax
         };
 
-        fetch("filter-sellinvoices", {
+        customFetch("filter-sellinvoices", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

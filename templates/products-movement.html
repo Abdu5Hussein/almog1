@@ -597,6 +597,7 @@
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <script>
       $(document).ready(function () {
@@ -736,7 +737,7 @@
             console.log("Clicked Pno:", clickedPno);
 
             // Fetch data for clients_table
-            fetch(`api/get-clients/?pno=${clickedPno}`, {
+            customFetch(`api/get-clients/?pno=${clickedPno}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -915,7 +916,7 @@
 
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`, {
+    customFetch(`api/get-data/?page=${page}&size=${size}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -1173,7 +1174,7 @@
 
           console.time("FilterTime");
           // Perform the fetch request
-          fetch("/api/filter-items", {
+          customFetch("/api/filter-items", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1259,7 +1260,7 @@
           console.log("Clicked Pno:", clickedPno);
 
           // Fetch data for clients_table
-          fetch(`api/filter-clients/?pno=${clickedPno}`, {
+          customFetch(`api/filter-clients/?pno=${clickedPno}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -1321,7 +1322,7 @@
           }
 
           // Perform the fetch request
-          fetch("/api/filter-client-input/", {
+          customFetch("/api/filter-client-input/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1367,7 +1368,7 @@
             .addEventListener("input", applyFiltersForClients);
         });
         function fetchAllData() {
-          fetch("api/get-data/", {
+          customFetch("api/get-data/", {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -1407,7 +1408,7 @@
           console.log(tableData);
 
           // Sending the data to Django backend using fetch
-          fetch("/generate-pdf/", {
+          customFetch("/generate-pdf/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

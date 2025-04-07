@@ -454,6 +454,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script>
     const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -527,7 +528,7 @@
       }
       console.log(data);
 
-      fetch(`prepare_sell_invoice`, {
+      customFetch(`prepare_sell_invoice`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -574,7 +575,7 @@
       }
       console.log(data);
 
-      fetch(`validate_sell_invoice`, {
+      customFetch(`validate_sell_invoice`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -625,7 +626,7 @@
       }
       console.log(data);
 
-      fetch(`deliver_sell_invoice`, {
+      customFetch(`deliver_sell_invoice`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -681,7 +682,7 @@
       }
       console.log(data);
 
-      fetch(`cancel_sell_invoice`, {
+      customFetch(`cancel_sell_invoice`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -692,7 +692,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
-
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
         const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -716,7 +716,7 @@
 
     function fetchData(){
          // Fetch data from the API endpoint
-        fetch("/permissions/", {
+        customFetch("/permissions/", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -842,7 +842,7 @@
           return csrfInput ? csrfInput.value : "";
         }
 
-        fetch("/api/filter-return-requests/", {
+        customFetch("/api/filter-return-requests/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

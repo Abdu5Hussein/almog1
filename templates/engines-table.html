@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>جدول المحركات</title>
     <link rel="stylesheet" href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}" />
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <style>
       table {
         margin-top: 20px;
@@ -113,7 +114,7 @@
             }
             console.log(data);
 
-            fetch('/engines/', {
+            customFetch('/engines/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -151,7 +152,7 @@
             }
             console.log(data);
 
-            fetch('/engines/', {
+            customFetch('/engines/', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -189,7 +190,7 @@
             }
             console.log(data);
             const id = document.getElementById("engineId").value;
-            fetch(`/engines/${id}/`, {
+            customFetch(`/engines/${id}/`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -226,7 +227,7 @@
                return
             }
 
-            fetch(`/engines/${id}/`, {
+            customFetch(`/engines/${id}/`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

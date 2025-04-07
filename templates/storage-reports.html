@@ -814,7 +814,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
-
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
       const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -883,7 +883,7 @@
             '<option value="" selected>اختر</option>';
 
           if (sectionId) {
-            fetch(`/get-subsections/?section_id=${sectionId}`, {
+            customFetch(`/get-subsections/?section_id=${sectionId}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -981,7 +981,7 @@
       function fetchData() {
         const url = `api/get-all-storage`;
 
-        fetch(url, {
+        customFetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -1035,7 +1035,7 @@
         console.log(tableData);
 
         // Sending the data to Django backend using fetch
-        fetch("/generate-pdf/", {
+        customFetch("/generate-pdf/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1120,7 +1120,7 @@
           return csrfInput ? csrfInput.value : "";
         }
 
-        fetch("api/filter-all-storage", {
+        customFetch("api/filter-all-storage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

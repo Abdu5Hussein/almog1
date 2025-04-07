@@ -11,6 +11,7 @@
       rel="stylesheet"
       href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
     />
+    <script src="{% static 'js/helper_functions.js' %}"></script>
   </head>
 
   <body>
@@ -194,7 +195,7 @@ aria-hidden="true"
               const row = this.closest('tr');
 
               if (confirm('Are you sure you want to delete this image?')) {
-                fetch('', { // Empty URL sends the request to the current view
+                customFetch('', { // Empty URL sends the request to the current view
                   method: 'POST',
                   headers: {
                     'X-CSRFToken': csrfToken,

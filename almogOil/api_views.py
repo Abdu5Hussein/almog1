@@ -2270,3 +2270,9 @@ def get_logo_by_pno(request, id):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def validate_token(request):
+    return Response({'detail': 'Token is valid.'})

@@ -760,7 +760,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
-
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
         const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -805,7 +805,7 @@ async function createPermission() {
 
     try {
         // Send POST request
-        const response = await fetch("http://45.13.59.226/permissions/", {
+        const response = await customFetch("http://45.13.59.226/permissions/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -838,7 +838,7 @@ function addPermissionItems(permission){
 }
 function fetchData(){
         /* // Fetch data from the API endpoint
-        fetch("/permissions/")
+        customFetch("/permissions/")
             .then(response => response.json()) // Parse JSON data from response
             .then(data => {
                 // Initialize Tabulator with the fetched data
@@ -884,7 +884,7 @@ function fetchData(){
     invoiceSelect.value = "";
   });
   function fetchLastRecieptNo(callback) {
-        fetch(`get-last-sellinvoice-id`)
+        customFetch(`get-last-sellinvoice-id`)
           .then((response) => {
             if (!response.ok) {
               throw new Error(`HTTP error! Status: ${response.status}`);
@@ -974,7 +974,7 @@ function fetchData(){
         const url = `/sell-invoice/${invoiceId}/returned-items`; // Replace `/your-endpoint-url/` with the actual endpoint path
 
         try {
-          const response = await fetch(url, {
+          const response = await customFetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",

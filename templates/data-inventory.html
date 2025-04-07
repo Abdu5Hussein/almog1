@@ -19,7 +19,7 @@
       href="{% static 'tabulator/custom-tabulator.css' %}"
     />
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <style>
     .page-link {
           text-align: center;
@@ -517,7 +517,7 @@
     //console.log("isLoading: ",isLoading);
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`, {
+    customFetch(`api/get-data/?page=${page}&size=${size}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',

@@ -600,6 +600,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
@@ -659,7 +660,7 @@
               invoice_no: invoice,
             };
 
-            fetch("/process_temp_confirm", {
+            customFetch("/process_temp_confirm", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -747,7 +748,7 @@
             alert("الرجاء اختيار رقم الفاتورة");
             return;
           }
-          fetch("/confirm_temp_invoice", {
+          customFetch("/confirm_temp_invoice", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

@@ -692,7 +692,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
-
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
       const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -742,7 +742,7 @@
           };
 
           // Send the data to the server using fetch (AJAX)
-          fetch("/update-buyinvoiceitem", {
+          customFetch("/update-buyinvoiceitem", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -785,7 +785,7 @@
           }
 
           // Send the data to the server using fetch (AJAX)
-          fetch("/delete-buyinvoiceitem", {
+          customFetch("/delete-buyinvoiceitem", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

@@ -14,6 +14,7 @@
     <!-- Bootstrap JS -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
     <link
@@ -927,7 +928,7 @@
 
           function refreshTable({ page = 1, size = 100 } = {}){
             console.time("fetchData"); // Start timer
-            fetch(`api/get-all-clients?page=${page}&size=${size}`, {
+            customFetch(`api/get-all-clients?page=${page}&size=${size}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -1273,7 +1274,7 @@
           };
           console.log(data);
 
-          fetch("api/create-client", {
+          customFetch("api/create-client", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1372,7 +1373,7 @@
             curr_flag: cuurencyFlagValue,
           };
           console.log(data);
-          fetch("api/update-client", {
+          customFetch("api/update-client", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1410,7 +1411,7 @@
             client_id: document.getElementById("cno")?.value || "",
           };
 
-          fetch("api/delete-client", {
+          customFetch("api/delete-client", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1496,7 +1497,7 @@
           }
           console.time("FilterTime");
           // Perform the fetch request
-          fetch("api/filter-all-clients", {
+          customFetch("api/filter-all-clients", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

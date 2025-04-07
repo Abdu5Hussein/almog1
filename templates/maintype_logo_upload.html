@@ -75,7 +75,7 @@
 
 <!-- Bootstrap JS -->
 <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
-
+<script src="{% static 'js/helper_functions.js' %}"></script>
 <script>
 const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 document.addEventListener('DOMContentLoaded', function () {
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData();
         formData.append('logo', imageInput.files[0]);
 
-        fetch(`/maintypes/${productId}/upload/logo`, {
+        customFetch(`/maintypes/${productId}/upload/logo`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',

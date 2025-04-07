@@ -17,6 +17,7 @@
       href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css"
       rel="stylesheet"
     />
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <style>
       #tabulator-table {
@@ -117,7 +118,7 @@
 
           console.log("Sending data to the server:", formData);
 
-          fetch("/import-tabulator-data/", {
+          customFetch("/import-tabulator-data/", {
             method: "POST",
             body: formData, // Send the data using FormData
           })

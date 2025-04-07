@@ -17,6 +17,7 @@
       href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css"
       rel="stylesheet"
     />
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <style>
       #tabulator-table {
@@ -137,7 +138,7 @@
               const headers = Object.keys(jsonData[0]);
 
               // Send data to backend for item existence check
-              fetch("/check_items", {
+              customFetch("/check_items", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -262,7 +263,7 @@
           console.log("invoice:", invoiceNo);
           console.log("table data:", JSON.stringify(data));
 
-          fetch("/process_buyInvoice_excel", {
+          customFetch("/process_buyInvoice_excel", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

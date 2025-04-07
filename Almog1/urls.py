@@ -259,6 +259,7 @@ urlpatterns = [
     path('employee-detail/<int:employee_id>/', api_views.employee_detail_get, name='employee-detail-get'),
     path('companies/<int:id>/logo',views.company_logo_view,name="company_logo_view"),
     path('companies/<int:id>/upload/logo',api_views.upload_company_logo,name="upload_company_logo_api"),
+     path('api/token/validate-token/', api_views.validate_token),
     path('products/<int:id>/company/logo',api_views.get_logo_by_pno,name="get_company_logo_by_pno_api"),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()

@@ -394,6 +394,7 @@
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script>
       $(document).ready(function () {
         const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -534,7 +535,7 @@
             console.log("Clicked Pno:", clickedPno);
 
             // Fetch data for clients_table
-            fetch(`api/get-clients/?pno=${clickedPno}`, {
+            customFetch(`api/get-clients/?pno=${clickedPno}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -612,7 +613,7 @@
           // Perform the fetch request
           console.time("FilterTime");
           // Perform the fetch request
-          fetch("/api/filter-items", {
+          customFetch("/api/filter-items", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -693,7 +694,7 @@
         // Function to fetch item data and populate input fields
         function fetchItemData(fileid) {
           // Make an AJAX request to the Django backend
-          fetch(`/get_item_data/${fileid}/`, {
+          customFetch(`/get_item_data/${fileid}/`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -861,7 +862,7 @@
               newItemValue: newItemValue,
             };
             console.log(body);
-          fetch("/update-itemvalue", {
+          customFetch("/update-itemvalue", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -885,7 +886,7 @@
             });
         });
         function fetchAllData() {
-          fetch("api/get-data/", {
+          customFetch("api/get-data/", {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -954,7 +955,7 @@
 
     console.time("fetchData"); // Start timer
 
-    fetch(`api/get-data/?page=${page}&size=${size}`, {
+    customFetch(`api/get-data/?page=${page}&size=${size}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',

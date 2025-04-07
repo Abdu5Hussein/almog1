@@ -1230,6 +1230,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
@@ -1449,7 +1450,7 @@ function openWindow(url,width = 600,height = 700) {
 
     console.time("fetchData"); // Start timer
 
-    fetch(`fetch-sellinvoices?page=${page}&size=${size}`, {
+    customFetch(`fetch-sellinvoices?page=${page}&size=${size}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -1693,7 +1694,7 @@ function openWindow(url,width = 600,height = 700) {
 
           console.time("FilterTime");
 
-          fetch("filter-sellinvoices", {
+          customFetch("filter-sellinvoices", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1849,7 +1850,7 @@ function openWindow(url,width = 600,height = 700) {
           //console.log(tableData);
 
           // Sending the data to Django backend using fetch
-          fetch("/generate-pdf/", {
+          customFetch("/generate-pdf/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

@@ -855,6 +855,7 @@
 
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'dselect/choices.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
@@ -1007,7 +1008,7 @@ get_invoice_items();
 
             // Make a POST request to the server
 
-            fetch("/sell_invoice_add_items", {
+            customFetch("/sell_invoice_add_items", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -1103,7 +1104,7 @@ get_invoice_items();
         console.log("Data to be sent:", data);
 
         // Sending the data to the API
-        fetch("api/create-sell-invoice-record", {
+        customFetch("api/create-sell-invoice-record", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1247,7 +1248,7 @@ get_invoice_items();
         const url = `/fetch-sell-invoice-items?id=${encodeURIComponent(invoiceId)}`; // Replace `/your-endpoint-url/` with the actual endpoint path
 
         try {
-          const response = await fetch(url, {
+          const response = await customFetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
