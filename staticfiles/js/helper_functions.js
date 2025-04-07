@@ -19,7 +19,7 @@ async function customFetch(url, options = {}) {
     const data = {
       refresh: refreshToken.replace(/"/g, '')
     }
-    alert("data :" + JSON.stringify(data));
+    //alert("data :" + JSON.stringify(data));
     const refreshResponse = await fetch('/api/get/tokken/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -27,7 +27,7 @@ async function customFetch(url, options = {}) {
     });
 
     if (refreshResponse.ok) {
-      alert("refresh response ok");
+      //alert("refresh response ok");
       const data = await refreshResponse.json();
       accessToken = data.access;
       localStorage.setItem('session_data@access_token', accessToken);

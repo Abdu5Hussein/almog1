@@ -259,8 +259,12 @@ urlpatterns = [
     path('employee-detail/<int:employee_id>/', api_views.employee_detail_get, name='employee-detail-get'),
     path('companies/<int:id>/logo',views.company_logo_view,name="company_logo_view"),
     path('companies/<int:id>/upload/logo',api_views.upload_company_logo,name="upload_company_logo_api"),
-     path('api/token/validate-token/', api_views.validate_token),
+    path('api/token/validate-token/', api_views.validate_token),
     path('products/<int:id>/company/logo',api_views.get_logo_by_pno,name="get_company_logo_by_pno_api"),
+    path('employees/management/reports',views.employees_report_view,name="employees_report_view"),
+    path('employees/management/salaries',views.employees_salary_view,name="employees_salaries_view"),
+    path('employees/management/salaries/edit',views.employees_salary_edit_view,name="employees_salaries_edit_view"),
+    path('employees/management/salaries/history',views.employees_cash_reports_view,name="employees_salaries_history"),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

@@ -2279,6 +2279,25 @@ def assign_orders_page(request, invoice_id):
     # You can pass any additional context here if needed, e.g., the invoice_id
     return render(request, 'assign_orders.html', {'invoice_id': invoice_id})
 
+@login_required
+def employees_report_view(request):
+    context = {}
+    return render(request,'employees-report.html',context)
+
+@login_required
+def employees_salary_view(request):
+    context = {}
+    return render(request,'employees-salary.html',context)
+
+@login_required
+def employees_salary_edit_view(request):
+    context = {}
+    return render(request,'employees-salary-edit.html',context)
+
+@login_required
+def employees_cash_reports_view(request):
+    context = {}
+    return render(request,'employees-cash-reports.html',context)
 
 @csrf_exempt
 def assign_order_to_employee(request, invoice_id):

@@ -1,0 +1,712 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>حساب المرتبات</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/custom-tabulator.css' %}"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'dselect/choices.min.css' %}" />
+
+    <style>
+        .item-disabled {
+        pointer-events: none; /* Prevent clicks */
+        opacity: 0.6; /* Reduce visibility */
+        cursor: not-allowed; /* Show not-allowed cursor */
+      }
+      .page-link {
+          text-align: center;
+          padding: 0.1rem 0.75rem;
+          height: 25px;
+          font-size: 15px;
+          color: #212529;
+      }
+
+      .page-link-active {
+          background-color: #0d6efd;
+          color:rgb(255, 255, 255);
+      }
+      .choices {
+        width: calc(100% - 73px); /*edit later*/
+      }
+      .dropdown {
+        display: none;
+        /* Initially hidden */
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        z-index: 1000;
+      }
+
+      .width-95 {
+        width: 95px;
+      }
+
+      .width-55 {
+        width: 55px;
+      }
+      .width-user {
+        width: calc(100% - 73px);
+      }
+      .width-170 {
+        width: 170px;
+      }
+      .width-73 {
+        width: 73px;
+      }
+
+      .width-80 {
+        width: 110px;
+      }
+
+      .dropdown label {
+        display: block;
+      }
+
+      #contextMenu {
+        display: none;
+        /* Hidden by default */
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        min-width: 150px;
+      }
+
+      .bi-question-circle {
+        padding-left: 2px;
+        font-size: 12px;
+      }
+
+      .bi-question-circle:hover {
+        color: #007bff;
+        /* Change color as needed */
+      }
+
+      #contextMenu div {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      #contextMenu div:hover {
+        background-color: #f0f0f0;
+      }
+
+      .large-textarea {
+        height: 235px;
+        /* Set a specific height for the textarea (adjust as needed) */
+      }
+
+      /* Set a fixed height for the Tabulator container */
+      /* Container for the table */
+
+      /* Container for the table */
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+      }
+
+
+
+      .form-label,
+      .form-control {
+        direction: ltr;
+        /* Make sure inputs and labels align correctly within the form */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Optional: Add space between buttons */
+      }
+
+      .small-input {
+        width: 50px !important;
+      }
+
+      form label {
+        margin-bottom: 0px;
+      }
+
+      th,
+      td {
+        padding: 2px;
+        /* Decrease padding */
+        font-size: 13px;
+        /* Decrease font size */
+        border: 1px solid #ddd;
+        /* Add borders for visibility */
+      }
+
+      input.form-control {
+        padding: 5px;
+        /* Decrease padding */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height (optional) */
+        border-radius: 0;
+        text-align: right;
+        direction: rtl;
+      }
+
+      select.form-select {
+        padding: 5px;
+        /* Decrease padding for select fields */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height for select fields (optional) */
+        border-radius: 0;
+        text-align: center;
+      }
+
+      h1,
+      h2,
+      h3,
+      label,
+      p,
+      table thead tbody {
+        font-size: 15px;
+        margin: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        text-align: right;
+        font-size: 15px;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container-main {
+        max-width: auto;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .container-main .container {
+        padding: 30px 0px;
+        height: auto;
+      }
+
+      .btn-primary {
+        width: 100%;
+      }
+
+      .editable {
+        cursor: pointer;
+        background-color: #f9f9f9;
+        padding-right: 5px;
+      }
+
+      .editable:focus {
+        outline: none;
+        background-color: #e6e6e6;
+      }
+
+      .custom-table {
+        height: 200px;
+        max-height: 200px;;
+        min-height: 200px;
+        overflow-y: hidden;
+
+      }
+      .custom-salaries-table {
+        height: 100px;
+        max-height: 100px;;
+        min-height: 100px;
+        overflow-y: hidden;
+
+      }
+      #products-table,#invoices-table {
+        max-height: 200px;
+        min-height: 200px;
+        overflow-y: auto;
+      }
+
+      table {
+        width: 100%;
+        margin: 0px;
+      }
+
+      thead {
+        background-color: #b3c9df;
+        color: rgb(0, 0, 0);
+        padding: 2px;
+      }
+
+      table thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        z-index: 1;
+      }
+
+      .title-container {
+        width: 100%;
+        background-color: #b3c9df;
+        text-align: center;
+        padding: 3px 0px;
+        margin-bottom: 4px;
+      }
+
+      /* Create a wrapper around the select element */
+      .custom-select-container {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+        margin: 0;
+        /* Ensure no extra margins are added */
+        padding: 0 0px;
+        /* Add padding to the row */
+        box-sizing: border-box;
+        /* Ensure padding is included in the width calculation */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Add space between buttons */
+      }
+
+      /* Move the arrow to the left */
+      .form-select {
+        padding-left: 2.5rem;
+        /* Add space on the left for the icon */
+        padding-right: 1rem;
+        /* Adjust right padding */
+        background: none;
+        /* Remove default background */
+      }
+
+      .custom-select-container::before {
+        content: "▾";
+        /* The caret symbol */
+        position: absolute;
+        left: 0.75rem;
+        /* Position it to the left */
+        top: 50%;
+        transform: translateY(-50%);
+        /* Center vertically */
+        pointer-events: none;
+        /* Prevent interaction with the icon */
+        color: #000;
+        /* Icon color (can be customized) */
+      }
+
+      /* Hide default dropdown arrow */
+      .form-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      .form-select-with-icon {
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+        appearance: auto;
+
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 0;
+        direction: rtl;
+        box-sizing: border-box;
+        margin: 0;
+        font-family: inherit;
+        text-transform: none;
+        word-wrap: normal;
+        --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        display: block;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--bs-body-color);
+        border: 1px solid #ced4da;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
+        background: none;
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
+        border-radius: 0;
+        text-align: center;
+        position: relative;
+        flex: 1 1 auto;
+        width: 1%;
+      }
+
+      /*//////////////////*/
+      .custom-form {
+        width: 100%;
+        /*max-width: 1100px;*/
+        padding: 0px 10px;
+      }
+
+      .row {
+        display: flex;
+        direction: rtl;
+        /* Use flexbox for layout */
+        /* Minimize vertical space */
+      }
+
+      .col-md-2,
+      .col-md-3 {
+        padding: 0 5px;
+        /* Reduce horizontal padding */
+      }
+
+      .form-label {
+        font-size: 12px;
+        /* Reduce font size */
+        margin-bottom: 2px;
+        /* Minimize label space */
+        margin-left: 10px;
+      }
+      .form-box {
+        height: 100px;
+        width: 100%;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+      .form-control {
+        height: 30px;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .form-select {
+        height: 30px;
+        /* Adjust select height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: nowrap;
+        /* Prevent wrapping */
+        justify-content: space-between;
+        /* Space buttons evenly */
+        margin-top: 5px;
+        /* Minimize space above button row */
+      }
+
+      button {
+        font-size: 12px;
+        /* Reduce button text size */
+        padding: 2px 5px;
+        /* Reduce button padding */
+      }
+
+      .custom-table table {
+        border-collapse: collapse;
+        /* Combine borders of adjacent cells */
+      }
+
+      .custom-table th,
+      .custom-table td {
+        padding: 0;
+        /* Remove all padding */
+        padding-right: 5px;
+        margin: 0;
+        /* Ensure no margins are applied */
+        height: auto;
+        /* Allow cells to have minimal height */
+      }
+
+      input[type="number"] {
+        direction: rtl;
+        /* For Arabic alignment */
+        padding-left: 2px;
+        /* Adds padding to the left to avoid overflow */
+        text-align: right;
+        /* Aligns the text inside the input to the right */
+        width: 100%;
+        /* Ensure full width */
+      }
+
+      /* Style for number input to always show increment/decrement arrows */
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Adjust for other browsers */
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+        /* Hides spinner on Firefox */
+      }
+
+      .modal-body {
+        max-height: 300px;
+        /* Set max height for modal body */
+        overflow-y: auto;
+        /* Enable scrolling in modal body */
+      }
+
+      .column-menu-btn {
+        font-size: 12px;
+        padding: 5px;
+      }
+      .max-width-500{
+        max-width: 500px;
+      }
+      #more-info {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+
+        #more-info.show {
+            max-height: 500px; /* Adjust this value depending on the content height */
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container-main p-4">
+
+        <div class="row mt-2">
+            <div class="title-container mb-2">
+                <h3 class="m-0">حساب المرتبات</h3>
+            </div>
+            <!-- Table Section -->
+            <div class="custom-table mb-1">
+                <div
+                dir="rtl"
+                id="employees-table"
+                class="table table-striped table-bordered table-hover"
+                ></div>
+            </div>
+            <div class="custom-salaries-table mb-1">
+                <div
+                dir="rtl"
+                id="salaries-table"
+                class="table table-striped table-bordered table-hover"
+                ></div>
+            </div>
+            <!-- Form Section with 5 input columns -->
+            <div class="custom-form">
+                <form id="firstForm" lang="ar">
+                    {% csrf_token %}
+                    <div class="row">
+                        <!-- First column -->
+                        <div class="col">
+
+                        </div>
+                        <div class="col">
+                            <div class="input-group mb-1 d-flex align-items-center">
+                                        <div class="width-95 d-flex align-items-center">
+                                            <label for="storage-balance" class="form-label"
+                                                >اسم الموظف</label
+                                            >
+                                        </div>
+                                        <select name="client" id="client" class="form-control text-end"  style="width: calc(100% - 95px);">
+                                            <option value="" selected>اختر موظف</option>
+                                            {% for x in clients %}
+                                            <option value="{{ x.clientid }}">{{ x.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group mb-2" dir="rtl">
+                            <div class="width-95 d-flex align-items-center">
+                                <label class="form-label mb-0">خيارات التسوية</label>
+                            </div>
+                            <div class="border p-3">
+                                <div class="form-check form-check-inline ms-3">
+                                    <input class="form-check-input" type="radio" name="transactionType" id="credit" value="دائن">
+                                    <label class="form-check-label" for="credit">تسوية</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="transactionType" id="debit" value="مدين">
+                                    <label class="form-check-label" for="debit">خصم</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="transactionType" id="debit" value="مدين">
+                                    <label class="form-check-label" for="debit">تحميل</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- First column -->
+                        <div class="col">
+                            <div class="input-group mb-1 d-flex align-items-center">
+                                        <div class="width-95 d-flex align-items-center">
+                                            <label for="storage-balance" class="form-label"
+                                                >اسم الموظف</label
+                                            >
+                                        </div>
+                                        <select name="client" id="client" class="form-control text-end"  style="width: calc(100% - 95px);">
+                                            <option value="" selected>اختر موظف</option>
+                                            {% for x in clients %}
+                                            <option value="{{ x.clientid }}">{{ x.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                            </div>
+                            <div class="input-group  mb-1">
+                                <div class="width-95 d-flex align-items-center">
+                                    <label for="for-who" class="form-label">بيان الحركة</label>
+                                </div>
+                                <input type="text" class="form-control" id="description" />
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group  mb-1">
+                                <div class="width-95 d-flex align-items-center">
+                                    <label for="for-who" class="form-label">قيمة الحركة</label>
+                                </div>
+                                <input type="text" class="form-control" id="amount" />
+                            </div>
+                            <div class="input-group mb-2" dir="rtl">
+                                <div class="width-95 d-flex align-items-center">
+                                    <label class="form-label mb-0">نوع الحركة</label>
+                                </div>
+                                <div class="border p-3">
+                                    <div class="form-check form-check-inline ms-3">
+                                        <input class="form-check-input" type="radio" name="transactionType" id="credit" value="دائن">
+                                        <label class="form-check-label" for="credit">دائن</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="transactionType" id="debit" value="مدين">
+                                        <label class="form-check-label" for="debit">مدين</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </form>
+                <!-- Modal -->
+                <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" inert>
+                    <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">تصدير البيانات</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">اختر احدى خيارات التصدير</div>
+                        <div class="modal-footer">
+                        <button type="button" data-bs-dismiss="modal" id="export-btn-excel" class="btn btn-primary" style="width: 100px">
+                            excel تصدير
+                        </button>
+                        <button type="button" id="export-btn-pdf" class="btn btn-secondary" style="width: 100px">
+                            pdf تصدير
+                        </button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Button Row -->
+        <div class="row mt-4">
+            <div class="col-12 d-flex justify-content-center gap-2 flex-wrap">
+                <button type="button" id="clear-btn" class="btn btn-primary" style="width: 100px">مسح</button>
+                <button type="button" class="btn btn-primary" style="width: 100px">حفظ</button>
+                <button type="button" class="btn btn-primary" style="width: 100px">حذف</button>
+                <button type="button" class="btn btn-primary" style="width: 100px">اغلاق</button>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Use jQuery -->
+
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'dselect/choices.min.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script>
+        // Initialize Tabulator
+        const employees_table = new Tabulator("#employees-table", {
+            data: [], // or use ajaxURL: '/your-endpoint' for dynamic data
+            layout: "fitColumns",
+            height: "100%",
+            columns: [
+            { title: "رقم الموظف", field: "id", hozAlign: "center", width: 120 },
+            { title: "اسم الموظف", field: "name", hozAlign: "right" },
+            { title: "المرتب الشهري", field: "salary", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
+            { title: "الرصيد", field: "balance", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } }
+            ],
+            locale:true,
+            langs:{
+            "default":{
+                "columns":{
+                "name":"اسم الموظف",
+                }
+            }
+            }
+        });
+        const salaries_table = new Tabulator("#salaries-table", {
+            data: [], // or use ajaxURL: '/your-endpoint' for dynamic data
+            layout: "fitColumns",
+            height: "100%",
+            columns: [
+            { title: "التاريخ", field: "date", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
+            { title: "نوع التسوية", field: "type", hozAlign: "right" },
+            { title: "القيمة", field: "balance", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
+            { title: "بيان التسوية", field: "description", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } }
+            ],
+        });
+    </script>
+  </body>
+</html>
