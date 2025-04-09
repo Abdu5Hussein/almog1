@@ -73,7 +73,7 @@ INSTALLED_APPS = [
 ]
 
 # settings.py
-LOGIN_URL = '/'
+LOGIN_URL = '/login'
 
 ASGI_APPLICATION = "Almog1.asgi.application"
 
@@ -103,7 +103,7 @@ SPECTACULAR_SETTINGS = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # Adjust as needed
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=7),  # Adjust as needed
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,  # Enable blacklisting

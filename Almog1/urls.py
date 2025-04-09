@@ -29,6 +29,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from django.urls import path, reverse
+from django.shortcuts import redirect
 
 router = DefaultRouter()
 router.register(r'permissions', api_views.ReturnPermissionViewSet, basename='return-permission')
@@ -45,8 +47,8 @@ urlpatterns = [
     path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     # ReDoc UI
     path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-
-    path('', views.LogInView, name='login'),
+    path('', lambda request: redirect(reverse('home'))),
+    path('login', views.LogInView, name='login'),
     path('process-login', api_views.sign_in, name='login-process'),
     path('mobile/login', api_views.mobile_sign_in, name='mobile-login'),
     path('api/user/logout', api_views.logout_view, name='logout'),

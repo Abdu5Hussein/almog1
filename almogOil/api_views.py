@@ -978,7 +978,7 @@ def set_unavailable(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+
 def clear_queue(request):
     """Clear all employees and orders from the queue, set all employees as unavailable, and reset invoice assignments."""
 
