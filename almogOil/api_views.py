@@ -1368,7 +1368,7 @@ def employee_current_order_info(request, employee_id):
         employee = EmployeesTable.objects.get(employee_id=employee_id)
 
         # Fetch the employee's assigned orders excluding those with "تم التوصيل" delivery status
-        assigned_orders = models.OrderQueue.objects.filter(employee=employee).select_related('order').order_by('assigned_at')
+        assigned_orders = models.OrderQueue.objects.filter(employee=employee,is_accepted=False,is_completed=False).select_related('order').order_by('assigned_at')
         assigned_orders = assigned_orders.exclude(order__delivery_status="تم التسليم")
 
         # Get the current order for the employee
