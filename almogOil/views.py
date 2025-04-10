@@ -1093,6 +1093,10 @@ def EditPrices(req):
     context = {'users': users}
     return render(req, 'edit-prices.html', context)
 
+@login_required
+def EmployeesAttendanceView(req):
+    context = {}
+    return render(req, 'employees-attendance.html', context)
 
 @login_required
 def account_statement(request):
