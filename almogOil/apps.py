@@ -6,5 +6,12 @@ class AlmogOilConfig(AppConfig):
     name = 'almogOil'
 
     def ready(self):
-        initialize_firebase()  # Ensure Firebase is initialized
-        import almogOil.signals  # Ensure signals are connected
+        # ✅ Initialize Firebase
+        initialize_firebase()
+
+        # ✅ Schedule background task
+        from almogOil.Tasks import schedule_assign_orders
+        schedule_assign_orders()
+
+        # ✅ Register signals
+        import almogOil.signals  # noqa
