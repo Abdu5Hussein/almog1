@@ -1899,7 +1899,8 @@ def create_source_record(request):
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
 
 """ Notifications Related Api's """
 
