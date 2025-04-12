@@ -1099,6 +1099,11 @@ def EmployeesAttendanceView(req):
     return render(req, 'employees-attendance.html', context)
 
 @login_required
+def EmployeesDetailsView(req):
+    context = {}
+    return render(req, 'employees-details.html', context)
+
+@login_required
 def account_statement(request):
     client_id = request.GET['id']
     records = models.TransactionsHistoryTable.objects.filter(client_id_id=client_id)

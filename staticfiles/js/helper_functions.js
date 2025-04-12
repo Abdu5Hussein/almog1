@@ -98,7 +98,7 @@ function logoutFunction() {
       sessionStorage.clear();
 
       // Redirect to login page
-      window.location.href = "/";
+      window.location.href = "/login";
     })
     .catch((error) => {
       console.error("Error:", error);

@@ -268,6 +268,8 @@ urlpatterns = [
     path('employees/management/salaries/edit',views.employees_salary_edit_view,name="employees_salaries_edit_view"),
     path('employees/management/salaries/history',views.employees_cash_reports_view,name="employees_salaries_history"),
     path('employees/management/attendance',views.EmployeesAttendanceView,name="employees_attendance_view"),
+    path('employees/management',views.EmployeesDetailsView,name="employees_management_view"),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode

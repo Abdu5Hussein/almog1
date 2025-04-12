@@ -1204,6 +1204,10 @@ def confirm_order(request, order_id):
         sell_invoice.delivery_status = "جاري التوصيل"  # Update the invoice status
         sell_invoice.save()
 
+        employee = order_queue.employee
+        employee.is_available = False
+        employee.has_active_order = True
+        employee.save()
         # Return success response
         return Response({"success": True, "message": "Order confirmed successfully and invoice status updated."})
 
@@ -1368,7 +1372,7 @@ def employee_current_order_info(request, employee_id):
         employee = EmployeesTable.objects.get(employee_id=employee_id)
 
         # Fetch the employee's assigned orders excluding those with "تم التوصيل" delivery status
-        assigned_orders = models.OrderQueue.objects.filter(employee=employee,is_accepted=False,is_completed=False).select_related('order').order_by('assigned_at')
+        assigned_orders = models.OrderQueue.objects.filter(employee=employee,is_completed=False).select_related('order').order_by('assigned_at')
         assigned_orders = assigned_orders.exclude(order__delivery_status="تم التسليم")
 
         # Get the current order for the employee

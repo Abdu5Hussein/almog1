@@ -13,6 +13,8 @@
     .table th, .table td {
       text-align: center;
       vertical-align: middle;
+      width: 105px;
+      font-size: 13px;
     }
     .gray-cell {
       background-color: #d6d6d6;
@@ -30,6 +32,9 @@
     hr {
       margin-top: 40px;
     }
+    .time-title{
+      width: 42px;
+    }
   </style>
 </head>
 <body>
@@ -40,7 +45,7 @@
   <div class="row mb-4">
     <div class="col-md-3">
       <label class="form-label">التاريخ</label>
-      <input type="date" class="form-control" value="2025-02-01">
+      <input type="month" class="form-control">
     </div>
     <div class="col-md-3">
       <label class="form-label">الاسم</label>
@@ -75,27 +80,483 @@
       <!-- Example Rows -->
       <tr>
         <td>الأسبوع الأول</td>
-        <td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td>
+        <td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td>
         <td class="delay-cell">2</td>
       </tr>
       <tr>
         <td>الأسبوع الثاني</td>
-        <td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td>
+        <td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td>
+        <td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td>
         <td class="delay-cell">2</td>
       </tr>
       <tr>
         <td>الأسبوع الثالث</td>
-        <td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td>
+        <td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td>
         <td class="delay-cell">2</td>
       </tr>
       <tr>
         <td>الأسبوع الرابع</td>
-        <td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td>
+        <td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td>
         <td class="delay-cell">2</td>
       </tr>
       <tr>
         <td>الأسبوع الخامس</td>
-        <td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td>
+        <td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td><td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <div class="time-title">
+              <label for="start-time" style="margin: 0;">حضور:</label>
+            </div>
+            <input type="time" id="start-time" name="start-time" style="width: 80px; padding: 2px;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="time-title">
+              <label for="end-time" style="margin: 0;">انصراف:</label>
+            </div>
+            <input type="time" id="end-time" name="end-time" style="width: 80px; padding: 2px;">
+          </div>
+        </td>
         <td class="delay-cell">3</td>
       </tr>
 
@@ -122,17 +583,35 @@
       <label class="form-label">عدد ساعات الصافي</label>
       <input type="text" class="form-control" placeholder="مثلاً: 148">
     </div>
-    <div class="col-md-2">
-      <label class="form-label">الراتب المستحق</label>
+    <div class="col-md-2" style="border-right: solid 1px #cccccc;">
+      <label class="form-label">قيمة السلفة</label>
       <input type="text" class="form-control" placeholder="مثلاً: 1200 د.ل">
     </div>
     <div class="col-md-2">
-      <label class="form-label">قيمة السلفة</label>
+      <label class="form-label">المدفوع من السلفة</label>
       <input type="text" class="form-control" placeholder="مثلاً: 100 د.ل">
     </div>
     <div class="col-md-2">
-      <label class="form-label">صافي المرتب</label>
+      <label class="form-label">المتبقي من السلفة</label>
       <input type="text" class="form-control" placeholder="مثلاً: 1100 د.ل">
+    </div>
+  </div>
+  <div class="row summary-box text-center">
+    <div class="col">
+      <label class="form-label">الراتب المستحق</label>
+      <input type="text" class="form-control" placeholder="مثلاً: 1200 د.ل">
+    </div>
+    <div class="col">
+      <label class="form-label">خصم الغياب / التأخير</label>
+      <input type="text" class="form-control" placeholder="مثلاً: 100 د.ل">
+    </div>
+    <div class="col">
+      <label class="form-label">خصم السلفة</label>
+      <input type="text" class="form-control" placeholder="مثلاً: 100 د.ل">
+    </div>
+    <div class="col">
+      <label class="form-label">صافي المرتب</label>
+      <input type="text" class="form-control" placeholder="مثلاً: 1000 د.ل">
     </div>
   </div>
 
