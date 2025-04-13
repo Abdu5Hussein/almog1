@@ -15,6 +15,7 @@ from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.utils import timezone
+from django.db.models import F, Q, Sum, IntegerField
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -210,6 +211,11 @@ def get_dropboxes(request):
 class EnginesTableViewSet(viewsets.ModelViewSet):
     queryset = models.enginesTable.objects.all()
     serializer_class = serializers.EnginesTableSerializer
+
+#@permission_classes([IsAuthenticated])
+class EmployeesTableViewSet(viewsets.ModelViewSet):
+    queryset = models.EmployeesTable.objects.all()
+    serializer_class = serializers.EmployeesSerializer
 
 
 @permission_classes([IsAuthenticated])
@@ -919,6 +925,11 @@ def set_available(request):
     except EmployeesTable.DoesNotExist:
         return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
 
+    if employee.has_active_order:
+        return Response({
+            "message": f"Employee {employee.employee_id} has an active order and cannot be marked as available."
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     if employee.is_available:
         return Response({"message": f"Employee {employee.employee_id} is already available."})
 
@@ -928,12 +939,16 @@ def set_available(request):
 
     # Check if the employee is already in the queue
     if models.EmployeeQueue.objects.filter(employee=employee).exists():
-        # If employee is already in the queue, stop the process and return the message
         return Response({"message": f"Employee {employee.employee_id} is already in the queue."})
 
     # Add to queue if not already present
     queue_position = models.EmployeeQueue.objects.filter(is_available=True).count() + 1
-    models.EmployeeQueue.objects.create(employee=employee, position=queue_position, is_assigned=False, is_available=True)
+    models.EmployeeQueue.objects.create(
+        employee=employee,
+        position=queue_position,
+        is_assigned=False,
+        is_available=True
+    )
 
     return Response({
         "message": f"Employee {employee.employee_id} is now available and added to the queue at position {queue_position}.",
@@ -2281,3 +2296,51 @@ def get_logo_by_pno(request, id):
 @permission_classes([IsAuthenticated])
 def validate_token(request):
     return Response({'detail': 'Token is valid.'})
+
+
+@api_view(['GET'])
+#@permission_classes([IsAuthenticated])
+def get_all_employees_with_balance(request):
+    try:
+        # Query the database for all clients
+        items = models.EmployeesTable.objects.all()
+        serializer = serializers.EmployeesSerializer()
+
+        data = []
+
+        for item in items:
+            clientid = item['clientid']
+
+            # Calculate balance from TransactionsHistoryTable
+            balance_data = models.TransactionsHistoryTable.objects.filter(client_id_id=clientid).aggregate(
+                total_debt=Sum('debt'),
+                total_credit=Sum('credit')
+            )
+
+            total_debt = balance_data.get('total_debt') or 0
+            total_credit = balance_data.get('total_credit') or 0
+            balance = round(total_credit - total_debt, 2)  # Ensure two decimal digits
+
+            # Fetch total credit for specific client_id and where details = "دفعة على حساب"
+            specific_credit_data = models.TransactionsHistoryTable.objects.filter(
+                client_id_id=clientid, details="دفعة على حساب"
+            ).aggregate(total_specific_credit=Sum('credit'))
+
+            total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
+
+            # Add balance and specific credit to the client's data
+            item['balance'] = balance
+            item['paid_total'] = total_specific_credit  # Add the total specific credit
+            data.append(item)
+
+
+        response = {
+            "data": list(data),  # Convert the current page items to a list
+        }
+
+        return Response(response)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

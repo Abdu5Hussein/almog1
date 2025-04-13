@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import datetime
 
 
 class AllClientsTable(models.Model):
@@ -758,6 +759,12 @@ class EmployeesTable(models.Model):
     salary = models.DecimalField(max_digits=19,decimal_places=4,default=0)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    daily_start_time = models.TimeField(
+        default=datetime.time(9, 0)
+    )
+    daily_end_time = models.TimeField(
+        default=datetime.time(18, 0)
+    )
     active = models.BooleanField(default=True)
     category = models.CharField(blank=True, null=True, max_length=50)
     notes = models.CharField(blank=True, null=True, max_length=300)

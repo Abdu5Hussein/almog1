@@ -634,9 +634,9 @@
                                 </div>
                                 <div>
                                     <img
-                                        src="{% static 'images/marine-logo.jpg' %}"
-                                        alt="logo"
-                                        class="logo m-4"
+                                        src="{% static 'images/image-icon.png' %}"
+                                        alt="image"
+                                        style="height: 40px;"
                                     />
                                 </div>
 
@@ -673,7 +673,8 @@
         <div class="row mt-4">
             <div class="col-12 d-flex justify-content-center gap-2 flex-wrap">
                 <button type="button" id="clear-btn" class="btn btn-primary" style="width: 100px">مسح</button>
-                <button type="button" class="btn btn-primary" style="width: 100px">حفظ</button>
+                <button type="button" class="btn btn-primary" style="width: 100px">جديد</button>
+                <button type="button" class="btn btn-primary" style="width: 100px">تعديل</button>
                 <button type="button" class="btn btn-primary" style="width: 100px">حذف</button>
                 <button type="button" class="btn btn-primary" style="width: 100px">اغلاق</button>
             </div>
@@ -694,7 +695,7 @@
             layout: "fitColumns",
             height: "100%",
             columns: [
-            { title: "رقم الموظف", field: "id", hozAlign: "center", width: 120 },
+            { title: "رقم الموظف", field: "employee_id", hozAlign: "center", width: 120 },
             { title: "اسم الموظف", field: "name", hozAlign: "right" },
             { title: "المرتب الشهري", field: "salary", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
             { title: "الرصيد", field: "balance", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } }
@@ -719,6 +720,26 @@
             { title: "بيان التسوية", field: "description", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } }
             ],
         });
+        // Function to fetch data from API and set in Tabulator
+  function loadEmployeeData() {
+    fetch("/api/get/employees-details-with-balance")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then(data => {
+        employees_table.setData(data);
+      })
+      .catch(error => {
+        console.error("Failed to fetch employee data:", error);
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", function (){
+    loadEmployeeData();
+  });
     </script>
   </body>
 </html>

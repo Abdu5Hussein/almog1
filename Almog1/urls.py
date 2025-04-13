@@ -36,6 +36,7 @@ router = DefaultRouter()
 router.register(r'permissions', api_views.ReturnPermissionViewSet, basename='return-permission')
 router.register(r'permission-items', api_views.ReturnPermissionItemsViewSet, basename='return-permission-items')
 router.register(r'engines', api_views.EnginesTableViewSet)
+router.register(r'api/employees-api', api_views.EmployeesTableViewSet)
 
 
 urlpatterns = [
@@ -269,6 +270,7 @@ urlpatterns = [
     path('employees/management/salaries/history',views.employees_cash_reports_view,name="employees_salaries_history"),
     path('employees/management/attendance',views.EmployeesAttendanceView,name="employees_attendance_view"),
     path('employees/management',views.EmployeesDetailsView,name="employees_management_view"),
+    path('api/get/employees-details-with-balance',api_views.get_all_employees_with_balance,name='employees-details-with-balance'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
