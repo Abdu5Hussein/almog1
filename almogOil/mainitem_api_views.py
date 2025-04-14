@@ -621,7 +621,7 @@ def delete_record(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+
 @csrf_exempt
 def web_filter_items(request):
     if request.method == "POST":

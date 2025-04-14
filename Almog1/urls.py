@@ -165,7 +165,7 @@ urlpatterns = [
     path('api/main-types/', api_views.get_main_types, name='get_main_types'),
     path('api/sub-types/', api_views.get_sub_types, name='get_sub_types'),
     path('api/filter-itemsapp/', mainitem_api_views.app_filter_Items, name='filter-items-for-app'),
-
+    path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
     path('api/get-drop-lists', api_views.get_dropboxes, name='get-drop-lists'),
     path('fetch_messages/<int:feedback_id>/', views.fetch_feedback_messages, name='fetch_feedback_messages'),
     path("add_message_to_feedback/<int:feedback_id>/", views.add_message_to_feedback, name="add_message_to_feedback"),
