@@ -12,6 +12,8 @@ from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 
 class AllClientsTable(models.Model):
@@ -714,7 +716,11 @@ class TransactionsHistoryTable(models.Model):
     delivered_date = models.DateTimeField(blank=True, null=True)
     delivered_for = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     current_balance = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
-    client_id = models.ForeignKey(AllClientsTable, models.DO_NOTHING)
+
+    # Generic foreign key fields
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    client_object = GenericForeignKey('content_type', 'object_id')
 
     class Meta:
         managed = True
@@ -756,6 +762,9 @@ class SellInvoiceItemsTable(models.Model):
 class EmployeesTable(models.Model):
     employee_id = models.BigAutoField(primary_key=True)
     name = models.CharField(blank=True, null=True, max_length=100)
+    identity_doc = models.CharField(blank=True, null=True, max_length=200)
+    nationality = models.CharField(blank=True, null=True, max_length=200)
+    last_transaction = models.CharField(blank=True, null=True, max_length=200)
     salary = models.DecimalField(max_digits=19,decimal_places=4,default=0)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
@@ -779,8 +788,8 @@ class EmployeesTable(models.Model):
 
 
     # New fields
-    username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
-    password = models.CharField(max_length=255,null=False)  # This will store the hashed password
+    username = models.CharField(max_length=150, unique=True,null=True)  # Ensure username is unique
+    password = models.CharField(max_length=255,null=True)  # This will store the hashed password
 
     class Meta:
         managed = True

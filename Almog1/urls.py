@@ -165,7 +165,7 @@ urlpatterns = [
     path('api/main-types/', api_views.get_main_types, name='get_main_types'),
     path('api/sub-types/', api_views.get_sub_types, name='get_sub_types'),
     path('api/filter-itemsapp/', mainitem_api_views.app_filter_Items, name='filter-items-for-app'),
-    path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
+
     path('api/get-drop-lists', api_views.get_dropboxes, name='get-drop-lists'),
     path('fetch_messages/<int:feedback_id>/', views.fetch_feedback_messages, name='fetch_feedback_messages'),
     path("add_message_to_feedback/<int:feedback_id>/", views.add_message_to_feedback, name="add_message_to_feedback"),
@@ -242,7 +242,7 @@ urlpatterns = [
     path('assign-order/', views.assign_order_page, name='assign-order-page'),
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
     path('api/add-to-cart/', views.AddToCartView.as_view(), name='add-to-cart'),
-     path('api/store-token/', api_views.store_fcm_token, name='store_fcm_token'),  # Define the API URL
+    path('api/store-token/', api_views.store_fcm_token, name='store_fcm_token'),  # Define the API URL
     path('archived-orders/<int:employee_id>/', api_views.get_archived_orders, name='get_archived_orders'),
     path('api/employee_current_order_info/<int:employee_id>/', api_views.employee_current_order_info, name='employee_current_order_info'),
     path('api/products/<int:id>/add-json-description',mainitem_api_views.mainitem_add_json_desc,name="add-json-description"),
@@ -271,6 +271,12 @@ urlpatterns = [
     path('employees/management/attendance',views.EmployeesAttendanceView,name="employees_attendance_view"),
     path('employees/management',views.EmployeesDetailsView,name="employees_management_view"),
     path('api/get/employees-details-with-balance',api_views.get_all_employees_with_balance,name='employees-details-with-balance'),
+#down here is for carparts
+    path('hozmabrands/',api_views.CarParts_page,name='CarParts_page'),
+    path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
+    path('hozmaHome/',api_views.CarPartsHome_page,name='CarParts_page'),
+    path('api/employees-api/<int:id>/edit-balance',api_views.Edit_employee_balance,name="employee-edit-balance"),
+
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

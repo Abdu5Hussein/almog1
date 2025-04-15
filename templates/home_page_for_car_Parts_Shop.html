@@ -1,0 +1,387 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Car Parts Shop</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        height: 100vh;
+        width: 100vw;
+        margin-right: 250px;
+        background-color: #1c3766;
+      }
+      .navbar-logo {
+          width: 100%;
+          height: auto;
+          object-fit: contain;
+          object-position: center;
+          object-position: 0px -33px;
+      }
+      .logo-container {
+        width: 100px;
+        height: 30px;
+        overflow: hidden;
+        display: inline-block;
+      }
+      @media (max-width: 768px) {
+        .sidebar{
+          top: 73px !important;
+          right: -300px !important;
+          padding-top: 30px !important;
+          transition: right 0.3s ease !important;
+        }
+        .besideSideBar{
+        margin-right: 0px !important;
+        }
+        .main-content{
+        padding-right: 0px !important;
+        }
+      }
+      .app-bar .logo h1 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .full-height {
+        height: 100%;
+      }
+      .custom-height {
+        height: calc(100% - 50px);
+      }
+      .image-container {
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .image-container img {
+        width: inherit;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+        user-select: none;
+      }
+      .sidebar {
+        background-color: #222c3db8;
+        color: white;
+        height: 100%;
+        padding: 20px;
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 250px;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar.show {
+        right: 0 !important;
+      }
+      .sidebar a {
+        color: white;
+        padding: 6px 15px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background-color 0.3s;
+      }
+      .sidebar a:hover {
+        background-color: #495057;
+        text-decoration: none;
+        color: white !important;
+      }
+      .sub-menu {
+        padding-right: 20px;
+        margin-top: 5px;
+        display: none;
+      }
+      .sub-menu a {
+        display: block;
+        text-align: right;
+        padding: 6px 15px;
+      }
+      .besideSideBar{
+        margin-right: 250px;
+      }
+      .main-content{
+        padding-right: 250px;
+      }
+      .navbar-brand {
+        margin-right: 4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="d-flex full-height">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top besideSideBar p-3">
+        <div class="container-fluid">
+          <a class="navbar-brand d-flex justify-content-center align-items-center" href="#">
+            <div class="logo-container">
+              <img
+                src="{% static 'images/car-parts-logo.svg' %}"
+                alt="logo"
+                class="navbar-logo"
+              />
+            </div>Car Parts Shop</a>
+          <button
+            class="navbar-toggler"
+            type="button"
+            id="sidebar-toggler"
+            aria-label="Toggle sidebar"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+              <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+            </svg>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/home">الصفحة الرئيسية</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/support_dashboard">الدعم الفني</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">حول الشركة</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="navbarDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  الحساب
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <li><a class="dropdown-item" href="#">معلومات الحساب</a></li>
+                  <li><a class="dropdown-item" href="#">الامان</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" id="logout-btn">تسجيل الخروج</a></li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link disabled"
+                  href="#"
+                  tabindex="-1"
+                  aria-disabled="true"
+                  >{{ request.session.name|default:"المستخدم!" }}</a
+                >
+              </li>
+            </ul>
+            <form class="d-flex">
+              <input
+                class="form-control me-2"
+                type="search"
+                placeholder="Search"
+                aria-label="Search"
+              />
+              <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Sidebar -->
+      <div id="sidebar" class="sidebar">
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>قطع غيار السيارات</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">بيانات القطع</a>
+              <a class="nav-link" href="#">تقارير القطع المحلية</a>
+              <a class="nav-link" href="#">تقارير القطع الخارجية</a>
+              <a class="nav-link" href="#">تعديل الأسعار</a>
+              <a class="nav-link" href="#">تقرير حركة القطع</a>
+              <a class="nav-link" href="#">إعادة ترصيد القطع</a>
+              <a class="nav-link" href="#">الجرد</a>
+              <a class="nav-link" href="#">التلف والفقد</a>
+              <a class="nav-link" href="#">أماكن التخزين</a>
+              <a class="nav-link" href="#">حجز قطع</a>
+              <a class="nav-link" href="#">النواقص</a>
+              <a class="nav-link" href="#">أذونات الصرف</a>
+              <a class="nav-link" href="#">قطع بالملاحظات</a>
+              <a class="nav-link" href="#">إضافة مواصفات القطع</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>فواتير الشراء المحلية</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">إدخال فاتورة شراء</a>
+              <a class="nav-link" href="#">تقارير فواتير الشراء</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>فواتير الشراء الخارجية</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">إدخال فاتورة شراء</a>
+              <a class="nav-link" href="#">تقارير فواتير الشراء</a>
+              <a class="nav-link" href="#">تعديل أسعار البيع</a>
+              <a class="nav-link" href="#">تسوية حساب الفواتير</a>
+              <a class="nav-link" href="#">جرد فواتير الشراء</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>فواتير البيع</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">إدخال فاتورة بيع</a>
+              <a class="nav-link" href="#">فواتير البيع</a>
+              <a class="nav-link" href="#">تسوية حساب الفواتير</a>
+              <a class="nav-link" href="#">بحث بأصناف المخزن</a>
+              <a class="nav-link" href="#">تقارير التحضير</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>العملاء</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">دليل العملاء</a>
+              <a class="nav-link" href="#">تقارير العملاء</a>
+              <a class="nav-link" href="#">تسوية حساب</a>
+              <a class="nav-link" href="#">تقارير تسوية حساب</a>
+              <a class="nav-link" href="#">تقارير المراجعة</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>الموردين</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">إضافة مورد</a>
+              <a class="nav-link" href="#">تقارير الموردين</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>الموظفين</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">دليل الموظفين</a>
+              <a class="nav-link" href="#">الموصلين</a>
+              <a class="nav-link" href="#">حساب المرتبات</a>
+              <a class="nav-link" href="#">قيود التسوية</a>
+              <a class="nav-link" href="#">تقارير</a>
+              <a class="nav-link" href="#">تقارير التسوية</a>
+              <a class="nav-link" href="#">حضور وغياب</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>الخزينة</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">قيود الخزينة</a>
+              <a class="nav-link" href="#">تقارير الخزينة</a>
+              <a class="nav-link" href="#">طلب قيمة</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>الحسابات</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">Subitem 10-1</a>
+              <a class="nav-link" href="#">Subitem 10-2</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>المستخدمين</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">المستخدمين</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link toggle-submenu" href="#"><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a>
+            <div class="sub-menu">
+              <a class="nav-link" href="#">Subitem 12-1</a>
+              <a class="nav-link" href="#">Subitem 12-2</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content flex-grow-1 mt-5">
+        <div class="container-fluid custom-height d-flex justify-content-center align-items-center">
+          <div class="container rounded-circle image-container">
+            <img
+              src="{% static 'images/car-parts-logo.jpg' %}"
+              alt="Car Parts Shop Logo"
+              class="logo m-4"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap Bundle (includes Popper.js) -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+      const menuToggle = document.getElementById("sidebar-toggler");
+      const sidebar = document.getElementById("sidebar");
+      menuToggle.addEventListener("click", function() {
+        sidebar.classList.toggle("show");
+      });
+
+      document.querySelectorAll(".toggle-submenu").forEach((item) => {
+        item.addEventListener("click", (event) => {
+          event.preventDefault();
+          const submenu = item.nextElementSibling;
+          document.querySelectorAll(".sub-menu").forEach((sub) => {
+            if (sub !== submenu) {
+              sub.style.display = "none";
+            }
+          });
+          submenu.style.display =
+            submenu.style.display === "block" ? "none" : "block";
+        });
+      });
+
+      document.getElementById("logout-btn").addEventListener("click", function (){
+        logoutFunction();
+      });
+
+      function logoutFunction(){
+          const access_token = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+          const refresh_token = localStorage.getItem("session_data@refresh_token").replace(/"/g, '');
+          const data = {
+              "refresh": refresh_token,
+              "access": access_token,
+          };
+          customFetch(`/api/user/logout`, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${access_token}`,
+              },
+              body: JSON.stringify(data),
+          })
+          .then((response) => response.json())
+          .then((result) => {
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = "/login";
+          })
+          .catch((error) => {
+              console.error("Error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>

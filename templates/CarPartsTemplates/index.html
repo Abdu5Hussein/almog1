@@ -1,0 +1,651 @@
+
+<!DOCTYPE html>
+<html lang="en">
+   {% load static %}
+<head>
+   <!-- basic -->
+   <meta charset="utf-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <!-- mobile metas -->
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+   <!-- site metas -->
+   <title>mical</title>
+   <meta name="keywords" content="">
+   <meta name="description" content="">
+   <meta name="author" content="">
+
+   <!-- bootstrap css -->
+   <link rel="stylesheet" href="{% static 'mical-html/css/bootstrap.min.css' %}">
+   <!-- style css -->
+   <link rel="stylesheet" href="{% static 'mical-html/css/style.css' %}">
+   <!-- responsive css -->
+   <link rel="stylesheet" href="{% static 'mical-html/css/responsive.css' %}">
+   <!-- fevicon -->
+   <link rel="icon" href="{% static 'mical-html/images/fevicon.png' %}" type="image/gif" />
+   <!-- scrollbar Custom CSS -->
+   <link rel="stylesheet" href="{% static 'mical-html/css/jquery.mCustomScrollbar.min.css' %}">
+   <!-- font awesome -->
+   <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+   <!-- fancybox -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" media="screen">
+   <!--[if lt IE 9]>
+   <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+   <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+   <![endif]-->
+</head>
+
+   <!-- body -->
+   <body class="main-layout">
+      <!-- loader  -->
+      <div class="loader_bg">
+         <div class="loader"><img src="images/loading.gif" alt="#" /></div>
+      </div>
+      <!-- end loader -->
+      <!-- header -->
+      <header>
+         <!-- header inner -->
+         <div class="header">
+            <div class="container-fluid">
+               <div class="row">
+                  <div class="col-xl-3 col-lg-3 col-md-3 col-sm-3 col logo_section">
+                     <div class="full">
+                        <div class="center-desk">
+                           <div class="logo">
+                              <a href="index.html"><img src="images/logo.png" alt="#" /></a>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-xl-9 col-lg-9 col-md-9 col-sm-9">
+                     <nav class="navigation navbar navbar-expand-md navbar-dark ">
+                        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarsExample04">
+                           <ul class="navbar-nav mr-auto">
+                              <li class="nav-item active">
+                                 <a class="nav-link" href="index.html"> الرئيسية  </a>
+                              </li>
+                              <li class="nav-item">
+                                 <a class="nav-link" href="about.html">حول </a>
+                              </li>
+                              <li class="nav-item">
+                                 <a class="nav-link" href="http://45.13.59.226/item-for-inqury-page/">المتجر</a>
+                              </li>
+                              <li class="nav-item">
+                                 <a class="nav-link" href="#">العلامات التجارية</a>
+                              </li>
+                              <li class="nav-item">
+                                 <a class="nav-link" href="contact.html">اتصل بنا</a>
+                              </li>
+                              <li class="nav-item d_none">
+                                 <a class="nav-link" href="#"><i class="fa fa-user-circle padd_right" aria-hidden="true"></i>التسجبل او تسجيل الدخول</a>
+                              </li>
+                              <li class="nav-item d_none">
+                                 <a class="nav-link" href="#"><i class="fa fa-search" aria-hidden="true"></i></a>
+                              </li>
+                              <li class="nav-item d_none">
+                                 <a class="nav-link" href="#" id="cart-icon">
+                                    <i class="fa fa-shopping-cart padd_right" aria-hidden="true"></i>
+                                    <span id="cart-count" class="cart-count">0</span>
+                                 </a>
+                              </li>
+                           </ul>
+                        </div>
+                     </nav>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </header>
+      <!-- end header inner -->
+      <!-- end header -->
+      <!-- banner -->
+      <section class="banner_main">
+         <div id="banner1" class="carousel slide" data-ride="carousel">
+            <ol class="carousel-indicators">
+               <li data-target="#banner1" data-slide-to="0" class="active"></li>
+               <li data-target="#banner1" data-slide-to="1"></li>
+               <li data-target="#banner1" data-slide-to="2"></li>
+            </ol>
+            <div class="carousel-inner">
+               <div class="carousel-item active">
+                  <div class="container-fluid">
+                     <div class="carousel-caption">
+                        <div class="row">
+                           <div class="col-md-6">
+                              <div class="text-bg">
+                                 <h1>Welcome</h1>
+                                 <span>car repair services</span>
+                                 <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, </p>
+                                 <a href="#">More Info </a> <a href="#">Contact Us</a>
+                              </div>
+                           </div>
+                           <div class="col-md-6">
+                              <div class="text_img">
+                                 <figure><img src="images/car.png" alt="#"/></figure>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="carousel-item">
+                  <div class="container-fluid">
+                     <div class="carousel-caption">
+                        <div class="row">
+                           <div class="col-md-6">
+                              <div class="text-bg">
+                                 <h1>Welcome</h1>
+                                 <span>car repair services</span>
+                                 <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, </p>
+                                 <a href="#">More Info </a> <a href="#">Contact Us</a>
+                              </div>
+                           </div>
+                           <div class="col-md-6">
+                              <div class="text_img">
+                                 <figure><img src="images/car.png" alt="#"/></figure>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="carousel-item">
+                  <div class="container-fluid">
+                     <div class="carousel-caption">
+                        <div class="row">
+                           <div class="col-md-6">
+                              <div class="text-bg">
+                                 <h1>Welcome</h1>
+                                 <span>car repair services</span>
+                                 <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, </p>
+                                 <a href="#">More Info </a> <a href="#">Contact Us</a>
+                              </div>
+                           </div>
+                           <div class="col-md-6">
+                              <div class="text_img">
+                                 <figure><img src="images/car.png" alt="#"/></figure>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+            <a class="carousel-control-prev" href="#banner1" role="button" data-slide="prev">
+            <i class="fa fa-chevron-left" aria-hidden="true"></i>
+            </a>
+            <a class="carousel-control-next" href="#banner1" role="button" data-slide="next">
+            <i class="fa fa-chevron-right" aria-hidden="true"></i>
+            </a>
+         </div>
+      </section>
+      <!-- end banner -->
+      <!-- three_box -->
+      <div class="three_box">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-4">
+                  <div class="box_text">
+                     <h3>AUTO DIAGNOSE</h3>
+                     <i><img src="images/thr.png" alt="#"/></i>
+                     <p>ipsum dolor sit amet, consectetur adipiscing elit, sed d veniam, adipiscing elit, sed d veniam</p>
+                  </div>
+               </div>
+               <div class="col-md-4">
+                  <div class="box_text">
+                     <h3>AUTO DIAGNOSE</h3>
+                     <i><img src="images/thr1.png" alt="#"/></i>
+                     <p>ipsum dolor sit amet, consectetur adipiscing elit, sed d veniam, adipiscing elit, sed d veniam</p>
+                  </div>
+               </div>
+               <div class="col-md-4">
+                  <div class="box_text">
+                     <h3>AUTO DIAGNOSE</h3>
+                     <i><img src="images/thr2.png" alt="#"/></i>
+                     <p>ipsum dolor sit amet, consectetur adipiscing elit, sed d veniam, adipiscing elit, sed d veniam</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <!-- three_box -->
+      <!-- about -->
+      <div  class="about">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-12">
+                  <div class="titlepage">
+                     <h2>About Our Car Service </h2>
+                  </div>
+               </div>
+            </div>
+            <div class="container">
+               <div class="row">
+                  <div class="col-md-10 offset-md-1">
+                     <div class="about_img">
+                        <div class="about_box">
+                           <h3>Dolor sit amet, consectetur adipiscing elit,  </h3>
+                           <p>dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud </p>
+                           <a class="read_more">Read More</a>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <!-- end about -->
+      <!-- wedo  section -->
+      <div class="wedo ">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-12">
+                  <div class="titlepage">
+                     <h2>What We Do</h2>
+                     <p>It is a long established fact that a reader will be distracted by the </p>
+                  </div>
+               </div>
+            </div>
+            <div class="row">
+               <div class="col-md-10 offset-md-1">
+                  <div class="row">
+                     <div class="col-md-6 margin_bottom">
+                        <div class="work">
+                           <figure><img src="images/img1.png" alt="#" /></figure>
+                        </div>
+                        <div class="work_text">
+                           <h3>Quick repair<br><span class="blu">Total Service</span></h3>
+                        </div>
+                     </div>
+                     <div class="col-md-6 margin_bottom">
+                        <div class="work">
+                           <figure><img src="images/img2.png" alt="#" /></figure>
+                        </div>
+                        <div class="work_text">
+                           <h3>Quick repair<br><span class="blu">Total Service</span></h3>
+                        </div>
+                     </div>
+                     <div class="col-md-6 margin_bottom">
+                        <div class="work">
+                           <figure><img src="images/img3.png" alt="#" /></figure>
+                        </div>
+                        <div class="work_text">
+                           <h3>Quick repair<br> <span class="blu">Total Service</span></h3>
+                        </div>
+                     </div>
+                     <div class="col-md-6 margin_bottom">
+                        <div class="work">
+                           <figure><img src="images/img4.png" alt="#" /></figure>
+                        </div>
+                        <div class="work_text">
+                           <h3>Quick repair<br><span class="blu">Total Service</span></h3>
+                        </div>
+                     </div>
+                  </div>
+                  <a class="read_more" href="#">See More</a>
+               </div>
+            </div>
+         </div>
+      </div>
+      <!-- end wedo  section -->
+      <!-- testimonial -->
+      <div class="testimonial">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-12">
+                  <div class="titlepage">
+                     <h2>Testimonial</h2>
+                     <p>It is a long established fact that a reader will be distracted by the </p>
+                  </div>
+               </div>
+            </div>
+            <div class="row">
+               <div class="col-md-12">
+                  <div id="myCarousel" class="carousel slide testimonial_Carousel " data-ride="carousel">
+                     <ol class="carousel-indicators">
+                        <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+                        <li data-target="#myCarousel" data-slide-to="1"></li>
+                        <li data-target="#myCarousel" data-slide-to="2"></li>
+                     </ol>
+                     <div class="carousel-inner">
+                        <div class="carousel-item active">
+                           <div class="container">
+                              <div class="carousel-caption ">
+                                 <div class="row">
+                                    <div class="col-md-6 margin_boot">
+                                       <div class="test_box">
+                                          <i><img src="images/tes.jpg" alt="#"/></i>
+                                          <h4>JCKOLO</h4>
+                                          <span>(It is a long )</span>
+                                          <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as </p>
+                                       </div>
+                                    </div>
+                                    <div class="col-md-6 margin_boot">
+                                       <div class="test_box">
+                                          <i><img src="images/tes1.jpg" alt="#"/></i>
+                                          <h4>ROCOYO</h4>
+                                          <span>(It is a long )</span>
+                                          <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as </p>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                        <div class="carousel-item">
+                           <div class="container">
+                              <div class="carousel-caption">
+                                 <div class="row">
+                                    <div class="col-md-6 margin_boot">
+                                       <div class="test_box">
+                                          <i><img src="images/tes.jpg" alt="#"/></i>
+                                          <h4>JCKOLO</h4>
+                                          <span>(It is a long )</span>
+                                          <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as </p>
+                                       </div>
+                                    </div>
+                                    <div class="col-md-6 margin_boot">
+                                       <div class="test_box">
+                                          <i><img src="images/tes1.jpg" alt="#"/></i>
+                                          <h4>ROCOYO</h4>
+                                          <span>(It is a long )</span>
+                                          <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as </p>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                        <div class="carousel-item">
+                           <div class="container">
+                              <div class="carousel-caption">
+                                 <div class="row">
+                                    <div class="col-md-6 margin_boot">
+                                       <div class="test_box">
+                                          <i><img src="images/tes.jpg" alt="#"/></i>
+                                          <h4>JCKOLO</h4>
+                                          <span>(It is a long )</span>
+                                          <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as </p>
+                                       </div>
+                                    </div>
+                                    <div class="col-md-6 margin_boot">
+                                       <div class="test_box">
+                                          <i><img src="images/tes1.jpg" alt="#"/></i>
+                                          <h4>ROCOYO</h4>
+                                          <span>(It is a long )</span>
+                                          <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as </p>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                     <a class="carousel-control-prev" href="#myCarousel" role="button" data-slide="prev">
+                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                     <span class="sr-only">Previous</span>
+                     </a>
+                     <a class="carousel-control-next" href="#myCarousel" role="button" data-slide="next">
+                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                     <span class="sr-only">Next</span>
+                     </a>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      </div>
+
+      <!-- Overlay and Cart Sidebar -->
+      <div id="overlay"></div>
+      <div id="cart-sidebar" class="cart-sidebar">
+         <h3>Your Cart</h3>
+         <ul id="cart-items" class="cart-items"></ul>
+         <button id="close-cart" class="close-cart">Close</button>
+      </div>
+
+      <!--  footer -->
+      <footer id="contact">
+         <div class="footer">
+            <div class="container">
+               <div class="row">
+                  <div class="col-md-4">
+                     <div class="titlepage">
+                        <h2>Contact Us</h2>
+                     </div>
+                  </div>
+                  <div class="col-md-8">
+                     <ul class="location_icon">
+                        <li><a href="#"><i class="fa fa-map-marker" aria-hidden="true"></i></a> Locatins</li>
+                        <li><a href="#"><i class="fa fa-volume-control-phone" aria-hidden="true"></i></a> +71 9087654321</li>
+                        <li><a href="#"><i class="fa fa-envelope" aria-hidden="true"></i></a>demo@gmail.com</li>
+                     </ul>
+                  </div>
+                  <div class="col-md-6">
+                     <form id="request" class="main_form">
+                        <div class="row">
+                           <div class="col-md-12 ">
+                              <input class="contactus" placeholder="Full Name" type="type" name="Full Name"> 
+                           </div>
+                           <div class="col-md-12">
+                              <input class="contactus" placeholder="Email" type="type" name="Email"> 
+                           </div>
+                           <div class="col-md-12">
+                              <input class="contactus" placeholder="Phone Number" type="type" name="Phone Number">                          
+                           </div>
+                           <div class="col-md-12">
+                              <textarea class="textarea" placeholder="Message" type="type" Message="Name">Message </textarea>
+                           </div>
+                           <div class="col-sm-col-xl-6 col-lg-6 col-md-6 col-sm-12">
+                              <button class="send_btn">Send</button>
+                           </div>
+                           <div class="col-sm-col-xl-6 col-lg-6 col-md-6 col-sm-12">
+                              <ul class="social_icon">
+                                 <li><a href="#"><i class="fa fa-facebook" aria-hidden="true"></i></a></li>
+                                 <li><a href="#"><i class="fa fa-twitter" aria-hidden="true"></i></a></li>
+                                 <li><a href="#"><i class="fa fa-linkedin-square" aria-hidden="true"></i></a></li>
+                                 <li><a href="#"><i class="fa fa-instagram" aria-hidden="true"></i></a></li>
+                              </ul>
+                           </div>
+                        </div>
+                     </form>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="map">
+                        <figure><img src="images/map.jpg" alt="#"/></figure>
+                     </div>
+                     <form class="bottom_form">
+                        <h3>Newsletter</h3>
+                        <input class="enter" placeholder="Enter your email" type="text" name="Enter your email">
+                        <button class="sub_btn">subscribe</button>
+                     </form>
+                  </div>
+               </div>
+            </div>
+            <div class="copyright">
+               <div class="container">
+                  <div class="row">
+                     <div class="col-md-12">
+                        <p>Copyright 2019 All Right Reserved By <a href="https://html.design/"> Free  html Templates</a></p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </footer>
+      <!-- end footer -->
+      <!-- Javascript files-->
+      {% load static %}
+      <script src="{% static 'mical-html/js/jquery.min.js' %}"></script>
+      <script src="{% static 'mical-html/js/popper.min.js' %}"></script>
+      <script src="{% static 'mical-html/js/bootstrap.bundle.min.js' %}"></script>
+      <script src="{% static 'mical-html/js/jquery-3.0.0.min.js' %}"></script>
+      <!-- sidebar -->
+      <script src="{% static 'mical-html/js/jquery.mCustomScrollbar.concat.min.js' %}"></script>
+      <script src="{% static 'mical-html/js/custom.js' %}"></script>
+
+      <style>
+         /* Cart Sidebar Styles */
+         #overlay {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background-color: rgba(0, 0, 0, 0.5);
+           display: none;
+           z-index: 999;
+         }
+         .cart-sidebar {
+           position: fixed;
+           top: 0;
+           right: -300px;
+           width: 300px;
+           height: 100%;
+           background-color: #fff;
+           box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+           padding: 20px;
+           transition: right 0.3s ease;
+           z-index: 1000;
+           overflow-y: auto;
+         }
+         .cart-sidebar.open {
+           right: 0;
+         }
+         .cart-items {
+           list-style: none;
+           padding: 0;
+           margin: 0 0 20px 0;
+         }
+         .cart-items li {
+           display: flex;
+           justify-content: space-between;
+           margin-bottom: 10px;
+           border-bottom: 1px solid #ddd;
+           padding-bottom: 10px;
+         }
+         .cart-items li button {
+           background-color: #ff4d4d;
+           border: none;
+           color: white;
+           padding: 5px 10px;
+           cursor: pointer;
+         }
+         .close-cart {
+           background-color: #333;
+           color: white;
+           border: none;
+           padding: 10px 15px;
+           cursor: pointer;
+           width: 100%;
+         }
+         .cart-count {
+           background-color: #ff4d4d;
+           color: white;
+           border-radius: 50%;
+           padding: 2px 6px;
+           font-size: 12px;
+           vertical-align: top;
+           margin-left: 5px;
+         }
+      </style>
+
+      <script>
+         document.addEventListener('DOMContentLoaded', function() {
+           const cartIcon = document.getElementById('cart-icon');
+           const cartSidebar = document.getElementById('cart-sidebar');
+           const overlay = document.getElementById('overlay');
+           const closeCartBtn = document.getElementById('close-cart');
+           const cartItemsList = document.getElementById('cart-items');
+           const cartCount = document.getElementById('cart-count');
+
+           function updateCartCount() {
+             const count = cartItemsList.children.length;
+             cartCount.textContent = count;
+           }
+
+           function toggleCart() {
+             cartSidebar.classList.toggle('open');
+             if (cartSidebar.classList.contains('open')) {
+               overlay.style.display = 'block';
+             } else {
+               overlay.style.display = 'none';
+             }
+           }
+
+           cartIcon.addEventListener('click', function(e) {
+             e.preventDefault();
+             toggleCart();
+           });
+
+           closeCartBtn.addEventListener('click', function() {
+             toggleCart();
+           });
+
+           overlay.addEventListener('click', function() {
+             toggleCart();
+           });
+
+           // Example function to add items to cart (for demonstration)
+           window.addToCart = function(itemName) {
+             const li = document.createElement('li');
+             li.textContent = itemName;
+             const removeBtn = document.createElement('button');
+             removeBtn.textContent = 'Remove';
+             removeBtn.addEventListener('click', function() {
+               li.remove();
+               updateCartCount();
+             });
+             li.appendChild(removeBtn);
+             cartItemsList.appendChild(li);
+             updateCartCount();
+           };
+
+           // New code to load cart from localStorage and populate UI
+           function loadCartFromLocalStorage() {
+             const cartJSON = localStorage.getItem('product_cart');
+             if (!cartJSON) return;
+             try {
+               const cart = JSON.parse(cartJSON);
+               cartItemsList.innerHTML = '';
+               cart.forEach(item => {
+                 const li = document.createElement('li');
+                 li.textContent = item.name + ' (Qty: ' + item.quantity + ')';
+                 const removeBtn = document.createElement('button');
+                 removeBtn.textContent = 'Remove';
+                 removeBtn.addEventListener('click', function() {
+                   li.remove();
+                   updateCartCount();
+                   removeItemFromLocalStorage(item.id);
+                 });
+                 li.appendChild(removeBtn);
+                 cartItemsList.appendChild(li);
+               });
+               updateCartCount();
+             } catch (e) {
+               console.error('Error parsing cart from localStorage', e);
+             }
+           }
+
+           function removeItemFromLocalStorage(itemId) {
+             const cartJSON = localStorage.getItem('product_cart');
+             if (!cartJSON) return;
+             try {
+               let cart = JSON.parse(cartJSON);
+               cart = cart.filter(item => item.id !== itemId);
+               localStorage.setItem('product_cart', JSON.stringify(cart));
+             } catch (e) {
+               console.error('Error removing item from localStorage cart', e);
+             }
+           }
+
+           // Load cart on page load
+           loadCartFromLocalStorage();
+
+         });
+      </script>
+   </body>
+</html>

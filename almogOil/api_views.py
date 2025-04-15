@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from rest_framework import status
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 import json
@@ -1658,10 +1659,11 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
                 credit=Decimal(returned_item_instance.total),
                 debt=0.0,
                 transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                details=f"ترجيع بضاتع - فاتورة رقم {invoice_item.invoice_no}",
+                details=f"ترجيع بضائع - فاتورة رقم {invoice_item.invoice_no}",
                 registration_date=timezone.now(),
                 current_balance=round(last_balance_amount, 2) + Decimal(returned_item_instance.total),  # Updated balance
-                client_id_id=invoice.client_id,  # Client ID
+                content_type=ContentType.objects.get_for_model(invoice.client_id),
+                object_id=invoice.client_id.pk
             )
         except:
             return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
@@ -1824,7 +1826,8 @@ def accept_payment_req(request, id):
                         details="طلب قيمة مالية",
                         registration_date=timezone.now(),
                         current_balance=round(last_balance_amount + loan_amount, 2),  # Updated balance
-                        client_id_id=req.client.clientid,  # Client ID
+                        content_type=ContentType.objects.get_for_model(req.client),
+                        object_id=req.client.pk  # Assuming req.client is a model instance (e.g. Employee, AllClientsTable)
                     )
                 except Exception as e:
                     return Response({"error": f"Error in transaction saving: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
@@ -2302,49 +2305,107 @@ def validate_token(request):
 #@permission_classes([IsAuthenticated])
 def get_all_employees_with_balance(request):
     try:
-        # Query the database for all clients
-        items = models.EmployeesTable.objects.all()
-        serializer = serializers.EmployeesSerializer()
-
+        # Fetch all employees
+        employees = models.EmployeesTable.objects.all()
         data = []
 
-        for item in items:
-            clientid = item['clientid']
+        for employee in employees:
+            clientid = employee.employee_id
 
-            # Calculate balance from TransactionsHistoryTable
-            balance_data = models.TransactionsHistoryTable.objects.filter(client_id_id=clientid).aggregate(
+            # Calculate total debt and credit
+            balance_data = models.TransactionsHistoryTable.objects.filter(
+                client_id_id=clientid
+            ).aggregate(
                 total_debt=Sum('debt'),
                 total_credit=Sum('credit')
             )
 
             total_debt = balance_data.get('total_debt') or 0
             total_credit = balance_data.get('total_credit') or 0
-            balance = round(total_credit - total_debt, 2)  # Ensure two decimal digits
+            balance = round(total_credit - total_debt, 2)
 
-            # Fetch total credit for specific client_id and where details = "دفعة على حساب"
+            # Calculate "دفعة على حساب" specific credit
             specific_credit_data = models.TransactionsHistoryTable.objects.filter(
                 client_id_id=clientid, details="دفعة على حساب"
             ).aggregate(total_specific_credit=Sum('credit'))
 
             total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
 
-            # Add balance and specific credit to the client's data
-            item['balance'] = balance
-            item['paid_total'] = total_specific_credit  # Add the total specific credit
-            data.append(item)
+            # Serialize employee and add balance info
+            serialized_employee = serializers.EmployeesSerializer(employee).data
+            serialized_employee['balance'] = balance
+            serialized_employee['paid_total'] = total_specific_credit
 
+            data.append(serialized_employee)
 
-        response = {
-            "data": list(data),  # Convert the current page items to a list
-        }
-
-        return Response(response)
+        return Response({"data": data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# it well be removed to to the other application what is in down here
 
 @csrf_exempt
 @api_view(["GET"])
 def item_filter_page(request):
     return render(request, 'items_page.html')
+
+@api_view(["GET"])
+def CarParts_page(request):
+    return render(request, 'CarPartsTemplates/testimonial.html')
+
+@api_view(["GET"])
+def CarPartsHome_page(request):
+    return render(request, 'CarPartsTemplates/index.html')
+
+
+@csrf_exempt
+@api_view(["POST"])
+def Edit_employee_balance(request, id):
+    try:
+        employee = models.EmployeesTable.objects.get(employee_id=id)
+    except models.EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    operation = request.data.get("operation")  # "credit" or "debit"
+    amount = request.data.get("amount")
+
+    if not operation or operation not in ["credit", "debit"]:
+        return Response({"error": "Invalid operation. Must be 'credit' or 'debit'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        amount = float(amount)
+    except (ValueError, TypeError):
+        return Response({"error": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create a new transaction using GenericForeignKey
+    models.TransactionsHistoryTable.objects.create(
+        transaction="Employee Transaction",
+        credit=amount if operation == "credit" else 0,
+        debt=amount if operation == "debit" else 0,
+        details=request.data.get("description", f"{operation.capitalize()} transaction"),
+        content_type=ContentType.objects.get_for_model(employee),
+        object_id=employee.pk
+    )
+
+    # Recalculate the balance
+    content_type = ContentType.objects.get_for_model(employee)
+    balance_data = models.TransactionsHistoryTable.objects.filter(
+        content_type=content_type,
+        object_id=employee.pk
+    ).aggregate(
+        total_debt=Sum('debt') or 0,
+        total_credit=Sum('credit') or 0
+    )
+
+    total_debt = balance_data.get('total_debt') or 0
+    total_credit = balance_data.get('total_credit') or 0
+    balance = round(total_credit - total_debt, 2)
+
+    employee.balance = balance
+    employee.save()
+
+    return Response({
+        "message": f"{operation.capitalize()} of {amount} added successfully.",
+        "balance": balance
+    }, status=status.HTTP_200_OK)

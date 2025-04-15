@@ -310,6 +310,340 @@
 </head>
 <body>
 
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1a237e; border-bottom: 2px solid #3949ab; font-size: 0.9rem;">
+    <div class="container">
+      <a class="navbar-brand fw-semibold" href="/home" aria-label="الرئيسية" style="font-size: 1.3rem; color: #ffca28; letter-spacing: 1px; text-shadow: 0 0 5px #ffca28;">
+        متجر المنتجات
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #ffca28;">
+        <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item">
+            <a class="nav-link" href="/home" aria-current="page" style="color: #c5cae9; transition: color 0.3s ease;">
+              <i class="bi bi-house-door-fill me-1" style="font-size: 1.1rem;"></i> الرئيسية
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/products" style="color: #c5cae9; transition: color 0.3s ease;">
+              <i class="bi bi-box-seam me-1" style="font-size: 1.1rem;"></i> المنتجات
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/orders" style="color: #c5cae9; transition: color 0.3s ease;">
+              <i class="bi bi-card-checklist me-1" style="font-size: 1.1rem;"></i> الطلبات
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/contact" style="color: #c5cae9; transition: color 0.3s ease;">
+              <i class="bi bi-envelope-fill me-1" style="font-size: 1.1rem;"></i> تواصل معنا
+            </a>
+          </li>
+          <li class="nav-item position-relative">
+            <a id="navbarCartIcon" class="nav-link" href="javascript:void(0);" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة" onclick="toggleCart()" style="color: #c5cae9; transition: color 0.3s ease;">
+              <i class="bi bi-cart3" aria-hidden="true" style="font-size: 1.4rem;"></i>
+              <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" aria-live="polite" aria-atomic="true" style="font-size: 0.7rem;">0</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <style>
+    .navbar-nav .nav-link:hover, .navbar-nav .nav-link.active {
+      color: #ffca28 !important;
+      text-shadow: 0 0 5px #ffca28;
+    }
+  </style>
+
+  <style>
+    /* RTL adjustments */
+    body {
+      direction: rtl;
+    }
+    .navbar-nav .nav-link {
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: color 0.3s ease;
+    }
+    .navbar-nav .nav-link:hover, .navbar-nav .nav-link.active {
+      color: #0d6efd;
+    }
+    .form-control {
+      max-width: 250px;
+    }
+  </style>
+
+  <style>
+    /* Custom Navbar inspired by marin.ly */
+    .custom-navbar {
+      position: fixed;
+      width: 100%;
+      top: 0;
+      right: 0;
+      background: transparent;
+      z-index: 10000;
+      transition: background-color 0.4s ease, box-shadow 0.4s ease;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      direction: rtl;
+    }
+
+    .custom-navbar.scrolled {
+      background: #0d6efd;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .custom-navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .navbar-logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: white;
+      text-decoration: none;
+      letter-spacing: 1px;
+      transition: color 0.3s ease;
+    }
+
+    .navbar-logo:hover {
+      color: #ffd54f;
+      text-shadow: 0 0 8px #ffd54f;
+    }
+
+    /* Menu Icon for mobile */
+    #menu-toggle {
+      display: none;
+    }
+
+    .menu-icon {
+      cursor: pointer;
+      display: none;
+      width: 30px;
+      height: 25px;
+      position: relative;
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg);
+      -webkit-transition: .5s ease-in-out;
+      transition: .5s ease-in-out;
+    }
+
+    .menu-icon .navicon {
+      background: white;
+      display: block;
+      position: absolute;
+      height: 3px;
+      width: 100%;
+      border-radius: 3px;
+      opacity: 1;
+      left: 0;
+      top: 0;
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg);
+      -webkit-transition: .25s ease-in-out;
+      transition: .25s ease-in-out;
+    }
+
+    .menu-icon .navicon:before,
+    .menu-icon .navicon:after {
+      content: '';
+      background: white;
+      display: block;
+      position: absolute;
+      height: 3px;
+      width: 100%;
+      border-radius: 3px;
+      opacity: 1;
+      left: 0;
+      -webkit-transition: .25s ease-in-out;
+      transition: .25s ease-in-out;
+    }
+
+    .menu-icon .navicon:before {
+      top: 8px;
+    }
+
+    .menu-icon .navicon:after {
+      top: 16px;
+    }
+
+    #menu-toggle:checked + .menu-icon .navicon {
+      background: transparent;
+    }
+
+    #menu-toggle:checked + .menu-icon .navicon:before {
+      -webkit-transform: rotate(45deg);
+      transform: rotate(45deg);
+      top: 0;
+    }
+
+    #menu-toggle:checked + .menu-icon .navicon:after {
+      -webkit-transform: rotate(-45deg);
+      transform: rotate(-45deg);
+      top: 0;
+    }
+
+    /* Navigation Menu */
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-menu li {
+      margin-left: 1.5rem;
+    }
+
+    .nav-menu li a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      position: relative;
+      padding: 0.5rem 0;
+      transition: color 0.3s ease;
+    }
+
+    .nav-menu li a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: 0;
+      left: 0;
+      background-color: #ffd54f;
+      transition: width 0.3s ease;
+      border-radius: 2px;
+    }
+
+    .nav-menu li a:hover,
+    .nav-menu li a.active {
+      color: #ffd54f;
+    }
+
+    .nav-menu li a:hover::after,
+    .nav-menu li a.active::after {
+      width: 100%;
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+      .menu-icon {
+        display: block;
+      }
+
+      .nav-menu {
+        position: fixed;
+        top: 60px;
+        right: 0;
+        background: #0d6efd;
+        height: calc(100% - 60px);
+        width: 250px;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+        z-index: 9999;
+      }
+
+      #menu-toggle:checked ~ .nav-menu {
+        transform: translateX(0);
+      }
+
+      .nav-menu li {
+        margin: 1rem 0;
+        width: 100%;
+      }
+
+      .nav-menu li a {
+        width: 100%;
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+
+  <style>
+    /* Animated Navbar Styles */
+    .animated-navbar {
+      transition: background-color 0.4s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .animated-navbar .navbar-brand {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+      transition: color 0.3s ease;
+    }
+
+    .animated-navbar .navbar-brand:hover {
+      color: #ffd54f;
+      text-shadow: 0 0 8px #ffd54f;
+    }
+
+    .animated-navbar .nav-link {
+      position: relative;
+      font-weight: 600;
+      font-size: 1.1rem;
+      padding: 0.5rem 1rem;
+      transition: color 0.3s ease;
+    }
+
+    .animated-navbar .nav-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 3px;
+      bottom: 0;
+      left: 0;
+      background-color: #ffd54f;
+      transition: width 0.3s ease;
+      border-radius: 2px;
+    }
+
+    .animated-navbar .nav-link:hover {
+      color: #ffd54f;
+    }
+
+    .animated-navbar .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .animated-navbar .nav-link.active {
+      color: #ffca28;
+    }
+
+    /* Navbar background change on scroll */
+    .navbar-scrolled {
+      background-color: #1e88e5 !important;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: background-color 0.4s ease;
+    }
+  </style>
+
+  <script>
+    // Change navbar background on scroll
+    document.addEventListener('scroll', function() {
+      const navbar = document.querySelector('.animated-navbar');
+      if (window.scrollY > 50) {
+        navbar.classList.add('navbar-scrolled');
+      } else {
+        navbar.classList.remove('navbar-scrolled');
+      }
+    });
+  </script>
+
   <!-- Cart Overlay -->
   <div class="cart-overlay" id="cartOverlay"></div>
 
@@ -349,11 +683,8 @@
           <h2 class="mb-0"><i class="bi bi-cart-check"></i> نظام طلب المنتجات</h2>
         </div>
         <div class="col-md-6 text-left">
-          <button class="btn btn-light position-relative" onclick="toggleCart()" id="cartButton">
-            <i class="bi bi-cart3"></i> عرض السلة
-            <span class="cart-badge" id="cartBadge">0</span>
-          </button>
-          <button class="btn btn-outline-light ms-2" onclick="window.print()">
+          
+          <button id="printCartButton" class="btn btn-outline-light ms-2" type="button">
             <i class="bi bi-printer"></i> طباعة
           </button>
         </div>
@@ -438,7 +769,7 @@
             <th class="company-col">الشركة</th>
             <th>المخزون</th>
             <th>الكمية</th>
-            <th>صورة</th>
+            <th>شراء</th>
           </tr>
         </thead>
         <tbody id="productList"></tbody>
@@ -541,7 +872,50 @@
           }
         });
       });
+
+      // Navbar search form submit handler
+      const navbarSearchForm = document.getElementById('navbarSearchForm');
+      const navbarSearchInput = document.getElementById('navbarSearchInput');
+      navbarSearchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const searchTerm = navbarSearchInput.value.trim();
+        // Apply search term to filters (search by itemno or itemname)
+        currentFilters.itemno = searchTerm;
+        currentFilters.itemmain = '';
+        currentFilters.itemsubmain = '';
+        currentFilters.engine_no = '';
+        currentPage = 1;
+        document.getElementById('pageInput').value = 1;
+        document.getElementById('productList').innerHTML = "";
+        document.getElementById('loading-spinner').style.display = 'block';
+        loadMoreItems();
+      });
+
+      // Navbar cart icon click handler to toggle cart sidebar
+      const navbarCartIcon = document.getElementById('navbarCartIcon');
+      navbarCartIcon.addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleCart();
+      });
+
+      // Print cart button handler to print only cart sidebar content
+      const printCartButton = document.getElementById('printCartButton');
+      printCartButton.addEventListener('click', function() {
+        printCartItems();
+      });
     });
+
+    // Function to print only the cart items list
+    function printCartItems() {
+      const cartSidebar = document.getElementById('cartSidebar');
+      const originalContents = document.body.innerHTML;
+      const printContents = cartSidebar.innerHTML;
+
+      document.body.innerHTML = `<div class="print-section">${printContents}</div>`;
+      window.print();
+      document.body.innerHTML = originalContents;
+      location.reload(); // Reload to restore event listeners and page state
+    }
 
     async function fetchWithAuth(url, method = 'GET', body = null) {
       const headers = {
@@ -611,17 +985,14 @@
       
       document.getElementById('noResults').style.display = 'none';
 
-      for (const item of items) {
-        const row = document.createElement('tr');
-        const imageUrl = await getImageUrl(item.pno);
-        const stock = parseInt(item.itemvalue) || 0;
-        row.setAttribute("data-stock", stock > 3 ? '3' : stock.toString());
-        
-        // Check if item is in cart
-        const cartItem = cart.find(ci => ci.pno === item.pno);
-        const cartQuantity = cartItem ? cartItem.quantity : 0;
+    for (const item of items) {
+      const row = document.createElement('tr');
+      const stock = parseInt(item.itemvalue) || 0;
+      // Check if item is in cart
+      const cartItem = cart.find(ci => ci.pno === item.pno);
+      const cartQuantity = cartItem ? cartItem.quantity : 0;
 
-        // In your displayItems function, modify the row creation:
+      // In your displayItems function, modify the row creation:
 row.innerHTML = `
   <td class="clickable-cell" data-pno="${item.pno}">${item.itemno ?? '-'}</td>
   <td class="maintype-col clickable-cell" data-pno="${item.pno}">${item.itemmain ?? '-'}</td>
@@ -635,15 +1006,10 @@ row.innerHTML = `
   <td class="company-col">${item.companyproduct ?? '-'}</td>
   <td>
     ${stock > 5 ? 
-      `<span class="badge bg-success">متوفر (${stock})</span>` : 
+      `<span class="badge bg-success">متوفر</span>` : 
       stock > 0 ? 
-        `<span class="badge bg-warning text-dark">كمية محدودة (${stock})</span>` : 
+        `<span class="badge bg-warning text-dark">كمية محدودة</span>` : 
         `<span class="badge bg-danger">غير متوفر</span>`}
-  </td>
-  <td class="text-center">
-    ${imageUrl ? 
-      `<img src="${imageUrl}" class="img-thumbnail" onclick="showProductImages('${item.pno}')">` : 
-      '-'}
   </td>
   <td>
     <div class="quantity-control">
@@ -654,7 +1020,12 @@ row.innerHTML = `
       <button class="btn btn-sm btn-outline-secondary quantity-btn" onclick="incrementQuantity('${item.pno}')">+</button>
     </div>
   </td>
-`;
+  <td>
+    <button class="btn btn-sm btn-success" onclick="addToCartWithQuantity('${item.pno}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value)">
+      شراء
+    </button>
+  </td>
+`
 
 // Add click event to each clickable cell
 row.querySelectorAll('.clickable-cell').forEach(cell => {
@@ -694,12 +1065,12 @@ row.querySelectorAll('.clickable-cell').forEach(cell => {
     const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
     console.log('API Response:', response); // Debugging: Log response from API
 
-    if (response && Array.isArray(response.images) && response.images.length > 0) {
-      console.log('Images found:', response.images); // Debugging: Log found images
+    if (response && Array.isArray(response) && response.length > 0) {
+      console.log('Images found:', response); // Debugging: Log found images
 
       // Display all images in modal
       let imagesHTML = '';
-response.images.forEach((imgObj, index) => {
+response.forEach((imgObj, index) => {
   const imgUrl = `${baseUrl}${imgObj.image_obj}`;
   console.log(`Image ${index + 1}:`, imgUrl); // Log each image URL
   
@@ -829,16 +1200,58 @@ modalBody.innerHTML = imagesHTML;
     }
 
     // Cart Functions
-   // Toggle cart visibility
+// Toggle cart visibility
 function toggleCart() {
-  document.getElementById('cartSidebar').classList.toggle('open');
-  document.getElementById('cartOverlay').classList.toggle('open');
+  const cartSidebar = document.getElementById('cartSidebar');
+  const cartOverlay = document.getElementById('cartOverlay');
+  const navbarCartIcon = document.getElementById('navbarCartIcon');
+
+  const isOpen = cartSidebar.classList.toggle('open');
+  cartOverlay.classList.toggle('open', isOpen);
+  navbarCartIcon.setAttribute('aria-expanded', isOpen);
+
+  if (isOpen) {
+    // Save the element that had focus
+    window.lastFocusedElement = document.activeElement;
+    // Set focus to the cart sidebar
+    cartSidebar.setAttribute('tabindex', '-1');
+    cartSidebar.focus();
+    // Disable background scroll
+    document.body.style.overflow = 'hidden';
+  } else {
+    // Restore focus to the last focused element
+    if (window.lastFocusedElement) {
+      window.lastFocusedElement.focus();
+    }
+    // Enable background scroll
+    document.body.style.overflow = '';
+  }
 }
 
 // Close cart if clicked outside (on overlay)
 document.getElementById('cartOverlay').addEventListener('click', function () {
-  document.getElementById('cartSidebar').classList.remove('open');
-  document.getElementById('cartOverlay').classList.remove('open');
+  const cartSidebar = document.getElementById('cartSidebar');
+  const cartOverlay = document.getElementById('cartOverlay');
+  const navbarCartIcon = document.getElementById('navbarCartIcon');
+
+  cartSidebar.classList.remove('open');
+  cartOverlay.classList.remove('open');
+  navbarCartIcon.setAttribute('aria-expanded', 'false');
+
+  // Restore focus to the last focused element
+  if (window.lastFocusedElement) {
+    window.lastFocusedElement.focus();
+  }
+  // Enable background scroll
+  document.body.style.overflow = '';
+});
+
+// Keyboard accessibility for cart icon
+document.getElementById('navbarCartIcon').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    toggleCart();
+  }
 });
 
 
@@ -847,7 +1260,7 @@ document.getElementById('cartOverlay').addEventListener('click', function () {
       updateCartUI();
     }
 
-    function updateCartUI() {
+    async function updateCartUI() {
       // Update cart badge
       const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
       document.getElementById('cartBadge').textContent = totalItems;
@@ -865,18 +1278,19 @@ document.getElementById('cartOverlay').addEventListener('click', function () {
       let html = '';
       let totalAmount = 0;
       
+      // Prepare placeholders for images to be replaced asynchronously
       cart.forEach(item => {
         const itemTotal = item.price * item.quantity;
         totalAmount += itemTotal;
         
         html += `
-          <div class="cart-item">
+          <div class="cart-item" id="cart-item-${item.pno}">
             <div class="d-flex align-items-center">
-              ${item.image ? 
-                `<img src="${item.image}" class="cart-item-img me-2" alt="${item.name}">` : 
-                `<div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center">
-                  <i class="bi bi-image text-muted"></i>
-                </div>`}
+              <div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                <div class="spinner-border text-primary" role="status" style="width:1.5rem; height:1.5rem;">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
               <div>
                 <h6 class="mb-0">${item.name}</h6>
                 <small class="text-muted">${item.itemno} | ${item.price.toFixed(2)} د.أ</small>
@@ -902,26 +1316,75 @@ document.getElementById('cartOverlay').addEventListener('click', function () {
       cartContainer.innerHTML = html;
       document.getElementById('cartItemsCount').textContent = cart.length;
       document.getElementById('cartTotalAmount').textContent = totalAmount.toFixed(2) + ' د.أ';
+
+      // Fetch images asynchronously and update each cart item
+      for (const item of cart) {
+        try {
+          const response = await fetchWithAuth(`${baseUrl}/api/products/${item.pno}/get-images`);
+          let imageUrl = '';
+          if (response && Array.isArray(response.images) && response.images.length > 0) {
+            imageUrl = `${baseUrl}${response.images[0]}`;
+          }
+          const cartItemDiv = document.getElementById(`cart-item-${item.pno}`);
+          if (cartItemDiv) {
+            const imgDiv = cartItemDiv.querySelector('.cart-item-img');
+            if (imageUrl) {
+              imgDiv.innerHTML = `<img src="${imageUrl}" class="cart-item-img me-2" alt="${item.name}" style="width:50px; height:50px; object-fit: contain; border-radius: 4px;">`;
+            } else {
+              imgDiv.innerHTML = `<div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                <i class="bi bi-image text-muted"></i>
+              </div>`;
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching cart item image:', error);
+        }
+      }
     }
 
-    function addToCart(pno, itemno, name, price, image = '') {
-      const existingItem = cart.find(item => item.pno === pno);
-      
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        cart.push({
-          pno,
-          itemno,
-          name,
-          price: parseFloat(price),
-          quantity: 1,
-          image
-        });
-      }
-      
-      updateCart();
-    }
+function addToCart(pno, itemno, name, price, image = '') {
+  const existingItem = cart.find(item => item.pno === pno);
+  
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    cart.push({
+      pno,
+      itemno,
+      name,
+      price: parseFloat(price),
+      quantity: 1,
+      image
+    });
+  }
+  
+  updateCart();
+}
+
+function addToCartWithQuantity(pno, itemno, name, price, image = '', quantity = 1) {
+  quantity = parseInt(quantity);
+  if (isNaN(quantity) || quantity <= 0) {
+    alert('الرجاء إدخال كمية صحيحة أكبر من صفر.');
+    return;
+  }
+  
+  const existingItem = cart.find(item => item.pno === pno);
+  
+  if (existingItem) {
+    existingItem.quantity = quantity;
+  } else {
+    cart.push({
+      pno,
+      itemno,
+      name,
+      price: parseFloat(price),
+      quantity: quantity,
+      image
+    });
+  }
+  
+  updateCart();
+}
 
     function removeFromCart(pno) {
       const index = cart.findIndex(item => item.pno === pno);
