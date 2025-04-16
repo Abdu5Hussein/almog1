@@ -271,11 +271,12 @@ urlpatterns = [
     path('employees/management/attendance',views.EmployeesAttendanceView,name="employees_attendance_view"),
     path('employees/management',views.EmployeesDetailsView,name="employees_management_view"),
     path('api/get/employees-details-with-balance',api_views.get_all_employees_with_balance,name='employees-details-with-balance'),
+    path('api/employees-api/<int:id>/edit-balance',api_views.Edit_employee_balance,name="employee-edit-balance"),
 #down here is for carparts
     path('hozmabrands/',api_views.CarParts_page,name='CarParts_page'),
     path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
     path('hozmaHome/',api_views.CarPartsHome_page,name='CarParts_page'),
-    path('api/employees-api/<int:id>/edit-balance',api_views.Edit_employee_balance,name="employee-edit-balance"),
+
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()

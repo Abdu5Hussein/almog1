@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "almogOil",
+    'wholesale_app',
     'debug_toolbar',
     'rest_framework',
     "corsheaders",

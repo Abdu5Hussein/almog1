@@ -219,7 +219,7 @@ class EmployeesTableViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EmployeesSerializer
 
 
-@permission_classes([IsAuthenticated])
+
 @api_view(["GET"])
 def get_models(request):
     models_data = models.Modeltable.objects.all()
@@ -227,21 +227,21 @@ def get_models(request):
     return Response({'models': serialized_data.data})
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+
 def get_engines(request):
     engines_data = models.enginesTable.objects.all()
     serialized_data = serializers.EngineSerializer(engines_data, many=True)
     return Response({'engines': serialized_data.data})
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+
 def get_main_types(request):
     main_types_data = models.Maintypetable.objects.all()
     serialized_data = serializers.MainTypeSerializer(main_types_data, many=True)
     return Response({'main_types': serialized_data.data})
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+
 def get_sub_types(request):
     sub_types_data = models.Subtypetable.objects.all()
     serialized_data = serializers.SubTypeSerializer(sub_types_data, many=True)
@@ -1648,7 +1648,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
 
 
         last_balance = (
-            models.TransactionsHistoryTable.objects.filter(client_id_id=invoice.client_id)
+            models.TransactionsHistoryTable.objects.filter(object_id=invoice.client_id)
             .order_by("-registration_date")
             .first()
         )
@@ -1661,9 +1661,9 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
                 transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
                 details=f"ترجيع بضائع - فاتورة رقم {invoice_item.invoice_no}",
                 registration_date=timezone.now(),
-                current_balance=round(last_balance_amount, 2) + Decimal(returned_item_instance.total),  # Updated balance
-                content_type=ContentType.objects.get_for_model(invoice.client_id),
-                object_id=invoice.client_id.pk
+                current_balance=round(last_balance_amount + Decimal(returned_item_instance.total), 2),
+                content_type=ContentType.objects.get_for_model(invoice.client_obj),
+                object_id=invoice.client_obj.pk
             )
         except:
             return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
@@ -1811,7 +1811,7 @@ def accept_payment_req(request, id):
 
                 # Fetch last balance
                 last_balance = (
-                    models.TransactionsHistoryTable.objects.filter(client_id_id=req.client.clientid)
+                    models.TransactionsHistoryTable.objects.filter(object_id=req.client.clientid)
                     .order_by("-registration_date")
                     .first()
                 )
@@ -2314,7 +2314,7 @@ def get_all_employees_with_balance(request):
 
             # Calculate total debt and credit
             balance_data = models.TransactionsHistoryTable.objects.filter(
-                client_id_id=clientid
+                object_id=clientid
             ).aggregate(
                 total_debt=Sum('debt'),
                 total_credit=Sum('credit')
@@ -2326,7 +2326,7 @@ def get_all_employees_with_balance(request):
 
             # Calculate "دفعة على حساب" specific credit
             specific_credit_data = models.TransactionsHistoryTable.objects.filter(
-                client_id_id=clientid, details="دفعة على حساب"
+                object_id=clientid, details="دفعة على حساب"
             ).aggregate(total_specific_credit=Sum('credit'))
 
             total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
@@ -2348,11 +2348,11 @@ def get_all_employees_with_balance(request):
 @csrf_exempt
 @api_view(["GET"])
 def item_filter_page(request):
-    return render(request, 'items_page.html')
+    return render(request, 'CarPartsTemplates/items_page.html')
 
 @api_view(["GET"])
 def CarParts_page(request):
-    return render(request, 'CarPartsTemplates/testimonial.html')
+    return render(request, 'CarPartsTemplates/Brands.html')
 
 @api_view(["GET"])
 def CarPartsHome_page(request):
@@ -2392,7 +2392,7 @@ def Edit_employee_balance(request, id):
     content_type = ContentType.objects.get_for_model(employee)
     balance_data = models.TransactionsHistoryTable.objects.filter(
         content_type=content_type,
-        object_id=employee.pk
+        object_id=employee
     ).aggregate(
         total_debt=Sum('debt') or 0,
         total_credit=Sum('credit') or 0
