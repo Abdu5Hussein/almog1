@@ -72,12 +72,18 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 # Other necessary imports
 from .Tasks import assign_orders
+from drf_spectacular.utils import extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
+
+from almogOil import serializers
 
 
 # Setup logger
 logger = logging.getLogger(__name__)
 
-
+@extend_schema(
+description="""get sub sections dropbox data.""",
+tags=["Drop Boxes"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_subsections(request):
@@ -90,6 +96,10 @@ def get_next_buyinvoice_no():
     last_invoice = Buyinvoicetable.objects.last()
     return (last_invoice.invoice_no if last_invoice else 0) + 1
 
+@extend_schema(
+description="""Create a new Buy Invoice.""",
+tags=["Buy Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @csrf_exempt
@@ -141,7 +151,10 @@ def create_buy_invoice(request):
     except Exception as e:
         return Response({"success": False, "error": str(e)}, status=400)
 
-
+@extend_schema(
+description="""get the product history and movement of a product by pno.""",
+tags=["Products","History and Archive"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def filter_clients(request):
@@ -164,7 +177,10 @@ def filter_clients(request):
 
 
 
-
+@extend_schema(
+description="""Filter product history and movements.""",
+tags=["Products"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def filter_clients_input(request):
@@ -225,7 +241,10 @@ def filter_clients_input(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+@extend_schema(
+description="""Process excell""",
+tags=["Excel"],
+)
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -440,6 +459,10 @@ def format_arabic_text(text):
     reshaped_text = arabic_reshaper.reshape(text)
     return get_display(reshaped_text)
 
+@extend_schema(
+description="""Generate a pdf file.""",
+tags=["PDF"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def generate_pdf(request):
@@ -573,7 +596,10 @@ def safe_float(value, default=0.0):
     except (ValueError, TypeError):
         return default
 
-
+@extend_schema(
+description="""Get all product movements from DB.""",
+tags=["Products"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_clients(request):
@@ -585,7 +611,10 @@ def get_clients(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)         # Return error details in JSON
 
-
+@extend_schema(
+description="""Delete a lost/damaged record from db.""",
+tags=["Lost and Damaged","Products"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete_lost_damaged(request):
@@ -604,7 +633,10 @@ def delete_lost_damaged(request):
     except Exception as e:
         return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""filter all lost/damaged records from db.""",
+tags=["Lost and Damaged","Products"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def filter_lost_damaged(request):
@@ -638,7 +670,10 @@ def filter_lost_damaged(request):
         logger.error(str(e))
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""fetch all lost/damaged records from db.""",
+tags=["Lost and Damaged","Products"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_lost_damaged_data(request):
@@ -649,7 +684,10 @@ def fetch_lost_damaged_data(request):
     )
     return Response(data)
 
-
+@extend_schema(
+description="""Create a new lost/damaged record to db.""",
+tags=["Lost and Damaged","Products"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_lost_damaged(request):
@@ -727,6 +765,10 @@ def add_lost_damaged(request):
         logger.error(error_message)
         return Response({'success': False, 'message': 'An unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""Get all clients from DB along with their balance""",
+tags=["Clients"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_clients(request):
@@ -790,6 +832,10 @@ def get_all_clients(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""create a new client record to DB""",
+tags=["Clients"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_client_record(request):
@@ -847,6 +893,10 @@ def create_client_record(request):
 
     return Response({'status': 'error', 'message': 'Invalid request method.'}, status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(
+description="""update a client data from DB""",
+tags=["Clients"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_client_record(request):
@@ -893,7 +943,10 @@ def update_client_record(request):
 
     return Response({'status': 'error', 'message': 'Invalid request method.'}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+description="""delete a client record from DB""",
+tags=["Clients"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete_client_record(request):
@@ -923,7 +976,10 @@ def delete_client_record(request):
         return Response({'status': 'error', 'message': f'An error occurred: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+@extend_schema(
+description="""filter all clients from DB""",
+tags=["Clients"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def filter_all_clients(request):
@@ -1038,7 +1094,10 @@ def filter_all_clients(request):
         return Response({"error": f"Internal Server Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+@extend_schema(
+description="""create a new storage record""",
+tags=["Storage Transactions"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_storage_record(request):
@@ -1098,7 +1157,10 @@ def create_storage_record(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+description="""delete a storage record""",
+tags=["Storage Transactions"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete_storage_record(request):
@@ -1118,7 +1180,10 @@ def delete_storage_record(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+description="""Get all storage records""",
+tags=["Storage Transactions"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_storage(request):
@@ -1135,6 +1200,10 @@ def get_all_storage(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""filter all storage records""",
+tags=["Storage Transactions"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def filter_all_storage(request):
@@ -1189,6 +1258,10 @@ def filter_all_storage(request):
     except Exception as e:
         return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""get last auto id from StorageTransactionsTable """,
+tags=["Storage Transactions"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_last_reciept_no(request):
@@ -1207,7 +1280,10 @@ def get_last_reciept_no(request):
 
     return Response({'error': 'Invalid transaction type'}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+description="""get last invoice no from Buyinvoicetable """,
+tags=["Buy Invoice"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_buyinvoice_no(request):
@@ -1224,7 +1300,10 @@ def get_buyinvoice_no(request):
         # Handle unexpected errors
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""get account statement for a client by client id """,
+tags=["Clients","Transactions History"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_account_statement(request):
@@ -1239,6 +1318,10 @@ def get_account_statement(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""get a specific buy invoice's items """,
+tags=["Buy Invoice"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_invoice_items(request):
@@ -1258,7 +1341,10 @@ def format_number(number):
     return f"{number:,.2f}"
 
 
-
+@extend_schema(
+description="""create a new record for Costs Table """,
+tags=["Costs"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_cost_record(request):
@@ -1301,6 +1387,10 @@ def create_cost_record(request):
     except Exception as e:
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""fetch all records for Costs Table """,
+tags=["Costs"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_costs(request):
@@ -1322,6 +1412,10 @@ def fetch_costs(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""delete a record for Costs Table """,
+tags=["Costs"],
+)
 @api_view(['DELETE'])
 def delete_buyinvoice_cost(request, autoid):
     try:
@@ -1336,7 +1430,10 @@ def delete_buyinvoice_cost(request, autoid):
     except Exception as e:
         return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""calculate cost price for a buy invoice """,
+tags=["Costs"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def calculate_cost(request):
@@ -1376,6 +1473,11 @@ def calculate_cost(request):
 
     except Exception as e:
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@extend_schema(
+description="""get a specific buy invoice's items by invoice no """,
+tags=["Buy Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_invoice_items(request):
@@ -1399,6 +1501,10 @@ def get_invoice_items(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""////""",
+tags=["External"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def process_data(request):
@@ -1425,6 +1531,10 @@ def process_data(request):
     except Exception as e:
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""////// """,
+tags=["External"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def process_add_data(request):
@@ -1453,7 +1563,10 @@ def process_add_data(request):
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+@extend_schema(
+description="""delete a specific buy invoice's item by his autoid""",
+tags=["Buy Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete_buy_invoice_item(request):
@@ -1481,6 +1594,10 @@ def delete_buy_invoice_item(request):
         # Handle unexpected errors
         return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""update a specific buy invoice's item data """,
+tags=["Buy Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_buyinvoiceitem(request):
@@ -1529,7 +1646,10 @@ def update_buyinvoiceitem(request):
 def excel_date_to_datetime(serial):
     return datetime.datetime(1900, 1, 1) + datetime.timedelta(days=serial - 2)
 
-
+@extend_schema(
+description="""////// """,
+tags=["Excel"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def process_buyInvoice_excel(request):
@@ -1623,7 +1743,10 @@ def process_buyInvoice_excel(request):
 
 
 
-
+@extend_schema(
+description="""get a specific buy invoice details """,
+tags=["Buy Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def process_temp_confirm(request):
@@ -1681,7 +1804,10 @@ def process_temp_confirm(request):
         return Response({'status': 'error', 'message': 'Invalid JSON data.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
+@extend_schema(
+description="""Confirm a pending temp sell invoice""",
+tags=["Buy Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def confirm_temp_invoice(request):
@@ -1765,6 +1891,10 @@ def confirm_temp_invoice(request):
     except Exception as e:
         return Response({'status': 'error', 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""create a new buy invoice item""",
+tags=["Buy Invoice","Buy Invoice Items"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def BuyInvoiceItemCreateView(request):
@@ -1862,6 +1992,10 @@ def BuyInvoiceItemCreateView(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""fetch all buy invoices""",
+tags=["Buy Invoice"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_buyinvoices(request):
@@ -1885,7 +2019,10 @@ def fetch_buyinvoices(request):
 
     return Response(response)
 
-
+@extend_schema(
+description="""filter buy invoices""",
+tags=["Buy Invoice",],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def filter_buyinvoices(request):
@@ -1963,7 +2100,10 @@ def filter_buyinvoices(request):
 
 
 
-
+@extend_schema(
+description="""get last sell invoice no""",
+tags=["Sell Invoice"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_sellinvoice_no(request):
@@ -1979,7 +2119,10 @@ def get_sellinvoice_no(request):
         # Handle unexpected errors
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""create a new sell invoice""",
+tags=["Sell Invoice"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_sell_invoice(request):
@@ -2055,6 +2198,10 @@ def create_sell_invoice(request):
 
     return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+@extend_schema(
+description="""create a new sell invoice item""",
+tags=["Sell Invoice","Sell Invoice Items"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def Sell_invoice_create_item(request):
@@ -2129,7 +2276,10 @@ def Sell_invoice_create_item(request):
     return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-
+@extend_schema(
+description="""fetch all sell invoice items by invoice no""",
+tags=["Sell Invoice","Sell Invoice Items"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_sell_invoice_items(request):
@@ -2145,7 +2295,10 @@ def fetch_sell_invoice_items(request):
     serializer = SellInvoiceItemsSerializer(items, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+@extend_schema(
+description="""fetch all sell invoices""",
+tags=["Sell Invoice"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_sellinvoices(request):
@@ -2182,6 +2335,10 @@ def fetch_sellinvoices(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""filter sell invoices""",
+tags=["Sell Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def filter_sellinvoices(request):
@@ -2249,7 +2406,10 @@ def filter_sellinvoices(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+@extend_schema(
+description="""set sell invoice status as preparing""",
+tags=["Sell Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def prepare_sell_invoice(request):
@@ -2278,7 +2438,10 @@ def prepare_sell_invoice(request):
     except Exception as e:
         return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""set sell invoice status as validated""",
+tags=["Sell Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def validate_sell_invoice(request):
@@ -2311,7 +2474,10 @@ def validate_sell_invoice(request):
     except Exception as e:
         return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""set sell invoice status as Delivered""",
+tags=["Sell Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def deliver_sell_invoice(request):
@@ -2368,7 +2534,10 @@ def deliver_sell_invoice(request):
     except Exception as e:
         return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""cancel sell invoice preparing""",
+tags=["Sell Invoice"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cancel_sell_invoice(request):
@@ -2406,7 +2575,10 @@ def cancel_sell_invoice(request):
     except Exception as e:
         return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""get last pno from mainitem table""",
+tags=["Products"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_mainItem_last_pno(request):
@@ -2425,7 +2597,10 @@ def get_mainItem_last_pno(request):
         # Handle unexpected errors
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""create a new message""",
+tags=["Support Desk"],
+)
 class SendMessageView(generics.CreateAPIView):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
@@ -2453,6 +2628,10 @@ class SendMessageView(generics.CreateAPIView):
 
      return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+@extend_schema(
+description="""get a message by sender id and receiver id""",
+tags=["Support Desk"],
+)
 class GetChatMessagesView(generics.ListAPIView):
     serializer_class = ChatMessageSerializer
 
@@ -2461,6 +2640,10 @@ class GetChatMessagesView(generics.ListAPIView):
      receiver_id = self.request.query_params.get('receiver')
      return ChatMessage.objects.filter(sender__clientid=sender_id, receiver__clientid=receiver_id) | ChatMessage.objects.filter(sender__clientid=receiver_id, receiver__clientid=sender_id)
 
+@extend_schema(
+description="""mark a message as read""",
+tags=["Support Desk"],
+)
 class MarkMessageAsReadView(generics.UpdateAPIView):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
@@ -2471,7 +2654,10 @@ class MarkMessageAsReadView(generics.UpdateAPIView):
         message.save()
         return Response({"message": "Message marked as read"}, status=status.HTTP_200_OK)
 
-
+@extend_schema(
+description="""SupportChatConversation api""",
+tags=["Support Desk"],
+)
 class SupportChatMessageView(APIView):
     def post(self, request, *args, **kwargs):
         conversation_id = request.data.get('conversation_id')
@@ -2511,6 +2697,10 @@ class SupportChatMessageView(APIView):
         serializer = SupportChatMessageSysSerializer(messages, many=True)
         return Response(serializer.data)
 
+@extend_schema(
+description="""create a new conversation""",
+tags=["Support Desk"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_conversation(request):
@@ -2527,6 +2717,10 @@ def create_conversation(request):
     conversation.save()
     return Response({'conversation_id': conversation.conversation_id}, status=status.HTTP_201_CREATED)
 
+@extend_schema(
+description="""fetch all feedbacks""",
+tags=["Support Desk"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_all_feedback(request):
@@ -2595,6 +2789,10 @@ def fetch_all_feedback(request):
 
 #     return JsonResponse(grouped_feedback, safe=False)
 
+@extend_schema(
+description="""add message to feedback in conversation""",
+tags=["Support Desk"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_message_to_feedback(request, feedback_id):
@@ -2626,7 +2824,10 @@ def add_message_to_feedback(request, feedback_id):
     message_data = FeedbackMessageSerializer(message).data
     return Response(message_data, status=status.HTTP_201_CREATED)
 
-
+@extend_schema(
+description="""close a feedback thread""",
+tags=["Support Desk"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def close_feedback(request, feedback_id):
@@ -2645,6 +2846,10 @@ def close_feedback(request, feedback_id):
     else:
         return Response({"error": "Only employees can close feedback."}, status=status.HTTP_403_FORBIDDEN)
 
+@extend_schema(
+description="""delete a feedback thread""",
+tags=["Support Desk"],
+)
 @api_view(['DELETE'])
 def delete_feedback(request, feedback_id):
     """Delete a feedback thread."""
@@ -2660,6 +2865,10 @@ def delete_feedback(request, feedback_id):
     else:
         return Response({"error": "Only employees can delete feedback."}, status=status.HTTP_403_FORBIDDEN)
 
+@extend_schema(
+description="""fetch feedbacks by client id""",
+tags=["Support Desk"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def feedback_by_user_id(request):
@@ -2697,6 +2906,10 @@ def feedback_by_user_id(request):
 
     return Response(feedback_data)
 
+@extend_schema(
+description="""fetch feedbacks by feedback id""",
+tags=["Support Desk"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_feedback_messages(request, feedback_id):
@@ -2717,7 +2930,10 @@ def fetch_feedback_messages(request, feedback_id):
 
 
 
-
+@extend_schema(
+description="""Assign an order manually to an employee.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def assign_order_manual(request):
@@ -2766,6 +2982,10 @@ def assign_order_manual(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""Get a list of available employees.""",
+tags=["Delivery"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_available_employees(request):
@@ -2774,6 +2994,10 @@ def get_available_employees(request):
     data = [{"id": emp.employee.id, "name": emp.employee.name} for emp in employees]
     return Response(data, status=status.HTTP_200_OK)
 
+@extend_schema(
+description="""Get a list of unassigned orders.""",
+tags=["Delivery"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_unassigned_orders(request):
@@ -2782,6 +3006,10 @@ def get_unassigned_orders(request):
     data = [{"invoice_no": order.invoice_no} for order in orders]
     return Response(data, status=status.HTTP_200_OK)
 
+@extend_schema(
+description="""Get a list of unassigned orders with status.""",
+tags=["Delivery"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_unassigned_orders_with_status(request):
@@ -2799,7 +3027,15 @@ def get_unassigned_orders_with_status(request):
 
 
 
-
+@extend_schema(
+    request=serializers.AddToCartSerializer,
+    responses={
+        201: CartItemSerializer,
+        400: OpenApiResponse(description="Bad Request (e.g. quantity exceeds itemvalue)"),
+        404: OpenApiResponse(description="Client not found"),
+    },
+    description="Adds an item to the cart. If the item already exists, it updates the quantity if within limit."
+)
 class AddToCartView(APIView):
     def post(self, request):
         client_id = request.data.get("clientid")

@@ -64,3 +64,21 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error("Element with ID 'navbarSearchForm' not found.");
     }
   });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Check if user session data is available in localStorage
+    const username = JSON.parse(localStorage.getItem("session_data@username"));
+    const userNamePlaceholder = document.getElementById('userNamePlaceholder');
+    
+    if (username) {
+        // If the user is logged in, update the account button text with the username
+        userNamePlaceholder.textContent = `مرحبًا, ${username}`;
+        document.getElementById('accountButton').href = "/my-account"; // Ensure it's pointing to the user's account page
+    } else {
+        // If no username is found, ensure it's showing the default "حسابي"
+        userNamePlaceholder.textContent = "حسابي";
+        document.getElementById('accountButton').href = "/login"; // Redirect to login if not logged in
+    }
+
+    // Rest of your navbar functionality like highlighting current page...
+});

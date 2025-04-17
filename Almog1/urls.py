@@ -165,7 +165,7 @@ urlpatterns = [
     path('api/main-types/', api_views.get_main_types, name='get_main_types'),
     path('api/sub-types/', api_views.get_sub_types, name='get_sub_types'),
     path('api/filter-itemsapp/', mainitem_api_views.app_filter_Items, name='filter-items-for-app'),
-
+    
     path('api/get-drop-lists', api_views.get_dropboxes, name='get-drop-lists'),
     path('fetch_messages/<int:feedback_id>/', views.fetch_feedback_messages, name='fetch_feedback_messages'),
     path("add_message_to_feedback/<int:feedback_id>/", views.add_message_to_feedback, name="add_message_to_feedback"),
@@ -276,9 +276,9 @@ urlpatterns = [
     path('hozmabrands/',api_views.CarParts_page,name='CarParts_page'),
     path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
     path('hozmaHome/',api_views.CarPartsHome_page,name='CarParts_page'),
-    path('hozmaDashboard/',api_views.Dashboard,name='Dashboard'),
-  
-
+    path('api/employees/<int:employee_id>/', api_views.get_employee_details, name='get_employee_details'),
+    path('hozmaDashbord/',api_views.Dashbord_page,name='dashbord'),
+    path('brand/<str:brand>/', api_views.brand_items, name='brand_items'),
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()

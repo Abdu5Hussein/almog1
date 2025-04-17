@@ -263,3 +263,14 @@ class LoginSerializer(serializers.Serializer):
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField(required=True)
+
+class AddToCartSerializer(serializers.Serializer):
+    clientid = serializers.CharField()
+    fileid = serializers.CharField()
+    itemname = serializers.CharField()
+    buyprice = serializers.DecimalField(max_digits=10, decimal_places=2)
+    quantity = serializers.IntegerField(required=False, default=1)
+    image = serializers.CharField(required=False, allow_blank=True)
+    logo = serializers.CharField(required=False, allow_blank=True)
+    pno = serializers.CharField(required=False, allow_blank=True)
+    itemvalue = serializers.IntegerField(required=False, default=0)

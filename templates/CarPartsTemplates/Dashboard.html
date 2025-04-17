@@ -1,167 +1,114 @@
-{% load static %}
-
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login Page</title>
-    <!-- Bootstrap CSS -->
-    <link
-      rel="stylesheet"
-      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
-    />
-    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
-  </head>
-  <body>
-    <div class="background-image"></div>
-    <div class="container">
-      <div class="row justify-content-center align-items-center vh-100">
-        <div class="col-md-4">
-          <div class="card shadow">
-            <div class="card-body">
-              <div id="img-container" class="img-container">
-                <img
-                  src="{% static 'images/almog-palestine-logo.jpg' %}"
-                  alt="Logo"
-                  class="logo mb-4"
-                  style="position: relative; top: -35px;"
-                />
-              </div>
-              <h1 class="text-center">Login</h1>
-
-              {% if messages %}
-                {% for message in messages %}
-                  <div class="alert alert-danger">{{ message }}</div>
-                {% endfor %}
-              {% endif %}
-
-              <form method="post" id="login-form">
-                {% csrf_token %}
-                <div class="mb-2">
-                  <label for="username" class="form-label">Username</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="username"
-                    name="username"
-                    placeholder="Enter your username: user1"
-                    required
-                  />
-                </div>
-                <div class="mb-4">
-                  <label for="password" class="form-label">Password</label>
-                  <input
-                    type="password"
-                    class="form-control"
-                    id="password"
-                    name="password"
-                    placeholder="Enter your password: password1"
-                    required
-                  />
-                </div>
-                <button type="submit" class="btn btn-primary w-100">
-                  Login
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.min.js' %}"></script>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        document
-          .getElementById("login-form")
-          .addEventListener("submit", async function (event) {
-            event.preventDefault(); // Prevent default form submission
-
-            const csrfToken =
-              document.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
-            // Get form values
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-            const role = "employee";
-
-            // Prepare the request payload
-            const payload = {
-              username: username,
-              password: password,
-              role: role,
-            };
-            console.log(payload);
-            try {
-              // Send POST request
-              const response = await fetch("http://45.13.59.226/process-login", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json",
-                  "X-CSRFToken": csrfToken,
-                },
-                body: JSON.stringify(payload),
-              });
-
-              const result = await response.json();
-
-              if (response.ok) {
-                // Store session data in local storage
-                if (result.session_data) {
-                  localStorage.setItem(
-                    "session_data@username",
-                    JSON.stringify(result.session_data.username)
-                  );
-                  localStorage.setItem(
-                    "session_data@name",
-                    JSON.stringify(result.session_data.name)
-                  );
-                  localStorage.setItem(
-                    "session_data@role",
-                    JSON.stringify(result.session_data.role)
-                  );
-                  localStorage.setItem(
-                    "session_data@user_id",
-                    JSON.stringify(
-                      result.session_data.user_id.replace(/"/g, "")
-                    )
-                  );
-
-                  localStorage.setItem(
-                    "session_data@access_token",
-                    JSON.stringify(result.access_token.replace(/"/g, ""))
-                  );
-                  localStorage.setItem(
-                    "session_data@refresh_token",
-                    JSON.stringify(result.refresh_token.replace(/"/g, ""))
-                  );
-                }
-                // Redirect to dashboard on success
-                window.location.href = "/item-for-inqury-page/"; // Change to your actual dashboard route
-              } else {
-                // Show error message
-                showError(result.message || "Login failed. Please try again.");
-              }
-            } catch (error) {
-              showError("An error occurred. Please check your internet connection.");
-            }
-          });
-
-        function showError(message) {
-          const alertBox = document.createElement("div");
-          alertBox.className = "alert alert-danger";
-          alertBox.textContent = message;
-          const formContainer = document.querySelector(".card-body");
-          formContainer.insertBefore(alertBox, formContainer.firstChild);
-
-          // Remove the error message after 5 seconds
-          setTimeout(() => alertBox.remove(), 5000);
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الموظف</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            direction: rtl; /* Right-to-left for Arabic */
         }
-      });
-    </script>
-  </body>
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+            border-radius: 10px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .details p {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .details p strong {
+            color: #333;
+        }
+        .error {
+            color: red;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>مرحباً، <span id="employeeName"></span></h2>
+    <div id="employeeDetails" class="details">
+        <p>تحميل بيانات الموظف...</p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Retrieve employee data from localStorage
+    const employeeId = JSON.parse(localStorage.getItem("session_data@user_id"));
+
+    // Check if employee ID exists (user is logged in)
+    if (employeeId) {
+        // Remove the 'e-' prefix and keep only the number part
+        const employeeIdNumber = employeeId.replace(/^e-/, '');
+        
+        // Update the dashboard with employee information
+        fetchEmployeeDetails(employeeIdNumber);
+    } else {
+        // Redirect to login if no employee ID found
+        window.location.href = "/login";
+    }
+});
+
+// Function to fetch employee details from the REST API
+function fetchEmployeeDetails(employeeId) {
+    fetch(`http://45.13.59.226/api/employees/${employeeId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const employeeDetailsDiv = document.getElementById('employeeDetails');
+            if (data) {
+                // Display employee details on the page
+                document.getElementById("employeeName").textContent = data.name;
+
+                employeeDetailsDiv.innerHTML = `
+                    <p><strong>رقم الموظف:</strong> ${data.employee_id}</p>
+                    <p><strong>الاسم:</strong> ${data.name}</p>
+                    <p><strong>رقم الهوية:</strong> ${data.identity_doc}</p>
+                    <p><strong>الجنسية:</strong> ${data.nationality}</p>
+                    <p><strong>آخر معاملة:</strong> ${data.last_transaction}</p>
+                    <p><strong>الراتب:</strong> ${data.salary}</p>
+                    <p><strong>تاريخ البداية:</strong> ${data.start_date}</p>
+                    <p><strong>تاريخ النهاية:</strong> ${data.end_date || "غير محدد"}</p>
+                    <p><strong>وقت العمل اليومي:</strong> ${data.daily_start_time} - ${data.daily_end_time}</p>
+                    <p><strong>حالة النشاط:</strong> ${data.active ? "نشط" : "غير نشط"}</p>
+                    <p><strong>الفئة:</strong> ${data.category}</p>
+                    <p><strong>ملاحظات:</strong> ${data.notes || "لا توجد ملاحظات"}</p>
+                    <p><strong>رقم الهاتف:</strong> ${data.phone || "غير متوفر"}</p>
+                    <p><strong>العنوان:</strong> ${data.address || "غير متوفر"}</p>
+                    <p><strong>تفاصيل البنك:</strong> ${data.bank_details || "غير متوفرة"}</p>
+                    <p><strong>رقم الحساب البنكي:</strong> ${data.bank_account_no || "غير متوفر"}</p>
+                    <p><strong>رقم الآيبان:</strong> ${data.bank_iban_no || "غير متوفر"}</p>
+                    <p><strong>معلومات التوفر:</strong> ${data.is_available ? "متاح" : "غير متاح"}</p>
+                    <p><strong>هل لديه طلب نشط؟:</strong> ${data.has_active_order ? "نعم" : "لا"}</p>
+                `;
+            } else {
+                employeeDetailsDiv.innerHTML = "<p>فشل تحميل بيانات الموظف. حاول مرة أخرى لاحقًا.</p>";
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching employee details:', error);
+            document.getElementById('employeeDetails').innerHTML = "<p>حدث خطأ أثناء تحميل البيانات.</p>";
+        });
+}
+</script>
+
+</body>
 </html>

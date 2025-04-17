@@ -62,7 +62,7 @@ import firebase_admin
 from firebase_admin import credentials
 from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
-from drf_spectacular.utils import extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
+from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 
 """ Log Out,Login And Authentication Api's"""
 @extend_schema(
@@ -228,12 +228,92 @@ def get_dropboxes(request):
         })
 
 
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all engines",
+        description="Returns a list of all engine entries in the database.",
+        responses={200: serializers.EnginesTableSerializer(many=True)},
+        tags=["Engines"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single engine",
+        description="Get details of a single engine by its ID.",
+        responses={200: serializers.EnginesTableSerializer},
+        tags=["Engines"],
+    ),
+    create=extend_schema(
+        summary="Create a new engine",
+        description="Adds a new engine record to the database.",
+        request=serializers.EnginesTableSerializer,
+        responses={201: serializers.EnginesTableSerializer},
+        tags=["Engines"],
+    ),
+    update=extend_schema(
+        summary="Update an engine",
+        description="Updates an existing engine by its ID.",
+        request=serializers.EnginesTableSerializer,
+        responses={200: serializers.EnginesTableSerializer},
+        tags=["Engines"],
+    ),
+    partial_update=extend_schema(
+        summary="Partially update an engine",
+        description="Updates some fields of an engine by its ID.",
+        request=serializers.EnginesTableSerializer,
+        responses={200: serializers.EnginesTableSerializer},
+        tags=["Engines"],
+    ),
+    destroy=extend_schema(
+        summary="Delete an engine",
+        description="Deletes an engine entry from the database.",
+        responses={204: None},
+        tags=["Engines"],
+    ),
+)
 @permission_classes([IsAuthenticated])
 class EnginesTableViewSet(viewsets.ModelViewSet):
     queryset = models.enginesTable.objects.all()
     serializer_class = serializers.EnginesTableSerializer
-
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all employees",
+        description="Retrieve a list of all employees.",
+        tags=["Employees", "Employees Viewset"],
+        responses={200: serializers.EmployeesSerializer(many=True)},
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single employee",
+        description="Retrieve details of an employee by their ID.",
+        tags=["Employees", "Employees Viewset"],
+        responses={200: serializers.EmployeesSerializer},
+    ),
+    create=extend_schema(
+        summary="Create a new employee",
+        description="Add a new employee record.",
+        tags=["Employees", "Employees Viewset"],
+        request=serializers.EmployeesSerializer,
+        responses={201: serializers.EmployeesSerializer},
+    ),
+    update=extend_schema(
+        summary="Update an employee",
+        description="Update all fields of an employee by their ID.",
+        tags=["Employees", "Employees Viewset"],
+        request=serializers.EmployeesSerializer,
+        responses={200: serializers.EmployeesSerializer},
+    ),
+    partial_update=extend_schema(
+        summary="Partially update an employee",
+        description="Update one or more fields of an employee.",
+        tags=["Employees", "Employees Viewset"],
+        request=serializers.EmployeesSerializer,
+        responses={200: serializers.EmployeesSerializer},
+    ),
+    destroy=extend_schema(
+        summary="Delete an employee",
+        description="Delete an employee by their ID.",
+        tags=["Employees", "Employees Viewset"],
+        responses={204: None},
+    ),
+)
 #@permission_classes([IsAuthenticated])
 class EmployeesTableViewSet(viewsets.ModelViewSet):
     queryset = models.EmployeesTable.objects.all()
@@ -1717,7 +1797,50 @@ def get_archived_orders(request, employee_id):
 
 
 """ Return invoice Api's """
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all return permissions",
+        description="Retrieve a list of all return permissions.",
+        tags=["Return Permission"],
+    ),
+    retrieve=extend_schema(
+        summary="Get a single return permission",
+        description="Retrieve a return permission record by ID.",
+        tags=["Return Permission"],
+    ),
+    create=extend_schema(
+        summary="Create a return permission",
+        description="""
+Creates a return permission record.
 
+- Requires valid `client` (clientid) and `invoice` (invoice_no).
+- Checks if client and invoice exist before saving.
+- Fields:
+  - `client`: clientid (foreign key)
+  - `invoice`: invoice_no (foreign key)
+  - `employee`: name or ID
+  - `payment`: optional payment details
+        """,
+        tags=["Return Permission"],
+        request=serializers.ReturnPermissionSerializer,
+        responses={201: serializers.ReturnPermissionSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Delete a return permission",
+        description="Delete a return permission by ID.",
+        tags=["Return Permission"],
+    ),
+    update=extend_schema(
+        summary="Update a return permission",
+        description="Update a return permission (full object).",
+        tags=["Return Permission"],
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a return permission",
+        description="Update part of a return permission.",
+        tags=["Return Permission"],
+    )
+)
 class ReturnPermissionViewSet(viewsets.ModelViewSet):
     queryset = models.return_permission.objects.all()
     serializer_class = serializers.ReturnPermissionSerializer
@@ -1754,7 +1877,54 @@ class ReturnPermissionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List return permission items",
+        description="Get all return permission item records.",
+        tags=["Return Permission Items"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve return permission item",
+        description="Get a specific return permission item by ID.",
+        tags=["Return Permission Items"],
+    ),
+    create=extend_schema(
+        summary="Create return permission item",
+        description="""
+Create an item under a return permission. This endpoint handles:
+- Validating the invoice and related product line (`autoid`)
+- Validating return quantity against available quantity
+- Saving the returned item record
+- Updating the related permission's total and quantity
+- Adjusting the invoice item’s returnable quantity
+- Updating product stock value in `Mainitem`
+- Logging the transaction in `TransactionsHistoryTable`
+- If payment is cash, storing a record in `StorageTransactionsTable`
+- Logging product movement in `Clientstable`
 
+Required Fields:
+- `invoice_no`: the invoice number to return from
+- `permission`: ID of the return permission header
+- `autoid`: the invoice item ID (from SellInvoiceItemsTable)
+- `returned_quantity`: how many items are being returned
+        """,
+        tags=["Return Permission Items"],
+        request=serializers.ReturnPermissionItemsSerializer,
+        responses={201: serializers.ReturnPermissionItemsSerializer},
+    ),
+    update=extend_schema(
+        summary="Update a return permission item",
+        tags=["Return Permission Items"],
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a return permission item",
+        tags=["Return Permission Items"],
+    ),
+    destroy=extend_schema(
+        summary="Delete a return permission item",
+        tags=["Return Permission Items"],
+    ),
+)
 class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
     queryset = models.return_permission_items.objects.all()
     serializer_class = serializers.ReturnPermissionItemsSerializer
@@ -1889,7 +2059,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
 
 @extend_schema(
 description="""get a sell invoice returned items by invoice no.""",
-tags=["Return permission"],
+tags=["Return Permission"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1906,7 +2076,7 @@ def get_invoice_returned_items(request,id):
 
 @extend_schema(
 description="""filter return permissions.""",
-tags=["Return permission"],
+tags=["Return Permission"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -2595,6 +2765,48 @@ def CarParts_page(request):
 @api_view(["GET"])
 def CarPartsHome_page(request):
     return render(request, 'CarPartsTemplates/index.html')
+
+@api_view(["GET"])
+def Dashbord_page(request):
+    return render(request, 'CarPartsTemplates/Dashboard.html')
+
+
+@api_view(['GET'])
+def get_employee_details(request, employee_id):
+    try:
+        employee = EmployeesTable.objects.get(employee_id=employee_id)
+        data = {
+            'employee_id': employee.employee_id,
+            'name': employee.name,
+            'identity_doc': employee.identity_doc,
+            'nationality': employee.nationality,
+            'last_transaction': employee.last_transaction,
+            'salary': str(employee.salary),
+            'start_date': employee.start_date,
+            'end_date': employee.end_date,
+            'daily_start_time': employee.daily_start_time,
+            'daily_end_time': employee.daily_end_time,
+            'active': employee.active,
+            'category': employee.category,
+            'notes': employee.notes,
+            'phone': employee.phone,
+            'address': employee.address,
+            'bank_details': employee.bank_details,
+            'bank_account_no': employee.bank_account_no,
+            'bank_iban_no': employee.bank_iban_no,
+            'is_available': employee.is_available,
+            'has_active_order': employee.has_active_order,
+            'fcm_token': employee.fcm_token,
+        }
+        return Response(data)
+    except EmployeesTable.DoesNotExist:
+        return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        
+@api_view(['GET'])
+def brand_items(request, brand):
+    items = models.Mainitem.objects.filter(itemmain=brand)
+    return render(request, 'CarPartsTemplates/brand-item.html', {'items': items, 'brand': brand})
 
 @extend_schema(
 description="""Credit or Debit an employee's balance.""",
