@@ -3,8 +3,11 @@ let lastPage = 1;
 let isLoading = false;
 let currentFilters = {};
 let itemsPerPage = 10;
+let datl = {};
 
 async function fetchFilteredData(page = 1) {
+  console.debug("Fetching filtered data for page:", page);
+  
   const filters = {
     itemno: currentFilters.itemno || '',
     itemmain: currentFilters.itemmain || '',
@@ -15,7 +18,12 @@ async function fetchFilteredData(page = 1) {
     size: itemsPerPage,
   };
 
+  console.debug("Filters applied:", filters);
+
   const response = await fetchWithAuth(`${baseUrl}/api/filter-items`, 'POST', filters);
+  
+  console.debug("Response data:", response);
+  
   return {
     data: response?.data || [],
     last_page: response?.last_page || 1,
@@ -36,6 +44,8 @@ async function displayItems(items) {
   document.getElementById('noResults').style.display = 'none';
 
   for (const item of items) {
+    console.debug("Displaying item:", item);
+    
     const row = document.createElement('tr');
     const stock = parseInt(item.itemvalue) || 0;
     const cartItem = cart.find(ci => ci.pno === item.pno);
@@ -86,6 +96,8 @@ async function displayItems(items) {
 }
 
 async function showProductImages(pno) {
+  console.debug("Fetching images for product with PNO:", pno);
+  
   try {
     const modalBody = document.querySelector('#imageModal .modal-body');
     modalBody.innerHTML = `
@@ -99,6 +111,8 @@ async function showProductImages(pno) {
     modal.show();
 
     const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
+    
+    console.debug("Image fetch response:", response);
     
     if (response && Array.isArray(response) && response.length > 0) {
       let imagesHTML = '';
@@ -138,42 +152,33 @@ async function showProductImages(pno) {
 }
 
 function applyFilters() {
-    // Collecting filter values
-    currentFilters = {
-      itemno: document.getElementById('modelFilter').value.trim(),
-      engine_no: document.getElementById('engineFilter').value.trim(),
-      itemmain: document.getElementById('mainTypeFilter').value.trim(),
-      itemsubmain: document.getElementById('subTypeFilter').value.trim(),
-    };
+  console.debug("Applying filters...");
   
-    // Debug print for filter values
-    console.log("Current Filters:", currentFilters);
+  currentFilters = {
+    itemno: document.getElementById('modelFilter').value.trim(),
+    engine_no: document.getElementById('engineFilter').value.trim(),
+    itemmain: document.getElementById('mainTypeFilter').value.trim(),
+    itemsubmain: document.getElementById('subTypeFilter').value.trim(),
+  };
   
-    // Resetting page number to 1 and updating the input field
-    currentPage = 1;
-    document.getElementById('pageInput').value = 1;
+  console.debug("Current filters:", currentFilters);
   
-    // Debug print for currentPage and pageInput value
-    console.log("Current Page:", currentPage);
-    console.log("Page Input Value:", document.getElementById('pageInput').value);
+  currentPage = 1;
+  document.getElementById('pageInput').value = 1;
+  document.getElementById('productList').innerHTML = "";
+  document.getElementById('loading-spinner').style.display = 'block';
   
-    // Clearing product list and showing loading spinner
-    document.getElementById('productList').innerHTML = "";
-    document.getElementById('loading-spinner').style.display = 'block';
-  
-    // Debug print to confirm that the loading spinner is displayed
-    console.log("Loading spinner displayed");
-  
-    // Call to load more items
-    loadMoreItems();
-  }
-  
+  loadMoreItems();
+}
 
 function resetFilters() {
+  console.debug("Resetting filters...");
+  
   document.getElementById('modelFilter').value = '';
   document.getElementById('engineFilter').value = '';
   document.getElementById('mainTypeFilter').value = '';
   document.getElementById('subTypeFilter').value = '';
+  
   applyFilters();
 }
 
@@ -181,6 +186,8 @@ async function loadMoreItems() {
   if (isLoading) return;
   isLoading = true;
 
+  console.debug("Loading more items for page:", currentPage);
+  
   const { data, last_page, total } = await fetchFilteredData(currentPage);
   lastPage = last_page;
   
@@ -192,6 +199,7 @@ async function loadMoreItems() {
 }
 
 function updatePaginationInfo(totalItems) {
+  console.debug("Total items:", totalItems, "Current page:", currentPage, "Last page:", lastPage);
   document.getElementById('pageInfo').textContent = 
     `الصفحة ${currentPage} من ${lastPage} | إجمالي العناصر: ${totalItems}`;
 }
@@ -199,6 +207,9 @@ function updatePaginationInfo(totalItems) {
 function changePage() {
   const pageInput = document.getElementById('pageInput');
   const newPage = parseInt(pageInput.value, 10);
+  
+  console.debug("Changing page to:", newPage);
+  
   if (newPage > 0 && newPage <= lastPage && newPage !== currentPage) {
     currentPage = newPage;
     document.getElementById('productList').innerHTML = "";
@@ -225,96 +236,134 @@ function nextPage() {
 
 function changeItemsPerPage() {
   itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
+  console.debug("Changing items per page to:", itemsPerPage);
+  
   currentPage = 1;
   document.getElementById('pageInput').value = 1;
   document.getElementById('productList').innerHTML = "";
   document.getElementById('loading-spinner').style.display = 'block';
+  
   loadMoreItems();
 }
 
-async function populateMainTypes() {
-  try {
-    const response = await fetchWithAuth(`http://45.13.59.226/api/main-types/`);
-    const mainTypes = await response?.main_types || [];
-
-    const select = document.getElementById('mainTypeFilter');
-    select.innerHTML = `<option value="">كل الأصناف الرئيسية</option>`;
-
-    mainTypes.forEach(main => {
-      const option = document.createElement('option');
-      option.value = main.typename;  // Set value to typename
-      option.textContent = main.typename || `رئيسي ${main.fileid}`;
-      select.appendChild(option);
-    });
-  } catch (error) {
-    console.error("خطأ في تحميل الأصناف الرئيسية:", error);
-  }
-}
-
-
-async function populateSubTypes(mainTypeId) {
-  try {
-    const response = await fetchWithAuth(`http://45.13.59.226/api/sub-types/`);
-    const subTypes = await response?.sub_types || [];
-
-    const select = document.getElementById('subTypeFilter');
-    select.innerHTML = `<option value="">كل الأصناف الفرعية</option>`;
-
-    subTypes
-      .filter(sub => sub.maintype_fk == mainTypeId)
-      .forEach(sub => {
-        const option = document.createElement('option');
-        option.value = sub.fileid;
-        option.textContent = sub.subtypename || `فرعي ${sub.fileid}`;
-        select.appendChild(option);
-      });
-
-    document.getElementById('modelFilter').innerHTML = `<option value="">كل الموديلات</option>`;
-  } catch (error) {
-    console.error("خطأ في تحميل الأصناف الفرعية:", error);
-  }
-}
-
-async function populateModels(subTypeId) {
-  try {
-    const response = await fetchWithAuth(`http://45.13.59.226/api/models/`);
-    const models = await response?.models || [];
-
-    const select = document.getElementById('modelFilter');
-    select.innerHTML = `<option value="">كل الموديلات</option>`;
-
-    models
-      .filter(model => model.subtype_fk == subTypeId)
-      .forEach(model => {
-        const option = document.createElement('option');
-        option.value = model.fileid;
-        option.textContent = model.model_name || `موديل ${model.fileid}`;
-        select.appendChild(option);
-      });
-  } catch (error) {
-    console.error("خطأ في تحميل الموديلات:", error);
-  }
-}
-
-// Initial load
-window.addEventListener('DOMContentLoaded', () => {
-  populateMainTypes();
-  loadMoreItems();
-
-  document.getElementById('mainTypeFilter').addEventListener('change', (e) => {
-    const selectedMain = e.target.value;
-    populateSubTypes(selectedMain);
+// 1. Fetch data and start chain
+fetch('http://45.13.59.226/api/get-drop-lists')
+  .then(res => res.json())
+  .then(json => {
+    datl = json;
+    console.debug("Filter data received:", datl);
+    populateMainTypes(json.main_types);
   });
 
-  document.getElementById('subTypeFilter').addEventListener('change', (e) => {
-    const selectedSub = e.target.value;
-    populateModels(selectedSub);
+// 2. Populate Main Types
+function populateMainTypes(mainTypes) {
+  const mainSelect = document.getElementById("mainTypeFilter");
+  mainSelect.innerHTML = '<option value="">اختر النوع الرئيسي</option>';
+
+  mainTypes.forEach(main => {
+    const option = document.createElement("option");
+    option.value = main.typename;
+    option.textContent = main.typename;
+    mainSelect.appendChild(option);
   });
 
-  document.getElementById('filterBtn').addEventListener('click', applyFilters);
-  document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
-  document.getElementById('prevPageBtn').addEventListener('click', prevPage);
-  document.getElementById('nextPageBtn').addEventListener('click', nextPage);
-  document.getElementById('pageInput').addEventListener('change', changePage);
-});
+  mainSelect.addEventListener('change', () => {
+    const selectedName = mainSelect.value;
+    const selectedMain = mainTypes.find(main => main.typename === selectedName);
+    if (!selectedMain) return;
+
+    const selectedMainId = parseInt(selectedMain.fileid);
+    console.debug("Selected main type ID:", selectedMainId);
+
+    populateSubTypes(selectedMainId);
+    document.getElementById("engineFilter").innerHTML = '';
+    document.getElementById("modelkFilter").innerHTML = '<option value="">اختر سنة الصنع</option>';
+  });
+}
+
+// 3. Populate Sub Types
+function populateSubTypes(mainId) {
+  const subTypes = datl.sub_types.filter(sub => sub.maintype_fk === mainId);
+  const subSelect = document.getElementById("subTypeFilter");
+  subSelect.innerHTML = '<option value="">اختر النوع الفرعي</option>';
+
+  subTypes.forEach(sub => {
+    const option = document.createElement("option");
+    option.value = sub.subtypename;
+    option.textContent = sub.subtypename;
+    subSelect.appendChild(option);
+  });
+
+  subSelect.addEventListener('change', () => {
+    const selectedName = subSelect.value;
+    const selectedSub = subTypes.find(sub => sub.subtypename === selectedName);
+    if (!selectedSub) return;
+
+    const selectedSubId = parseInt(selectedSub.fileid);
+    console.debug("Selected sub type ID:", selectedSubId);
+
+    populateModel(selectedSubId);
+    populateEngine(selectedName); // <-- ✅ added here
+  });
+}
+
+
+// 4. Populate Models
+function populateModel(subId) {
+  const models = datl.models.filter(mod => mod.subtype_fk === subId);
+  const modelSelect = document.getElementById("modelkFilter");
+  modelSelect.innerHTML = '<option value="">اختر سنة الصنع</option>';
+
+  models.forEach(mod => {
+    const option = document.createElement("option");
+    option.value = mod.model_name;
+    option.textContent = mod.model_name;
+    modelSelect.appendChild(option);
+  });
+
+  modelSelect.addEventListener('change', () => {
+    const selectedName = modelSelect.value;
+    const selectedModel = models.find(mod => mod.model_name === selectedName);
+    if (selectedModel) {
+      console.debug("Selected model ID:", selectedModel.fileid);
+      // Do something with selectedModel.fileid...
+    }
+  });
+}
+
+function populateEngine(subTypeName) {
+  console.debug("🚀 populateEngine called with subtype name:", subTypeName);
+
+  const engines = datl.engines.filter(mod => {
+    if (!mod.subtype_str) return false;
+    const subtypes = mod.subtype_str.split(';').map(s => s.trim());
+    return subtypes.includes(subTypeName);
+  });
+
+  console.debug("🔍 Filtered engines matching subtype_str:", engines);
+
+  const engineSelect = document.getElementById("engineFilter");
+  engineSelect.innerHTML = '<option value="">اختر المحرك</option>';
+
+  engines.forEach(mod => {
+    console.debug("➕ Adding engine option:", mod.engine_name);
+    const option = document.createElement("option");
+    option.value = mod.engine_name;
+    option.textContent = mod.engine_name;
+    engineSelect.appendChild(option);
+  });
+
+  engineSelect.addEventListener('change', () => {
+    const selectedEngine = engineSelect.value;
+    const selectedModel = engines.find(mod => mod.engine_name === selectedEngine);
+    if (selectedModel) {
+      console.debug("✅ Selected engine:", selectedModel.engine_name);
+      console.debug("📦 Corresponding model object:", selectedModel);
+      console.debug("🆔 File ID of selected model:", selectedModel.fileid);
+    } else {
+      console.debug("⚠️ Engine not found in filtered list.");
+    }
+  });
+}
+
+

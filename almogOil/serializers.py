@@ -242,16 +242,24 @@ class BasicEmployeeSerializer(serializers.ModelSerializer):
         model = EmployeesTable
         # List only the basic, non-sensitive fields.
         fields = [
-            'employee_id', 
-            'name', 
-            'salary', 
-            'start_date', 
-            'end_date', 
-            'active', 
-            'category', 
-            'notes', 
-            'phone', 
+            'employee_id',
+            'name',
+            'salary',
+            'start_date',
+            'end_date',
+            'active',
+            'category',
+            'notes',
+            'phone',
             'address',
             'is_available',
             'has_active_order'
         ]
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+    role = serializers.CharField(required=False, allow_blank=True)
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=True)

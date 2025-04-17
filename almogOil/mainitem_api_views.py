@@ -222,7 +222,7 @@ def UpdateItemsEngineApiView(request, item_id):
         engines = s_data['engine_no']
         return Response({'engines': engines}, status=status.HTTP_200_OK)
 
-
+@api_view(['GET'])
 def app_filter_Items(request):
     # Extract the filter parameters from the request body
     itemmain = request.data.get('itemmain', None)

@@ -62,9 +62,17 @@ import firebase_admin
 from firebase_admin import credentials
 from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
+from drf_spectacular.utils import extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 
 """ Log Out,Login And Authentication Api's"""
-
+@extend_schema(
+request=serializers.LogoutSerializer,
+description='''
+Logout API:
+Logs a user out of the system and end his session.
+''',
+tags=["User Management"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
@@ -87,6 +95,14 @@ def logout_view(request):
     except Exception as e:
         return Response({"message": "Invalid or expired refresh token", "error": str(e), "session": False}, status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(
+request=serializers.LoginSerializer,
+description='''
+Login API:
+Logs a user in of the system and starts his session.
+''',
+tags=["User Management"],
+)
 @api_view(["POST"])
 def sign_in(request):
     try:
@@ -184,8 +200,13 @@ def sign_in(request):
 
 
 """Drop Boxes"""
+@extend_schema(
+description='''
+Get Dropboxes data.
+''',
+tags=["Drop Boxes"],
+)
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def get_dropboxes(request):
     model = models.Modeltable.objects.all()
     serialized_model = serializers.ModelSerializer(model, many=True)
@@ -219,29 +240,49 @@ class EmployeesTableViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EmployeesSerializer
 
 
-
+@extend_schema(
+description='''
+Get models Table data.
+''',
+tags=["Drop Boxes"],
+)
 @api_view(["GET"])
 def get_models(request):
     models_data = models.Modeltable.objects.all()
     serialized_data = serializers.ModelSerializer(models_data, many=True)
     return Response({'models': serialized_data.data})
 
+@extend_schema(
+description='''
+Get engines Table's data.
+''',
+tags=["Drop Boxes"],
+)
 @api_view(["GET"])
-
 def get_engines(request):
     engines_data = models.enginesTable.objects.all()
     serialized_data = serializers.EngineSerializer(engines_data, many=True)
     return Response({'engines': serialized_data.data})
 
+@extend_schema(
+description='''
+Get main types. ex: Mercedes,BMW.
+''',
+tags=["Drop Boxes"],
+)
 @api_view(["GET"])
-
 def get_main_types(request):
     main_types_data = models.Maintypetable.objects.all()
     serialized_data = serializers.MainTypeSerializer(main_types_data, many=True)
     return Response({'main_types': serialized_data.data})
 
+@extend_schema(
+description='''
+Get sub types ex: Cerato,Benz.
+''',
+tags=["Drop Boxes"],
+)
 @api_view(["GET"])
-
 def get_sub_types(request):
     sub_types_data = models.Subtypetable.objects.all()
     serialized_data = serializers.SubTypeSerializer(sub_types_data, many=True)
@@ -249,7 +290,12 @@ def get_sub_types(request):
 
 """ Sell Invoice Api's """
 
-
+@extend_schema(
+description='''
+Get a specific invoice's data.
+''',
+tags=["Sell Invoice"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_invoice_data(request, autoid):
@@ -261,6 +307,12 @@ def get_invoice_data(request, autoid):
     except SellinvoiceTable.DoesNotExist:
         return Response({"error": "Invoice not found"}, status=404)
 
+@extend_schema(
+description='''
+Get Specific Client's sell invoices.
+''',
+tags=["Sell Invoice","Clients"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def GetClientInvoices(request, id):
@@ -276,7 +328,12 @@ def GetClientInvoices(request, id):
 
     return Response(serializer.data, status=status.HTTP_200_OK)  # Return the serialized data
 ######
-
+@extend_schema(
+description='''
+Get Specific sell invoice's data by invoice no.
+''',
+tags=["Sell Invoice"],
+)
 @api_view(['GET'])
 #@permission_classes([IsAuthenticated])
 def GetClientInvoicesByInvoiceNo(request, id):
@@ -323,7 +380,10 @@ def GetClientInvoicesByInvoiceNo(request, id):
 #         except Exception as e:
 #             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+description="""Update invoice status and set delivered_date if status is 'تم التوصيل'.""",
+tags=["Sell Invoice","Delivery"],
+)
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -347,6 +407,10 @@ def update_invoice_status(request, invoice_no):
 
     return Response({"error": "Invalid status."}, status=400)
 
+@extend_schema(
+description="""Fetch all invoices with status 'حضرت'.""",
+tags=["Sell Invoice","Delivery"],
+)
 @csrf_exempt
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -368,7 +432,10 @@ class CustomPagination(PageNumberPagination):
 
 
 """ Support Dashboard Api's """
-
+@extend_schema(
+description="""Fetch all support conversations.""",
+tags=["Support Desk"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def support_conversations(request):
@@ -378,6 +445,10 @@ def support_conversations(request):
         return Response({'conversations': serializer.data})
 
 # Get Messages in a Conversation
+@extend_schema(
+description="""Get Messages in a specific Conversation.""",
+tags=["Support Desk"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_conversation_messages(request, conversation_id):
@@ -391,6 +462,10 @@ def get_conversation_messages(request, conversation_id):
             return Response({'error': 'Conversation not found'}, status=status.HTTP_404_NOT_FOUND)
 
 # Create a New Message in a Conversation
+@extend_schema(
+description="""Create a New Message in a Conversation.""",
+tags=["Support Desk"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_message(request, conversation_id=None):
@@ -442,7 +517,10 @@ def send_message(request, conversation_id=None):
             'message_data': message_serializer.data
         }, status=status.HTTP_201_CREATED)
 
-
+@extend_schema(
+description="""Start a Conversation.""",
+tags=["Support Desk"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def start_conversation(request, client_id):
@@ -488,7 +566,10 @@ def start_conversation(request, client_id):
             return Response({'error': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-
+@extend_schema(
+description="""Send a feedback in a Conversation.""",
+tags=["Support Desk"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_feedback(request):
@@ -514,7 +595,10 @@ def send_feedback(request):
     # Return the created feedback data in response
     return Response(serializers.FeedbackSerializer(feedback).data, status=status.HTTP_201_CREATED)
 
-
+@extend_schema(
+description="""Respond to a feedback in a Conversation.""",
+tags=["Support Desk"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def respond_to_feedback(request, client_id):
@@ -546,7 +630,10 @@ def respond_to_feedback(request, client_id):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 """ Client Related Api's """
-
+@extend_schema(
+description="""Get a specific client from db.""",
+tags=["Clients"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_clients1(request,id=None):
@@ -557,7 +644,10 @@ def get_all_clients1(request,id=None):
 
 
 """ Delivery Related Api's """
-
+@extend_schema(
+description="""Assign an order directly to an employee while ensuring a fair and accurate queue system.""",
+tags=["Delivery"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_employee_order(request, employee_id):
@@ -634,7 +724,10 @@ def get_employee_order(request, employee_id):
     except EmployeesTable.DoesNotExist:
         return Response({"error": "Employee not found."}, status=404)
 
-
+@extend_schema(
+description="""Accept an order from queue.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def accept_order(request, queue_id):
@@ -648,7 +741,7 @@ def accept_order(request, queue_id):
 
         # Update the order's delivery status to 'جاري التوصيل'
         order = order_queue.order
-        order.delivery_status = 'كهجاري التوصيل'
+        order.delivery_status = 'جاري التوصيل'
         order.save()
 
         # Mark the employee as unavailable and set the active order flag
@@ -668,7 +761,10 @@ def accept_order(request, queue_id):
     except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
-
+@extend_schema(
+description="""Declice an order.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def decline_order(request, queue_id):
@@ -708,6 +804,10 @@ def decline_order(request, queue_id):
     except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order queue entry not found."}, status=404)
 
+@extend_schema(
+description="""Deliver an order to its destination.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def deliver_order(request, queue_id):
@@ -747,6 +847,10 @@ def deliver_order(request, queue_id):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@extend_schema(
+description="""Skip an order.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def skip_order(request, queue_id):
@@ -780,7 +884,10 @@ def skip_order(request, queue_id):
         return Response({"error": "Order queue entry not found."}, status=404)
 
 
-
+@extend_schema(
+description="""Toggle the availability of the delivery person based on their employee ID and update their queue position.""",
+tags=["Delivery"],
+)
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -828,7 +935,10 @@ def update_delivery_availability(request):
         "is_available": employee.is_available
     })
 
-
+@extend_schema(
+description="""Assign an order to a driver.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def assign_orders(request):
@@ -859,6 +969,10 @@ def assign_orders(request):
 
 
 # 📌 Complete a delivery and assign a new order
+@extend_schema(
+description="""Assign order as Delivered and completed.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def complete_delivery(request, invoice_id):
@@ -901,6 +1015,10 @@ def complete_delivery(request, invoice_id):
 
 
 # 📌 View all pending orders
+@extend_schema(
+description="""Get all pending orders.""",
+tags=["Delivery"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def pending_orders(request):
@@ -911,7 +1029,10 @@ def pending_orders(request):
 
 
 
-
+@extend_schema(
+description="""Set driver as available.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def set_available(request):
@@ -957,7 +1078,10 @@ def set_available(request):
     })
 
 
-
+@extend_schema(
+description="""Set driver as unavailable.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def set_unavailable(request):
@@ -992,9 +1116,11 @@ def set_unavailable(request):
         "is_available": employee.is_available
     })
 
-
+@extend_schema(
+description="""Clear all employees and orders from the queue.""",
+tags=["Delivery"],
+)
 @api_view(['POST'])
-
 def clear_queue(request):
     """Clear all employees and orders from the queue, set all employees as unavailable, and reset invoice assignments."""
 
@@ -1018,7 +1144,10 @@ def clear_queue(request):
 
     }, status=status.HTTP_200_OK)
 
-
+@extend_schema(
+description="""Get a specific Driver's orders.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_employee_orders(request, employee_id):
@@ -1053,6 +1182,10 @@ def get_employee_orders(request, employee_id):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@extend_schema(
+description="""Set order as completed.""",
+tags=["Delivery"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def complete_order(request, autoid):
@@ -1099,7 +1232,10 @@ def complete_order(request, autoid):
 
 
 
-
+@extend_schema(
+description="""Get all available drivers for Delivery.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_available_employees(request):
@@ -1113,6 +1249,10 @@ def get_available_employees(request):
     # Return the serialized data in the response
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@extend_schema(
+description="""check assign status of all orders.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def check_assign_status(request):
@@ -1164,6 +1304,10 @@ def check_assign_status(request):
 
     return Response(data)
 
+@extend_schema(
+description="""check assign status of all orders.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def check_assign_statusss(request, employee_id):
@@ -1203,7 +1347,10 @@ def check_assign_statusss(request, employee_id):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
-
+@extend_schema(
+description="""confirm an order.""",
+tags=["Delivery"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def confirm_order(request, order_id):
@@ -1235,7 +1382,10 @@ def confirm_order(request, order_id):
 
 
 
-
+@extend_schema(
+description="""Decline an order.""",
+tags=["Delivery"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def decline_order(request, order_id):
@@ -1272,7 +1422,10 @@ def decline_order(request, order_id):
 
 
 
-
+@extend_schema(
+description="""show order assignments.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def monitor_order_assignments(request):
@@ -1335,6 +1488,10 @@ def monitor_order_assignments(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@extend_schema(
+description="""Get a specific driver order with details.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def employee_order_info(request, employee_id):
@@ -1379,7 +1536,10 @@ def employee_order_info(request, employee_id):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
-
+@extend_schema(
+description="""driver's current order details.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def employee_current_order_info(request, employee_id):
@@ -1435,7 +1595,10 @@ def employee_current_order_info(request, employee_id):
 
 
 # views.py
-
+@extend_schema(
+description="""confirm order arrival.""",
+tags=["Delivery"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def confirm_order_arrival(request, order_id):
@@ -1466,7 +1629,10 @@ def confirm_order_arrival(request, order_id):
     except models.OrderQueue.DoesNotExist:
         return Response({"error": "Order not found or already confirmed."}, status=404)
 
-
+@extend_schema(
+description="""get all confirmed orders.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_all_confirmed_orders(request):
@@ -1487,6 +1653,10 @@ def get_all_confirmed_orders(request):
 
     return Response(data, status=200)
 
+@extend_schema(
+description="""get a specific driver's confirmed orders.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_employee_confirmed_orders(request):
@@ -1512,7 +1682,10 @@ def get_employee_confirmed_orders(request):
     return Response(data, status=200)
 
 
-
+@extend_schema(
+description="""get_archived_orders.""",
+tags=["Delivery"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_archived_orders(request, employee_id):
@@ -1714,7 +1887,10 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-
+@extend_schema(
+description="""get a sell invoice returned items by invoice no.""",
+tags=["Return permission"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_invoice_returned_items(request,id):
@@ -1728,7 +1904,10 @@ def get_invoice_returned_items(request,id):
         }, status=status.HTTP_200_OK)
 
 
-
+@extend_schema(
+description="""filter return permissions.""",
+tags=["Return permission"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def filter_return_reqs(request):
@@ -1772,6 +1951,11 @@ def filter_return_reqs(request):
 
 """ Employee Related Api's """
 # 📌 View all available employees
+
+@extend_schema(
+description="""get available_employees.""",
+tags=["Delivery","Drivers","Employees"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def available_employees(request):
@@ -1783,7 +1967,10 @@ def available_employees(request):
 
 """ Payment Request Api's """
 
-
+@extend_schema(
+description="""accept a payment request.""",
+tags=["Payment Requests"],
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def accept_payment_req(request, id):
@@ -1856,7 +2043,10 @@ def accept_payment_req(request, id):
 
 """ Sources Related Api's """
 
-
+@extend_schema(
+description="""Create a new source.""",
+tags=["Sources"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_source_record(request):
@@ -1925,7 +2115,10 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
 """ Notifications Related Api's """
-
+@extend_schema(
+description="""Register an FCM token for a user (Employee or Client).""",
+tags=["Notifications"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def register_fcm_token(request):
@@ -1953,7 +2146,10 @@ def register_fcm_token(request):
     user.save()
     return Response({"message": "FCM token registered successfully"}, status=200)
 
-
+@extend_schema(
+description="""Send a notification to user (Employee or Client).""",
+tags=["Notifications"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_notification(request):
@@ -1990,6 +2186,10 @@ def send_notification(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@extend_schema(
+description="""send invoice related notifications to user (Employee or Client).""",
+tags=["Notifications","Sell Invoice"],
+)
 def send_invoice_notification(invoice, status_message):
     """Send a notification when invoice status changes."""
     channel_layer = get_channel_layer()
@@ -2005,6 +2205,10 @@ def send_invoice_notification(invoice, status_message):
         }
     )
 
+@extend_schema(
+description="""Store an FCM token for a user (Employee or Client).""",
+tags=["Notifications"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def store_fcm_token(request):
@@ -2044,7 +2248,10 @@ def store_fcm_token(request):
         else:
             return Response({"error": "Invalid role. Role should be 'client' or 'employee'."}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+description="""Upload a logo for maintype ,ex: logo for Mercedes.""",
+tags=["Main Types"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def upload_maintype_logo(request, id):
@@ -2065,6 +2272,10 @@ def upload_maintype_logo(request, id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""Upload a logo for companies.""",
+tags=["Companies"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def upload_company_logo(request, id):
@@ -2085,6 +2296,10 @@ def upload_company_logo(request, id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""Fetch records from StorageTransactionsTable where transaction_date is today.""",
+tags=["Storage Transactions"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_today_storage(request):
@@ -2100,6 +2315,10 @@ def get_today_storage(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""Fetch all records from StorageTransactionsTable.""",
+tags=["Storage Transactions"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_storage(request):
@@ -2115,6 +2334,10 @@ def get_all_storage(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@extend_schema(
+description="""Filter records from StorageTransactionsTable.""",
+tags=["Storage Transactions"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def filter_all_storage(request):
@@ -2164,7 +2387,10 @@ def filter_all_storage(request):
     except Exception as e:
         return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""Retrieve an employee's basic information by employee_id.""",
+tags=["Employees"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def employee_detail_get(request, employee_id):
@@ -2180,7 +2406,10 @@ def employee_detail_get(request, employee_id):
     serializer = serializers.BasicEmployeeSerializer(employee)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+@extend_schema(
+description="""sign in api for mobile app.""",
+tags=["User Management","Mobile App"],
+)
 @api_view(["POST"])
 def mobile_sign_in(request):
     try:
@@ -2276,7 +2505,10 @@ def mobile_sign_in(request):
     except Exception as e:
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""Get the company's logo by product's pno number.""",
+tags=["Companies","Products"],
+)
 @api_view(['GET'])
 #@permission_classes([IsAuthenticated])
 def get_logo_by_pno(request, id):
@@ -2294,13 +2526,19 @@ def get_logo_by_pno(request, id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+description="""Retrieve Token and validate it.""",
+tags=["User Management"],
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def validate_token(request):
     return Response({'detail': 'Token is valid.'})
 
-
+@extend_schema(
+description="""Retrieve an employee data along with his balance.""",
+tags=["Employees"],
+)
 @api_view(['GET'])
 #@permission_classes([IsAuthenticated])
 def get_all_employees_with_balance(request):
@@ -2358,7 +2596,10 @@ def CarParts_page(request):
 def CarPartsHome_page(request):
     return render(request, 'CarPartsTemplates/index.html')
 
-
+@extend_schema(
+description="""Credit or Debit an employee's balance.""",
+tags=["Employees"],
+)
 @csrf_exempt
 @api_view(["POST"])
 def Edit_employee_balance(request, id):

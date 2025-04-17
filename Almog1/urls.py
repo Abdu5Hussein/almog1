@@ -276,6 +276,8 @@ urlpatterns = [
     path('hozmabrands/',api_views.CarParts_page,name='CarParts_page'),
     path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
     path('hozmaHome/',api_views.CarPartsHome_page,name='CarParts_page'),
+    path('hozmaDashboard/',api_views.Dashboard,name='Dashboard'),
+  
 
 
 
