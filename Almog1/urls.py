@@ -37,6 +37,7 @@ router.register(r'permissions', api_views.ReturnPermissionViewSet, basename='ret
 router.register(r'permission-items', api_views.ReturnPermissionItemsViewSet, basename='return-permission-items')
 router.register(r'engines', api_views.EnginesTableViewSet)
 router.register(r'api/employees-api', api_views.EmployeesTableViewSet)
+router.register(r'api/balance-editions-api', api_views.BalanceEditionsTableViewSet)
 
 
 urlpatterns = [
@@ -165,7 +166,7 @@ urlpatterns = [
     path('api/main-types/', api_views.get_main_types, name='get_main_types'),
     path('api/sub-types/', api_views.get_sub_types, name='get_sub_types'),
     path('api/filter-itemsapp/', mainitem_api_views.app_filter_Items, name='filter-items-for-app'),
-    
+
     path('api/get-drop-lists', api_views.get_dropboxes, name='get-drop-lists'),
     path('fetch_messages/<int:feedback_id>/', views.fetch_feedback_messages, name='fetch_feedback_messages'),
     path("add_message_to_feedback/<int:feedback_id>/", views.add_message_to_feedback, name="add_message_to_feedback"),
@@ -280,6 +281,8 @@ urlpatterns = [
     path('hozmaDashbord/',api_views.Dashbord_page,name='dashbord'),
     path('brand/<str:itemmain>/', api_views.brand_items, name='brand_items'),
     path('hozmaCart/',api_views.Cart_page, name='Cart'),
+    path('api/balance-editions/user/<int:id>',api_views.Get_balance_editions_by_employee, name='balance-editions-for-user'),
+    path('api/filter/balance-editions-api/',api_views.filterBalanceEditions, name='filter-balance-editions'),
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()

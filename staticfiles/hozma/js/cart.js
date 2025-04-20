@@ -44,6 +44,9 @@ function toggleCart() {
       toggleCart();
     }
   });
+
+
+  
   
   function updateCartUI() {
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -107,26 +110,47 @@ function toggleCart() {
   
   async function fetchAndUpdateCartItemImage(pno) {
     try {
+      console.log(`Fetching image for product number: ${pno}`);
+  
       const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
+      console.log('Raw response from API:', response);
+  
       let imageUrl = '';
-      if (response && Array.isArray(response.images) && response.images.length > 0) {
-        imageUrl = `${baseUrl}${response.images[0]}`;
+      if (response && Array.isArray(response) && response.length > 0) {
+        imageUrl = `${baseUrl}${response[0].image_obj}`;
+        console.log('Image URL constructed:', imageUrl);
+      } else {
+        console.log('No images found in response');
       }
+  
       const cartItemDiv = document.getElementById(`cart-item-${pno}`);
-      if (cartItemDiv) {
-        const imgDiv = cartItemDiv.querySelector('.cart-item-img');
-        if (imageUrl) {
-          imgDiv.innerHTML = `<img src="${imageUrl}" class="cart-item-img me-2" alt="${item.name}" style="width:50px; height:50px; object-fit: contain; border-radius: 4px;">`;
-        } else {
-          imgDiv.innerHTML = `<div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
-            <i class="bi bi-image text-muted"></i>
-          </div>`;
-        }
+      if (!cartItemDiv) {
+        console.warn(`No cart item found for pno: ${pno}`);
+        return;
       }
+  
+      const imgDiv = cartItemDiv.querySelector('.cart-item-img');
+      if (!imgDiv) {
+        console.warn(`No image div found inside cart item for pno: ${pno}`);
+        return;
+      }
+  
+      if (imageUrl) {
+        imgDiv.innerHTML = `<img src="${imageUrl}" class="cart-item-img me-2" alt="Image for ${pno}" style="width:50px; height:50px; object-fit: contain; border-radius: 4px;">`;
+        console.log(`Image tag updated for pno: ${pno}`);
+      } else {
+        imgDiv.innerHTML = `<div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+          <i class="bi bi-image text-muted"></i>
+        </div>`;
+        console.log(`Placeholder image shown for pno: ${pno}`);
+      }
+  
     } catch (error) {
       console.error('Error fetching cart item image:', error);
     }
   }
+  
+  
   
   function addToCart(pno, itemno, name, price, image = '') {
     const existingItem = cart.find(item => item.pno === pno);
@@ -144,7 +168,9 @@ function toggleCart() {
       });
     }
     
-    updateCart();
+    updateCartUI();
+    updateCartPageUI(); 
+
   }
   
   function addToCartWithQuantity(pno, itemno, name, price, image = '', quantity = 1) {
@@ -170,6 +196,7 @@ function toggleCart() {
     }
     
     updateCart();
+    updateCartPageUI(); 
   }
   
   function removeFromCart(pno) {
@@ -177,6 +204,7 @@ function toggleCart() {
     if (index !== -1) {
       cart.splice(index, 1);
       updateCart();
+      updateCartPageUI(); 
     }
     
     const qtyInput = document.getElementById(`qty-${pno}`);
@@ -189,6 +217,7 @@ function toggleCart() {
     if (confirm('هل أنت متأكد أنك تريد إفراغ سلة الطلبات؟')) {
       cart.length = 0;
       updateCart();
+      updateCartPageUI(); 
       
       document.querySelectorAll('.quantity-input').forEach(input => {
         input.value = 0;
@@ -235,6 +264,7 @@ function toggleCart() {
     }
     
     updateCart();
+    updateCartPageUI(); 
   }
   
   function incrementQuantity(pno) {
@@ -255,6 +285,7 @@ function toggleCart() {
     if (item) {
       item.quantity += 1;
       updateCart();
+      updateCartPageUI(); 
       
       const qtyInput = document.getElementById(`qty-${pno}`);
       if (qtyInput) {
@@ -272,6 +303,7 @@ function toggleCart() {
         removeFromCart(pno);
       } else {
         updateCart();
+        updateCartPageUI(); 
         
         const qtyInput = document.getElementById(`qty-${pno}`);
         if (qtyInput) {
@@ -333,76 +365,85 @@ function toggleCart() {
     const cartContainer = document.getElementById('cartItems');
     
     if (cart.length === 0) {
-      cartContainer.innerHTML = `
+        cartContainer.innerHTML = `
         <div class="auto-cart-empty">
-          <i class="bi bi-cart-x auto-cart-empty-icon"></i>
-          <h5>سلة التسوق فارغة</h5>
-          <p class="text-muted">لم تقم بإضافة أي قطع غيار بعد</p>
-          <a href="/products" class="btn btn-outline-primary mt-2">
+            <i class="bi bi-cart-x auto-cart-empty-icon"></i>
+            <h5>سلة التسوق فارغة</h5>
+            <p class="text-muted">لم تقم بإضافة أي قطع غيار بعد</p>
+            <a href="/products" class="btn btn-outline-primary mt-2">
             <i class="bi bi-arrow-left"></i> متابعة التسوق
-          </a>
+            </a>
         </div>
-      `;
-      
-      document.getElementById('summaryItemsCount').textContent = '0';
-      document.getElementById('summarySubtotal').textContent = '0.00 د.أ';
-      document.getElementById('summaryTotalAmount').textContent = '0.00 د.أ';
-      return;
+        `;
+        
+        document.getElementById('summaryItemsCount').textContent = '0';
+        document.getElementById('summarySubtotal').textContent = '0.00 د.أ';
+        document.getElementById('summaryTotalAmount').textContent = '0.00 د.أ';
+        return;
     }
     
     let html = '';
     let totalAmount = 0;
-  
+
     cart.forEach(item => {
-      const itemTotal = item.price * item.quantity;
-      totalAmount += itemTotal;
-      
-      html += `
-      <div class="auto-cart-item" id="cart-item-${item.pno}">
-        <div class="d-flex align-items-center" style="min-width:0;">
-        <div class="auto-cart-img">
-          <img src="${item.image || 'https://via.placeholder.com/90x90?text=Part'}" alt="${item.name}">
+        const itemTotal = item.price * item.quantity;
+        totalAmount += itemTotal;
+        
+        html += `
+        <div class="auto-cart-item" id="cart-item-${item.pno}">
+            <div class="d-flex align-items-center" style="min-width:0;">
+                <div class="auto-cart-img cart-item-img me-2 d-flex align-items-center justify-content-center bg-light"
+                     style="width:50px; height:50px;">
+                    <i class="bi bi-image text-muted"></i>
+                </div>
+                <div class="auto-cart-info">
+                    <h6 class="auto-part-title mb-1">${item.name}</h6>
+                    <div class="auto-part-number">${item.itemno}</div>
+                    ${item.compatibility ? `<div class="part-compatibility"><i class="bi bi-check-circle"></i> متوافق مع ${item.compatibility}</div>` : ''}
+                    <div class="auto-part-price">${item.price.toFixed(2)} د.ل للقطعة</div>
+                    ${item.origin ? `<div class="auto-part-origin">${item.origin}</div>` : ''}
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <button class="auto-remove-btn" onclick="removeFromCart('${item.pno}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+                <div class="auto-qty-control">
+                    <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
+                            onclick="decrementCartQuantity('${item.pno}')">-</button>
+                    <input type="text" class="auto-qty-value mx-2" id="qty-${item.pno}" 
+                           value="${item.quantity}" readonly>
+                    <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
+                            onclick="incrementCartQuantity('${item.pno}')">+</button>
+                </div>
+            </div>
         </div>
-        <div class="auto-cart-info">
-          <h6 class="auto-part-title mb-1">${item.name}</h6>
-          <div class="auto-part-number">${item.itemno}</div>
-          ${item.compatibility ? `<div class="part-compatibility"><i class="bi bi-check-circle"></i> متوافق مع ${item.compatibility}</div>` : ''}
-          <div class="auto-part-price">${item.price.toFixed(2)} د.ل للقطعة</div>
-          ${item.origin ? `<div class="auto-part-origin">${item.origin}</div>` : ''}
-        </div>
-        </div>
-        <div class="d-flex align-items-center">
-        <button class="auto-remove-btn" onclick="removeFromCart('${item.pno}')">
-          <i class="bi bi-trash"></i>
-        </button>
-        <div class="auto-qty-control">
-          <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
-          onclick="decrementCartQuantity('${item.pno}')">-</button>
-          <span class="auto-qty-value mx-2">${item.quantity}</span>
-          <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
-          onclick="incrementCartQuantity('${item.pno}')">+</button>
-        </div>
-        </div>
-      </div>
-      `;
+        `;
+
+        // 🔁 Dynamically fetch and update the image after rendering
+        setTimeout(() => {
+            fetchAndUpdateCartItemImage(item.pno);
+        }, 0);
     });
-  
+
     cartContainer.innerHTML = html;
     document.getElementById('summaryItemsCount').textContent = totalItems;
     document.getElementById('summarySubtotal').textContent = totalAmount.toFixed(2) + ' د.ل ';
     document.getElementById('summaryTotalAmount').textContent = totalAmount.toFixed(2) + ' د.ل ';
-  }
-  
-  function checkout() {
+}
+
+
+function checkout() {
     if (cart.length === 0) {
-      alert('سلة التسوق فارغة. الرجاء إضافة قطع غيار قبل الدفع.');
-      return;
+        alert('سلة التسوق فارغة. الرجاء إضافة قطع غيار قبل الدفع.');
+        return;
     }
     // Implement your checkout logic here
     window.location.href = '/checkout';
-  }
-  
-  // Initialize cart on page load
-  document.addEventListener('DOMContentLoaded', function() {
+}
+
+// Initialize cart on page load
+document.addEventListener('DOMContentLoaded', function() {
     updateCartPageUI();
-  });
+
+});

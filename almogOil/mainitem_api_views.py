@@ -638,7 +638,7 @@ def web_filter_items(request):
 
             # Build the query based on the filters
             if filters.get('fileid'):
-               filters_q &= Q(fileid__icontains=filters['fileid'])
+                filters_q &= Q(fileid__icontains=filters['fileid'])
             if filters.get('itemno'):
                 filters_q &= Q(itemno__icontains=filters['itemno'])
             if filters.get('itemmain'):
@@ -646,9 +646,9 @@ def web_filter_items(request):
             if filters.get('itemsubmain'):
                 filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
             if filters.get('engine_no'):
-               filters_q &= Q(engine_no__icontains=filters['engine_no'])
+                filters_q &= Q(engine_no__icontains=filters['engine_no'])
             if filters.get('itemthird'):
-               filters_q &= Q(itemthird__icontains=filters['itemthird'])
+                filters_q &= Q(itemthird__icontains=filters['itemthird'])
             if filters.get('companyproduct'):
                 filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
             if filters.get('itemname'):
@@ -668,11 +668,21 @@ def web_filter_items(request):
             if filters.get('oem'):
                 filters_q &= Q(oem_numbers__icontains=filters['oem'])
 
-            # Apply checkbox filters using Q objects
+            # Original filters
             if filters.get('itemvalue') == "0":
                 filters_q &= Q(itemvalue=0)
             if filters.get('itemvalue') == ">0":
                 filters_q &= Q(itemvalue__gt=0)
+
+            # New availability logic (switch-case style)
+            availability = filters.get('availability')
+            if availability == "not_available":
+                filters_q &= Q(itemvalue=0)
+            elif availability == "limited":
+                filters_q &= Q(itemvalue__lte=10, itemvalue__gt=0)
+            elif availability == "available":
+                filters_q &= Q(itemvalue__gt=10)
+
             if filters.get('resvalue') == ">0":
                 filters_q &= Q(resvalue__gt=0)
             if filters.get('itemvalue_itemtemp') == "lte":
@@ -761,4 +771,3 @@ def web_filter_items(request):
             return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-

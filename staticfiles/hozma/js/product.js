@@ -7,46 +7,43 @@ let datl = {};
 
 // Main function to fetch filtered data
 async function fetchFilteredData(page = 1) {
-console.debug("Fetching filtered data for page:", page);
+    console.debug("Fetching filtered data for page:", page);
 
-const filters = {
-pno: currentFilters.pno || '',
-companyno: currentFilters.companyno || '',
-oem: currentFilters.oem || '',
-itemname: currentFilters.itemname || '',
-companyproduct: currentFilters.companyproduct || '',
-itemvalue: currentFilters.itemvalue || '',
-page: page,
-size: itemsPerPage,
-};
+    const filters = {
+        pno: currentFilters.pno || '',
+        companyno: currentFilters.companyno || '',
+        oem: currentFilters.oem || '',
+        itemname: currentFilters.itemname || '',
+        companyproduct: currentFilters.companyproduct || '',
+        availability: currentFilters.availability || '',
+        itemmain: currentFilters.itemmain || '',
+        page: page,
+        size: itemsPerPage,
+    };
 
-const availabilityFilter = currentFilters.availability;
-  if (availabilityFilter) {
-    switch(availabilityFilter) {
-      case 'available':
-        filters.min_itemvalue = 10;
-        break;
-      case 'limited':
-        filters.min_itemvalue = 1;
-        filters.max_itemvalue = 10;
-        break;
-      case 'unavailable':
-        filters.itemvalue = 0;
-        break;
+    console.debug("Full filters being sent:", JSON.stringify(filters, null, 2));
+
+    try {
+        const response = await fetchWithAuth(`${baseUrl}/api/filter-items`, 'POST', filters);
+        console.debug("Full API response:", response);
+        
+        if (!response) {
+            throw new Error("Empty response from server");
+        }
+
+        return {
+            data: response?.data || [],
+            last_page: response?.last_page || 1,
+            total: response?.total || 0
+        };
+    } catch (error) {
+        console.error("API Error:", error);
+        return {
+            data: [],
+            last_page: 1,
+            total: 0
+        };
     }
-  }
-
-  console.debug("Filters applied:", filters);
-
-  const response = await fetchWithAuth(`${baseUrl}/api/filter-items`, 'POST', filters);
-
-  console.debug("Response data:", response);
-
-  return {
-    data: response?.data || [],
-    last_page: response?.last_page || 1,
-    total: response?.total || 0
-  };
 }
 
 
@@ -75,8 +72,8 @@ row.innerHTML = `
 <td>${parseFloat(item.buyprice || 0).toFixed(2)} د.أ</td>
 <td>${item.companyproduct ?? '-'}</td>
 <td>
-${stock > 5 ? `<span class="badge bg-success">متوفر</span>` :
-stock > 0 ? `<span class="badge bg-warning text-dark">كمية محدودة</span>` :
+${stock > 10 ? `<span class="badge bg-success">متوفر</span>` :
+stock > 0 && stock <= 9 ? `<span class="badge bg-warning text-dark">كمية محدودة</span>` :
 `<span class="badge bg-danger">غير متوفر</span>`}
 </td>
 <td>
@@ -189,42 +186,60 @@ console.log('Existing backdrops:', document.querySelectorAll('.modal-backdrop').
 console.log('Existing modals:', document.querySelectorAll('.modal.show').length);
 }
 
-
+function changeItemMain(value) {
+    // Set the hidden input value
+    document.getElementById('itemmain').value = value;
+    
+    // Update active state visually
+    document.querySelectorAll('.itemmain-icon').forEach(icon => {
+        icon.classList.toggle('active', icon.dataset.value === value);
+    });
+    
+    // Apply filters
+    applyFilters();
+}
 // Apply filters from input fields
 function applyFilters() {
-console.debug("Applying filters...");
-
-currentFilters = {
-itemvalue: document.getElementById('itemvalueFilter').value.trim(),   
-pno: document.getElementById('pnoFilter').value.trim(),
-companyno: document.getElementById('companynoFilter').value.trim(),
-oem: document.getElementById('oemFilter').value.trim(),
-itemname: document.getElementById('itemnameFilter').value.trim(),
-companyproduct: document.getElementById('companyproductFilter').value.trim(),
-};
-
-
-console.debug("Current filters:", currentFilters);
-
-currentPage = 1;
-document.getElementById('pageInput').value = 1;
-document.getElementById('productList').innerHTML = "";
-document.getElementById('loading-spinner').style.display = 'block';
-
-loadMoreItems();
+    console.debug("Applying filters...");
+  
+    currentFilters = {
+      pno: document.getElementById('pnoFilter').value.trim(),
+      companyno: document.getElementById('companynoFilter').value.trim(),
+      oem: document.getElementById('oemFilter').value.trim(),
+      itemname: document.getElementById('itemnameFilter').value.trim(),
+      companyproduct: document.getElementById('companyproductFilter').value.trim(),
+      availability: document.getElementById('availabilityFilter').value, // Removed trim() as it's a select value
+      itemmain: document.getElementById('itemmain') ? document.getElementById('itemmain').value : '',
+    };
+  
+    console.debug("Current filters:", currentFilters);
+  
+    currentPage = 1;
+    document.getElementById('pageInput').value = 1;
+    document.getElementById('productList').innerHTML = "";
+    document.getElementById('loading-spinner').style.display = 'block';
+  
+    loadMoreItems();
 }
 
 // Reset all filters
 function resetFilters() {
-console.debug("Resetting filters...");
+    console.debug("Resetting filters...");
 
-document.getElementById('pnoFilter').value = '';
-document.getElementById('companynoFilter').value = '';
-document.getElementById('oemFilter').value = '';
-document.getElementById('itemnameFilter').value = '';
-document.getElementById('companyproductFilter').value = '';
-
-applyFilters();
+    document.getElementById('pnoFilter').value = '';
+    document.getElementById('companynoFilter').value = '';
+    document.getElementById('oemFilter').value = '';
+    document.getElementById('itemnameFilter').value = '';
+    document.getElementById('companyproductFilter').value = '';
+    document.getElementById('availabilityFilter').value = '';
+    
+    // Reset itemmain
+    document.getElementById('itemmain').value = '';
+    document.querySelectorAll('.itemmain-icon').forEach(icon => {
+        icon.classList.remove('active');
+    });
+    
+    applyFilters();
 }
 
 // Load more items with pagination
@@ -316,6 +331,15 @@ if (e.key === 'Enter') applyFilters();
 document.getElementById('companyproductFilter').addEventListener('keyup', function(e) {
 if (e.key === 'Enter') applyFilters();
 });
+document.getElementById('availabilityFilter').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') applyFilters();
+    });
+    document.querySelectorAll('.itemmain-icon').forEach(icon => {
+        icon.addEventListener('click', function() {
+            changeItemMain(this.dataset.value);
+        });
+    });
+
 
 // Add click event for apply filters button
 document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);

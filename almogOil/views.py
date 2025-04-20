@@ -2295,7 +2295,10 @@ def employees_report_view(request):
 
 @login_required
 def employees_salary_view(request):
-    context = {}
+    employees= models.EmployeesTable.objects.all().values("name","employee_id")
+    context = {
+        "employees": employees,
+    }
     return render(request,'employees-salary.html',context)
 
 @login_required
@@ -2353,7 +2356,6 @@ def assign_order_to_employee(request, invoice_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-        # login for hozma logic 
+        # login for hozma logic
 
 
-       

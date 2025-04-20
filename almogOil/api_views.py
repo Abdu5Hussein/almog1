@@ -2806,7 +2806,7 @@ def get_employee_details(request, employee_id):
     except EmployeesTable.DoesNotExist:
         return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        
+
 @api_view(['GET'])
 def brand_items(request, brand):
     items = models.Mainitem.objects.filter(itemmain=brand)
@@ -2849,7 +2849,7 @@ def Edit_employee_balance(request, id):
     content_type = ContentType.objects.get_for_model(employee)
     balance_data = models.TransactionsHistoryTable.objects.filter(
         content_type=content_type,
-        object_id=employee
+        object_id=employee.employee_id
     ).aggregate(
         total_debt=Sum('debt') or 0,
         total_credit=Sum('credit') or 0
@@ -2866,3 +2866,89 @@ def Edit_employee_balance(request, id):
         "message": f"{operation.capitalize()} of {amount} added successfully.",
         "balance": balance
     }, status=status.HTTP_200_OK)
+
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List balance_editions items",
+        description="Get all balance_editions item records.",
+        tags=["Employees","Balance","Transactions History","Balance Editions"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve balance_editions item",
+        description="Get a specific balance_editions item by ID.",
+        tags=["Employees","Balance","Transactions History","Balance Editions"],
+    ),
+    create=extend_schema(
+        summary="Create balance_editions item",
+        tags=["Employees","Balance","Transactions History","Balance Editions"],
+        request=serializers.BalanceEditionsSerializer,
+        responses={201: serializers.BalanceEditionsSerializer},
+    ),
+    update=extend_schema(
+        summary="Update a balance_editions item",
+        tags=["Employees","Balance","Transactions History","Balance Editions"],
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a balance_editions item",
+        tags=["Employees","Balance","Transactions History","Balance Editions"],
+    ),
+    destroy=extend_schema(
+        summary="Delete a balance_editions item",
+        tags=["Employees","Balance","Transactions History","Balance Editions"],
+    ),
+)
+class BalanceEditionsTableViewSet(viewsets.ModelViewSet):
+    queryset = models.balance_editions.objects.all()
+    serializer_class = serializers.BalanceEditionsSerializer
+
+@extend_schema(
+description="""get all Credits/Debits for an employee.""",
+tags=["Employees","Balance","Transactions History","Balance Editions"],
+)
+@api_view(['GET'])
+def Get_balance_editions_by_employee(request, id):
+    try:
+        instance = models.balance_editions.objects.filter(employee=id)
+        serializer = serializers.BalanceEditionsSerializer(instance,many=True)
+        return Response(serializer.data)
+    except models.balance_editions.DoesNotExist:
+        return Response({'error': 'Balance edition not found'}, status=404)
+
+
+@extend_schema(
+description="""Filter records from balance_editions.""",
+tags=["Balance Editions"],
+)
+# @permission_classes([IsAuthenticated])  # Uncomment if you want auth
+@api_view(['POST'])
+def filterBalanceEditions(request):
+    try:
+        filters = request.data
+        query = Q()
+
+        # Filter by employee ID
+        employee_id = filters.get("id")
+        if employee_id:
+            query &= Q(employee=employee_id)
+
+        # Filter by exact date
+        date_str = filters.get("date", "").strip()
+        if date_str:
+            try:
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                query &= Q(date__date=date_obj)
+            except ValueError:
+                return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch and serialize filtered results
+        queryset = models.balance_editions.objects.filter(query)
+        serializer = serializers.BalanceEditionsSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

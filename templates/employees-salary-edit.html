@@ -555,7 +555,7 @@
                                                 >اسم الموظف</label
                                             >
                                         </div>
-                                        <select name="client" id="client" class="form-control text-end"  style="width: calc(100% - 95px);">
+                                        <select name="client2" id="client2" class="form-control text-end"  style="width: calc(100% - 95px);">
                                             <option value="" selected>اختر موظف</option>
                                             {% for x in clients %}
                                             <option value="{{ x.clientid }}">{{ x.name }}</option>
@@ -676,37 +676,126 @@
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-        // Initialize Tabulator
         const employees_table = new Tabulator("#employees-table", {
-            data: [], // or use ajaxURL: '/your-endpoint' for dynamic data
-            layout: "fitColumns",
-            height: "100%",
-            columns: [
-            { title: "رقم الموظف", field: "id", hozAlign: "center", width: 120 },
-            { title: "اسم الموظف", field: "name", hozAlign: "right" },
-            { title: "المرتب الشهري", field: "salary", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
-            { title: "الرصيد", field: "balance", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } }
-            ],
-            locale:true,
-            langs:{
-            "default":{
-                "columns":{
-                "name":"اسم الموظف",
-                }
+        layout: "fitColumns",
+        height: "100%",
+        selectable: 1,
+
+        columns: [
+          { title: "رقم الموظف", field: "employee_id", hozAlign: "center", width: 120 },
+          { title: "اسم الموظف", field: "name", hozAlign: "right" },
+          {
+            title: "المرتب الشهري",
+            field: "salary",
+            hozAlign: "center",
+            editor: "input",
+            formatter: function (cell) {
+              let value = cell.getValue();
+              if (value == null || isNaN(value)) {
+                return "د.ل 0";
+              }
+              return `د.ل ${Number(value).toLocaleString()}`;
             }
+          },
+          {
+            title: "الرصيد",
+            field: "balance",
+            hozAlign: "center",
+            formatter: function (cell) {
+              let value = cell.getValue();
+              if (value == null || isNaN(value)) {
+                return "د.ل 0";
+              }
+              return `د.ل ${Number(value).toLocaleString()}`;
             }
+          }
+        ],
+        placeholder: "No Data Available",
+
+        rowClick: function (e, row) {
+          selectedRow = row;
+        }
+      });
+
+      // Load data
+      function loadEmployeeData() {
+        fetch("/api/employees-api")
+          .then(response => response.json())
+          .then(data => {
+            employees_table.setData(data);
+          })
+          .catch(error => {
+            console.error("Failed to fetch employee data:", error);
+          });
+      }
+      function loadEditionsData(id) {
+        fetch("/api/balance-editions/user/"+id)
+          .then(response => response.json())
+          .then(data => {
+            salaries_table.setData(data);
+          })
+          .catch(error => {
+            console.error("Failed to fetch employee data:", error);
+          });
+      }
+      function clearForm() {
+        window.requestAnimationFrame(function () {
+          const formElements = document.querySelectorAll(
+            " input,  select,  textarea"
+          );
+          formElements.forEach(function (element) {
+            if (!element.classList.contains("value-fixed")) {
+              if (
+                element.tagName.toLowerCase() === "input" ||
+                element.tagName.toLowerCase() === "textarea"
+              ) {
+                element.value = ""; // Reset input and textarea values
+              } else if (element.tagName.toLowerCase() === "select") {
+                element.selectedIndex = 0; // Reset select dropdowns
+              }
+            }
+
+            loadEmployeeData();
+          });
         });
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        loadEmployeeData();
+      });
+      document.getElementById("clear-btn").addEventListener("click", function () {
+        clearForm();
+      });
         const salaries_table = new Tabulator("#salaries-table", {
             data: [], // or use ajaxURL: '/your-endpoint' for dynamic data
             layout: "fitColumns",
             height: "100%",
             columns: [
-            { title: "التاريخ", field: "date", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
-            { title: "نوع التسوية", field: "type", hozAlign: "right" },
-            { title: "القيمة", field: "balance", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
-            { title: "بيان التسوية", field: "description", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } }
+            { title: "التاريخ", field: "date", hozAlign: "center"},
+            { title: "القيمة", field: "amount", hozAlign: "center", formatter: "money", formatterParams: { symbol: "د.ل", precision: 0 } },
+            { title: "بيان التسوية", field: "description" },
+            { title: "نوع التسوية", field: "type" },
             ],
+            placeholder: "No Data Available",
         });
+
+        employees_table.on("rowClick", function (e, row) {
+          console.log("Row clicked after data update:", row.getData());
+          const employee_id = row.getData().employee_id; // Get pno of the clicked row
+          console.log("Clicked employee_id:", employee_id);
+
+          loadEditionsData(employee_id);
+        });
+
+        function addEdition(){
+          const data = {
+            employee_id: document.getElementById("employee_id").value,
+            date: document.getElementById("date").value,
+            amount: document.getElementById("amount").value,
+            description: document.getElementById("description").value,
+            type: document.getElementById("type").value,
+
+          }
+        }
     </script>
   </body>
 </html>

@@ -235,7 +235,10 @@ class LostAndDamagedTableSerializer(serializers.ModelSerializer):
         model = models.LostAndDamagedTable
         fields = '__all__'
 
-
+class BalanceEditionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.balance_editions
+        fields = '__all__'
 
 class BasicEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
