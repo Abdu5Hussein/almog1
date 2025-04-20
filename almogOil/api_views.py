@@ -2769,6 +2769,10 @@ def CarPartsHome_page(request):
 @api_view(["GET"])
 def Dashbord_page(request):
     return render(request, 'CarPartsTemplates/Dashboard.html')
+@api_view(["GET"])
+def Cart_page(request):
+    return render(request, 'CarPartsTemplates/Cart.html')
+
 
 
 @api_view(['GET'])

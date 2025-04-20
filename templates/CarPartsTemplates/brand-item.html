@@ -77,37 +77,70 @@
         <h2 class="mb-0"><i class="bi bi-cart-check"></i> نظام طلب المنتجات</h2>
     </div>
 
-    <div class="row row-cols-1 row-cols-md-4 g-4 mb-5">
-        {% for item in items %}
-        <div class="col">
-            <div class="card h-100 shadow-sm">
+    <div class="scroll-table-container mb-5">
+        <table class="table table-bordered mb-0">
+          <thead>
+            <tr>
+              <th>الصورة</th>
+              <th>اسم القطعة</th>
+              <th>رقم القطعة</th>
+              <th>السعر</th>
+              <th>شراء</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in page_obj %}
+            <tr>
+              <td>
                 <img src="http://45.13.59.226/api/products/{{ item.pno }}/get-images"
-                     class="card-img-top img-thumbnail"
                      alt="صورة المنتج"
+                     style="width: 50px; height: auto; cursor: pointer;"
                      onclick="showImagePopup(this.src)">
-                <div class="card-body">
-                    <h5 class="card-title text-truncate">{{ item.companyproduct }}</h5>
-                    <p class="card-text">
-                        <strong>رقم القطعة:</strong> {{ item.pno }}<br>
-                        <strong>سعر الشراء:</strong> {{ item.buyprice }} د.أ
-                    </p>
-                    <button class="btn btn-outline-success w-100"
-                            onclick="addToCart('{{ item.pno }}', '{{ item.companyproduct }}', '{{ item.buyprice }}')">
-                        <i class="bi bi-cart-plus"></i> إضافة للسلة
-                    </button>
-                </div>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <div class="alert alert-info text-center">
-                لا توجد منتجات لهذا القسم حاليًا.
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+              </td>
+              <td>{{ item.companyproduct }}</td>
+              <td>{{ item.pno }}</td>
+              <td>{{ item.buyprice }} د.أ</td>
+              <td>
+                <button class="btn btn-outline-success"
+                        onclick="addToCart('{{ item.pno }}', '{{ item.companyproduct }}', '{{ item.buyprice }}')">
+                  <i class="bi bi-cart-plus"></i> إضافة
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center">لا توجد منتجات لهذا القسم حاليًا.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page_obj.has_other_pages %}
+<nav aria-label="pagination">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode|safe|cut:'page='|cut:'&' }}">السابق</a>
+    </li>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+      <a class="page-link" href="?page={{ num }}&{{ request.GET.urlencode|safe|cut:'page='|cut:'&' }}">{{ num }}</a>
+    </li>
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode|safe|cut:'page='|cut:'&' }}">التالي</a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
 </div>
 
+      
 <script>
 function showImagePopup(src) {
     const image = new Image();

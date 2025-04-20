@@ -191,3 +191,30 @@
       display: none !important;
     }
   }
+ /* Modal fixes */
+.modal {
+  z-index: 1060 !important;
+  background-color: rgba(0,0,0,0.5); /* Add semi-transparent background */
+}
+
+.modal-backdrop {
+  z-index: 1050 !important;
+  background-color: #000 !important;
+}
+
+/* Fix for multiple backdrops */
+.modal-backdrop:not(:first-of-type) {
+  display: none !important;
+}
+
+/* Ensure modal content is always on top */
+.modal-content {
+  position: relative;
+  z-index: 1061 !important;
+}
+
+/* Prevent body scrolling when modal is open */
+body.modal-open {
+  overflow: hidden;
+  padding-right: 0 !important;
+}

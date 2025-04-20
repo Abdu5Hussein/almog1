@@ -619,10 +619,8 @@ def delete_record(request):
         return Response({"success": False, "message": str(e)}, status=500)
 
 
-
-@api_view(['POST'])
-
 @csrf_exempt
+@api_view(['POST'])
 def web_filter_items(request):
     if request.method == "POST":
         try:

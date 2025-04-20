@@ -278,7 +278,8 @@ urlpatterns = [
     path('hozmaHome/',api_views.CarPartsHome_page,name='CarParts_page'),
     path('api/employees/<int:employee_id>/', api_views.get_employee_details, name='get_employee_details'),
     path('hozmaDashbord/',api_views.Dashbord_page,name='dashbord'),
-    path('brand/<str:brand>/', api_views.brand_items, name='brand_items'),
+    path('brand/<str:itemmain>/', api_views.brand_items, name='brand_items'),
+    path('hozmaCart/',api_views.Cart_page, name='Cart'),
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()

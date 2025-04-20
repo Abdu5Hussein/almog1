@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>نظام طلب المنتجات</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
@@ -83,32 +84,36 @@
   <div class="cart-overlay" id="cartOverlay"></div>
 
   <!-- Cart Sidebar -->
-  <div class="cart-sidebar" id="cartSidebar">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4>سلة الطلبات</h4>
-      <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">
-        <i class="bi bi-trash"></i> إفراغ السلة
-      </button>
-    </div>
-    
-    <div id="cartItemsContainer">
-      <p class="text-muted text-center py-4">السلة فارغة</p>
-    </div>
-    
-    <div class="mt-3 border-top pt-3">
-      <div class="d-flex justify-content-between mb-2">
-        <span>عدد الأصناف:</span>
-        <strong id="cartItemsCount">0</strong>
-      </div>
-      <div class="d-flex justify-content-between mb-3">
-        <span>المجموع:</span>
-        <strong id="cartTotalAmount">0.00 د.أ</strong>
-      </div>
-      <button class="btn btn-primary w-100" onclick="submitOrder()">
-        <i class="bi bi-send-check"></i> إرسال الطلب
-      </button>
-    </div>
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>سلة الطلبات</h4>
+    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">
+      <i class="bi bi-trash"></i> إفراغ السلة
+    </button>
   </div>
+
+  <div id="cartItemsContainer">
+    <p class="text-muted text-center py-4">السلة فارغة</p>
+  </div>
+
+  <div class="mt-3 border-top pt-3">
+    <div class="d-flex justify-content-between mb-2">
+      <span>عدد الأصناف:</span>
+      <strong id="cartItemsCount">0</strong>
+    </div>
+    <div class="d-flex justify-content-between mb-3">
+      <span>المجموع:</span>
+      <strong id="cartTotalAmount">0.00 د.أ</strong>
+    </div>
+    <button class="btn btn-primary w-100" onclick="submitOrder()">
+      <i class="bi bi-send-check"></i> إرسال الطلب
+    </button>
+    <button class="btn btn-outline-primary w-100 mt-2" onclick="openCartPage()">
+      <i class="bi bi-cart"></i> الانتقال إلى سلة الطلبات
+    </button>
+  </div>
+</div>
+
 
   <div class="container">
     <!-- Header Section -->
@@ -126,55 +131,65 @@
       </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="filters row mb-4 g-3">
-      <div class="col-md-2 col-sm-6">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
-          <input id="modelFilter" class="form-control" placeholder="رقم القطعة">
-        </div>
-      </div>
-    
-      <div class="col-md-2 col-sm-6">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-tags"></i></span>
-          <select id="mainTypeFilter" class="form-select">
-            <option value="">كل الأصناف الرئيسية</option>
-          </select>
-        </div>
-      </div>
-    
-      <div class="col-md-2 col-sm-6">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-tag"></i></span>
-          <select id="subTypeFilter" class="form-select">
-            <option value="">كل الأصناف الفرعية</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="col-md-2 col-sm-6">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-car-front-fill"></i></span>
-          <select id="modelkFilter" class="form-select">
-            <option value="">كل الموديلات</option>
-            <!-- Populate dynamically -->
-          </select>
-        </div>
-      </div>
-    
-      <div class="col-md-2 col-sm-6">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-gear"></i></span>
-          <select id="engineFilter" class="form-select">
-            <option value="">كل المحركات</option>
-            <!-- Populate dynamically -->
-          </select>
-        </div>
-      </div>
-    
-      
+  <!-- قسم الفلاتر -->
+<div class="filters row mb-4 g-3">
+  <!-- فلتر رقم القطعة -->
+  <div class="col-md-2 col-sm-6">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+      <input id="pnoFilter" class="form-control" placeholder="رقم القطعة" type="text">
+      <button class="btn btn-primary" onclick="applyFilters()">
+        <i class="bi bi-search"></i>
+      </button>
     </div>
+  </div>
+
+  <!-- فلتر رقم الشركة -->
+  <div class="col-md-2 col-sm-6">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-building"></i></span>
+      <input id="companynoFilter" class="form-control" placeholder="رقم الشركة" type="text">
+      <button class="btn btn-primary" onclick="applyFilters()">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- فلتر رقم OEM -->
+  <div class="col-md-2 col-sm-6">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-gear"></i></span>
+      <input id="oemFilter" class="form-control" placeholder="رقم OEM" type="text">
+      <button class="btn btn-primary" onclick="applyFilters()">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- فلتر اسم القطعة -->
+  <div class="col-md-2 col-sm-6">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-tag"></i></span>
+      <input id="itemnameFilter" class="form-control" placeholder="اسم القطعة" type="text">
+      <button class="btn btn-primary" onclick="applyFilters()">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- فلتر منتج الشركة -->
+  <div class="col-md-2 col-sm-6">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
+      <input id="companyproductFilter" class="form-control" placeholder="منتج الشركة" type="text">
+      <button class="btn btn-primary" onclick="applyFilters()">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  
     
     
 
@@ -214,96 +229,95 @@
     </div>
 
     <!-- Table Section -->
-    <div class="scroll-table-container">
-      <table class="table table-bordered mb-0">
+   <div class="container">
+  <!-- Table Section with Scrollable Container -->
+  <div class="scroll-table-container">
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
         <thead>
           <tr>
             <th>رقم القطعة</th>
-            <th class="maintype-col">الصنف الرئيسي</th>
-            <th class="subtype-col">الصنف الفرعي</th>
-            <th class="engine-col">رقم المحرك</th>
-            <th class="location-col">الموديل</th>
             <th>اسم القطعة</th>
-            <th>السعر</th>
-            <th class="company-col">الشركة</th>
+            <th>الشركة</th>
             <th>المخزون</th>
+            <th>السعر</th>
             <th>الكمية</th>
             <th>شراء</th>
           </tr>
         </thead>
-        <tbody id="productList"></tbody>
+        <tbody id="productList">
+          <!-- Items will be loaded here -->
+        </tbody>
       </table>
     </div>
-
-    <!-- Loading Spinner -->
-    <div id="loading-spinner" class="text-center py-4" style="display:none;">
-      <div class="spinner-border" role="status"></div>
-      <p class="mt-2">جارٍ تحميل البيانات...</p>
+    
+       <!-- Loading Spinner -->
+       <div id="loading-spinner" class="text-center py-4" style="display:none;">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-2">جارٍ تحميل البيانات...</p>
+      </div>
+  
+      <!-- No Results Message -->
+      <div id="noResults" class="text-center py-5" style="display:none;">
+        <i class="bi bi-exclamation-circle" style="font-size: 3rem; color: #6c757d;"></i>
+        <h4 class="mt-3">لا توجد نتائج</h4>
+        <p class="text-muted">لم يتم العثور على منتجات تطابق معايير البحث الخاصة بك</p>
+      </div>
     </div>
+  
 
-    <!-- No Results Message -->
-    <div id="noResults" class="text-center py-5" style="display:none;">
-      <i class="bi bi-exclamation-circle" style="font-size: 3rem; color: #6c757d;"></i>
-      <h4 class="mt-3">لا توجد نتائج</h4>
-      <p class="text-muted">لم يتم العثور على منتجات تطابق معايير البحث الخاصة بك</p>
-    </div>
-  </div>
-
-  <!-- Modal for Full Image -->
-  <div class="modal fade" id="imageModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">صورة المنتج</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center">
-          <img id="modalImage" class="modal-img" src="" alt="Product Image" style="max-height: 70vh;">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+  
+    <!-- Order Success Modal -->
+    <div class="modal fade" id="orderSuccessModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">تم إرسال الطلب بنجاح</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+            <p class="mt-3">تم إرسال طلبك بنجاح وسيتم معالجته قريباً</p>
+            <p>رقم الطلب: <strong id="orderNumber"></strong></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success" data-bs-dismiss="modal">موافق</button>
+          </div>
         </div>
       </div>
     </div>
+    <!-- Availability Filter -->
+<div class="col-md-2 col-sm-6">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
+    <select id="itemvalueFilter" class="form-select" onchange="applyFilters()">
+      <option value="">حالة التوفر</option>
+      <option value="available">متوفر (10+)</option>
+      <option value="limited">كمية محدودة (1-10)</option>
+      <option value="unavailable">غير متوفر (0)</option>
+    </select>
   </div>
-
-  <!-- Order Success Modal -->
-  <div class="modal fade" id="orderSuccessModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title">تم إرسال الطلب بنجاح</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center">
-          <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-          <p class="mt-3">تم إرسال طلبك بنجاح وسيتم معالجته قريباً</p>
-          <p>رقم الطلب: <strong id="orderNumber"></strong></p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-success" data-bs-dismiss="modal">موافق</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal for Product Images -->
+</div>
+  
+   <!-- Keep only this modal for product images -->
 <div class="modal fade" id="imageModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">صور المنتج</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <!-- Images will be loaded here dynamically -->
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
-        </div>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">صور المنتج</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Images will be loaded here dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
       </div>
     </div>
   </div>
+</div>
+
+  
 
   <footer class="bg-dark text-white py-5 mt-5">
     <div class="container">
@@ -359,6 +373,7 @@
       </div>
     </div>
   </footer>
+  
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'hozma/js/navbar.js' %}"></script>
   <script src="{% static 'hozma/js/product.js' %}"></script>
@@ -366,4 +381,5 @@
   <script src="{% static 'hozma/js/itemmain.js' %}"></script>
   
 </body>
+
 </html>
