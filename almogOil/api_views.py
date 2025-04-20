@@ -2812,6 +2812,52 @@ def brand_items(request, brand):
     items = models.Mainitem.objects.filter(itemmain=brand)
     return render(request, 'CarPartsTemplates/brand-item.html', {'items': items, 'brand': brand})
 
+
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Sum
+from django.utils.timezone import make_aware
+from datetime import datetime
+
+def update_employee_balance(employee, amount, operation, description=None):
+    if not operation or operation not in ["credit", "debit"]:
+        raise ValueError("Invalid operation. Must be 'credit' or 'debit'.")
+
+    try:
+        amount = float(amount)
+    except (ValueError, TypeError):
+        raise ValueError("Invalid amount")
+
+    # Create transaction
+    models.TransactionsHistoryTable.objects.create(
+        transaction="Employee Transaction",
+        credit=amount if operation == "credit" else 0,
+        debt=amount if operation == "debit" else 0,
+        details=description or f"{operation.capitalize()} transaction",
+        content_type=ContentType.objects.get_for_model(employee),
+        object_id=employee.pk
+    )
+
+    # Recalculate balance
+    content_type = ContentType.objects.get_for_model(employee)
+    balance_data = models.TransactionsHistoryTable.objects.filter(
+        content_type=content_type,
+        object_id=employee.pk
+    ).aggregate(
+        total_debt=Sum('debt') or 0,
+        total_credit=Sum('credit') or 0
+    )
+
+    total_debt = balance_data.get('total_debt') or 0
+    total_credit = balance_data.get('total_credit') or 0
+    balance = round(total_credit - total_debt, 2)
+
+    # Save updated balance
+    employee.balance = balance
+    employee.save()
+
+    return balance
+
+
 @extend_schema(
 description="""Credit or Debit an employee's balance.""",
 tags=["Employees"],
@@ -2824,50 +2870,21 @@ def Edit_employee_balance(request, id):
     except models.EmployeesTable.DoesNotExist:
         return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    operation = request.data.get("operation")  # "credit" or "debit"
+    operation = request.data.get("operation")
     amount = request.data.get("amount")
-
-    if not operation or operation not in ["credit", "debit"]:
-        return Response({"error": "Invalid operation. Must be 'credit' or 'debit'."}, status=status.HTTP_400_BAD_REQUEST)
+    description = request.data.get("description", None)
 
     try:
-        amount = float(amount)
-    except (ValueError, TypeError):
-        return Response({"error": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Create a new transaction using GenericForeignKey
-    models.TransactionsHistoryTable.objects.create(
-        transaction="Employee Transaction",
-        credit=amount if operation == "credit" else 0,
-        debt=amount if operation == "debit" else 0,
-        details=request.data.get("description", f"{operation.capitalize()} transaction"),
-        content_type=ContentType.objects.get_for_model(employee),
-        object_id=employee.pk
-    )
-
-    # Recalculate the balance
-    content_type = ContentType.objects.get_for_model(employee)
-    balance_data = models.TransactionsHistoryTable.objects.filter(
-        content_type=content_type,
-        object_id=employee.employee_id
-    ).aggregate(
-        total_debt=Sum('debt') or 0,
-        total_credit=Sum('credit') or 0
-    )
-
-    total_debt = balance_data.get('total_debt') or 0
-    total_credit = balance_data.get('total_credit') or 0
-    balance = round(total_credit - total_debt, 2)
-
-    employee.balance = balance
-    employee.save()
+        balance = update_employee_balance(employee, amount, operation, description)
+    except ValueError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({
         "message": f"{operation.capitalize()} of {amount} added successfully.",
         "balance": balance
     }, status=status.HTTP_200_OK)
-
-
 
 @extend_schema_view(
     list=extend_schema(
