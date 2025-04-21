@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (username) {
         // If the user is logged in, update the account button text with the username
         userNamePlaceholder.textContent = `مرحبًا, ${username}`;
-        document.getElementById('accountButton').href = "/my-account"; // Ensure it's pointing to the user's account page
+        document.getElementById('accountButton').href = "/hozmaDashbord/"; // Ensure it's pointing to the user's account page
     } else {
         // If no username is found, ensure it's showing the default "حسابي"
         userNamePlaceholder.textContent = "حسابي";

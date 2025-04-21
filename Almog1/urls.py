@@ -284,7 +284,11 @@ urlpatterns = [
     path('api/balance-editions/user/<int:id>',api_views.Get_balance_editions_by_employee, name='balance-editions-for-user'),
     path('api/filter/balance-editions-api/',api_views.filterBalanceEditions, name='filter-balance-editions'),
     path('api/filter/employees-api/',api_views.filter_employees, name='filter-employees'),
-
+    path('hozmatrack-order/', api_views.track_order, name='track_order'),
+    path('hozmareturn-policy/', api_views.return_policy, name='return_policy'),
+    path('hozmafaq/', api_views.faq, name='faq'),
+    path('hozmaterms-conditions/', api_views.terms_conditions, name='terms_conditions'),
+    path('item-for-inqury-page/<int:pno>/', api_views.item_detail_view, name='item_detail'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode

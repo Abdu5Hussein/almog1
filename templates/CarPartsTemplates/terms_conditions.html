@@ -1,0 +1,533 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ itemname }} - Car Part Details | AutoPartsPro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
+  <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
+  <link rel="stylesheet" href="{% static 'hozma/css/prodcut.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0F1B2E; border-bottom: 3px solid #FF6B00;">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="http://45.13.59.226/item-for-inqury-page/" aria-label="الرئيسية" style="font-size: 2rem; color: #FFD700; letter-spacing: 1px;">
+                <i class="bi bi-gear-fill me-2"></i>حزمة
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
+                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="http://45.13.59.226/item-for-inqury-page/" aria-current="page">
+                            <i class="bi bi-speedometer2 me-1"></i> الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown mx-1">
+                        <a class="nav-link nav-link-auto dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-layers me-1"></i> الأقسام
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
+                            <li><a class="dropdown-item" href="/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
+                            <li><a class="dropdown-item" href="/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
+                            <li><a class="dropdown-item" href="/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
+                            <li><a class="dropdown-item" href="/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
+                            <li><hr class="dropdown-divider" style="border-color: #FF6B00;"></li>
+                            <li><a class="dropdown-item" href="/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozmabrands/">
+                            <i class="bi bi-tags me-1"></i> الماركات
+                        </a>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="/offers">
+                            <i class="bi bi-percent me-1"></i> العروض
+                            <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">جديد</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="/contact">
+                            <i class="bi bi-headset me-1"></i> الدعم الفني
+                        </a>
+                    </li>
+                    <li class="nav-item position-relative mx-1">
+                        <a id="navbarCartIcon" class="nav-link nav-link-auto" href="javascript:void(0);" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة" onclick="toggleCart()">
+                            <i class="bi bi-cart3" aria-hidden="true"></i>
+                            <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
+                        </a>
+                    </li>
+                    <!-- Account Button -->
+                    <!-- Account Button -->
+    <li class="nav-item ms-3">
+      <a id="accountButton" class="btn btn-warning fw-bold" href="/my-account" style="border-radius: 30px; min-width: 120px;">
+          <i class="bi bi-person-circle me-1"></i> <span id="userNamePlaceholder">حسابي</span>
+      </a>
+    </li>
+    
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+
+    <!-- Cart Overlay -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+
+  <!-- Cart Sidebar -->
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>سلة الطلبات</h4>
+    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">
+      <i class="bi bi-trash"></i> إفراغ السلة
+    </button>
+  </div>
+
+  <div id="cartItemsContainer">
+    <p class="text-muted text-center py-4">السلة فارغة</p>
+  </div>
+
+  <div class="mt-3 border-top pt-3">
+    <div class="d-flex justify-content-between mb-2">
+      <span>عدد الأصناف:</span>
+      <strong id="cartItemsCount">0</strong>
+    </div>
+    <div class="d-flex justify-content-between mb-3">
+      <span>المجموع:</span>
+      <strong id="cartTotalAmount">0.00 د.أ</strong>
+    </div>
+    <button class="btn btn-primary w-100" onclick="submitOrder()">
+      <i class="bi bi-send-check"></i> إرسال الطلب
+    </button>
+    <button class="btn btn-outline-primary w-100 mt-2" onclick="openCartPage()">
+      <i class="bi bi-cart"></i> الانتقال إلى سلة الطلبات
+    </button>
+  </div>
+</div>
+
+<!-- Terms & Conditions Section -->
+<section class="terms-section py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold mb-3" style="color: #0F1B2E;">الشروط والأحكام</h1>
+            <p class="lead text-muted">آخر تحديث: 21 أبريل 2025</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>تنبيه:</strong> يرجى قراءة هذه الشروط والأحكام بعناية قبل استخدام موقع حزمة أو إجراء أي عمليات شراء.
+                        </div>
+
+                        <!-- Table of Contents -->
+                        <div class="toc-container mb-5 p-3" style="background-color: #f0f0f0; border-radius: 8px;">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-list-ul me-2"></i>محتويات الصفحة:</h5>
+                            <ol class="list-unstyled">
+                                <li class="mb-2"><a href="#section1" class="text-decoration-none">1. المقدمة والقبول</a></li>
+                                <li class="mb-2"><a href="#section2" class="text-decoration-none">2. تعريفات</a></li>
+                                <li class="mb-2"><a href="#section3" class="text-decoration-none">3. حسابات المستخدمين</a></li>
+                                <li class="mb-2"><a href="#section4" class="text-decoration-none">4. سياسة الطلبات والشحن</a></li>
+                                <li class="mb-2"><a href="#section5" class="text-decoration-none">5. سياسة الإرجاع والاستبدال</a></li>
+                                <li class="mb-2"><a href="#section6" class="text-decoration-none">6. طرق الدفع والأسعار</a></li>
+                                <li class="mb-2"><a href="#section7" class="text-decoration-none">7. الضمانات والمسؤوليات</a></li>
+                                <li class="mb-2"><a href="#section8" class="text-decoration-none">8. الملكية الفكرية</a></li>
+                                <li class="mb-2"><a href="#section9" class="text-decoration-none">9. الخصوصية والأمان</a></li>
+                                <li class="mb-2"><a href="#section10" class="text-decoration-none">10. التعديلات والإخطارات</a></li>
+                                <li class="mb-2"><a href="#section11" class="text-decoration-none">11. القانون الواجب التطبيق</a></li>
+                            </ol>
+                        </div>
+
+                        <!-- Terms Content -->
+                        <div class="terms-content">
+                            <!-- Section 1 -->
+                            <div id="section1" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-file-earmark-text me-2"></i>1. المقدمة والقبول
+                                </h3>
+                                <p>مرحباً بكم في موقع حزمة (hozma.ly). هذه الشروط والأحكام تحكم استخدامكم لموقعنا الإلكتروني وخدماتنا. باستخدام الموقع أو إجراء عمليات شراء من خلاله، فإنكم توافقون على الالتزام بهذه الشروط والأحكام بالكامل.</p>
+                                <p>نحتفظ بالحق في تعديل هذه الشروط في أي وقت دون إشعار مسبق. يقع على عاتقكم مسؤولية مراجعة هذه الصفحة بشكل دوري للاطلاع على أي تغييرات.</p>
+                            </div>
+
+                            <!-- Section 2 -->
+                            <div id="section2" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-book me-2"></i>2. تعريفات
+                                </h3>
+                                <p>في هذه الوثيقة، المصطلحات التالية لها المعاني المخصصة لها أدناه:</p>
+                                <ul>
+                                    <li><strong>"الموقع"</strong>: يشير إلى موقع حزمة الإلكتروني (hozma.ly) وجميع صفحاته الفرعية.</li>
+                                    <li><strong>"المتجر"</strong>: يشير إلى كيان حزمة التجاري المسجل.</li>
+                                    <li><strong>"العميل"</strong>: أي شخص أو كيان يقوم بإجراء عمليات شراء من الموقع.</li>
+                                    <li><strong>"المنتج"</strong>: أي قطعة غيار أو ملحق سيارات معروضة للبيع على الموقع.</li>
+                                    <li><strong>"الطلب"</strong>: طلب شراء رسمي يتم تقديمه من خلال الموقع.</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 3 -->
+                            <div id="section3" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-person-badge me-2"></i>3. حسابات المستخدمين
+                                </h3>
+                                <p>لإجراء عمليات شراء من الموقع، قد يُطلب منكم إنشاء حساب مستخدم. أنتم تتحملون المسؤولية الكاملة عن:</p>
+                                <ul>
+                                    <li>توفير معلومات دقيقة وكاملة عند التسجيل</li>
+                                    <li>الحفاظ على سرية معلومات تسجيل الدخول</li>
+                                    <li>جميع الأنشطة التي تتم تحت حسابكم</li>
+                                </ul>
+                                <p>يحق للمتجر تعليق أو إغلاق أي حساب في حالة:</p>
+                                <ul>
+                                    <li>تقديم معلومات غير صحيحة</li>
+                                    <li>استخدام غير مصرح به</li>
+                                    <li>انتهاك أي من هذه الشروط والأحكام</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 4 -->
+                            <div id="section4" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-truck me-2"></i>4. سياسة الطلبات والشحن
+                                </h3>
+                                <h5 class="fw-bold mt-4">4.1 تأكيد الطلب</h5>
+                                <p>عند تقديم طلب، ستصلكم رسالة تأكيد بالبريد الإلكتروني. لا يعتبر هذا التأكيد قبولاً للطلب، بل مجرد اعتراف باستلامه. يصبح الطلب ملزماً فقط عند شحنه.</p>
+                                
+                                <h5 class="fw-bold mt-4">4.2 سياسة الشحن</h5>
+                                <ul>
+                                    <li>يتم الشحن خلال 1-3 أيام عمل بعد تأكيد الطلب</li>
+                                    <li>أوقات التسليم تقديرية وقد تختلف حسب الموقع</li>
+                                    <li>يتم الشحن عبر شركات شحن معتمدة</li>
+                                    <li>يجب توفير عنوان دقيق وكامل للتسليم</li>
+                                </ul>
+                                
+                                <h5 class="fw-bold mt-4">4.3 تكاليف الشحن</h5>
+                                <p>تختلف تكاليف الشحن حسب:</p>
+                                <ul>
+                                    <li>حجم ووزن الطلب</li>
+                                    <li>موقع التسليم</li>
+                                    <li>سرعة الشحن المطلوبة</li>
+                                </ul>
+                                <p>سيتم عرض تكاليف الشحن النهائية قبل إتمام عملية الشراء.</p>
+                            </div>
+
+                            <!-- Section 5 -->
+                            <div id="section5" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-arrow-left-right me-2"></i>5. سياسة الإرجاع والاستبدال
+                                </h3>
+                                <h5 class="fw-bold mt-4">5.1 شروط الإرجاع</h5>
+                                <p>نقبل إرجاع المنتجات في الحالات التالية:</p>
+                                <ul>
+                                    <li>المنتج غير متوافق مع سيارتكم (بعد التحقق)</li>
+                                    <li>المنتج به عيب في التصنيع</li>
+                                    <li>المنتج غير مطابق للمواصفات المعلنة</li>
+                                </ul>
+                                <p>شروط الإرجاع:</p>
+                                <ul>
+                                    <li>يجب أن يكون الإرجاع خلال 7 أيام من تاريخ الاستلام</li>
+                                    <li>يجب أن يكون المنتج في حالته الأصلية مع جميع التغليف</li>
+                                    <li>يجب إرفاق الفاتورة الأصلية</li>
+                                </ul>
+                                
+                                <h5 class="fw-bold mt-4">5.2 عملية الإرجاع</h5>
+                                <ol>
+                                    <li>الاتصال بخدمة العملاء للحصول على إذن إرجاع</li>
+                                    <li>تعبئة نموذج الإرجاع المرفق مع الطلب</li>
+                                    <li>إعادة المنتج مع جميع ملحقاته</li>
+                                    <li>سيتم معالجة الإرجاع خلال 5-7 أيام عمل</li>
+                                </ol>
+                                
+                                <h5 class="fw-bold mt-4">5.3 المبالغ المستردة</h5>
+                                <p>في حالة الموافقة على الإرجاع:</p>
+                                <ul>
+                                    <li>سيتم استرداد المبلغ بنفس طريقة الدفع الأصلية</li>
+                                    <li>قد يتم خصم تكاليف الشحن من المبلغ المسترد</li>
+                                    <li>لا يتم استرداد تكاليف التركيب إذا تم تركيب القطعة</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 6 -->
+                            <div id="section6" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-credit-card me-2"></i>6. طرق الدفع والأسعار
+                                </h3>
+                                <h5 class="fw-bold mt-4">6.1 طرق الدفع المقبولة</h5>
+                                <p>نحن نقبل طرق الدفع التالية:</p>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="bi bi-cash-coin fs-4 me-3 text-success"></i>
+                                            <div>
+                                                <h6 class="fw-bold mb-0">الدفع نقداً</h6>
+                                                <small class="text-muted">عند الاستلام</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="bi bi-credit-card fs-4 me-3 text-primary"></i>
+                                            <div>
+                                                <h6 class="fw-bold mb-0">بطاقات الدفع</h6>
+                                                <small class="text-muted">ائتمان/مدينة</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="bi bi-bank fs-4 me-3 text-info"></i>
+                                            <div>
+                                                <h6 class="fw-bold mb-0">تحويل بنكي</h6>
+                                                <small class="text-muted">حوالة مصرفية</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h5 class="fw-bold mt-4">6.2 الأسعار والعملات</h5>
+                                <ul>
+                                    <li>جميع الأسعار بالدينار الليبي ما لم يذكر خلاف ذلك</li>
+                                    <li>الأسعار قابلة للتغيير دون إشعار مسبق</li>
+                                    <li>الأسعار لا تشمل تكاليف التركيب ما لم ينص صراحة على ذلك</li>
+                                    <li>يتم احتساب الضرائب (إن وجدت) عند إتمام الشراء</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 7 -->
+                            <div id="section7" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-shield-check me-2"></i>7. الضمانات والمسؤوليات
+                                </h3>
+                                <h5 class="fw-bold mt-4">7.1 ضمان المنتجات</h5>
+                                <p>تختلف فترات الضمان حسب نوع المنتج والشركة المصنعة:</p>
+                                <ul>
+                                    <li>القطع الأصلية: حسب ضمان المصنع (عادة 6-12 شهراً)</li>
+                                    <li>القطع البديلة: ضمان المتجر لمدة 3 أشهر</li>
+                                    <li>لا يشمل الضمان الأضرار الناتجة عن:</li>
+                                    <ul>
+                                        <li>الاستخدام غير الصحيح</li>
+                                        <li>الحوادث أو الكوارث الطبيعية</li>
+                                        <li>التعديلات أو الإصلاحات غير المعتمدة</li>
+                                    </ul>
+                                </ul>
+                                
+                                <h5 class="fw-bold mt-4">7.2 حدود المسؤولية</h5>
+                                <p>لا يتحمل المتجر مسؤولية:</p>
+                                <ul>
+                                    <li>الأضرار غير المباشرة أو العرضية</li>
+                                    <li>خسائر الأرباح أو البيانات</li>
+                                    <li>الأضرار الناتجة عن:</li>
+                                    <ul>
+                                        <li>تأخير في الشحن خارج عن إرادتنا</li>
+                                        <li>أعمال القوة القاهرة (كوارث طبيعية، اضطرابات)</li>
+                                        <li>استخدام غير صحيح للمنتجات</li>
+                                    </ul>
+                                </ul>
+                            </div>
+
+                            <!-- Section 8 -->
+                            <div id="section8" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-c-circle me-2"></i>8. الملكية الفكرية
+                                </h3>
+                                <p>جميع محتويات الموقع، بما في ذلك على سبيل المثال لا الحصر:</p>
+                                <ul>
+                                    <li>الشعارات والعلامات التجارية</li>
+                                    <li>الصور والتصاميم</li>
+                                    <li>النصوص والوصفات</li>
+                                    <li>البرمجيات وقواعد البيانات</li>
+                                </ul>
+                                <p>هي ملك حصري لحزمة أو مورديها ومحمية بموجب قوانين الملكية الفكرية المحلية والدولية.</p>
+                                <p>لا يسمح بأي استخدام غير مصرح به لأي من هذه المحتويات دون موافقة خطية مسبقة منا.</p>
+                            </div>
+
+                            <!-- Section 9 -->
+                            <div id="section9" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-lock me-2"></i>9. الخصوصية والأمان
+                                </h3>
+                                <p>نحن نلتزم بحماية خصوصيتكم. يرجى مراجعة <a href="/privacy-policy" class="text-primary">سياسة الخصوصية</a> الخاصة بنا للاطلاع على التفاصيل الكاملة حول كيفية جمعنا واستخدامنا وحمايتنا لمعلوماتكم الشخصية.</p>
+                                <h5 class="fw-bold mt-4">9.1 معلومات الدفع</h5>
+                                <p>نحن لا نخزن معلومات بطاقات الدفع على خوادمنا. جميع معاملات الدفع تتم عبر بوابات دفع آمنة ومعتمدة.</p>
+                                <h5 class="fw-bold mt-4">9.2 أمان الموقع</h5>
+                                <p>نحن نستخدم تقنيات تشفير متقدمة لحماية:</p>
+                                <ul>
+                                    <li>بيانات الدخول إلى الحسابات</li>
+                                    <li>المعاملات المالية</li>
+                                    <li>المعلومات الشخصية</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 10 -->
+                            <div id="section10" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-megaphone me-2"></i>10. التعديلات والإخطارات
+                                </h3>
+                                <p>نحتفظ بالحق في تعديل هذه الشروط والأحكام في أي وقت. سيتم نشر أي تغييرات على هذه الصفحة مع تحديث تاريخ "آخر تحديث".</p>
+                                <p>يستمر استخدامكم للموقع بعد نشر التعديلات بمثابة قبولكم للشروط المعدلة.</p>
+                                <p>جميع الإخطارات الرسمية ستكون:</p>
+                                <ul>
+                                    <li>عبر البريد الإلكتروني المسجل في حسابكم</li>
+                                    <li>أو عن طريق إشعارات داخل الموقع</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 11 -->
+                            <div id="section11" class="mb-5">
+                                <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                                    <i class="bi bi-balance me-2"></i>11. القانون الواجب التطبيق
+                                </h3>
+                                <p>تخضع هذه الشروط والأحكام وتفسر وفقاً لقوانين دولة ليبيا. أي نزاعات تنشأ عن أو تتعلق بهذه الشروط ستخضع للاختصاص الحصري للمحاكم في طرابلس.</p>
+                                <p>إذا تم اعتبار أي بند من هذه الشروط غير صالح أو غير قابل للتنفيذ، فإن ذلك لن يؤثر على صحة أو قابلية تنفيذ البنود الأخرى.</p>
+                            </div>
+
+                            <!-- Acceptance -->
+                            <div class="acceptance-box p-4 mt-5 text-center" style="background-color: #f0f0f0; border-radius: 8px;">
+                                <h5 class="fw-bold mb-3">إقرار وقبول</h5>
+                                <p>باستخدام هذا الموقع أو إجراء أي عمليات شراء، فإنكم تقرون بأنكم قد قرأتم وفهمتم ووافقتم على الالتزام بهذه الشروط والأحكام.</p>
+                                <p>إذا لم توافقوا على أي جزء من هذه الشروط، يرجى عدم استخدام موقعنا.</p>
+                                <p class="text-muted small mt-3">آخر تحديث: 21 أبريل 2025</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact for Questions -->
+                <div class="card mt-4 border-0 shadow-sm" style="background-color: #FF6B00; color: white;">
+                    <div class="card-body text-center py-4">
+                        <h4 class="fw-bold mb-3">لديكم استفسارات حول شروطنا؟</h4>
+                        <p class="mb-4">فريق الدعم القانوني لدينا مستعد للإجابة على جميع استفساراتكم</p>
+                        <a href="/contact" class="btn btn-light btn-lg rounded-pill px-4">
+                            <i class="bi bi-envelope me-2"></i> تواصل معنا
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .terms-content h5 {
+        color: #0F1B2E;
+        border-right: 3px solid #FF6B00;
+        padding-right: 10px;
+        margin-top: 20px;
+    }
+    
+    .terms-content ul, .terms-content ol {
+        padding-right: 20px;
+    }
+    
+    .terms-content li {
+        margin-bottom: 8px;
+    }
+    
+    .toc-container a {
+        color: #0F1B2E;
+        transition: all 0.3s;
+    }
+    
+    .toc-container a:hover {
+        color: #FF6B00;
+        padding-right: 5px;
+    }
+</style>
+
+<script>
+    // Smooth scrolling for TOC links
+    document.querySelectorAll('.toc-container a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            window.scrollTo({
+                top: targetElement.offsetTop - 80,
+                behavior: 'smooth'
+            });
+            
+            // Add highlight to the section
+            targetElement.style.backgroundColor = 'rgba(255, 107, 0, 0.1)';
+            setTimeout(() => {
+                targetElement.style.backgroundColor = '';
+            }, 2000);
+        });
+    });
+</script>
+
+<footer class="bg-dark text-white py-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-gear-fill me-2"></i>حزمة</h5>
+          <p>متجر متخصص في قطع غيار السيارات بجودة عالية وأسعار تنافسية. نقدم لكم أفضل المنتجات من أشهر الماركات العالمية.</p>
+          <div class="social-icons mt-3">
+            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="text-white me-2"><i class="bi bi-twitter"></i></a>
+            <a href="#" class="text-white me-2"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="text-white"><i class="bi bi-whatsapp"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-4">
+          <h5 class="fw-bold mb-3">روابط سريعة</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="#" class="text-white-50">الرئيسية</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">من نحن</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">المنتجات</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">العروض</a></li>
+            <li><a href="#" class="text-white-50">اتصل بنا</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4 mb-4">
+          <h5 class="fw-bold mb-3">خدمة العملاء</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="/hozmaDashbord/" class="text-white-50">حسابي</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">تتبع الطلب</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">سياسة الإرجاع</a></li>
+            <li class="mb-2"><a href="/hozmafaq/" class="text-white-50">الأسئلة الشائعة</a></li>
+            <li><a href="/hozmaterms-conditions/" class="text-white-50">الشروط والأحكام</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4 mb-4">
+          <h5 class="fw-bold mb-3">اتصل بنا</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="bi bi-geo-alt-fill me-2"></i> 'طرابلس' المدينة الرياضية</li>
+            <li class="mb-2"><i class="bi bi-telephone-fill me-2"></i> +218914262604</li>
+            <li class="mb-2"><i class="bi bi-envelope-fill me-2"></i> info@marin.ly</li>
+            <li><i class="bi bi-clock-fill me-2"></i> الأحد - الخميس: 9ص - 5م</li>
+          </ul>
+        </div>
+      </div>
+      <hr class="my-4" style="border-color: #444;">
+      <div class="row">
+        <div class="col-md-6 text-center text-md-start">
+          <p class="mb-0">&copy; 2025 حزمة. جميع الحقوق محفوظة.</p>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <img src="https://via.placeholder.com/200x50" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  
+    <script src="{% static 'hozma/js/navbar.js' %}"></script>
+    <script src="{% static 'hozma/js/product.js' %}"></script>
+    <script src="{% static 'hozma/js/cart.js' %}"></script>
+    <script src="{% static 'hozma/js/itemmain.js' %}"></script>
+

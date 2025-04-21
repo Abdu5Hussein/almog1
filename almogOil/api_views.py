@@ -2769,31 +2769,44 @@ def CarPartsHome_page(request):
 @api_view(["GET"])
 def Dashbord_page(request):
     return render(request, 'CarPartsTemplates/Dashboard.html')
+
 @api_view(["GET"])
 def Cart_page(request):
     return render(request, 'CarPartsTemplates/Cart.html')
 @api_view(["GET"])
-def item_detail_view(request, pno):
-    # Simulate a POST request to your existing API with the pno as filter
-    factory = APIRequestFactory()
-    post_data = {
-        "pno": pno,
-        "fullTable": True
-    }
-    fake_request = factory.post('/api/filter/', post_data, format='json')
-    
-    # Call your existing API view
-    response = web_filter_items(fake_request)
-    
-    if hasattr(response, 'data') and "data" in response.data and response.data["data"]:
-        item = response.data["data"][0]  # Get the first item
-    else:
-        item = None
+def my_account(request):
+    return render(request, 'CarPartsTemplates/my_account.html')
+@api_view(["GET"])
+def track_order(request):
+    return render(request, 'CarPartsTemplates/track_order.html')
+@api_view(["GET"])
+def return_policy(request):
+    return render(request, 'CarPartsTemplates/return_policy.html')
+@api_view(["GET"])
+def faq(request):
+    return render(request, 'CarPartsTemplates/faq.html')
+@api_view(["GET"])
+def terms_conditions(request):
+    return render(request, 'CarPartsTemplates/terms_conditions.html')    
 
-    return render(request, 'item_detail.html', {
-        'item': item,
-        'pno': pno
-    })
+@api_view(["GET"])   
+def item_detail_view(request, pno):
+    item = get_object_or_404(models.Mainitem, pno=pno)
+    context = {
+        'itemmain': item.itemmain,
+        'itemsubmain': item.itemsubmain,
+        'itemname': item.itemname,
+        'itemthird': item.itemthird,
+        'itemsize': item.itemsize,
+        'companyproduct': item.companyproduct,
+        'buyprice': item.buyprice,
+        'memo': item.memo,
+        'json_description': item.json_description,
+        'engine_no': item.engine_no,
+        'pno': item.pno,
+        'itemvalue':item.itemvalue,
+    }
+    return render(request, 'CarPartsTemplates/item_detail.html', context)
 
 
 @api_view(['GET'])

@@ -1,0 +1,411 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ itemname }} - Car Part Details | AutoPartsPro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
+  <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
+  <link rel="stylesheet" href="{% static 'hozma/css/prodcut.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0F1B2E; border-bottom: 3px solid #FF6B00;">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="http://45.13.59.226/item-for-inqury-page/" aria-label="الرئيسية" style="font-size: 2rem; color: #FFD700; letter-spacing: 1px;">
+                <i class="bi bi-gear-fill me-2"></i>حزمة
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
+                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="http://45.13.59.226/item-for-inqury-page/" aria-current="page">
+                            <i class="bi bi-speedometer2 me-1"></i> الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown mx-1">
+                        <a class="nav-link nav-link-auto dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-layers me-1"></i> الأقسام
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
+                            <li><a class="dropdown-item" href="/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
+                            <li><a class="dropdown-item" href="/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
+                            <li><a class="dropdown-item" href="/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
+                            <li><a class="dropdown-item" href="/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
+                            <li><hr class="dropdown-divider" style="border-color: #FF6B00;"></li>
+                            <li><a class="dropdown-item" href="/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozmabrands/">
+                            <i class="bi bi-tags me-1"></i> الماركات
+                        </a>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="/offers">
+                            <i class="bi bi-percent me-1"></i> العروض
+                            <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">جديد</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="nav-link nav-link-auto" href="/contact">
+                            <i class="bi bi-headset me-1"></i> الدعم الفني
+                        </a>
+                    </li>
+                    <li class="nav-item position-relative mx-1">
+                        <a id="navbarCartIcon" class="nav-link nav-link-auto" href="javascript:void(0);" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة" onclick="toggleCart()">
+                            <i class="bi bi-cart3" aria-hidden="true"></i>
+                            <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
+                        </a>
+                    </li>
+                    <!-- Account Button -->
+                    <!-- Account Button -->
+    <li class="nav-item ms-3">
+      <a id="accountButton" class="btn btn-warning fw-bold" href="/my-account" style="border-radius: 30px; min-width: 120px;">
+          <i class="bi bi-person-circle me-1"></i> <span id="userNamePlaceholder">حسابي</span>
+      </a>
+    </li>
+    
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+
+    <!-- Cart Overlay -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+
+  <!-- Cart Sidebar -->
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>سلة الطلبات</h4>
+    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">
+      <i class="bi bi-trash"></i> إفراغ السلة
+    </button>
+  </div>
+
+  <div id="cartItemsContainer">
+    <p class="text-muted text-center py-4">السلة فارغة</p>
+  </div>
+
+  <div class="mt-3 border-top pt-3">
+    <div class="d-flex justify-content-between mb-2">
+      <span>عدد الأصناف:</span>
+      <strong id="cartItemsCount">0</strong>
+    </div>
+    <div class="d-flex justify-content-between mb-3">
+      <span>المجموع:</span>
+      <strong id="cartTotalAmount">0.00 د.أ</strong>
+    </div>
+    <button class="btn btn-primary w-100" onclick="submitOrder()">
+      <i class="bi bi-send-check"></i> إرسال الطلب
+    </button>
+    <button class="btn btn-outline-primary w-100 mt-2" onclick="openCartPage()">
+      <i class="bi bi-cart"></i> الانتقال إلى سلة الطلبات
+    </button>
+  </div>
+</div>
+
+
+
+<div class="product-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-car-alt me-2"></i> {{ itemname }}</h1>
+                <p class="mb-0">{{ itemmain }} / {{ itemsubmain }} / {{ itemthird }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                {% if itemvalue > 0 %}
+<span class="badge badge-stock badge-in-stock">
+    <i class="fas fa-check-circle me-1"></i> متوفر في المخزن
+</span>
+{% else %}
+<span class="badge badge-stock badge-out-of-stock">
+    <i class="fas fa-times-circle me-1"></i> غير متوفر حالياً
+</span>
+{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="product-container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="product-image-placeholder">
+                            <i class="fas fa-car-parts fa-4x opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-card">
+                            <h3><i class="fas fa-info-circle technical-icon"></i> معلومات أساسية</h3>
+                            <div class="detail-item">
+                                <span class="detail-label">رقم القطعة:</span>
+                                <span class="detail-value">{{ pno }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">الشركة المصنعة:</span>
+                                <span class="detail-value">{{ companyproduct }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">تصنيف السيارة:</span>
+                                <ul class="detail-value list-unstyled mb-0">
+                                    <li><strong>النوع:</strong> {{ itemmain }}</li>
+                                    <li><strong>الموديل:</strong> {{ itemsubmain }}</li>
+                                    <li><strong>سنة الصنع:</strong> {{ itemthird }}</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <span class="detail-label">البلد المنتج:</span>
+                                <span class="detail-value">{{ itemsize }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">رقم المحرك:</span>
+                                <span class="detail-value">{{ engine_no }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="specs-card mt-4">
+                    <h3><i class="fas fa-file-alt technical-icon"></i> وصف المنتج</h3>
+                    {% if memo %}
+                    <p>{{ memo }}</p>
+                    {% else %}
+                    <p class="text-muted">لا يوجد وصف إضافي متاح.</p>
+                    {% endif %}
+                </div>
+
+                <div class="specs-card mt-4">
+                    <h3><i class="fas fa-cogs technical-icon"></i> المواصفات الفنية</h3>
+                    <pre>{{ json_description|safe }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="price-card">
+                <h3>السعر</h3>
+                <div class="price-amount">{{ buyprice }} د.ل</div>
+                <p class="text-muted">السعر لا يشمل الضرائب والشحن</p>
+
+                <div class="mb-4">
+                    <label for="quantity" class="form-label">الكمية</label>
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary" type="button">-</button>
+                        <input type="number" class="form-control text-center" value="1" min="1" id="quantity">
+                        <button class="btn btn-outline-secondary" type="button">+</button>
+                    </div>
+                </div>
+
+                <button class="btn-add-to-cart mb-3">
+                    <i class="fas fa-cart-plus me-2"></i> أضف إلى السلة
+                </button>
+
+                <div class="d-flex justify-content-between small text-muted mt-3">
+                    <span><i class="fas fa-shield-alt me-1"></i> ضمان سنة</span>
+                    <span><i class="fas fa-truck me-1"></i> شحن سريع وآمن</span>
+                    <span><i class="fas fa-undo me-1"></i> إرجاع سهل</span>
+                </div>
+            </div>
+
+            <div class="specs-card mt-4">
+                <h3><i class="fas fa-headset technical-icon"></i> هل تحتاج مساعدة؟</h3>
+                <p>متخصصو قطع الغيار لدينا مستعدون لمساعدتك في أي استفسار حول هذا المنتج.</p>
+                <button class="btn btn-outline-primary w-100">
+                    <i class="fas fa-phone-alt me-2"></i> اتصل بالدعم
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white py-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-gear-fill me-2"></i>حزمة</h5>
+          <p>متجر متخصص في قطع غيار السيارات بجودة عالية وأسعار تنافسية. نقدم لكم أفضل المنتجات من أشهر الماركات العالمية.</p>
+          <div class="social-icons mt-3">
+            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="text-white me-2"><i class="bi bi-twitter"></i></a>
+            <a href="#" class="text-white me-2"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="text-white"><i class="bi bi-whatsapp"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-4">
+          <h5 class="fw-bold mb-3">روابط سريعة</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="#" class="text-white-50">الرئيسية</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">من نحن</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">المنتجات</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">العروض</a></li>
+            <li><a href="#" class="text-white-50">اتصل بنا</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4 mb-4">
+          <h5 class="fw-bold mb-3">خدمة العملاء</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="/hozmaDashbord/" class="text-white-50">حسابي</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">تتبع الطلب</a></li>
+            <li class="mb-2"><a href="#" class="text-white-50">سياسة الإرجاع</a></li>
+            <li class="mb-2"><a href="/hozmafaq/" class="text-white-50">الأسئلة الشائعة</a></li>
+            <li><a href="/hozmaterms-conditions/" class="text-white-50">الشروط والأحكام</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4 mb-4">
+          <h5 class="fw-bold mb-3">اتصل بنا</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="bi bi-geo-alt-fill me-2"></i> 'طرابلس' المدينة الرياضية</li>
+            <li class="mb-2"><i class="bi bi-telephone-fill me-2"></i> +218914262604</li>
+            <li class="mb-2"><i class="bi bi-envelope-fill me-2"></i> info@marin.ly</li>
+            <li><i class="bi bi-clock-fill me-2"></i> الأحد - الخميس: 9ص - 5م</li>
+          </ul>
+        </div>
+      </div>
+      <hr class="my-4" style="border-color: #444;">
+      <div class="row">
+        <div class="col-md-6 text-center text-md-start">
+          <p class="mb-0">&copy; 2025 حزمة. جميع الحقوق محفوظة.</p>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <img src="https://via.placeholder.com/200x50" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+   document.querySelector('.btn-add-to-cart').addEventListener('click', function() {
+    // Get the product details from Django template variables
+    const product = {
+        pno: '{{ pno }}',                     // Using Django template variable
+        itemno: '{{ pno }}',                  // Using same as pno if itemno not available
+        name: '{{ itemname|escapejs }}',      // Escaping JavaScript special characters
+        price: parseFloat('{{ buyprice }}'),  // Using buyprice from template
+        image: ''                            // Default empty string (no image in your template)
+    };
+    
+    // Get quantity
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    
+    // Add to cart with quantity using the new function
+    addToCartWithQuantity(
+        product.pno,
+        product.itemno,
+        product.name,
+        product.price,
+        product.image,
+        quantity
+    );
+    
+    // Animation
+    const button = this;
+    button.innerHTML = '<i class="fas fa-check me-2"></i> تمت الإضافة للسلة!';
+    button.style.backgroundColor = '#27ae60';
+    setTimeout(() => {
+        button.innerHTML = '<i class="fas fa-cart-plus me-2"></i> أضف إلى السلة';
+        button.style.backgroundColor = '';
+    }, 2000);
+});
+
+// Function to load product image
+async function loadProductImage() {
+    const placeholder = document.querySelector('.product-image-placeholder');
+    const pno = placeholder.dataset.productId || '{{ pno }}';
+
+    try {
+        console.log(`Fetching image for product number: ${pno}`);
+
+        const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
+        console.log('Raw response from API:', response);
+
+        if (response && Array.isArray(response) && response.length > 0) {
+            let imagesHtml = response.map((img, index) => `
+                <img src="${baseUrl}${img.image_obj}" 
+                     class="img-fluid product-image ${index === 0 ? 'active' : ''}" 
+                     style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; display: ${index === 0 ? 'block' : 'none'};"
+                     alt="Product Image ${index + 1}">
+            `).join('');
+
+            placeholder.innerHTML = `
+                <div class="image-carousel-wrapper" style="position: relative;">
+                    ${imagesHtml}
+                    <button class="carousel-btn prev-btn" style="position: absolute; top: 50%; left: 10px;">&#10094;</button>
+                    <button class="carousel-btn next-btn" style="position: absolute; top: 50%; right: 10px;">&#10095;</button>
+                </div>
+            `;
+
+            addCarouselFunctionality(placeholder);
+            placeholder.classList.remove('product-image-placeholder');
+            console.log(`Product images loaded for pno: ${pno}`);
+        } else {
+            showPlaceholderIcon(placeholder);
+            console.log(`Showing placeholder for pno: ${pno}`);
+        }
+
+    } catch (error) {
+        console.error('Error loading product image:', error);
+        showPlaceholderIcon(placeholder);
+    }
+}
+
+function showPlaceholderIcon(placeholder) {
+    placeholder.innerHTML = '<i class="fas fa-car-parts fa-4x opacity-50"></i>';
+    placeholder.classList.add('product-image-placeholder');
+}
+
+function addCarouselFunctionality(placeholder) {
+    const images = placeholder.querySelectorAll('.product-image');
+    let currentIndex = 0;
+
+    const showImage = (index) => {
+        images.forEach((img, i) => {
+            img.style.display = i === index ? 'block' : 'none';
+        });
+    };
+
+    placeholder.querySelector('.prev-btn').addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        showImage(currentIndex);
+    });
+
+    placeholder.querySelector('.next-btn').addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % images.length;
+        showImage(currentIndex);
+    });
+}
+
+// Call when page loads
+document.addEventListener('DOMContentLoaded', loadProductImage);
+
+
+        </script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+      <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    
+      <script src="{% static 'hozma/js/navbar.js' %}"></script>
+      <script src="{% static 'hozma/js/product.js' %}"></script>
+      <script src="{% static 'hozma/js/cart.js' %}"></script>
+      <script src="{% static 'hozma/js/itemmain.js' %}"></script>
+      
+     
+     
+</body>
+</html>

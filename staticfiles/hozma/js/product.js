@@ -67,15 +67,16 @@ const cartItem = cart.find(ci => ci.pno === item.pno);
 const cartQuantity = cartItem ? cartItem.quantity : 0;
 
 row.innerHTML = `
-<td class="clickable-cell" data-pno="${item.pno}">${item.itemno ?? '-'}</td>
+<td class="clickable-cell" data-pno="${item.pno}">${item.pno ?? '-'}</td>
 <td class="clickable-cell" data-pno="${item.pno}">${item.itemname ?? '-'}</td>
-<td>${parseFloat(item.buyprice || 0).toFixed(2)} د.أ</td>
+
 <td>${item.companyproduct ?? '-'}</td>
 <td>
 ${stock > 10 ? `<span class="badge bg-success">متوفر</span>` :
 stock > 0 && stock <= 9 ? `<span class="badge bg-warning text-dark">كمية محدودة</span>` :
 `<span class="badge bg-danger">غير متوفر</span>`}
 </td>
+<td>${parseFloat(item.buyprice || 0).toFixed(2)} د.ل</td>
 <td>
 <div class="quantity-control">
 <button class="btn btn-sm btn-outline-secondary quantity-btn" onclick="decrementQuantity('${item.pno}')">-</button>
@@ -86,11 +87,16 @@ onchange="updateQuantity('${item.pno}', this.value)">
 </div>
 </td>
 <td>
-<button class="btn btn-sm btn-success" onclick="addToCartWithQuantity('${item.pno}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value)">
+<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value)">
 شراء
 </button>
 </td>
+<td>
+
+<a href="/item-for-inqury-page/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
+</td>
 `;
+
 
 row.querySelectorAll('.clickable-cell').forEach(cell => {
     cell.style.cursor = 'pointer';
