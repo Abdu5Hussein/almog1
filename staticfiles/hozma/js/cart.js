@@ -398,7 +398,7 @@ function toggleCart() {
                 </div>
                 <div class="auto-cart-info">
                     <h6 class="auto-part-title mb-1">${item.name}</h6>
-                    <div class="auto-part-number">${item.itemno}</div>
+                    <div class="auto-part-number">${item.pno}</div>
                     ${item.compatibility ? `<div class="part-compatibility"><i class="bi bi-check-circle"></i> متوافق مع ${item.compatibility}</div>` : ''}
                     <div class="auto-part-price">${item.price.toFixed(2)} د.ل للقطعة</div>
                     ${item.origin ? `<div class="auto-part-origin">${item.origin}</div>` : ''}
@@ -420,17 +420,17 @@ function toggleCart() {
         </div>
         `;
 
-        // 🔁 Dynamically fetch and update the image after rendering
-        setTimeout(() => {
-            fetchAndUpdateCartItemImage(item.pno);
-        }, 0);
+        
     });
 
     cartContainer.innerHTML = html;
     document.getElementById('summaryItemsCount').textContent = totalItems;
     document.getElementById('summarySubtotal').textContent = totalAmount.toFixed(2) + ' د.ل ';
     document.getElementById('summaryTotalAmount').textContent = totalAmount.toFixed(2) + ' د.ل ';
-}
+    for (const item of cart) {
+      fetchAndUpdateCartItemImage(item.pno);
+    }
+  }
 
 
 function checkout() {

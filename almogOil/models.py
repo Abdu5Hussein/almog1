@@ -1070,3 +1070,19 @@ class balance_editions(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.employee.name} - {self.type} {self.amount} LYD"
+
+
+class Attendance_table(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee = models.ForeignKey(EmployeesTable,on_delete=models.CASCADE)
+    salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    date = models.DateField()
+    daily_hours = models.DecimalField(max_digits=10, decimal_places=2, default=6.0)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    total_hours = models.DecimalField(max_digits=10, decimal_places=2, default=6.0)
+    absent_hours = models.DecimalField(max_digits=10, decimal_places=2, default=6.0)
+    coming_time = models.TimeField()
+    leaving_time = models.TimeField()
+    absent = models.BooleanField(default=False)
+    reason = models.CharField(max_length=100, null=True, blank=True)

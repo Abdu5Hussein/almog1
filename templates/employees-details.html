@@ -692,7 +692,7 @@
 
       // Load data
       function loadEmployeeData() {
-        fetch("/api/employees-api")
+        customFetch("/api/employees-api")
           .then(response => response.json())
           .then(data => {
             employees_table.setData(data);
@@ -730,7 +730,7 @@
       console.log("details: ", newEmployee);
 
       // Send to backend API
-      fetch("/api/employees-api/", {
+      customFetch("/api/employees-api/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newEmployee)
@@ -775,7 +775,7 @@
         };
 
         // Sending the PUT request with the updated JSON data
-        fetch(`/api/employees-api/${id}/`, {
+        customFetch(`/api/employees-api/${id}/`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedEmployee)
@@ -803,7 +803,7 @@
         }
 
         if (confirm(` هل تريد حذف الموظف رقم ${id}؟`)) {
-          fetch(`/api/employees-api/${id}/`, {
+          customFetch(`/api/employees-api/${id}/`, {
             method: "DELETE"
           })
             .then(() => {
@@ -822,7 +822,7 @@
         const url = `http://45.13.59.226/api/employees-api/${employeeId}/`;
 
         // Make a GET request to the API
-        fetch(url)
+        customFetch(url)
           .then(response => {
             if (!response.ok) {
               throw new Error('Failed to fetch employee data');

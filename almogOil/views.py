@@ -2290,7 +2290,10 @@ def assign_orders_page(request, invoice_id):
 
 @login_required
 def employees_report_view(request):
-    context = {}
+    employees= models.EmployeesTable.objects.all().values("name","employee_id")
+    context = {
+        "employees": employees,
+    }
     return render(request,'employees-report.html',context)
 
 @login_required
@@ -2303,12 +2306,18 @@ def employees_salary_view(request):
 
 @login_required
 def employees_salary_edit_view(request):
-    context = {}
+    employees= models.EmployeesTable.objects.all().values("name","employee_id")
+    context = {
+        "employees": employees,
+    }
     return render(request,'employees-salary-edit.html',context)
 
 @login_required
 def employees_cash_reports_view(request):
-    context = {}
+    employees= models.EmployeesTable.objects.all().values("name","employee_id")
+    context = {
+        "employees": employees,
+    }
     return render(request,'employees-cash-reports.html',context)
 
 @csrf_exempt

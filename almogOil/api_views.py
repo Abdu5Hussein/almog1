@@ -2772,7 +2772,28 @@ def Dashbord_page(request):
 @api_view(["GET"])
 def Cart_page(request):
     return render(request, 'CarPartsTemplates/Cart.html')
+@api_view(["GET"])
+def item_detail_view(request, pno):
+    # Simulate a POST request to your existing API with the pno as filter
+    factory = APIRequestFactory()
+    post_data = {
+        "pno": pno,
+        "fullTable": True
+    }
+    fake_request = factory.post('/api/filter/', post_data, format='json')
+    
+    # Call your existing API view
+    response = web_filter_items(fake_request)
+    
+    if hasattr(response, 'data') and "data" in response.data and response.data["data"]:
+        item = response.data["data"][0]  # Get the first item
+    else:
+        item = None
 
+    return render(request, 'item_detail.html', {
+        'item': item,
+        'pno': pno
+    })
 
 
 @api_view(['GET'])
@@ -2817,6 +2838,30 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
 from django.utils.timezone import make_aware
 from datetime import datetime
+
+def calculate_balance_for_instance(instance):
+    """
+    Calculates the balance for any instance (employee, customer, vendor, etc.)
+    using GenericForeignKey relations in TransactionsHistoryTable.
+    """
+    if not instance or not hasattr(instance, 'pk'):
+        raise ValueError("A valid model instance is required.")
+
+    content_type = ContentType.objects.get_for_model(instance.__class__)
+
+    balance_data = models.TransactionsHistoryTable.objects.filter(
+        content_type=content_type,
+        object_id=instance.pk
+    ).aggregate(
+        total_debt=Sum('debt'),
+        total_credit=Sum('credit')
+    )
+
+    total_debt = balance_data.get('total_debt') or 0
+    total_credit = balance_data.get('total_credit') or 0
+    balance = round(total_credit - total_debt, 2)
+
+    return Decimal(balance)
 
 def update_employee_balance(employee, amount, operation, description=None):
     if not operation or operation not in ["credit", "debit"]:
@@ -2920,6 +2965,49 @@ class BalanceEditionsTableViewSet(viewsets.ModelViewSet):
     queryset = models.balance_editions.objects.all()
     serializer_class = serializers.BalanceEditionsSerializer
 
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        employee_id = data.get("employee")
+        amount = data.get("amount")
+        entry_type = data.get("type")  # Expecting "credit" or "debit"
+        description = data.get("description", "")
+        name = data.get("name", "")
+
+        if not all([employee_id, amount, entry_type]):
+            return Response({"error": "Missing required fields: employee, amount, type"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            amount = Decimal(amount)
+            if entry_type not in ["credit", "debit"]:
+                return Response({"error": "Type must be either 'credit' or 'debit'"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            employee = models.EmployeesTable.objects.get(employee_id=employee_id)
+        except models.EmployeesTable.DoesNotExist:
+            return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError:
+            return Response({"error": "Amount must be a number"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            balance_before = calculate_balance_for_instance(employee) or 0.0
+            balance_after = Decimal(balance_before) + amount if entry_type == "credit" else Decimal(balance_before) - amount
+
+            # Create balance edition record
+            balance_edition = models.balance_editions.objects.create(
+                employee=employee,
+                name=employee.name,
+                type=entry_type,
+                description=description,
+                amount=amount,
+                balance_before=balance_before,
+                balance_after=balance_after,
+            )
+            balance = update_employee_balance(employee, amount, entry_type, description)
+            serializer = self.get_serializer(balance_edition)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
 @extend_schema(
 description="""get all Credits/Debits for an employee.""",
 tags=["Employees","Balance","Transactions History","Balance Editions"],
@@ -2950,14 +3038,22 @@ def filterBalanceEditions(request):
         if employee_id:
             query &= Q(employee=employee_id)
 
+        transaction_type = filters.get("type")
+        if transaction_type:
+            query &= Q(type=transaction_type)
+
         # Filter by exact date
-        date_str = filters.get("date", "").strip()
-        if date_str:
+        # Apply date range filter if fromdate and todate are provided
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
             try:
-                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-                query &= Q(date__date=date_obj)
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                query &= Q(date__range=[from_date_obj, to_date_obj])
             except ValueError:
-                return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Fetch and serialize filtered results
         queryset = models.balance_editions.objects.filter(query)
@@ -2969,3 +3065,103 @@ def filterBalanceEditions(request):
 
     except Exception as e:
         return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@extend_schema(
+description="""filter employees.""",
+tags=["Employees"],
+)
+@api_view(["POST"])
+#@permission_classes([IsAuthenticated])
+def filter_employees(request):
+    try:
+        filters = request.data  # DRF automatically parses the JSON body
+        query_filter = Q()  # Initialize an empty Q object for combining filters
+
+        # Apply client-name filter if provided
+        if 'id' in filters:
+            query_filter &= Q(employee_id=filters['id'])
+
+        # Query the model with the combined filters
+        queryset = models.EmployeesTable.objects.filter(query_filter)
+        serializer = serializers.EmployeesSerializer(queryset,many=True)
+
+        # If no matching records, return an empty list
+        if not queryset.exists():
+            return Response([], status=status.HTTP_200_OK)
+
+        # Serialize and return the filtered data
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all attendance records",
+        description="Returns a list of all attendance entries in the database.",
+        tags=["Attendance","Employees"],
+        responses={200: serializers.AttendanceSerializer(many=True)}
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a single attendance record",
+        description="Get a specific attendance record by its ID.",
+        tags=["Attendance","Employees"],
+        responses={200: serializers.AttendanceSerializer}
+    ),
+    create=extend_schema(
+        summary="Create new attendance entry",
+        description="Creates an attendance entry. Accepts employee ID as string for the foreign key.",
+        tags=["Attendance","Employees"],
+        responses={201: serializers.AttendanceSerializer}
+    ),
+    update=extend_schema(
+        summary="Update an attendance record",
+        description="Updates all fields of an existing attendance record by its ID.",
+        tags=["Attendance","Employees"],
+        responses={200: serializers.AttendanceSerializer}
+    ),
+    partial_update=extend_schema(
+        summary="Partially update an attendance record",
+        description="Updates selected fields of an attendance record by its ID.",
+        tags=["Attendance","Employees"],
+        responses={200: serializers.AttendanceSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Delete an attendance record",
+        description="Deletes an attendance record by its ID.",
+        tags=["Attendance","Employees"],
+        responses={204: None}
+    ),
+)
+class AttendanceTableViewSet(viewsets.ModelViewSet):
+    queryset = models.Attendance_table.objects.all()
+    serializer_class = serializers.AttendanceSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        employee_id = data.get("employee")
+        try:
+            employee = models.EmployeesTable.objects.get(employee_id=employee_id)
+        except models.EmployeesTable.DoesNotExist:
+            return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            attendance = models.Attendance_table.objects.create(
+                employee=employee,
+                salary=employee.salary,
+                date=data.get("date"),
+                daily_hours=Decimal(data.get("daily_hours", 6.0)),
+                start_time=data.get("start_time"),
+                end_time=data.get("end_time"),
+                total_hours=Decimal(data.get("total_hours", 6.0)),
+                absent_hours=Decimal(data.get("absent_hours", 6.0)),
+                coming_time=data.get("coming_time"),
+                leaving_time=data.get("leaving_time"),
+                absent=data.get("absent", False),
+                reason=data.get("reason", "")
+            )
+            serializer = self.get_serializer(attendance)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -240,6 +240,11 @@ class BalanceEditionsSerializer(serializers.ModelSerializer):
         model = models.balance_editions
         fields = '__all__'
 
+class AttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Attendance_table
+        fields = '__all__'
+
 class BasicEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeesTable
