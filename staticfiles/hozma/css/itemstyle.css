@@ -285,3 +285,34 @@ body.modal-open {
   background-color: #dc3545; /* red */
   color: white;
 }
+
+  @media (max-width: 576px) {
+    .table th, .table td {
+      font-size: 0.9rem; /* Adjust font size for smaller screens */
+      padding: 0.5rem; /* Adjust padding for better spacing */
+    }
+    .table th {
+      white-space: nowrap; /* Prevent header text from wrapping */
+    }
+  }
+
+  #floatingCartIcon {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background-color: #ff9800;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: move;
+    z-index: 999;
+  }
+
+  #floatingCartIcon img {
+    width: 30px;
+    height: 30px;
+  }

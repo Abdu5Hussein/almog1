@@ -1,6 +1,9 @@
+{% extends 'CarPartsTemplates/base.html' %}
+
+{% block title %}الأسئلة الشائعة{% endblock %}
+
+{% block content %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,166 +13,233 @@
   <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
   <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
 </head>
-<body style="background-color: #f9f9f9; font-family: 'Cairo', sans-serif;">
 
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0F1B2E; border-bottom: 3px solid #FF6B00;">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="http://45.13.59.226/item-for-inqury-page/" aria-label="الرئيسية" style="font-size: 2rem; color: #FFD700; letter-spacing: 1px;">
-            <i class="bi bi-gear-fill me-2"></i>حزمة
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
-            <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNavDropdown">
-            <ul class="navbar-nav ms-auto align-items-lg-center">
-                <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto" href="http://45.13.59.226/item-for-inqury-page/" aria-current="page">
-                        <i class="bi bi-speedometer2 me-1"></i> الرئيسية
-                    </a>
-                </li>
-                <li class="nav-item dropdown mx-1">
-                    <a class="nav-link nav-link-auto dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-layers me-1"></i> الأقسام
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
-                        <li><a class="dropdown-item" href="/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
-                        <li><a class="dropdown-item" href="/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
-                        <li><a class="dropdown-item" href="/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
-                        <li><a class="dropdown-item" href="/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: #FF6B00;"></li>
-                        <li><a class="dropdown-item" href="/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozmabrands/">
-                        <i class="bi bi-tags me-1"></i> الماركات
-                    </a>
-                </li>
-                <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto" href="/offers">
-                        <i class="bi bi-percent me-1"></i> العروض
-                        <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">جديد</span>
-                    </a>
-                </li>
-                <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto" href="/contact">
-                        <i class="bi bi-headset me-1"></i> الدعم الفني
-                    </a>
-                </li>
-                <li class="nav-item position-relative mx-1">
-                    <a id="navbarCartIcon" class="nav-link nav-link-auto" href="javascript:void(0);" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة" onclick="toggleCart()">
-                        <i class="bi bi-cart3" aria-hidden="true"></i>
-                        <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
-                    </a>
-                </li>
-                <li class="nav-item ms-3">
-                    <a id="accountButton" class="btn btn-warning fw-bold" href="/my-account" style="border-radius: 30px; min-width: 120px;">
-                        <i class="bi bi-person-circle me-1"></i> <span id="userNamePlaceholder">حسابي</span>
-                    </a>
-                </li>
-            </ul>
+
+   <!-- Keep only this modal for product images -->
+   <div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">صور المنتج</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body">
+          <!-- Images will be loaded here dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+        </div>
+      </div>
     </div>
-</nav>
+  </div>
+  </div>
+  </div>
+
+
 
 <div class="container">
-    <div class="header-section">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="row align-items-center">
+      <div class="col-md-6">
         <h2 class="mb-0"><i class="bi bi-cart-check"></i> نظام طلب المنتجات</h2>
-    </div>
-
-    <div class="scroll-table-container mb-5">
-        <table class="table table-bordered mb-0">
-          <thead>
-            <tr>
-              <th>الصورة</th>
-              <th>اسم القطعة</th>
-              <th>رقم القطعة</th>
-              <th>السعر</th>
-              <th>شراء</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in page_obj %}
-            <tr>
-              <td>
-                <img src="http://45.13.59.226/api/products/{{ item.pno }}/get-images"
-                     alt="صورة المنتج"
-                     style="width: 50px; height: auto; cursor: pointer;"
-                     onclick="showImagePopup(this.src)">
-              </td>
-              <td>{{ item.companyproduct }}</td>
-              <td>{{ item.pno }}</td>
-              <td>{{ item.buyprice }} د.أ</td>
-              <td>
-                <button class="btn btn-outline-success"
-                        onclick="addToCart('{{ item.pno }}', '{{ item.companyproduct }}', '{{ item.buyprice }}')">
-                  <i class="bi bi-cart-plus"></i> إضافة
-                </button>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="5" class="text-center">لا توجد منتجات لهذا القسم حاليًا.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
       </div>
-      {% if page_obj.has_other_pages %}
-<nav aria-label="pagination">
-  <ul class="pagination justify-content-center">
-    {% if page_obj.has_previous %}
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode|safe|cut:'page='|cut:'&' }}">السابق</a>
-    </li>
-    {% endif %}
+      <div class="col-md-6 text-left">
+        
+        <button id="printCartButton" class="btn btn-outline-light ms-2" type="button">
+          <i class="bi bi-printer"></i> طباعة
+        </button>
+      </div>
+    </div>
+  </div>
 
-    {% for num in page_obj.paginator.page_range %}
-    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-      <a class="page-link" href="?page={{ num }}&{{ request.GET.urlencode|safe|cut:'page='|cut:'&' }}">{{ num }}</a>
-    </li>
-    {% endfor %}
+<!-- قسم الفلاتر -->
 
-    {% if page_obj.has_next %}
-    <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode|safe|cut:'page='|cut:'&' }}">التالي</a>
-    </li>
-    {% endif %}
-  </ul>
-</nav>
-{% endif %}
+
+<div class="filters row mb-4 g-3">
+  
+
+<!-- فلتر رقم القطعة -->
+<div class="col-md-2 col-sm-6">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+    <input id="pnoFilter" class="form-control" placeholder="رقم القطعة" type="text">
+    <button class="btn btn-primary" onclick="applyFilters()">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
 </div>
 
-      
-<script>
-function showImagePopup(src) {
-    const image = new Image();
-    image.src = src;
-    image.style.maxWidth = "100%";
-    image.style.maxHeight = "90vh";
+<!-- فلتر رقم الشركة -->
+<div class="col-md-2 col-sm-6">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-building"></i></span>
+    <input id="companynoFilter" class="form-control" placeholder="رقم الشركة" type="text">
+    <button class="btn btn-primary" onclick="applyFilters()">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
+</div>
 
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'fixed';
-    wrapper.style.top = '0';
-    wrapper.style.left = '0';
-    wrapper.style.width = '100%';
-    wrapper.style.height = '100%';
-    wrapper.style.backgroundColor = 'rgba(0,0,0,0.8)';
-    wrapper.style.display = 'flex';
-    wrapper.style.justifyContent = 'center';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.zIndex = '9999';
-    wrapper.appendChild(image);
-    wrapper.onclick = () => document.body.removeChild(wrapper);
-    document.body.appendChild(wrapper);
-}
+<!-- فلتر رقم OEM -->
+<div class="col-md-2 col-sm-6">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-gear"></i></span>
+    <input id="oemFilter" class="form-control" placeholder="رقم OEM" type="text">
+    <button class="btn btn-primary" onclick="applyFilters()">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
+</div>
 
-function addToCart(pno, name, price) {
-    alert(`تمت إضافة القطعة ${name} (${pno}) بسعر ${price} د.أ إلى السلة`);
-    // يمكنك استبدال هذا بـ API حقيقية لإضافة المنتج للسلة
-}
-</script>
+<!-- فلتر اسم القطعة -->
+<div class="col-md-2 col-sm-6">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-tag"></i></span>
+    <input id="itemnameFilter" class="form-control" placeholder="اسم القطعة" type="text">
+    <button class="btn btn-primary" onclick="applyFilters()">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
+</div>
 
+<!-- فلتر منتج الشركة -->
+<div class="col-md-2 col-sm-6">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
+    <input id="companyproductFilter" class="form-control" placeholder="منتج الشركة" type="text">
+    <button class="btn btn-primary" onclick="applyFilters()">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
+</div>
+
+
+<!-- Add this to your filters section -->
+<div class="mb-4">
+  <select class="selectpicker w-100" id="availabilityFilter" data-live-search="true" data-style="btn-outline-secondary" data-size="5" title="Filter by availability..." onchange="applyFilters()">
+    <option value="" data-content="<span class='badge bg-secondary p-2 d-flex align-items-center'><i class='fas fa-circle me-2'></i> الكل</span>">All</option>
+    <option value="available" data-content="<span class='badge bg-success p-2 d-flex align-items-center'><i class='fas fa-check-circle me-2'></i> متوفر (10+)</span>">Available</option>
+    <option value="limited" data-content="<span class='badge bg-warning text-dark p-2 d-flex align-items-center'><i class='fas fa-exclamation-circle me-2'></i> كمية محدودة (1-10)</span>">Limited</option>
+    <option value="unavailable" data-content="<span class='badge bg-danger p-2 d-flex align-items-center'><i class='fas fa-times-circle me-2'></i> غير متوفر (0)</span>">Unavailable</option>
+  </select>
+</div>
+
+
+
+
+  <!-- Page Navigation -->
+  <div class="page-input row mb-3 g-3 align-items-center">
+    <div class="col-md-4">
+      <div class="input-group">
+        <span class="input-group-text">الصفحة</span>
+        <input id="pageInput" type="number" class="form-control" min="1" value="1" onchange="changePage()">
+        <button class="btn btn-outline-secondary" onclick="prevPage()"><i class="bi bi-chevron-right"></i></button>
+        <button class="btn btn-outline-secondary" onclick="nextPage()"><i class="bi bi-chevron-left"></i></button>
+      </div>
+    </div>
+    <div class="col-md-4 text-center">
+      <span id="pageInfo">الصفحة 1 من 1</span>
+    </div>
+    <div class="col-md-4 text-left">
+      <div class="input-group">
+        <span class="input-group-text">العناصر لكل صفحة</span>
+        <select id="itemsPerPage" class="form-select" onchange="changeItemsPerPage()">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mb-4">
+    <button onclick="applyFilters()" class="btn btn-primary me-2">
+      <i class="bi bi-search"></i> بحث
+    </button>
+    <button onclick="resetFilters()" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-counterclockwise"></i> إعادة تعيين
+    </button>
+  </div>
+</div>
+<div class="container">
+  <div class="header-section">
+      <h2 class="mb-0"><i class="bi bi-cart-check"></i> نظام طلب المنتجات</h2>
+  </div>
+
+  <div class="scroll-table-container mb-5">
+      <table class="table table-bordered mb-0">
+        <thead>
+          <tr>
+            <th>رقم القطعة</th>
+            <th>اسم القطعة</th>
+            <th>الشركة</th>
+            <th>المخزون</th>
+            <th>السعر</th>
+            <th>الكمية</th>
+            <th>شراء</th>
+            <th>تفاصيل</th>
+          </tr>
+        </thead>
+        <tbody id="productList">
+          <!-- Products will be inserted here by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div id="noResults" class="text-center" style="display: none;">
+      لا توجد منتجات لهذا القسم حاليًا.
+    </div>
+    
+    <div id="loading-spinner" class="text-center my-4" style="display: none;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">جار التحميل...</span>
+      </div>
+    </div>
+
+    <nav aria-label="pagination" id="paginationContainer">
+      <ul class="pagination justify-content-center">
+        <li class="page-item">
+          <button class="page-link" id="prevPageBtn" disabled>السابق</button>
+        </li>
+        <li class="page-item">
+          <input type="number" class="form-control" id="pageInput" value="1" min="1" style="width: 60px;">
+        </li>
+        <li class="page-item">
+          <button class="page-link" id="nextPageBtn" disabled>التالي</button>
+        </li>
+      </ul>
+      <div class="text-center" id="pageInfo">الصفحة 1 من 1</div>
+    </nav>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">صور المنتج</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Images will be inserted here -->
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+    
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+
+
+
+<!-- Your existing other script includes -->
+
+<script src="{% static 'hozma/js/barandproduct.js' %}"></script>
+<script src="{% static 'hozma/js/cart.js' %}"></script>
+
+
+{% endblock %}

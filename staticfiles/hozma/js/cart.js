@@ -447,3 +447,23 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartPageUI();
 
 });
+
+const cartIcon = document.getElementById('floatingCartIcon');
+  let offsetX, offsetY, isDragging = false;
+
+  cartIcon.addEventListener('mousedown', function (e) {
+    isDragging = true;
+    offsetX = e.clientX - cartIcon.offsetLeft;
+    offsetY = e.clientY - cartIcon.offsetTop;
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (isDragging) {
+      cartIcon.style.left = (e.clientX - offsetX) + 'px';
+      cartIcon.style.top = (e.clientY - offsetY) + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', function () {
+    isDragging = false;
+  });

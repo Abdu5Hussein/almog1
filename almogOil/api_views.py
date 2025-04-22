@@ -2787,9 +2787,9 @@ def faq(request):
     return render(request, 'CarPartsTemplates/faq.html')
 @api_view(["GET"])
 def terms_conditions(request):
-    return render(request, 'CarPartsTemplates/terms_conditions.html')    
+    return render(request, 'CarPartsTemplates/terms_conditions.html')
 
-@api_view(["GET"])   
+@api_view(["GET"])
 def item_detail_view(request, pno):
     item = get_object_or_404(models.Mainitem, pno=pno)
     context = {
@@ -3109,6 +3109,17 @@ def filter_employees(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+def calculate_daily_hours(start_time, end_time):
+    today = datetime.today().date()
+    start_dt = datetime.combine(today, start_time)
+    end_dt = datetime.combine(today, end_time)
+    if end_dt < start_dt:
+        end_dt += timedelta(days=1)
+    duration = end_dt - start_dt
+    hours = duration.total_seconds() / 3600
+    return Decimal(str(round(hours, 2)))
+
+
 @extend_schema_view(
     list=extend_schema(
         summary="List all attendance records",
@@ -3154,27 +3165,63 @@ class AttendanceTableViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
         employee_id = data.get("employee")
+        coming_time_str = data.get("coming_time")  # e.g. "08:30"
+        leaving_time_str = data.get("leaving_time")  # e.g. "17:00"
+        absent = data.get("absent", False)
+
+        try:
+            if coming_time_str and leaving_time_str:
+                coming_time = datetime.strptime(coming_time_str, "%H:%M").time()
+                leaving_time = datetime.strptime(leaving_time_str, "%H:%M").time()
+
+                worked_hours = calculate_daily_hours(coming_time, leaving_time)
+            else:
+                worked_hours = Decimal("0.00")  # Or handle as needed
+        except:
+            return Response({"error": "cant calculate worked hours."}, status=status.HTTP_404_NOT_FOUND)
+
         try:
             employee = models.EmployeesTable.objects.get(employee_id=employee_id)
         except models.EmployeesTable.DoesNotExist:
             return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
+            daily_hours = calculate_daily_hours(employee.daily_start_time, employee.daily_end_time)
             attendance = models.Attendance_table.objects.create(
                 employee=employee,
                 salary=employee.salary,
                 date=data.get("date"),
-                daily_hours=Decimal(data.get("daily_hours", 6.0)),
-                start_time=data.get("start_time"),
-                end_time=data.get("end_time"),
-                total_hours=Decimal(data.get("total_hours", 6.0)),
-                absent_hours=Decimal(data.get("absent_hours", 6.0)),
-                coming_time=data.get("coming_time"),
-                leaving_time=data.get("leaving_time"),
-                absent=data.get("absent", False),
-                reason=data.get("reason", "")
+                daily_hours=daily_hours,
+                start_time=employee.daily_start_time,
+                end_time=employee.daily_end_time,
+                worked_hours= 0 if absent else worked_hours,
+                absent_hours=daily_hours if absent else Decimal(daily_hours-worked_hours),
+                coming_time=None if absent else data.get("coming_time"),
+                leaving_time=None if absent else data.get("leaving_time"),
+                absent=absent,
+                reason=data.get("reason", ""),
+                note=data.get("note", "")
             )
             serializer = self.get_serializer(attendance)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+description="""fetch all attendance records for an employee.""",
+tags=["Attendance","Employees"],
+)
+@api_view(["GET"])
+def fetch_attendance_per_employee(request, id):
+    try:
+        employee = models.EmployeesTable.objects.get(employee_id=id)
+    except models.EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        attendance_records = models.Attendance_table.objects.filter(employee=id)
+        serializer = serializers.AttendanceSerializer(attendance_records, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except models.Attendance_table.DoesNotExist:
+        return Response({"error": "No attendance records found"}, status=status.HTTP_200_OK)

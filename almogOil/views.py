@@ -1095,7 +1095,10 @@ def EditPrices(req):
 
 @login_required
 def EmployeesAttendanceView(req):
-    context = {}
+    employees= models.EmployeesTable.objects.all().values("name","employee_id")
+    context = {
+        "employees": employees,
+    }
     return render(req, 'employees-attendance.html', context)
 
 @login_required

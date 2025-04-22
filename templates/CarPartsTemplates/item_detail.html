@@ -1,3 +1,9 @@
+
+{% extends 'CarPartsTemplates/base.html' %}
+
+{% block title %}الأسئلة الشائعة{% endblock %}
+
+{% block content %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -15,103 +21,7 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0F1B2E; border-bottom: 3px solid #FF6B00;">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="http://45.13.59.226/item-for-inqury-page/" aria-label="الرئيسية" style="font-size: 2rem; color: #FFD700; letter-spacing: 1px;">
-                <i class="bi bi-gear-fill me-2"></i>حزمة
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
-                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNavDropdown">
-                <ul class="navbar-nav ms-auto align-items-lg-center">
-                    <li class="nav-item mx-1">
-                        <a class="nav-link nav-link-auto" href="http://45.13.59.226/item-for-inqury-page/" aria-current="page">
-                            <i class="bi bi-speedometer2 me-1"></i> الرئيسية
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown mx-1">
-                        <a class="nav-link nav-link-auto dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-layers me-1"></i> الأقسام
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
-                            <li><a class="dropdown-item" href="/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
-                            <li><a class="dropdown-item" href="/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
-                            <li><a class="dropdown-item" href="/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
-                            <li><a class="dropdown-item" href="/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
-                            <li><hr class="dropdown-divider" style="border-color: #FF6B00;"></li>
-                            <li><a class="dropdown-item" href="/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item mx-1">
-                        <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozmabrands/">
-                            <i class="bi bi-tags me-1"></i> الماركات
-                        </a>
-                    </li>
-                    <li class="nav-item mx-1">
-                        <a class="nav-link nav-link-auto" href="/offers">
-                            <i class="bi bi-percent me-1"></i> العروض
-                            <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">جديد</span>
-                        </a>
-                    </li>
-                    <li class="nav-item mx-1">
-                        <a class="nav-link nav-link-auto" href="/contact">
-                            <i class="bi bi-headset me-1"></i> الدعم الفني
-                        </a>
-                    </li>
-                    <li class="nav-item position-relative mx-1">
-                        <a id="navbarCartIcon" class="nav-link nav-link-auto" href="javascript:void(0);" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة" onclick="toggleCart()">
-                            <i class="bi bi-cart3" aria-hidden="true"></i>
-                            <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
-                        </a>
-                    </li>
-                    <!-- Account Button -->
-                    <!-- Account Button -->
-    <li class="nav-item ms-3">
-      <a id="accountButton" class="btn btn-warning fw-bold" href="/my-account" style="border-radius: 30px; min-width: 120px;">
-          <i class="bi bi-person-circle me-1"></i> <span id="userNamePlaceholder">حسابي</span>
-      </a>
-    </li>
-    
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-
-    <!-- Cart Overlay -->
-  <div class="cart-overlay" id="cartOverlay"></div>
-
-  <!-- Cart Sidebar -->
-<div class="cart-sidebar" id="cartSidebar">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4>سلة الطلبات</h4>
-    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">
-      <i class="bi bi-trash"></i> إفراغ السلة
-    </button>
-  </div>
-
-  <div id="cartItemsContainer">
-    <p class="text-muted text-center py-4">السلة فارغة</p>
-  </div>
-
-  <div class="mt-3 border-top pt-3">
-    <div class="d-flex justify-content-between mb-2">
-      <span>عدد الأصناف:</span>
-      <strong id="cartItemsCount">0</strong>
-    </div>
-    <div class="d-flex justify-content-between mb-3">
-      <span>المجموع:</span>
-      <strong id="cartTotalAmount">0.00 د.أ</strong>
-    </div>
-    <button class="btn btn-primary w-100" onclick="submitOrder()">
-      <i class="bi bi-send-check"></i> إرسال الطلب
-    </button>
-    <button class="btn btn-outline-primary w-100 mt-2" onclick="openCartPage()">
-      <i class="bi bi-cart"></i> الانتقال إلى سلة الطلبات
-    </button>
-  </div>
-</div>
+   
 
 
 
@@ -232,62 +142,11 @@
     </div>
 </div>
 
-<footer class="bg-dark text-white py-5">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-4 mb-4">
-          <h5 class="fw-bold mb-3"><i class="bi bi-gear-fill me-2"></i>حزمة</h5>
-          <p>متجر متخصص في قطع غيار السيارات بجودة عالية وأسعار تنافسية. نقدم لكم أفضل المنتجات من أشهر الماركات العالمية.</p>
-          <div class="social-icons mt-3">
-            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
-            <a href="#" class="text-white me-2"><i class="bi bi-twitter"></i></a>
-            <a href="#" class="text-white me-2"><i class="bi bi-instagram"></i></a>
-            <a href="#" class="text-white"><i class="bi bi-whatsapp"></i></a>
-          </div>
-        </div>
-        <div class="col-lg-2 col-md-4 mb-4">
-          <h5 class="fw-bold mb-3">روابط سريعة</h5>
-          <ul class="list-unstyled">
-            <li class="mb-2"><a href="#" class="text-white-50">الرئيسية</a></li>
-            <li class="mb-2"><a href="#" class="text-white-50">من نحن</a></li>
-            <li class="mb-2"><a href="#" class="text-white-50">المنتجات</a></li>
-            <li class="mb-2"><a href="#" class="text-white-50">العروض</a></li>
-            <li><a href="#" class="text-white-50">اتصل بنا</a></li>
-          </ul>
-        </div>
-        <div class="col-lg-3 col-md-4 mb-4">
-          <h5 class="fw-bold mb-3">خدمة العملاء</h5>
-          <ul class="list-unstyled">
-            <li class="mb-2"><a href="/hozmaDashbord/" class="text-white-50">حسابي</a></li>
-            <li class="mb-2"><a href="#" class="text-white-50">تتبع الطلب</a></li>
-            <li class="mb-2"><a href="#" class="text-white-50">سياسة الإرجاع</a></li>
-            <li class="mb-2"><a href="/hozmafaq/" class="text-white-50">الأسئلة الشائعة</a></li>
-            <li><a href="/hozmaterms-conditions/" class="text-white-50">الشروط والأحكام</a></li>
-          </ul>
-        </div>
-        <div class="col-lg-3 col-md-4 mb-4">
-          <h5 class="fw-bold mb-3">اتصل بنا</h5>
-          <ul class="list-unstyled">
-            <li class="mb-2"><i class="bi bi-geo-alt-fill me-2"></i> 'طرابلس' المدينة الرياضية</li>
-            <li class="mb-2"><i class="bi bi-telephone-fill me-2"></i> +218914262604</li>
-            <li class="mb-2"><i class="bi bi-envelope-fill me-2"></i> info@marin.ly</li>
-            <li><i class="bi bi-clock-fill me-2"></i> الأحد - الخميس: 9ص - 5م</li>
-          </ul>
-        </div>
-      </div>
-      <hr class="my-4" style="border-color: #444;">
-      <div class="row">
-        <div class="col-md-6 text-center text-md-start">
-          <p class="mb-0">&copy; 2025 حزمة. جميع الحقوق محفوظة.</p>
-        </div>
-        <div class="col-md-6 text-center text-md-end">
-          <img src="https://via.placeholder.com/200x50" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
-        </div>
-      </div>
-    </div>
-  </footer>
 
 
+  {% endblock %}
+    
+  {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
    document.querySelector('.btn-add-to-cart').addEventListener('click', function() {
@@ -408,4 +267,4 @@ document.addEventListener('DOMContentLoaded', loadProductImage);
      
      
 </body>
-</html>
+{% endblock %}
