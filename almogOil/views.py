@@ -1095,7 +1095,7 @@ def EditPrices(req):
 
 @login_required
 def EmployeesAttendanceView(req):
-    employees= models.EmployeesTable.objects.all().values("name","employee_id")
+    employees= models.EmployeesTable.objects.all().values("name","employee_id","salary")
     context = {
         "employees": employees,
     }
@@ -2370,4 +2370,16 @@ def assign_order_to_employee(request, invoice_id):
 
         # login for hozma logic
 
-
+# for hozma
+def hozmalogin(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        # You can add authentication logic here using Django's auth system
+        # from django.contrib.auth import authenticate, login
+        # user = authenticate(request, username=username, password=password)
+        # if user is not None:
+        #     login(request, user)
+        return redirect('item-for-inqury-page')
+    else:
+        return render(request, 'CarPartsTemplates/hozmalogin.html')

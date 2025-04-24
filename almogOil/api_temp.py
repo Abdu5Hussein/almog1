@@ -2140,7 +2140,7 @@ def create_sell_invoice(request):
                 else:
                     client_obj = AllClientsTable.objects.get(name=client_identifier)
 
-                balance_data = TransactionsHistoryTable.objects.filter(client_id=client_obj).aggregate(
+                balance_data = TransactionsHistoryTable.objects.filter(object_id=client_obj.clientid).aggregate(
                     total_debt=Sum('debt') or Decimal("0.0000"),
                     total_credit=Sum('credit') or Decimal("0.0000")
                 )

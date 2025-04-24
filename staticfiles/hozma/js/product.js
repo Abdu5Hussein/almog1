@@ -1,4 +1,4 @@
- let currentPage = 1;
+let currentPage = 1;
 let lastPage = 1;
 let isLoading = false;
 let currentFilters = {};
@@ -87,7 +87,7 @@ onchange="updateQuantity('${item.pno}', this.value)">
 </div>
 </td>
 <td>
-<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value)">
+<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.fileid}','${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value)">
 شراء
 </button>
 </td>
@@ -402,4 +402,3 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset overflow
     document.body.style.overflow = '';
 });
-

@@ -11,9 +11,8 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
-  <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
-  <link rel="stylesheet" href="{% static 'hozma/css/prodcut.css' %}">
+  
+  <link rel="stylesheet" href="{% static 'hozma/css/Dashboard.css' %}">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </head>
@@ -24,205 +23,66 @@
 
    
 
-
-
-<div class="container">
-    <h2>مرحباً بك في لوحة تحكم قطع غيار السيارات, <span id="customerName"></span></h2>
-    
-    <div class="dashboard-sections">
-        <!-- User Information Section -->
-        <div class="dashboard-section">
-            <h3><i class="fas fa-user"></i> معلومات الحساب</h3>
-            <div id="customerDetails" class="details">
-                <p>جاري تحميل بيانات العميل...</p>
+    <div class="container my-4 text-end" dir="rtl">
+        <h2 class="mb-4">مرحباً بك في لوحة تحكم قطع غيار السيارات، <span id="customerName" class="text-primary"></span></h2>
+        
+        <div class="row g-4">
+            <!-- معلومات الحساب -->
+            <div class="col-md-6">
+                <div class="dashboard-section p-3 border rounded shadow-sm bg-light">
+                    <h4><i class="fas fa-user me-2"></i>معلومات الحساب</h4>
+                    <div id="customerDetails" class="details mt-3">
+                        <!-- Client info will be injected here -->
+                        <p>جاري تحميل بيانات العميل...</p>
+                    </div>
+                    
+                       
+                    
+                    <button class="btn btn-outline-primary mt-3 w-100" onclick="editProfile()">تعديل الملف الشخصي</button>
+                </div>
             </div>
-            <button class="btn btn-edit" onclick="editProfile()">تعديل الملف الشخصي</button>
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="dashboard-section quick-actions">
-            <h3><i class="fas fa-bolt"></i> إجراءات سريعة</h3>
-            <div class="action-buttons">
-                <button class="btn" onclick="location.href='/shop'"><i class="fas fa-shopping-cart"></i> متجر القطع</button>
-                <button class="btn" onclick="location.href='/wishlist'"><i class="fas fa-heart"></i> المفضلة</button>
-                <button class="btn" onclick="location.href='/track-order'"><i class="fas fa-truck"></i> تتبع الطلب</button>
-                <button class="btn" onclick="location.href='/support'"><i class="fas fa-headset"></i> الدعم الفني</button>
+    
+            <!-- الإجراءات السريعة -->
+            <div class="col-md-6">
+                <div class="dashboard-section p-3 border rounded shadow-sm bg-light">
+                    <h4><i class="fas fa-bolt me-2"></i>إجراءات سريعة</h4>
+                    <div class="d-grid gap-2 mt-3">
+                        <button class="btn btn-primary" onclick="location.href='/shop'"><i class="fas fa-shopping-cart me-2"></i>متجر القطع</button>
+                        <button class="btn btn-danger" onclick="location.href='/wishlist'"><i class="fas fa-heart me-2"></i>المفضلة</button>
+                        <button class="btn btn-info" onclick="location.href='/track-order'"><i class="fas fa-truck me-2"></i>تتبع الطلب</button>
+                        <button class="btn btn-dark" onclick="location.href='/support'"><i class="fas fa-headset me-2"></i>الدعم الفني</button>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- سجل الطلبات -->
+            <div class="col-12">
+                <div class="dashboard-section p-3 border rounded shadow-sm bg-light">
+                    <h4><i class="fas fa-history me-2"></i>سجل الطلبات</h4>
+                    <div id="orderHistory" class="mt-3">
+                        <p>جاري تحميل سجل الطلبات...</p>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-secondary" onclick="location.href='/orders'">عرض جميع الطلبات</button>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- القطع التي تم الاطلاع عليها مؤخراً -->
+            <div class="col-12">
+                <div class="dashboard-section p-3 border rounded shadow-sm bg-light">
+                    <h4><i class="fas fa-clock me-2"></i>القطع التي اطلعتها مؤخراً</h4>
+                    <div id="recentlyViewed" class="row row-cols-1 row-cols-md-4 g-3 mt-3">
+                        <p>جاري تحميل القطع...</p>
+                    </div>
+                </div>
             </div>
         </div>
+    
+        <!-- زر التحميل لاختبار -->
+       
     </div>
     
-    <!-- Order History Section -->
-    <div class="dashboard-section">
-        <h3><i class="fas fa-history"></i> سجل الطلبات</h3>
-        <div id="orderHistory">
-            <p>جاري تحميل سجل الطلبات...</p>
-        </div>
-        <button class="btn btn-view-all" onclick="location.href='/orders'">عرض جميع الطلبات</button>
-    </div>
-    
-    <!-- Recently Viewed Products -->
-    <div class="dashboard-section">
-        <h3><i class="fas fa-clock"></i> القطع التي اطلعتها مؤخراً</h3>
-        <div id="recentlyViewed" class="products-grid">
-            <p>جاري تحميل القطع...</p>
-        </div>
-    </div>
-</div>
-<button class="btn btn-sm btn-primary" onclick="fetchOrderHistory(14)">
-    تحميل بياناتي
-</button>
-<button class="btn btn-sm btn-primary" onclick="fetchCustomerDetails(2)">
-    تحميل بياناتي
-</button>
-<div>
-    <h3>Employee Information</h3>
-    <p id="employee-name">Name: </p>
-    <p id="employee-address">Address: </p>
-    <p id="employee-salary">Salary: </p>
-    <p id="employee-phone">Phone: </p>
-</div>
-<style>
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    .dashboard-sections {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .dashboard-section {
-        background: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        flex: 1;
-    }
-    
-    .quick-actions .action-buttons {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    
-    
-    .btn:hover {
-        background: #1a252f;
-    }
-    
-    .btn-edit {
-        background: #3498db;
-    }
-    
-    .btn-edit:hover {
-        background: #2980b9;
-    }
-    
-    .btn-view-all {
-        background: #27ae60;
-        margin-top: 15px;
-    }
-    
-    .btn-view-all:hover {
-        background: #219653;
-    }
-    
-    .btn-small {
-        padding: 5px 10px;
-        font-size: 0.9em;
-    }
-    
-    .details p {
-        margin: 8px 0;
-        line-height: 1.6;
-    }
-    
-    .orders-table {
-        overflow-x: auto;
-    }
-    
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    th, td {
-        padding: 12px 15px;
-        text-align: right;
-        border-bottom: 1px solid #ddd;
-    }
-    
-    .status {
-        padding: 5px 10px;
-        border-radius: 3px;
-        font-size: 0.9em;
-    }
-    
-    .status.delivered {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .status.processing {
-        background: #fff3cd;
-        color: #856404;
-    }
-    
-    .status.shipped {
-        background: #cce5ff;
-        color: #004085;
-    }
-    
-    .products-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
-        margin-top: 15px;
-    }
-    
-    .product-card {
-        border: 1px solid #eee;
-        border-radius: 8px;
-        padding: 15px;
-        text-align: center;
-    }
-    
-    .product-card img {
-        max-width: 100%;
-        height: 120px;
-        object-fit: contain;
-        margin-bottom: 10px;
-    }
-    
-    .product-card h4 {
-        margin: 10px 0;
-        font-size: 1.1em;
-    }
-    
-    .price {
-        font-weight: bold;
-        color: #e74c3c;
-        margin: 10px 0;
-    }
-    
-    @media (max-width: 768px) {
-        .dashboard-sections {
-            flex-direction: column;
-        }
-        
-        .quick-actions .action-buttons {
-            grid-template-columns: 1fr;
-        }
-        
-        .products-grid {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        }
-    }
-    </style>
 
 {% endblock %}
     
@@ -261,70 +121,60 @@
         
         // Function to fetch customer details
         function fetchCustomerDetails(customerId) {
-    fetchWithAuth(`http://45.13.59.226/api/employees/${customerId}/`)
-        .then(response => response.json())
+    fetchWithAuth(`http://45.13.59.226/api/clients/${customerId}/`)
         .then(data => {
-            // Use the actual data from the API response instead of hardcoded data
-            const employeeData = {
-                "employee_id": data.employee_id,
-                "name": data.name,
-                "identity_doc": data.identity_doc,
-                "nationality": data.nationality,
-                "last_transaction": data.last_transaction,
-                "salary": data.salary,
-                "start_date": data.start_date,
-                "end_date": data.end_date,
-                "daily_start_time": data.daily_start_time,
-                "daily_end_time": data.daily_end_time,
-                "active": data.active,
-                "category": data.category,
-                "notes": data.notes,
-                "phone": data.phone,
-                "address": data.address,
-                "bank_details": data.bank_details,
-                "bank_account_no": data.bank_account_no,
-                "bank_iban_no": data.bank_iban_no,
-                "is_available": data.is_available,
-                "has_active_order": data.has_active_order,
-                "fcm_token": data.fcm_token
-            };
+            if (!data || !data.clients || data.clients.length === 0) {
+                console.error("No client data found.");
+                return;
+            }
 
-            // Display or process the data as needed
-            console.log(employeeData);
+            const client = data.clients[0]; // because you're using `filter()`, it returns a list
 
-            // Optionally, you can display this data on the UI
-            displayEmployeeData(employeeData);
+            console.log("Client Data:", client);
+
+            displayClientData(client);
         })
         .catch(error => {
-            console.error('Error fetching employee data:', error);
+            console.error('Error fetching client data:', error);
         });
 }
 
-function displayEmployeeData(employeeData) {
-    document.getElementById('employee-name').textContent = employeeData.name;
-    document.getElementById('employee-address').textContent = employeeData.address;
-    document.getElementById('employee-salary').textContent = `Salary: ${employeeData.salary}`;
-    document.getElementById('employee-phone').textContent = `Phone: ${employeeData.phone}`;
-    // Add more fields as needed...
+function displayClientData(clientData) {
+    const detailsDiv = document.getElementById('customerDetails');
+
+    const html = `
+        <p><strong>الاسم:</strong> ${clientData.name || 'غير متوفر'}</p>
+        <p><strong>العنوان:</strong> ${clientData.address || 'غير متوفر'}</p>
+        <p><strong>رقم الهاتف:</strong> ${clientData.phone || 'غير متوفر'}</p>
+        <p><strong>البريد الإلكتروني:</strong> ${clientData.email || 'غير متوفر'}</p>
+        <p><strong>الموقع الإلكتروني:</strong> ${clientData.website || 'غير متوفر'}</p>
+    `;
+
+    detailsDiv.innerHTML = html;
 }
+
+
+
+
 
         
         // Function to fetch order history
         // Function to fetch order history with debug logs
-function fetchOrderHistory(customerId) {
+        function fetchOrderHistory(customerId) {
     console.log("Fetching order history for customer ID:", customerId);
 
     fetchWithAuth(`http://45.13.59.226/history/${customerId}/invoices/`)
-        .then(response => {
-            console.log("Fetch response status:", response.status);
-            return response.json();
-        })
         .then(invoices => {
+            if (!invoices) {
+                document.getElementById('orderHistory').innerHTML = "<p>حدث خطأ أثناء تحميل سجل الفواتير.</p>";
+                return;
+            }
+
             console.log("Fetched invoices:", invoices);
 
             const orderHistoryDiv = document.getElementById('orderHistory');
 
-            if (invoices && invoices.length > 0) {
+            if (invoices.length > 0) {
                 let html = `<div class="orders-table">
                     <table>
                         <thead>
@@ -339,13 +189,10 @@ function fetchOrderHistory(customerId) {
                         </thead>
                         <tbody>`;
 
-                // Display last 3 invoices
                 const recentInvoices = invoices.slice(0, 3);
                 console.log("Recent 3 invoices:", recentInvoices);
 
                 recentInvoices.forEach(invoice => {
-                    console.log("Processing invoice:", invoice);
-
                     html += `
                         <tr>
                             <td>#${invoice.invoice_no}</td>
@@ -369,6 +216,7 @@ function fetchOrderHistory(customerId) {
             document.getElementById('orderHistory').innerHTML = "<p>حدث خطأ أثناء تحميل سجل الفواتير.</p>";
         });
 }
+
 
 
         

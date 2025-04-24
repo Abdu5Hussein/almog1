@@ -32,7 +32,7 @@ async function fetchWithAuth(url, method = 'GET', body = null) {
       if (response.status === 401) {
         alert("تم تسجيل الخروج بسبب انتهاء الجلسة.");
         localStorage.clear();
-        window.location.href = "/login.html";
+        window.location.href = "/hozmalogin/";
       }
       return null;
     }
@@ -42,6 +42,35 @@ async function fetchWithAuth(url, method = 'GET', body = null) {
     return null;
   }
 }
+
+async function postWithAuth(url, data) {
+  const headers = {
+    'Authorization': `Bearer ${jwtToken_access}`,
+    'Content-Type': 'application/json'
+  };
+  const options = {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  };
+
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert("تم تسجيل الخروج بسبب انتهاء الجلسة.");
+        localStorage.clear();
+        window.location.href = "/hozmalogin/";
+      }
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Fetch error:', error);
+    return null;
+  }
+}
+
 
 function updateCart() {
   localStorage.setItem('product_cart', JSON.stringify(cart));

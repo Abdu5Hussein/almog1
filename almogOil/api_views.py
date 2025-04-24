@@ -3225,3 +3225,48 @@ def fetch_attendance_per_employee(request, id):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except models.Attendance_table.DoesNotExist:
         return Response({"error": "No attendance records found"}, status=status.HTTP_200_OK)
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+@api_view(["POST"])
+# @permission_classes([IsAuthenticated])  # Uncomment if you need authentication
+def two_way(request):
+    data = request.data  # DRF automatically parses the JSON body
+    required_fields = ["service", "accountId", "nid", "email", "phone", "template"]
+
+    # Check for missing required fields
+    for field in required_fields:
+        if field not in data:
+            error_message = {
+                "header": {},
+                "error": {
+                    "errorDetails": [
+                        {
+                            "code": status.HTTP_400_BAD_REQUEST,
+                            "message": f"Missing required field: {field}"
+                        }
+                    ],
+                    "type": ""
+                }
+            }
+            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
+
+    # Process data based on the service type
+    service = data['service']
+    account_id = data['accountId']
+    nid = data['nid']
+    email = data['email']
+    phone = data['phone']
+    template = data['template']
+
+
+
+    return Response({
+        "header": {
+            "status": "success",
+            "message": "Request processed successfully.",
+            "data": request.data,
+        }
+    })

@@ -1087,3 +1087,93 @@ class Attendance_table(models.Model):
     absent = models.BooleanField(default=False)
     reason = models.CharField(max_length=400, null=True, blank=True)
     note = models.CharField(max_length=400, null=True, blank=True)
+
+#  hozma models
+class PreOrderTable(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    client = models.ForeignKey(AllClientsTable, on_delete=models.CASCADE)
+    invoice_no = models.IntegerField()
+    invoice_date = models.DateTimeField(blank=True, null=True)
+    client_rate = models.CharField(max_length=60, blank=True, null=True)
+    client_category = models.CharField(max_length=60, blank=True, null=True)
+    client_limit = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    client_balance = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    payment_status = models.CharField(max_length=60, blank=True, null=True)
+    amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    mobile = models.BooleanField(default=False)
+    invoice_status = models.CharField(max_length=60, default="قيد المراجعة")
+    reviewed_by = models.CharField(max_length=100, blank=True, null=True)
+    reviewed_date = models.DateTimeField(blank=True, null=True)
+    is_reviewed = models.BooleanField(default=False)
+    is_confirmed_by_client = models.BooleanField(default=False)
+    is_declined_by_client = models.BooleanField(default=False)
+    date_time = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'PreOrderTable'
+
+
+class ConfirmedOrderTable(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    client = models.ForeignKey(AllClientsTable, on_delete=models.CASCADE)
+    invoice_no = models.IntegerField(unique=True)
+    invoice_date = models.DateTimeField(blank=True, null=True)
+    client_rate = models.CharField(max_length=60, blank=True, null=True)
+    client_category = models.CharField(max_length=60, blank=True, null=True)
+    client_limit = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    client_balance = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    payment_status = models.CharField(max_length=60, blank=True, null=True)
+    amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    mobile = models.BooleanField(default=False)
+    invoice_status = models.CharField(max_length=60, default="قيد المراجعة")
+    reviewed_by = models.CharField(max_length=100, blank=True, null=True)
+    reviewed_date = models.DateTimeField(blank=True, null=True)
+    is_reviewed = models.BooleanField(default=False)
+    is_confirmed_by_client = models.BooleanField(default=False)
+    is_declined_by_client = models.BooleanField(default=False)
+    date_time = models.DateTimeField(default=timezone.now)
+    preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
+    date_confirmed = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'ConfirmedOrderTable'
+
+
+class ArchivedOrderTable(models.Model):
+    preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
+    reason = models.CharField(max_length=255, blank=True, null=True)
+    date_archived = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'ArchivedOrderTable'
+
+
+class PreOrderItemsTable(models.Model):
+    autoid = models.BigAutoField(primary_key=True)
+    item_no = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
+    pno = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
+    name = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company_no = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    quantity = models.IntegerField(blank=True, null=True)
+    quantity_unit = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
+    date = models.CharField(max_length=130, db_collation='Arabic_CI_AS', blank=True, null=True)
+    place = models.CharField(max_length=130, db_collation='Arabic_CI_AS', blank=True, null=True)
+    dinar_unit_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    dinar_total_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    note = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
+    e_name = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    prev_quantity = models.IntegerField(blank=True, null=True)
+    current_quantity = models.IntegerField(blank=True, null=True)
+    current_quantity_after_return = models.IntegerField(blank=True, null=True)
+    invoice_instance = models.ForeignKey(SellinvoiceTable, models.DO_NOTHING)
+    invoice_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+    main_cat = models.CharField(max_length=170, db_collation='Arabic_CI_AS', blank=True, null=True)
+    sub_cat = models.CharField(max_length=170, db_collation='Arabic_CI_AS', blank=True, null=True)
+    paid = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    remaining = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+
+    class Meta:
+        managed = True
+        db_table = 'pre_order_items_table'

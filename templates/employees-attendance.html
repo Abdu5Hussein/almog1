@@ -49,7 +49,7 @@
       <select name="employee" id="employee" class="form-control text-end"  style="width: calc(100% - 95px);">
           <option value="" selected>اختر موظف</option>
           {% for x in employees %}
-          <option value="{{ x.employee_id }}">{{ x.name }}</option>
+          <option value="{{ x.employee_id }}" data-salary="{{ x.salary }}">{{ x.name }}</option>
           {% endfor %}
       </select>
     </div>
@@ -98,7 +98,7 @@
     </div>
     <div class="col-md-2">
       <label class="form-label">عدد ساعات الصافي</label>
-      <input type="text" class="form-control" placeholder="مثلاً: 148">
+      <input type="text" class="form-control" id="total-net-hours" placeholder="مثلاً: 148">
     </div>
     <div class="col-md-2" style="border-right: solid 1px #cccccc;">
       <label class="form-label">قيمة السلفة</label>
@@ -116,20 +116,36 @@
   <div class="row summary-box text-center">
     <div class="col">
       <label class="form-label">الراتب المستحق</label>
-      <input type="text" class="form-control" placeholder="مثلاً: 1200 د.ل">
+      <div class="d-flex align-items-center">
+        <input type="text" class="form-control" id="total-salary" placeholder="مثلاً: 1200">
+        <input type="text" class="form-control form-control-sm ms-2 text-center" value="د.ل" style="width: 60px;" readonly>
+      </div>
     </div>
+
     <div class="col">
       <label class="form-label">خصم الغياب / التأخير</label>
-      <input type="text" class="form-control" placeholder="مثلاً: 100 د.ل">
+      <div class="d-flex align-items-center">
+        <input type="text" class="form-control" id="absent-worth" placeholder="مثلاً: 100">
+        <input type="text" class="form-control form-control-sm ms-2 text-center" value="د.ل" style="width: 60px;" readonly>
+      </div>
     </div>
+
     <div class="col">
       <label class="form-label">خصم السلفة</label>
-      <input type="text" class="form-control" placeholder="مثلاً: 100 د.ل">
+      <div class="d-flex align-items-center">
+        <input type="text" class="form-control" id="payment-worth" placeholder="مثلاً: 100">
+        <input type="text" class="form-control form-control-sm ms-2 text-center" value="د.ل" style="width: 60px;" readonly>
+      </div>
     </div>
+
     <div class="col">
       <label class="form-label">صافي المرتب</label>
-      <input type="text" class="form-control" placeholder="مثلاً: 1000 د.ل">
+      <div class="d-flex align-items-center">
+        <input type="text" class="form-control" id="net-salary" placeholder="مثلاً: 1000">
+        <input type="text" class="form-control form-control-sm ms-2 text-center" value="د.ل" style="width: 60px;" readonly>
+      </div>
     </div>
+
   </div>
 
   <!-- Signatures -->
@@ -141,6 +157,11 @@
     <div class="col-md-6 text-start">
       <label class="form-label">توقيع رئيس القسم</label>
       <hr>
+    </div>
+  </div>
+  <div class="row mt-5">
+    <div class="col">
+      <button class="btn btn-primary mt-3 mt-md-0" onclick="window.print()">طباعة الصفحة</button>
     </div>
   </div>
 
@@ -168,27 +189,38 @@
     const year = parseInt(document.getElementById("year").value);
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // Fetch existing attendance records
-    let attendanceMap = new Map();
+    let daily_hours = "0"; // Default
+    let foundFirst = false;
+
+    // Map to store attendance records by day
+    const attendanceMap = new Map();
+
+    // Fetch attendance data
     try {
       const res = await fetch(`/api/attendance/employees/${id}/`, { method: "GET" });
       if (!res.ok) throw new Error("فشل في جلب البيانات");
-      const data = await res.json();
 
+      const data = await res.json();
       data.forEach(entry => {
         const entryDate = new Date(entry.date);
         const entryMonth = entryDate.getMonth();
         const entryYear = entryDate.getFullYear();
+
         if (entryMonth === month && entryYear === year) {
           const day = entryDate.getDate();
           attendanceMap.set(day, entry);
+
+          if (!foundFirst && entry.daily_hours) {
+            daily_hours = entry.daily_hours * daysInMonth;
+            foundFirst = true;
+          }
         }
       });
     } catch (err) {
       alert("حدث خطأ أثناء تحميل بيانات الحضور: " + err.message);
     }
 
-    // Create table
+    // Create table element
     const table = document.createElement("table");
     table.className = "table table-bordered table-striped table-hover mb-4";
     table.dir = "rtl";
@@ -220,12 +252,9 @@
       const leaving_time = record?.leaving_time ?? "";
       const absent = record?.absent ?? false;
       const absent_hours = record?.absent_hours ?? "";
-      const daily_hours = 0; //record?.daily_hours ?? "0";
-
       const isDisabled = record ? "disabled" : "";
 
       const row = document.createElement("tr");
-
       row.innerHTML = `
         <td class="text-center">${day}-${month + 1}-${year}</td>
         <td class="text-center">${weekday}</td>
@@ -235,35 +264,21 @@
         <td class="text-center" data-column='absent_hours'>${absent_hours}</td>
         <td class="text-center"><button class="btn btn-secondary mt-3 mt-md-0" id="save-${day}-${month + 1}" ${isDisabled}>حفظ</button></td>
       `;
-
       tbody.appendChild(row);
     }
 
     table.appendChild(tbody);
     container.appendChild(table);
 
-    /*// Summary fields
-    const summaryDiv = document.createElement("div");
-    summaryDiv.className = "row summary-box text-center";
+    // Set daily working hours input
+    document.getElementById("total-working-hours").value = daily_hours;
 
-    summaryDiv.innerHTML = `
-      <div class="col mb-3">
-        <label class="form-label fw-bold">عدد ساعات العمل</label>
-        <input type="text" class="form-control" placeholder="مثلاً: 160">
-      </div>
-      <div class="col mb-3">
-        <label class="form-label fw-bold">إجمالي ساعات الغياب</label>
-        <input type="text" class="form-control" placeholder="مثلاً: 12">
-      </div>
-    `;
-
-    container.appendChild(summaryDiv);*/
-
-    // Setup save buttons after table is generated
+    // Setup post-render functionality
     calculateTotalAbsentHours();
     setupAttendanceSaveButtons(id);
-    document.getElementById("total-working-hours").value = daily_hours;
+    update_input_calc();
   }
+
 
   function setupAttendanceSaveButtons(id) {
     const tableRows = document.querySelectorAll("#attendance-table-container table tbody tr");
@@ -337,7 +352,7 @@
     return
   }
   generateAttendanceTable(employeeId); // توليد الجدول
-  setupAttendanceSaveButtons(employeeId); // ربط أزرار الحفظ بالموظف (معرف الموظف 15)
+  //setupAttendanceSaveButtons(employeeId); // ربط أزرار الحفظ بالموظف (معرف الموظف 15)
 });
 function calculateTotalAbsentHours() {
     let totalAbsentHours = 0;
@@ -355,6 +370,24 @@ function calculateTotalAbsentHours() {
 
     // Update the input field with the total absent hours
     document.getElementById("total-absent-hours").value = totalAbsentHours.toFixed(2); // Set value with two decimal points
+  }
+
+  function update_input_calc(){
+    const total_working_hours = parseFloat(document.getElementById("total-working-hours").value) || 0;
+    const total_absent_hours = parseFloat(document.getElementById("total-absent-hours").value) || 0;
+    console.log("total_working_hours: ", document.getElementById("total-working-hours").value);
+    console.log("total_absent_hours: ", document.getElementById("total-absent-hours").value);
+    const total_net_hours = total_working_hours - total_absent_hours;
+    document.getElementById("total-net-hours").value = total_net_hours.toFixed(2); // Set value with two decimal points
+
+    const salary = parseFloat(document.getElementById("employee").selectedOptions[0].getAttribute("data-salary")) || 0;
+    const after_absent_salary = parseFloat((total_net_hours / total_working_hours) * salary) || 0;
+    const absent_worth = parseFloat(salary-after_absent_salary)
+    const net_salary = salary - absent_worth;
+    console.log("salary: ", salary);
+    document.getElementById("total-salary").value = salary.toFixed(2); // Set value with two decimal points
+    document.getElementById("absent-worth").value = absent_worth.toFixed(2);
+    document.getElementById("net-salary").value = net_salary.toFixed(2);
   }
 </script>
 

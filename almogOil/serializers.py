@@ -282,3 +282,22 @@ class AddToCartSerializer(serializers.Serializer):
     logo = serializers.CharField(required=False, allow_blank=True)
     pno = serializers.CharField(required=False, allow_blank=True)
     itemvalue = serializers.IntegerField(required=False, default=0)
+
+
+#hozma application serlizers
+
+class PreOrderSerializer(serializers.ModelSerializer):
+    invoice_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.PreOrderTable
+        fields = "__all__"
+
+    def get_invoice_date(self, obj):
+        return obj.invoice_date.strftime("%Y-%m-%d")  # Ensure "YYYY-MM-DD" format
+
+class PreOrderItemsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.PreOrderItemsTable
+        fields = "__all__"

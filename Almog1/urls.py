@@ -24,7 +24,7 @@ from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
 from almogOil import consumers
-from almogOil import api_views,views,mainitem_api_views,api_temp
+from almogOil import api_views,views,mainitem_api_views,api_temp,HozmaApi_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework.routers import DefaultRouter
@@ -274,7 +274,12 @@ urlpatterns = [
     path('employees/management',views.EmployeesDetailsView,name="employees_management_view"),
     path('api/get/employees-details-with-balance',api_views.get_all_employees_with_balance,name='employees-details-with-balance'),
     path('api/employees-api/<int:id>/edit-balance',api_views.Edit_employee_balance,name="employee-edit-balance"),
+    path('lib/two_way/',api_views.two_way,name="two_way"),
+
 #down here is for carparts
+    path('preorder/create/', HozmaApi_views.create_pre_order, name='create_pre_order'),
+    path('preorder/last-invoice/', HozmaApi_views.get_sellinvoice_no, name='get_sellinvoice_no'),
+    path('preorder/add-item/', HozmaApi_views.Sell_invoice_create_item, name='sell_invoice_create_item'),
     path('hozmabrands/',api_views.CarParts_page,name='CarParts_page'),
     path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
     path('hozmaHome/',api_views.CarPartsHome_page,name='CarParts_page'),
@@ -288,6 +293,7 @@ urlpatterns = [
     path('hozmatrack-order/', api_views.track_order, name='track_order'),
     path('hozmareturn-policy/', api_views.return_policy, name='return_policy'),
     path('hozmafaq/', api_views.faq, name='faq'),
+    path('hozmalogin/', views.hozmalogin, name='hozmalogin'),
     path('hozmaterms-conditions/', api_views.terms_conditions, name='terms_conditions'),
     path('item-for-inqury-page/<int:pno>/', api_views.item_detail_view, name='item_detail'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
