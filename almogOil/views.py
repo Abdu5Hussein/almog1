@@ -61,6 +61,7 @@ from almogOil import serializers,models
 from products import serializers as product_serializers
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
+from app_sell_invoice import serializers as sell_invoice_serializers
 
 
 
@@ -1694,7 +1695,7 @@ def sell_invoice_storage_management(request):
 def sell_invoice_profile(request, id):
     invoice = get_object_or_404(models.SellinvoiceTable, invoice_no=id)
 
-    serializer = serializers.SellInvoiceSerializer(invoice)
+    serializer = sell_invoice_serializers.SellInvoiceSerializer(invoice)
     clients = models.AllClientsTable.objects.all().values()
 
     context = {
@@ -2087,7 +2088,7 @@ def engines_view(request):
 def return_items_add_items(request, id, permission):
     try:
         invoice_items = models.SellInvoiceItemsTable.objects.filter(invoice_no=id)
-        serializer = serializers.SellInvoiceItemsSerializer(invoice_items, many=True)
+        serializer = sell_invoice_serializers.SellInvoiceItemsSerializer(invoice_items, many=True)
         invoice_items_data = json.dumps(serializer.data) # Store serialized data
     except models.SellInvoiceItemsTable.DoesNotExist:
         invoice_items_data = {}  # Return an empty list if no records are found

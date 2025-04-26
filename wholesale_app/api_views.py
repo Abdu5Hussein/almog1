@@ -14,7 +14,8 @@ from almogOil import serializers as almogOil_serializers
 from products import serializers as products_serializers
 from rest_framework.decorators import api_view
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 
 @api_view(["GET"])
 def item_detail_view(request, pno):
@@ -149,3 +150,15 @@ def brand_items(request, brand):
 
 
 # Create your views here.
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_product_images(request, id):
+    try:
+        product = almogOil_models.Mainitem.objects.get(pno=id)
+    except almogOil_models.Mainitem.DoesNotExist:
+        return Response({"error": "Product not found!"}, status=404)  # Added return and status
+
+    images = almogOil_models.Imagetable.objects.filter(productid=product.fileid)  # Ensure `productid` is correct
+    serializer = products_serializers.productImageSerializer(images, many=True)
+
+    return Response(serializer.data)  # Added return statement

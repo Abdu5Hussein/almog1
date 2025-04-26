@@ -112,7 +112,7 @@ async function fetchAndUpdateCartItemImage(pno) {
   try {
     console.log(`Fetching image for product number: ${pno}`);
 
-    const response = await fetchWithAuth(`${baseUrl}/hozma/api/products/${pno}/get-images`);
+    const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
     console.log('Raw response from API:', response);
 
     let imageUrl = '';
@@ -370,7 +370,7 @@ function printCartItems() {
   location.reload();
 }
 function openCartPage() {
-  window.location.href = "/hozmaCart"; // Update this to your actual cart page URL
+  window.location.href = "/hozma/hozmaCart"; // Update this to your actual cart page URL
 }
 
   

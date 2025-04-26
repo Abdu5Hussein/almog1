@@ -27,6 +27,7 @@ from almogOil import consumers
 from almogOil import api_views,views,api_temp
 from products import views as products_views
 from products import api_views as products_api_views
+from app_sell_invoice import api_views as sell_invoice_api_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework.routers import DefaultRouter
@@ -147,19 +148,19 @@ urlpatterns = [
     path('sell_invoice_add_invoice', views.sell_invoice_add_invoice, name='sell_invoice_add_invoice'),
     path('sell_invoice_management', views.sell_invoice_management, name='sell_invoice_management'),
     path('sell-invoice-profile/<int:id>/', views.sell_invoice_profile, name='sell_invoice_profile'),
-    path('api/create-sell-invoice-record', api_temp.create_sell_invoice, name='create_sell_invoice'),
-    path('get-last-sellinvoice-id',api_temp.get_sellinvoice_no,name='get-last-sell-invoice'),
+    path('api/create-sell-invoice-record', sell_invoice_api_views.create_sell_invoice, name='create_sell_invoice'),
+    path('get-last-sellinvoice-id',sell_invoice_api_views.get_sellinvoice_no,name='get-last-sell-invoice'),
     path('sell_invoice_add_items',views.sell_invoice_add_items,name='sell_invoice_add_items'),
-    path('sell_invoice_create_item',api_temp.Sell_invoice_create_item,name='sell_invoice_create_item'),
-    path("fetch-sell-invoice-items",api_temp.fetch_sell_invoice_items,name="fetch-sell-invoice-items"),
-    path('fetch-sellinvoices', api_temp.fetch_sellinvoices, name='fetch_sellinvoices'),
-    path('filter-sellinvoices', api_temp.filter_sellinvoices, name='filter_sellinvoices'),
+    path('sell_invoice_create_item',sell_invoice_api_views.Sell_invoice_create_item,name='sell_invoice_create_item'),
+    path("fetch-sell-invoice-items",sell_invoice_api_views.fetch_sell_invoice_items,name="fetch-sell-invoice-items"),
+    path('fetch-sellinvoices', sell_invoice_api_views.fetch_sellinvoices, name='fetch_sellinvoices'),
+    path('filter-sellinvoices', sell_invoice_api_views.filter_sellinvoices, name='filter_sellinvoices'),
     path('sell_invoice_storage_report', views.sell_invoice_prepare_report, name='sell_invoice_prepare_report'),
     path('sell_invoice_storage_manage', views.sell_invoice_storage_management, name='sell_invoice_storage_management'),
-    path('prepare_sell_invoice', api_temp.prepare_sell_invoice, name='prepare_sell_invoice'),
-    path('validate_sell_invoice', api_temp.validate_sell_invoice, name='validate_sell_invoice'),
-    path('deliver_sell_invoice', api_temp.deliver_sell_invoice, name='deliver_sell_invoice'),
-    path('cancel_sell_invoice', api_temp.cancel_sell_invoice, name='cancel_sell_invoice'),
+    path('prepare_sell_invoice', sell_invoice_api_views.prepare_sell_invoice, name='prepare_sell_invoice'),
+    path('validate_sell_invoice', sell_invoice_api_views.validate_sell_invoice, name='validate_sell_invoice'),
+    path('deliver_sell_invoice', sell_invoice_api_views.deliver_sell_invoice, name='deliver_sell_invoice'),
+    path('cancel_sell_invoice', sell_invoice_api_views.cancel_sell_invoice, name='cancel_sell_invoice'),
     path('api/mainitems/get_last_pno', products_api_views.get_mainItem_last_pno, name='get_last_pno'),
     path('accept-order/<int:queue_id>/', api_views.accept_order, name='accept-order'),
     path('skip-order/<int:queue_id>/', api_views.skip_order, name='skip-order'),
@@ -183,8 +184,8 @@ urlpatterns = [
     path('api/send-message/', views.SupportChatMessageView.as_view(), name='send_message'),
     path('api/get-messages/', views.SupportChatMessageView.as_view(), name='get_messages'),
     path('mark-read/<int:pk>/', views.MarkMessageAsReadView.as_view(), name='mark-message-as-read'),
-    path('history/<int:id>/invoices/', api_views.GetClientInvoices, name='get-client-invoices'),
-    path('history/invoices/<int:id>/', api_views.GetClientInvoicesByInvoiceNo, name='get-invoice-no-invoices'),
+    path('history/<int:id>/invoices/', sell_invoice_api_views.GetClientInvoices, name='get-client-invoices'),
+    path('history/invoices/<int:id>/', sell_invoice_api_views.GetClientInvoicesByInvoiceNo, name='get-invoice-no-invoices'),
     path('api/support_conversations/', api_views.support_conversations, name='support_conversations'),
     path('api/conversations/<int:conversation_id>/messages/', api_views.get_conversation_messages, name='get_conversation_messages'),
     path('api/conversations/<int:conversation_id>/send_message/', api_views.send_message, name='send_message'),
@@ -240,7 +241,7 @@ urlpatterns = [
     path('confirmed_orders/', api_views.get_all_confirmed_orders, name='get_all_confirmed_orders'),
     path('complete_order/<int:autoid>/', api_views.complete_order, name='complete_order'),
     path('WStest/', views.invoice_notifications, name='WStest'),
-    path('invoice/<int:autoid>/', api_views.get_invoice_data, name='get_invoice_data'),
+    path('invoice/<int:autoid>/', sell_invoice_api_views.get_invoice_data, name='get_invoice_data'),
     path('api/employees/', views.get_available_employees, name='get-employees'),
     path('api/orders/', views.get_unassigned_orders, name='get-orders'),
     path('assign-order/', views.assign_order_page, name='assign-order-page'),

@@ -53,6 +53,7 @@ from rest_framework.response import Response
 from decimal import Decimal
 from . import models, serializers
 from products import serializers as product_serializers
+from app_sell_invoice import serializers as sell_invoice_serializers
 from .models import AllClientsTable, SellinvoiceTable
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -409,66 +410,6 @@ def get_sub_types(request):
     serialized_data = product_serializers.SubTypeSerializer(sub_types_data, many=True)
     return Response({'sub_types': serialized_data.data})
 
-""" Sell Invoice Api's """
-
-@extend_schema(
-description='''
-Get a specific invoice's data.
-''',
-tags=["Sell Invoice"],
-)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_invoice_data(request, autoid):
-    try:
-        # Fetch the data using the provided autoid (primary key)
-        invoice_data = SellinvoiceTable.objects.get(autoid=autoid)
-        serializer = serializers.OrderSerializer(invoice_data)
-        return Response(serializer.data)
-    except SellinvoiceTable.DoesNotExist:
-        return Response({"error": "Invoice not found"}, status=404)
-
-@extend_schema(
-description='''
-Get Specific Client's sell invoices.
-''',
-tags=["Sell Invoice","Clients"],
-)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def GetClientInvoices(request, id):
-    # Filter invoices based on the client ID
-    str_id = str(id)
-    invoices = models.SellinvoiceTable.objects.filter(client_id=str_id)
-
-    if not invoices.exists():
-        return Response({'error': 'No invoices found for the provided client ID.'}, status=status.HTTP_404_NOT_FOUND)
-
-    # Serialize the invoices
-    serializer = serializers.SellInvoiceSerializer(invoices, many=True)
-
-    return Response(serializer.data, status=status.HTTP_200_OK)  # Return the serialized data
-######
-@extend_schema(
-description='''
-Get Specific sell invoice's data by invoice no.
-''',
-tags=["Sell Invoice"],
-)
-@api_view(['GET'])
-#@permission_classes([IsAuthenticated])
-def GetClientInvoicesByInvoiceNo(request, id):
-    # Filter invoices based on the client ID
-    str_id = str(id)
-    invoices = models.SellinvoiceTable.objects.filter(invoice_no=str_id)
-
-    if not invoices.exists():
-        return Response({'error': 'No invoices found for the provided client ID.'}, status=status.HTTP_404_NOT_FOUND)
-
-    # Serialize the invoices
-    serializer = serializers.SellInvoiceSerializer(invoices, many=True)
-
-    return Response(serializer.data, status=status.HTTP_200_OK)  # Return the serialized data
 
 # class InvoiceStatusViewSet(viewsets.ViewSet):
 #     """
@@ -500,46 +441,6 @@ def GetClientInvoicesByInvoiceNo(request, id):
 #             return Response({"error": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
 #         except Exception as e:
 #             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-@extend_schema(
-description="""Update invoice status and set delivered_date if status is 'تم التوصيل'.""",
-tags=["Sell Invoice","Delivery"],
-)
-@csrf_exempt
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def update_invoice_status(request, invoice_no):
-    """Update invoice status and set delivered_date if status is 'تم التوصيل'."""
-    try:
-        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)  # Direct get()
-    except SellinvoiceTable.DoesNotExist:
-        return Response({"error": "Invoice not found."}, status=404)
-
-    new_status = request.data.get("delivery_status")
-
-    if new_status in ["جاري التوصيل", "تم التوصيل"]:
-        invoice.delivery_status = new_status
-        if new_status == "تم التوصيل":
-
-            invoice.delivered_date = now()  # Set the current timestamp
-        invoice.save()
-        send_invoice_notification(invoice, new_status)
-        return Response({"message": "Status updated successfully."})
-
-    return Response({"error": "Invalid status."}, status=400)
-
-@extend_schema(
-description="""Fetch all invoices with status 'حضرت'.""",
-tags=["Sell Invoice","Delivery"],
-)
-@csrf_exempt
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_delivery_invoices(request):
-    """Fetch all invoices with status 'حضرت'."""
-    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
-    serializer = serializers.SellInvoiceSerializer(invoices, many=True)
-    return Response(serializer.data)
 
 #####################
 
@@ -1424,6 +1325,47 @@ def check_assign_status(request):
     }
 
     return Response(data)
+
+@extend_schema(
+description="""Update invoice status and set delivered_date if status is 'تم التوصيل'.""",
+tags=["Sell Invoice","Delivery"],
+)
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_invoice_status(request, invoice_no):
+    """Update invoice status and set delivered_date if status is 'تم التوصيل'."""
+    try:
+        invoice = SellinvoiceTable.objects.get(invoice_no=invoice_no)  # Direct get()
+    except SellinvoiceTable.DoesNotExist:
+        return Response({"error": "Invoice not found."}, status=404)
+
+    new_status = request.data.get("delivery_status")
+
+    if new_status in ["جاري التوصيل", "تم التوصيل"]:
+        invoice.delivery_status = new_status
+        if new_status == "تم التوصيل":
+
+            invoice.delivered_date = now()  # Set the current timestamp
+        invoice.save()
+        send_invoice_notification(invoice, new_status)
+        return Response({"message": "Status updated successfully."})
+
+    return Response({"error": "Invalid status."}, status=400)
+
+@extend_schema(
+description="""Fetch all invoices with status 'حضرت'.""",
+tags=["Sell Invoice","Delivery"],
+)
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_delivery_invoices(request):
+    """Fetch all invoices with status 'حضرت'."""
+    invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
+    serializer = sell_invoice_serializers.SellInvoiceSerializer(invoices, many=True)
+    return Response(serializer.data)
+
 
 @extend_schema(
 description="""check assign status of all orders.""",

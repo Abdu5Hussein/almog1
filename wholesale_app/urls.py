@@ -13,7 +13,7 @@ urlpatterns = [
     path('preorder/last-invoice/', HozmaApi_views.get_sellinvoice_no, name='get_sellinvoice_no'),
     path('preorder/add-item/', HozmaApi_views.Sell_invoice_create_item, name='sell_invoice_create_item'),
     path('hozmabrands/', views.CarParts_page, name='CarParts_page'),
-    path('item-for-inqury-page/', views.item_filter_page, name='item_filter_page'),
+    path('products/', views.item_filter_page, name='item_filter_page'),
     path('hozmaHome/', views.CarPartsHome_page, name='CarPartsHome_page'),
     path('hozmaDashbord/', views.Dashbord_page, name='dashbord'),
     path('brand/<str:brand>/', api_views.brand_items, name='brand_items'),
@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('api/products/<int:id>/get-images',api_views.get_product_images,name="product-get-images"),
 ]

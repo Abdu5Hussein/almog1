@@ -89,16 +89,6 @@ class FeedbackSerializer(serializers.ModelSerializer):
         model = models.Feedback
         fields = ['id', 'sender', 'feedback_text', 'created_at', 'employee_response', 'is_resolved', 'response_at']
 
-class SellInvoiceSerializer(serializers.ModelSerializer):
-    invoice_date = serializers.SerializerMethodField()
-
-    class Meta:
-        model = models.SellinvoiceTable
-        fields = "__all__"
-
-    def get_invoice_date(self, obj):
-        return obj.invoice_date.strftime("%Y-%m-%d")  # Ensure "YYYY-MM-DD" format
-
 
 class ReturnPermissionSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source="client.name", read_only=True)
@@ -123,11 +113,7 @@ class BuyInvoiceSerializer(serializers.ModelSerializer):
     def get_invoice_date(self, obj):
         return obj.invoice_date.strftime("%Y-%m-%d")  # Ensure "YYYY-MM-DD" format
 
-class SellInvoiceItemsSerializer(serializers.ModelSerializer):
 
-    class Meta:
-        model = models.SellInvoiceItemsTable
-        fields = "__all__"
 
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:

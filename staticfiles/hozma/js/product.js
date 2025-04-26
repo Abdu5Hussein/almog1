@@ -24,7 +24,7 @@ async function fetchFilteredData(page = 1) {
     console.debug("Full filters being sent:", JSON.stringify(filters, null, 2));
 
     try {
-        const response = await fetchWithAuth(`${baseUrl}/hozma/api/filter-items`, 'POST', filters);
+        const response = await fetchWithAuth(`${baseUrl}/api/filter-items`, 'POST', filters);
         console.debug("Full API response:", response);
         
         if (!response) {
@@ -151,7 +151,7 @@ async function showProductImages(pno) {
         modal.show();
 
         // Fetch images
-        const response = await fetchWithAuth(`${baseUrl}/hozma/api/products/${pno}/get-images`);
+        const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
         
         // Process images response
         if (response && Array.isArray(response) && response.length > 0) {
@@ -258,7 +258,7 @@ console.debug("Loading more items for page:", currentPage);
 
 const { data, last_page, total } = await fetchFilteredData(currentPage);
 
-lastPage = last_page;
+lastPage = last_page || 1;
 
 await displayItems(data);
 updatePaginationInfo(total);
@@ -387,10 +387,7 @@ document.getElementById('itemsPerPage').addEventListener('change', changeItemsPe
 applyFilters();
 
 
-window.onload = function() {
-// Call applyFilters on page load to load items with or without filters
-applyFilters();
-};
+
 
 // Cleanup any existing modals when page loads
 document.addEventListener('DOMContentLoaded', function() {

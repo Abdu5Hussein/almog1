@@ -73,11 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (username) {
         // If the user is logged in, update the account button text with the username
         userNamePlaceholder.textContent = `مرحبًا, ${username}`;
-        document.getElementById('accountButton').href = "hozma/hozmaDashbord/"; // Ensure it's pointing to the user's account page
+        document.getElementById('accountButton').href = "/hozma/hozmaDashbord/"; // Ensure it's pointing to the user's account page
     } else {
         // If no username is found, ensure it's showing the default "حسابي"
         userNamePlaceholder.textContent = "حسابي";
-        document.getElementById('accountButton').href = "hozma/login"; // Redirect to login if not logged in
+        document.getElementById('accountButton').href = "/hozma/login"; // Redirect to login if not logged in
     }
 
     // Rest of your navbar functionality like highlighting current page...
