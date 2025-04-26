@@ -35,7 +35,7 @@ async function fetchFilteredData(page = 1) {
     console.log("📦 Sending filters to backend:", filters);
 
     try {
-        const response = await fetchWithAuth(`${baseUrl}/api/filter-items`, 'POST', filters);
+        const response = await fetchWithAuth(`${baseUrl}/hozma/api/filter-items`, 'POST', filters);
 
         // ✅ DEBUG: Log full response
         console.log("📥 Received response from backend:", response);

@@ -24,7 +24,7 @@ async function fetchFilteredData(page = 1) {
     console.debug("Full filters being sent:", JSON.stringify(filters, null, 2));
 
     try {
-        const response = await fetchWithAuth(`${baseUrl}/api/filter-items`, 'POST', filters);
+        const response = await fetchWithAuth(`${baseUrl}/hozma/api/filter-items`, 'POST', filters);
         console.debug("Full API response:", response);
         
         if (!response) {
@@ -87,9 +87,10 @@ onchange="updateQuantity('${item.pno}', this.value)">
 </div>
 </td>
 <td>
-<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.fileid}','${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value)">
-شراء
+<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value, ${item.itemvalue})">
+  شراء
 </button>
+
 </td>
 <td>
 
@@ -150,7 +151,7 @@ async function showProductImages(pno) {
         modal.show();
 
         // Fetch images
-        const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
+        const response = await fetchWithAuth(`${baseUrl}/hozma/api/products/${pno}/get-images`);
         
         // Process images response
         if (response && Array.isArray(response) && response.length > 0) {

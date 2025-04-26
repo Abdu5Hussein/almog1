@@ -1,13 +1,14 @@
 """ Mainitem Api's """
 
+from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 import hashlib
 from django.core.cache import cache
 from rest_framework.decorators import api_view
 import json
 from rest_framework.pagination import PageNumberPagination
 from django.core.exceptions import FieldError
-from . import models  # Adjust this import to match your project structure
-from . import serializers
+from almogOil import models as almogOil_Models # Adjust this import to match your project structure
+from almogOil import serializers as almogOil_Serializers
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -16,8 +17,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
-from .models import Mainitem
-from .serializers import MainitemSerializer
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from datetime import datetime, timedelta
@@ -31,7 +30,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import generics, mixins,viewsets
 from rest_framework import viewsets, status
 from decimal import Decimal
-from . import models, serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from almogOil import models
@@ -46,8 +44,8 @@ from django.core.paginator import Paginator
 def UpdateItemsItemmainApiView(request, item_id):
     try:
         # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
+        item = almogOil_Models.Mainitem.objects.get(pno=item_id)
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'POST':
@@ -68,7 +66,7 @@ def UpdateItemsItemmainApiView(request, item_id):
                 itemmain_list.append(value)
                 item.itemmain = ";".join(itemmain_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -76,13 +74,13 @@ def UpdateItemsItemmainApiView(request, item_id):
                 itemmain_list.remove(value)
                 item.itemmain = ";".join(itemmain_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
+        s_data = almogOil_Serializers.MainitemSerializer(item).data
         itemmain = s_data['itemmain']
         return Response({'itemmain': itemmain}, status=status.HTTP_200_OK)
 
@@ -92,8 +90,8 @@ def UpdateItemsItemmainApiView(request, item_id):
 def UpdateItemsSubmainApiView(request, item_id):
     try:
         # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
+        item = almogOil_Models.Mainitem.objects.get(pno=item_id)
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'POST':
@@ -114,7 +112,7 @@ def UpdateItemsSubmainApiView(request, item_id):
                 itemsub_list.append(value)
                 item.itemsubmain = ";".join(itemsub_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -122,13 +120,13 @@ def UpdateItemsSubmainApiView(request, item_id):
                 itemsub_list.remove(value)
                 item.itemsubmain = ";".join(itemsub_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
+        s_data = almogOil_Serializers.MainitemSerializer(item).data
         itemsubmain = s_data['itemsubmain']
         return Response({'itemsub': itemsubmain}, status=status.HTTP_200_OK)
 
@@ -137,8 +135,8 @@ def UpdateItemsSubmainApiView(request, item_id):
 def UpdateItemsModelApiView(request, item_id):
     try:
         # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
+        item = almogOil_Models.Mainitem.objects.get(pno=item_id)
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'POST':
@@ -159,7 +157,7 @@ def UpdateItemsModelApiView(request, item_id):
                 model_list.append(value)
                 item.itemthird = ";".join(model_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -167,13 +165,13 @@ def UpdateItemsModelApiView(request, item_id):
                 model_list.remove(value)
                 item.itemthird = ";".join(model_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
+        s_data = almogOil_Serializers.MainitemSerializer(item).data
         itemthird = s_data['itemthird']
         return Response({'models': itemthird}, status=status.HTTP_200_OK)
 
@@ -182,8 +180,8 @@ def UpdateItemsModelApiView(request, item_id):
 def UpdateItemsEngineApiView(request, item_id):
     try:
         # Retrieve the item by its ID
-        item = models.Mainitem.objects.get(pno=item_id)
-    except models.Mainitem.DoesNotExist:
+        item = almogOil_Models.Mainitem.objects.get(pno=item_id)
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'POST':
@@ -204,7 +202,7 @@ def UpdateItemsEngineApiView(request, item_id):
                 engine_list.append(value)
                 item.engine_no = ";".join(engine_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -212,13 +210,13 @@ def UpdateItemsEngineApiView(request, item_id):
                 engine_list.remove(value)
                 item.engine_no = ";".join(engine_list)
                 item.save()
-                return Response(serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = serializers.MainitemSerializer(item).data
+        s_data = almogOil_Serializers.MainitemSerializer(item).data
         engines = s_data['engine_no']
         return Response({'engines': engines}, status=status.HTTP_200_OK)
 
@@ -242,7 +240,7 @@ def app_filter_Items(request):
         filters['engine_no__icontains'] = engine_no  # Case-insensitive search
 
     # Apply the filters to the Mainitem model
-    items = Mainitem.objects.filter(**filters)
+    items = almogOil_Models.Mainitem.objects.filter(**filters)
 
     # Check if any items are found
     if not items.exists():
@@ -253,7 +251,7 @@ def app_filter_Items(request):
     paginated_items = paginator.paginate_queryset(items, request)
 
     # Serialize the filtered and paginated items
-    serializer = MainitemSerializer(paginated_items, many=True)
+    serializer = almogOil_Serializers.MainitemSerializer(paginated_items, many=True)
 
     # Return the paginated data as the response
     return paginator.get_paginated_response(serializer.data)
@@ -271,12 +269,12 @@ class CustomPagination(PageNumberPagination):
 @permission_classes([IsAuthenticated])
 def get_product_images(request, id):
     try:
-        product = models.Mainitem.objects.get(pno=id)
-    except models.Mainitem.DoesNotExist:
+        product = almogOil_Models.Mainitem.objects.get(pno=id)
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"error": "Product not found!"}, status=404)  # Added return and status
 
-    images = models.Imagetable.objects.filter(productid=product.fileid)  # Ensure `productid` is correct
-    serializer = serializers.productImageSerializer(images, many=True)
+    images = almogOil_Models.Imagetable.objects.filter(productid=product.fileid)  # Ensure `productid` is correct
+    serializer = almogOil_Serializers.productImageSerializer(images, many=True)
 
     return Response(serializer.data)  # Added return statement
 
@@ -293,13 +291,13 @@ def mainitem_add_json_desc(request, id):
         parsed_json = json.loads(json_data) if isinstance(json_data, str) else json_data
 
         # Retrieve the product
-        product = models.Mainitem.objects.get(pno=id)
+        product = almogOil_Models.Mainitem.objects.get(pno=id)
         product.json_description = parsed_json  # Assuming this field is a JSONField
         product.save()
 
         return Response({"message": "JSON description updated successfully"}, status=status.HTTP_200_OK)
 
-    except models.Mainitem.DoesNotExist:
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
     except json.JSONDecodeError:
         return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
@@ -314,15 +312,15 @@ def mainitem_add_json_desc(request, id):
 def get_item_data(request, fileid):
     try:
         # Retrieve the record from the database
-        item = Mainitem.objects.get(fileid=fileid)
+        item = almogOil_Models.Mainitem.objects.get(fileid=fileid)
 
         # Serialize the item data
-        serializer = MainitemSerializer(item)
+        serializer = almogOil_Serializers.MainitemSerializer(item)
 
         # Return the serialized data
         return Response(serializer.data)
 
-    except Mainitem.DoesNotExist:
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"error": "Item not found"}, status=404)
 
 @api_view(['PATCH'])
@@ -332,7 +330,7 @@ def edit_main_item(request):
         try:
             data = request.data  # DRF automatically parses JSON into a Python dict
             fileid = data.get('fileid')
-            item = Mainitem.objects.get(fileid=fileid)
+            item = almogOil_Models.Mainitem.objects.get(fileid=fileid)
 
             # Function to safely update a field
             def safe_update(field_name, new_value):
@@ -368,7 +366,7 @@ def edit_main_item(request):
             item.save()  # Save the updated record
 
             return Response({'success': True}, status=status.HTTP_200_OK)
-        except Mainitem.DoesNotExist:
+        except almogOil_Models.Mainitem.DoesNotExist:
             return Response({'success': False, 'error': 'Record not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -378,7 +376,7 @@ def edit_main_item(request):
 def get_mainItem_last_pno(request):
     try:
         # Get the last autoid by ordering the table by autoid in descending order
-        last_pno = Mainitem.objects.order_by('-pno').first()
+        last_pno = almogOil_Models.Mainitem.objects.order_by('-pno').first()
         if last_pno:
             response_data = {'pno': last_pno.pno}
         else:
@@ -434,7 +432,7 @@ def create_main_item(request):
         }
 
         # Use the serializer with the mapped data
-        serializer = MainitemSerializer(data=mapped_data)
+        serializer = almogOil_Serializers.MainitemSerializer(data=mapped_data)
 
         if serializer.is_valid():
             serializer.save()
@@ -464,15 +462,15 @@ def safe_float(value, default=0.0):
 @permission_classes([IsAuthenticated])
 def get_data(request):
     try:
-        items = Mainitem.objects.all().order_by('itemname')
-        serializer = MainitemSerializer(items, many=True)
+        items = almogOil_Models.Mainitem.objects.all().order_by('itemname')
+        serializer = almogOil_Serializers.MainitemSerializer(items, many=True)
 
-        total_itemvalue = Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
-        total_itemvalueb = Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
-        total_resvalue = Mainitem.objects.aggregate(total=Sum('resvalue'))['total']
-        total_cost = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('costprice')))['total']
-        total_order = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('orderprice')))['total']
-        total_buy = Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('buyprice')))['total']
+        total_itemvalue = almogOil_Models.Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
+        total_itemvalueb = almogOil_Models.Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
+        total_resvalue = almogOil_Models.Mainitem.objects.aggregate(total=Sum('resvalue'))['total']
+        total_cost = almogOil_Models.Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('costprice')))['total']
+        total_order = almogOil_Models.Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('orderprice')))['total']
+        total_buy = almogOil_Models.Mainitem.objects.aggregate(total=Sum(F('itemvalue') * F('buyprice')))['total']
 
         fullTable = request.GET.get('fullTable', None)
         if fullTable:
@@ -492,7 +490,7 @@ def get_data(request):
         page_size = int(request.GET.get('size', 20))
         paginator = Paginator(items, page_size)
         page_obj = paginator.get_page(page_number)
-        page_serializer = MainitemSerializer(page_obj, many=True)
+        page_serializer = almogOil_Serializers.MainitemSerializer(page_obj, many=True)
 
         response = {
             "data": page_serializer.data,
@@ -521,12 +519,12 @@ def update_itemvalue(request):
         new_itemvalue = data.get('newItemValue')
         old_itemvalue = 0
 
-        item = Mainitem.objects.get(fileid=fileid)
+        item = almogOil_Models.Mainitem.objects.get(fileid=fileid)
         old_itemvalue = item.itemvalue
         item.itemvalue = new_itemvalue
         item.save()
 
-        movement_Record = models.Clientstable.objects.create(
+        movement_Record = almogOil_Models.Clientstable.objects.create(
             itemno=item.itemno,
             itemname=item.itemname,
             maintype=item.itemmain,
@@ -540,7 +538,7 @@ def update_itemvalue(request):
         )
 
         return Response({'success': True, 'message': 'Item value updated successfully.'}, status=status.HTTP_200_OK)
-    except Mainitem.DoesNotExist:
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({'success': False, 'message': 'Item not found.'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -556,12 +554,12 @@ def update_storage(request):
         fileid = data.get('fileid')
         storage = data.get('storage')
 
-        item = Mainitem.objects.get(fileid=fileid)
+        item = almogOil_Models.Mainitem.objects.get(fileid=fileid)
         item.itemplace = storage
         item.save()
 
         return Response({'success': True, 'message': 'Storage updated successfully.'}, status=status.HTTP_200_OK)
-    except Mainitem.DoesNotExist:
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({'success': False, 'message': 'Item not found.'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'success': False, 'message': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -587,7 +585,7 @@ def check_items(request):
                 continue
 
             # Check if item exists in Mainitem model based on 'company_no'
-            exists = Mainitem.objects.filter(replaceno=company_no).exists()
+            exists = almogOil_Models.Mainitem.objects.filter(replaceno=company_no).exists()
             results.append({"company_no": company_no, "exists": 1 if exists else 0})
 
         return Response({"status": "success", "results": results}, status=status.HTTP_200_OK)
@@ -607,12 +605,12 @@ def delete_record(request):
         if not fileid:
             return Response({"success": False, "message": "No 'fileid' provided."}, status=400)
 
-        record = Mainitem.objects.get(fileid=fileid)
+        record = almogOil_Models.Mainitem.objects.get(fileid=fileid)
         record.delete()
 
         return Response({"success": True, "message": "Record deleted successfully."})
 
-    except Mainitem.DoesNotExist:
+    except almogOil_Models.Mainitem.DoesNotExist:
         return Response({"success": False, "message": "Record not found."}, status=404)
 
     except Exception as e:
@@ -701,10 +699,10 @@ def web_filter_items(request):
                     return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Now filter the queryset using the combined Q object
-            queryset = Mainitem.objects.filter(filters_q).order_by('itemname')
+            queryset = almogOil_Models.Mainitem.objects.filter(filters_q).order_by('itemname')
 
             # Serialize the filtered data
-            serializer = MainitemSerializer(queryset, many=True)
+            serializer = almogOil_Serializers.MainitemSerializer(queryset, many=True)
             items_data = serializer.data
 
             # Initialize totals
@@ -771,3 +769,50 @@ def web_filter_items(request):
             return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@extend_schema(
+description="""Upload a logo for maintype ,ex: logo for Mercedes.""",
+tags=["Main Types"],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_maintype_logo(request, id):
+    if 'logo' not in request.FILES:
+        return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+
+    image = request.FILES['logo']
+
+    try:
+        maintype = almogOil_Models.Maintypetable.objects.get(fileid=id)
+        maintype.logo_obj = image  # Assign the file object directly
+        maintype.save()
+        return Response({"message": "Logo uploaded successfully!"}, status=status.HTTP_200_OK)
+
+    except almogOil_Models.Maintypetable.DoesNotExist:
+        return Response({"error": "Maintypetable entry not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@extend_schema(
+description="""Get the company's logo by product's pno number.""",
+tags=["Companies","Products"],
+)
+@api_view(['GET'])
+#@permission_classes([IsAuthenticated])
+def get_logo_by_pno(request, id):
+    try:
+        product = get_object_or_404(almogOil_Models.Mainitem, pno=id)
+        company = get_object_or_404(almogOil_Models.Companytable, companyname=product.companyproduct)
+
+        logo = company.logo_obj
+        if logo:
+            logo_url = request.build_absolute_uri(logo.url)  # 👈 Full URL
+            return Response({"logo_url": logo_url}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Logo not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

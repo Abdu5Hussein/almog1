@@ -3,14 +3,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from rest_framework import status
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 import json
-from rest_framework.pagination import PageNumberPagination
-from django.core.exceptions import FieldError
-from . import models  # Adjust this import to match your project structure
-from . import serializers
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -22,7 +17,6 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -51,21 +45,17 @@ from rest_framework import generics, mixins,viewsets
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from decimal import Decimal
-from . import models, serializers
-from .models import AllClientsTable, SellinvoiceTable
+from almogOil import models as almogOil_models
+from wholesale_app import models as hozma_models
+from almogOil import serializers as almogOil_serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password, check_password
-from firebase_admin import messaging
-from .models import EmployeesTable, AllClientsTable
-import firebase_admin
-from firebase_admin import credentials
-from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 
-def get_last_sellinvoice_no():
-    last_invoice = SellinvoiceTable.objects.order_by("-invoice_no").first()
+def get_last_PreOrderTable_no():
+    last_invoice = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
     return last_invoice.invoice_no if last_invoice else 0
 
 
@@ -87,15 +77,15 @@ def create_pre_order(request):
         # Fetch client
         try:
             if str(client_identifier).isdigit():
-                client_obj = AllClientsTable.objects.get(clientid=int(client_identifier))
+                client_obj = almogOil_models.AllClientsTable.objects.get(clientid=int(client_identifier))
             else:
-                client_obj = AllClientsTable.objects.get(name=client_identifier)
+                client_obj = almogOil_models.AllClientsTable.objects.get(name=client_identifier)
 
-            balance_data = models.TransactionsHistoryTable.objects.filter(object_id=client_obj.clientid).aggregate(
+            balance_data = almogOil_models.TransactionsHistoryTable.objects.filter(object_id=client_obj.clientid).aggregate(
                 total_debt=Sum('debt') or Decimal("0.0000"),
                 total_credit=Sum('credit') or Decimal("0.0000")
             )
-        except AllClientsTable.DoesNotExist:
+        except almogOil_models.AllClientsTable.DoesNotExist:
             return Response({"success": False, "error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
 
         total_debt = balance_data.get('total_debt') or Decimal('0.0000')
@@ -103,7 +93,7 @@ def create_pre_order(request):
         client_balance = total_credit - total_debt
 
         # Preferably refactor this function
-        last_receipt_no = get_last_sellinvoice_no() + 1
+        last_receipt_no = get_last_PreOrderTable_no() + 1
 
         for_who = "application" if data.get("for_who") == "application" else None
 
@@ -125,7 +115,7 @@ def create_pre_order(request):
             'mobile': data.get("mobile") if data.get("mobile") else False,
         }
 
-        serializer = serializers.PreOrderSerializer(data=invoice_data)
+        serializer = almogOil_serializers.PreOrderSerializer(data=invoice_data)
         if serializer.is_valid():
             serializer.save()
             async_task('almogOil.Tasks.assign_orders')
@@ -154,7 +144,7 @@ tags=["PreOrder", "PreOrder last invoice number"],
 def get_sellinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by invoice_no in descending order
-        last_invoice = models.PreOrderTable.objects.order_by('-invoice_no').first()
+        last_invoice = almogOil_models.PreOrderTable.objects.order_by('-invoice_no').first()
         if last_invoice:
             return Response({'autoid': last_invoice.invoice_no}, status=status.HTTP_200_OK)
         else:
@@ -182,16 +172,16 @@ def Sell_invoice_create_item(request):
 
             # Get the related product
             try:
-                product = models.Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
-            except models.Mainitem.DoesNotExist:
+                product = almogOil_models.Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
+            except almogOil_models.Mainitem.DoesNotExist:
                 return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
             # Get the related invoice
             try:
-                invoice = models.PreOrder.objects.get(invoice_no=data.get("invoice_id"))
+                invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
                 invoice.amount += (Decimal(product.buyprice or 0) * Decimal(data.get("itemvalue") or 0))
                 invoice.save()
-            except models.PreOrder.DoesNotExist:
+            except almogOil_models.PreOrderTable.DoesNotExist:
                 return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
             # Check if sufficient quantity exists
@@ -201,7 +191,7 @@ def Sell_invoice_create_item(request):
 
             # Prepare the data for creating a new SellInvoiceItemsTable instance
             item_data = {
-                'invoice_instance': invoice,
+                'invoice_instance': invoice.autoid,
                 'invoice_no': data.get("invoice_id"),
                 'item_no': product.itemno,
                 'pno': data.get("pno"),
@@ -220,7 +210,7 @@ def Sell_invoice_create_item(request):
             }
 
             # Use serializer to create the SellInvoiceItemsTable record
-            serializer = serializers.PreOrderItemsSerializer(data=item_data)
+            serializer = almogOil_serializers.PreOrderItemsSerializer(data=item_data)
             if serializer.is_valid():
                 serializer.save()
 

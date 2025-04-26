@@ -4,6 +4,7 @@ import logging
 from decimal import Decimal
 from datetime import datetime, timedelta
 from django.utils.dateparse import parse_date
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import F, Q, Sum, IntegerField
 from django.db.models.functions import Cast
@@ -58,10 +59,10 @@ from .models import (
     Oemtable, BuyinvoiceCosts, Clienttypestable, CostTypesTable, CurrenciesTable, enginesTable, ChatMessage
 )
 from .serializers import (
-    MainitemSerializer, CartItemSerializer, SupportChatMessageSysSerializer,
+    CartItemSerializer, SupportChatMessageSysSerializer,
     SupportChatConversationSerializer, SupportChatConversationSerializer1, FeedbackSerializer,
-    BuyInvoiceItemsTableSerializer, BuyInvoiceSerializer, LostAndDamagedTableSerializer, TransactionsHistoryTableSerializer, BuyinvoiceCostsSerializer,
-    SellInvoiceSerializer, SellInvoiceItemsSerializer, ClientSerializer, SubsectionSerializer, ChatMessageSerializer, FeedbackMessageSerializer
+    BuyInvoiceItemsTableSerializer, BuyInvoiceSerializer, TransactionsHistoryTableSerializer, BuyinvoiceCostsSerializer,
+    SellInvoiceSerializer, SellInvoiceItemsSerializer, ClientSerializer, ChatMessageSerializer, FeedbackMessageSerializer
 )
 
 import re
@@ -75,6 +76,9 @@ from .Tasks import assign_orders
 from drf_spectacular.utils import extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 
 from almogOil import serializers
+from products import serializers as product_serializers
+
+from almogOil import models
 
 
 # Setup logger
@@ -89,7 +93,7 @@ tags=["Drop Boxes"],
 def get_subsections(request):
     section_id = request.GET.get('section_id')
     subsections = Subsectionstable.objects.filter(sectionid_id=section_id)
-    serializer = SubsectionSerializer(subsections, many=True)
+    serializer = product_serializers.SubsectionSerializer(subsections, many=True)
     return Response(serializer.data)
 
 def get_next_buyinvoice_no():
@@ -661,7 +665,7 @@ def filter_lost_damaged(request):
                 return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Serialize the filtered data
-        serializer = LostAndDamagedTableSerializer(queryset, many=True)
+        serializer = product_serializers.LostAndDamagedTableSerializer(queryset, many=True)
         return Response(serializer.data)
 
     except json.JSONDecodeError:
@@ -789,7 +793,7 @@ def get_all_clients(request):
             clientid = item['clientid']
 
             # Calculate balance from TransactionsHistoryTable
-            balance_data = TransactionsHistoryTable.objects.filter(client_id_id=clientid).aggregate(
+            balance_data = TransactionsHistoryTable.objects.filter(object_id=clientid).aggregate(
                 total_debt=Sum('debt'),
                 total_credit=Sum('credit')
             )
@@ -800,7 +804,7 @@ def get_all_clients(request):
 
             # Fetch total credit for specific client_id and where details = "دفعة على حساب"
             specific_credit_data = TransactionsHistoryTable.objects.filter(
-                client_id_id=clientid, details="دفعة على حساب"
+                object_id=clientid, details="دفعة على حساب"
             ).aggregate(total_specific_credit=Sum('credit'))
 
             total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
@@ -1022,7 +1026,7 @@ def filter_all_clients(request):
         clients_data = []
         for client in queryset:
             client_id = client.clientid
-            balance_data = TransactionsHistoryTable.objects.filter(client_id_id=client_id).aggregate(
+            balance_data = TransactionsHistoryTable.objects.filter(object_id=client_id).aggregate(
                 total_debt=Sum("debt"),
                 total_credit=Sum("credit"),
             )
@@ -1041,12 +1045,12 @@ def filter_all_clients(request):
             if fromdate and todate:
                 # Fetch total credit for specific client_id and where details = "دفعة على حساب"
                 specific_credit_data = TransactionsHistoryTable.objects.filter(
-                    client_id_id=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
+                    object_id=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
                 ).aggregate(total_specific_credit=Sum('credit'))
             else:
                 # Fetch total credit for specific client_id and where details = "دفعة على حساب"
                 specific_credit_data = TransactionsHistoryTable.objects.filter(
-                    client_id_id=client_id, details="دفعة على حساب"
+                    object_id=client_id, details="دفعة على حساب"
                 ).aggregate(total_specific_credit=Sum('credit'))
 
             total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
@@ -1134,7 +1138,7 @@ def create_storage_record(request):
             client_id = client.clientid
 
         last_balance = (
-            TransactionsHistoryTable.objects.filter(client_id_id=client_id)
+            TransactionsHistoryTable.objects.filter(object_id=client_id)
             .order_by("-registration_date")
             .first()
         )
@@ -1148,7 +1152,8 @@ def create_storage_record(request):
             details=f"{data.get('subsection')} / {data.get('reciept_no')}",
             registration_date=transaction_date,
             current_balance=updated_balance,  # Updated balance
-            client_id=client_id,  # Client ID
+            content_type=ContentType.objects.get_for_model(client),
+            object_id=client_id,  # Client ID
         )
         account_statement.save()
 
@@ -1311,10 +1316,32 @@ def get_account_statement(request):
     if not client_id:
         return Response({'error': 'Client ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    client = None
+    content_type = None
+
     try:
-        items = TransactionsHistoryTable.objects.filter(client_id_id=client_id)
+        # Try getting client from AllClientsTable
+        client = models.AllClientsTable.objects.get(clientid=client_id)
+        content_type = ContentType.objects.get_for_model(models.AllClientsTable)
+    except models.AllClientsTable.DoesNotExist:
+        try:
+            # Try getting client from EmployeesTable
+            client = models.EmployeesTable.objects.get(employee_id=client_id)
+            content_type = ContentType.objects.get_for_model(models.EmployeesTable)
+        except models.EmployeesTable.DoesNotExist:
+            raise Http404("Client not found")
+
+    try:
+        # Get all transactions related to the client using GenericForeignKey
+        items = models.TransactionsHistoryTable.objects.filter(
+            content_type=content_type,
+            object_id=client_id
+        )
+
+        # Serialize the results
         serializer = TransactionsHistoryTableSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -2119,12 +2146,17 @@ def get_sellinvoice_no(request):
         # Handle unexpected errors
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+def get_last_sellinvoice_no():
+    last_invoice = SellinvoiceTable.objects.order_by("-invoice_no").first()
+    return last_invoice.invoice_no if last_invoice else 0
+
 @extend_schema(
 description="""create a new sell invoice""",
 tags=["Sell Invoice"],
 )
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+#@permission_classes([IsAuthenticated])
 def create_sell_invoice(request):
     if request.method == "POST":
         try:
@@ -2151,8 +2183,7 @@ def create_sell_invoice(request):
             total_credit = balance_data.get('total_credit') or Decimal('0.0000')
             client_balance = total_credit - total_debt
 
-            last_receipt_response = get_sellinvoice_no(request)
-            last_receipt_no = last_receipt_response.get("autoid", 0)
+            last_receipt_no = get_last_sellinvoice_no()
             next_receipt_no = int(last_receipt_no) + 1
 
             for_who = "application" if data.get("for_who") == "application" else None
@@ -2160,7 +2191,7 @@ def create_sell_invoice(request):
             # Prepare the data for creating a new invoice
             invoice_data = {
                 'invoice_no': next_receipt_no,
-                'client_obj': client_obj,
+                'client_obj': client_obj.clientid,
                 'client_id': client_obj.clientid,
                 'client_name': client_obj.name,
                 'client_rate': client_obj.category,
@@ -2203,7 +2234,7 @@ description="""create a new sell invoice item""",
 tags=["Sell Invoice","Sell Invoice Items"],
 )
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+#@permission_classes([IsAuthenticated])
 def Sell_invoice_create_item(request):
     if request.method == "POST":
         try:
@@ -2235,7 +2266,7 @@ def Sell_invoice_create_item(request):
 
             # Prepare the data for creating a new SellInvoiceItemsTable instance
             item_data = {
-                'invoice_instance': invoice,
+                'invoice_instance': invoice.autoid,
                 'invoice_no': data.get("invoice_id"),
                 'item_no': product.itemno,
                 'pno': data.get("pno"),
@@ -2245,7 +2276,7 @@ def Sell_invoice_create_item(request):
                 'company': product.companyproduct,
                 'company_no': product.replaceno,
                 'quantity': item_value,
-                'date': timezone.now(),
+                'date': f"{timezone.now().date()}",
                 'place': product.itemplace,
                 'dinar_unit_price': Decimal(product.buyprice or 0),
                 'dinar_total_price': Decimal(product.buyprice or 0) * item_value,

@@ -17,14 +17,16 @@ Including another URLconf
 """
 from django.conf import settings
 from django.conf.urls.static import static
-
+#from almog1 import wholesale_app,products
 from django.contrib import admin
 from django.urls import path
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 import rest_framework
 from almogOil import consumers
-from almogOil import api_views,views,mainitem_api_views,api_temp,HozmaApi_views
+from almogOil import api_views,views,api_temp
+from products import views as products_views
+from products import api_views as products_api_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework.routers import DefaultRouter
@@ -41,6 +43,7 @@ router.register(r'api/balance-editions-api', api_views.BalanceEditionsTableViewS
 router.register(r'api/attendance-api', api_views.AttendanceTableViewSet)
 
 urlpatterns = [
+    path('hozma/', include('wholesale_app.urls')),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
 
@@ -63,19 +66,19 @@ urlpatterns = [
     path('products-movement', views.ProductsMovementReport, name='products-movement'),
     path('products-balance', views.ProductsBalance, name='products-balance'),
     path('data-inventory', views.DataInventory, name='data-inventory'),
-    path('api/get-data/', mainitem_api_views.get_data, name='get_data'),
+    path('api/get-data/', products_api_views.get_data, name='get_data'),
     path('lost-and-damaged', views.LostDamaged, name='lost-and-damaged'),
     path('main-catalog', views.MainCat, name='main-catalog'),
     path('measurements', views.Measurements, name='measurements'),
-    path('create_main_item/', mainitem_api_views.create_main_item, name='create_main_item'),
-    path('delete-record/',mainitem_api_views.delete_record, name='delete_record'),
-    path('edit_main_item/', mainitem_api_views.edit_main_item, name='edit_main_item'),
-    path('get_item_data/<int:fileid>/', mainitem_api_views.get_item_data, name='get_item_data'),
+    path('create_main_item/', products_api_views.create_main_item, name='create_main_item'),
+    path('delete-record/',products_api_views.delete_record, name='delete_record'),
+    path('edit_main_item/', products_api_views.edit_main_item, name='edit_main_item'),
+    path('get_item_data/<int:fileid>/', products_api_views.get_item_data, name='get_item_data'),
     path('maintype', views.MainCat, name='maintype'),
     path('subtype', views.SubCat, name='subtype'),
     path('manage_companies', views.manage_companies, name='manage_companies'),
     path('countries/', views.manage_countries, name='manage_countries'),
-    path('api/filter-items', mainitem_api_views.web_filter_items, name='filter_items'),
+    path('api/filter-items', products_api_views.web_filter_items, name='filter_items'),
     path('more-details', views.MoreDetails, name='more-details'),
     path('generate-pdf/', views.generate_pdf, name='generate_pdf'),
     path('oem/', views.OemNumbers, name='oem'),
@@ -85,13 +88,13 @@ urlpatterns = [
     path('import-tabulator-data/', views.process_excel_and_import, name='import_tabulator_data'),
     path('api/filter-clients/', api_temp.filter_clients, name='filter-clients'),
     path('api/filter-client-input/', api_temp.filter_clients_input, name='filter-client-input'),
-    path('update-itemvalue', mainitem_api_views.update_itemvalue, name='update-itemvalue'),
+    path('update-itemvalue', products_api_views.update_itemvalue, name='update-itemvalue'),
     path('fetch-lost-damaged-data/', api_temp.fetch_lost_damaged_data, name='fetch_lost_damaged_data'),
     path('add-lost-damaged', api_temp.add_lost_damaged, name='add_lost_damaged'),
     path('filter-lost-damaged', api_temp.filter_lost_damaged, name='filter_lost_damaged'),
     path('api/delete-lost-damaged', api_temp.delete_lost_damaged, name='delete_lost_damaged'),
     path('storage', views.StoragePlaces, name='storage'),
-    path('update-storage', mainitem_api_views.update_storage, name='update-storage'),
+    path('update-storage', products_api_views.update_storage, name='update-storage'),
     path('clients-management', views.ClientsManagement, name='clients-management'),
     path('api/create-client', api_temp.create_client_record, name='create-client'),
     path('api/update-client', api_temp.update_client_record, name='update-client'),
@@ -134,7 +137,7 @@ urlpatterns = [
     path("process_temp_confirm",views.process_temp_confirm,name="process_temp_confirm"),
     path("confirm_temp_invoice",api_temp.confirm_temp_invoice,name="confirm_temp_invoice"),
     path("buy-invoice_edit-prices",views.buyInvoice_edit_prices,name="buyInvoice_edit_prices"),
-    path("check_items",mainitem_api_views.check_items,name="check_items"),
+    path("check_items",products_api_views.check_items,name="check_items"),
     path('delete-buyinvoice-cost/<int:autoid>/', api_temp.delete_buyinvoice_cost, name='delete_buyinvoice_cost'),
     path("b_invoice_management",views.Buyinvoice_management,name="b_invoice_management"),
     path('fetch-buyinvoices', api_temp.fetch_buyinvoices, name='fetch_buyinvoices'),
@@ -157,7 +160,7 @@ urlpatterns = [
     path('validate_sell_invoice', api_temp.validate_sell_invoice, name='validate_sell_invoice'),
     path('deliver_sell_invoice', api_temp.deliver_sell_invoice, name='deliver_sell_invoice'),
     path('cancel_sell_invoice', api_temp.cancel_sell_invoice, name='cancel_sell_invoice'),
-    path('api/mainitems/get_last_pno', mainitem_api_views.get_mainItem_last_pno, name='get_last_pno'),
+    path('api/mainitems/get_last_pno', products_api_views.get_mainItem_last_pno, name='get_last_pno'),
     path('accept-order/<int:queue_id>/', api_views.accept_order, name='accept-order'),
     path('skip-order/<int:queue_id>/', api_views.skip_order, name='skip-order'),
     path('decline-order/<int:queue_id>/', api_views.decline_order, name='decline-order'),
@@ -165,7 +168,7 @@ urlpatterns = [
     path('api/engines/', api_views.get_engines, name='get_engines'),
     path('api/main-types/', api_views.get_main_types, name='get_main_types'),
     path('api/sub-types/', api_views.get_sub_types, name='get_sub_types'),
-    path('api/filter-itemsapp/', mainitem_api_views.app_filter_Items, name='filter-items-for-app'),
+    path('api/filter-itemsapp/', products_api_views.app_filter_Items, name='filter-items-for-app'),
 
     path('api/get-drop-lists', api_views.get_dropboxes, name='get-drop-lists'),
     path('fetch_messages/<int:feedback_id>/', views.fetch_feedback_messages, name='fetch_feedback_messages'),
@@ -199,10 +202,10 @@ urlpatterns = [
     path('invoice/delivery/', api_views.get_delivery_invoices, name='get_delivery_invoices'),
     path('invoice/<str:invoice_no>/update_status/', api_views.update_invoice_status, name='update_invoice_status'),
     path('item/<int:id>/add-more-categories',views.addMoreCatView,name='add-more-categories'),
-    path('item/<int:item_id>/update-main/',mainitem_api_views.UpdateItemsItemmainApiView,name='update-main'),
-    path('item/<int:item_id>/update-sub/',mainitem_api_views.UpdateItemsSubmainApiView,name='update-sub'),
-    path('item/<int:item_id>/update-model/',mainitem_api_views.UpdateItemsModelApiView,name='update-model'),
-    path('item/<int:item_id>/update-engine/',mainitem_api_views.UpdateItemsEngineApiView,name='update-engine'),
+    path('item/<int:item_id>/update-main/',products_api_views.UpdateItemsItemmainApiView,name='update-main'),
+    path('item/<int:item_id>/update-sub/',products_api_views.UpdateItemsSubmainApiView,name='update-sub'),
+    path('item/<int:item_id>/update-model/',products_api_views.UpdateItemsModelApiView,name='update-model'),
+    path('item/<int:item_id>/update-engine/',products_api_views.UpdateItemsEngineApiView,name='update-engine'),
     path('assign-order-manual/', views.assign_order_manual, name='assign-order'),
     path('feedback_details/<int:feedback_id>/', views.feedback_details, name='feedback_details'),
     path('get-employee-orders/<int:employee_id>/', api_views.get_employee_order, name='get-employee-order'),
@@ -246,7 +249,7 @@ urlpatterns = [
     path('api/store-token/', api_views.store_fcm_token, name='store_fcm_token'),  # Define the API URL
     path('archived-orders/<int:employee_id>/', api_views.get_archived_orders, name='get_archived_orders'),
     path('api/employee_current_order_info/<int:employee_id>/', api_views.employee_current_order_info, name='employee_current_order_info'),
-    path('api/products/<int:id>/add-json-description',mainitem_api_views.mainitem_add_json_desc,name="add-json-description"),
+    path('api/products/<int:id>/add-json-description',products_api_views.mainitem_add_json_desc,name="add-json-description"),
     path('api/payment-requests/<int:id>/accept',api_views.accept_payment_req,name="accept_payment_request"),
     path('api/filter-return-requests/', api_views.filter_return_reqs, name='filter_return_reqs'),
     path('sources/management',views.sources_management_View,name='sources_management_View'),
@@ -254,17 +257,17 @@ urlpatterns = [
     path('send_notifications/', api_views.send_notification, name='send_notification'),
     path('api/create_source',api_views.create_source_record,name="create_source_record"),
     path('return-permissions/<int:id>/profile/',views.return_permission_profile,name="return_permission-profile"),
-    path('api/products/<int:id>/get-images',mainitem_api_views.get_product_images,name="product-get-images"),
+    path('api/products/<int:id>/get-images',products_api_views.get_product_images,name="product-get-images"),
     path('users/management', views.users_management,name="users_management"),
     path('maintypes/<int:id>/logo',views.maintype_logo_view,name="maintype_logo_view"),
     path('assign-orders-page/<str:invoice_id>/', views.assign_orders_page, name='assign_orders_page'),
     path('assign-order-employee/<str:invoice_id>/', views.assign_order_to_employee, name='assign_order_to_employee'),
-    path('maintypes/<int:id>/upload/logo',api_views.upload_maintype_logo,name="upload_maintype_logo_api"),
+    path('maintypes/<int:id>/upload/logo',products_api_views.upload_maintype_logo,name="upload_maintype_logo_api"),
     path('employee-detail/<int:employee_id>/', api_views.employee_detail_get, name='employee-detail-get'),
     path('companies/<int:id>/logo',views.company_logo_view,name="company_logo_view"),
     path('companies/<int:id>/upload/logo',api_views.upload_company_logo,name="upload_company_logo_api"),
     path('api/token/validate-token/', api_views.validate_token),
-    path('products/<int:id>/company/logo',api_views.get_logo_by_pno,name="get_company_logo_by_pno_api"),
+    path('products/<int:id>/company/logo',products_api_views.get_logo_by_pno,name="get_company_logo_by_pno_api"),
     path('employees/management/reports',views.employees_report_view,name="employees_report_view"),
     path('employees/management/salaries',views.employees_salary_view,name="employees_salaries_view"),
     path('employees/management/salaries/edit',views.employees_salary_edit_view,name="employees_salaries_edit_view"),
@@ -275,27 +278,12 @@ urlpatterns = [
     path('api/get/employees-details-with-balance',api_views.get_all_employees_with_balance,name='employees-details-with-balance'),
     path('api/employees-api/<int:id>/edit-balance',api_views.Edit_employee_balance,name="employee-edit-balance"),
     path('lib/two_way/',api_views.two_way,name="two_way"),
-
-#down here is for carparts
-    path('preorder/create/', HozmaApi_views.create_pre_order, name='create_pre_order'),
-    path('preorder/last-invoice/', HozmaApi_views.get_sellinvoice_no, name='get_sellinvoice_no'),
-    path('preorder/add-item/', HozmaApi_views.Sell_invoice_create_item, name='sell_invoice_create_item'),
-    path('hozmabrands/',api_views.CarParts_page,name='CarParts_page'),
-    path('item-for-inqury-page/', api_views.item_filter_page, name='item_filter_page'),
-    path('hozmaHome/',api_views.CarPartsHome_page,name='CarParts_page'),
     path('api/employees/<int:employee_id>/', api_views.get_employee_details, name='get_employee_details'),
-    path('hozmaDashbord/',api_views.Dashbord_page,name='dashbord'),
-    path('brand/<str:brand>/', api_views.brand_items, name='brand_items'),
-    path('hozmaCart/',api_views.Cart_page, name='Cart'),
+
     path('api/balance-editions/user/<int:id>',api_views.Get_balance_editions_by_employee, name='balance-editions-for-user'),
     path('api/filter/balance-editions-api/',api_views.filterBalanceEditions, name='filter-balance-editions'),
     path('api/filter/employees-api/',api_views.filter_employees, name='filter-employees'),
-    path('hozmatrack-order/', api_views.track_order, name='track_order'),
-    path('hozmareturn-policy/', api_views.return_policy, name='return_policy'),
-    path('hozmafaq/', api_views.faq, name='faq'),
-    path('hozmalogin/', views.hozmalogin, name='hozmalogin'),
-    path('hozmaterms-conditions/', api_views.terms_conditions, name='terms_conditions'),
-    path('item-for-inqury-page/<int:pno>/', api_views.item_detail_view, name='item_detail'),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode

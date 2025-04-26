@@ -112,7 +112,7 @@ async function fetchAndUpdateCartItemImage(pno) {
   try {
     console.log(`Fetching image for product number: ${pno}`);
 
-    const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
+    const response = await fetchWithAuth(`${baseUrl}/hozma/api/products/${pno}/get-images`);
     console.log('Raw response from API:', response);
 
     let imageUrl = '';
@@ -174,18 +174,28 @@ function addToCart(pno,fileid, itemno, name, price, image = '') {
 
 }
 
-function addToCartWithQuantity(pno,fileid, itemno, name, price, image = '', quantity = 1) {
+function addToCartWithQuantity(pno, fileid, itemno, name, price, image = '', quantity = 1, stock) {
   quantity = parseInt(quantity);
+
+  // Ensure quantity is a valid number and greater than 0
   if (isNaN(quantity) || quantity <= 0) {
     alert('الرجاء إدخال كمية صحيحة أكبر من صفر.');
     return;
   }
-  
+
+  // Check if the quantity exceeds stock
+  if (quantity > stock) {
+    alert(`الكمية المتوفرة هي ${stock}. يمكنك شراء الكمية المتوفرة فقط.`);
+    return;
+  }
+
   const existingItem = cart.find(item => item.pno === pno);
-  
+
+  // Update the quantity if item already exists in the cart
   if (existingItem) {
     existingItem.quantity = quantity;
   } else {
+    // Add new item to the cart if it doesn't exist
     cart.push({
       pno,
       fileid,
@@ -196,10 +206,11 @@ function addToCartWithQuantity(pno,fileid, itemno, name, price, image = '', quan
       image
     });
   }
-  
+
   updateCart();
-  updateCartPageUI(); 
+  updateCartPageUI();
 }
+
 
 function removeFromCart(pno) {
   const index = cart.findIndex(item => item.pno === pno);
@@ -437,7 +448,6 @@ function updateCartPageUI() {
 
 
 async function checkout() {
-  // Load cart from localStorage
   let cart = JSON.parse(localStorage.getItem('product_cart')) || [];
   console.log("Loaded cart:", cart);
 
@@ -455,7 +465,7 @@ async function checkout() {
   }
 
   const data = {
-    client: clientId, // Make sure to use the dynamic ID
+    client: clientId,
     client_rate: "",
     client_category: "",
     client_limit: "",
@@ -471,8 +481,7 @@ async function checkout() {
   let invoiceNo;
 
   try {
-    // Create invoice
-    const response = await fetch('http://45.13.59.226/preorder/create/', {
+    const response = await fetch('http://45.13.59.226/hozma/preorder/create/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -499,46 +508,54 @@ async function checkout() {
   console.log("Invoice number:", invoiceNo);
   window.invoiceAutoId = invoiceNo;
 
-  // Prepare the required data for each item
-  const simplifiedItems = cart.map(item => ({
+  // Send each item one by one
+for (let item of cart) {
+  const itemData = {
     pno: item.pno,
     fileid: item.fileid,
     invoice_id: invoiceNo,
     itemvalue: item.quantity,
     sellprice: parseFloat(item.price).toFixed(2)
-  }));
-  console.log("Prepared items for invoice:", simplifiedItems);
+  };
+
+  // Log the item data before sending
+  console.log("Sending item data:", itemData);
 
   try {
-    // Add items to the invoice
-    const itemsResponse = await fetch('http://45.13.59.226/preorder/add-item/', {
+    const itemResponse = await fetch('http://45.13.59.226/hozma/preorder/add-item/', {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ items: simplifiedItems })
+      body: JSON.stringify(itemData)
     });
-
-    const itemsResult = await itemsResponse.json();
-
-    if (itemsResponse.ok && itemsResult.success) {
-      console.log("Items added successfully:", itemsResult);
-    } else {
-      console.error("Failed to add items:", itemsResult);
-      alert("فشل في إضافة العناصر إلى الفاتورة.");
+  
+    const itemResult = await itemResponse.json();
+    console.log("Server response for item:", itemResult);
+    
+    // Check if the response contains a success message or confirmation
+    if (!itemResponse.ok || itemResult.confirm_status !== 'confirmed') {
+      console.error("Failed to add item:", itemResult);
+      alert(`فشل في إضافة عنصر ${item.pno} إلى الفاتورة.`);
       return;
+    } else {
+      console.log("Item added:", itemResult);
     }
-
+    
   } catch (error) {
-    console.error("Error while adding items:", error);
-    alert("حدث خطأ أثناء إضافة العناصر. الرجاء المحاولة لاحقًا.");
+    console.error("Error while adding item:", error);
+    alert(`حدث خطأ أثناء إضافة عنصر ${item.pno}. الرجاء المحاولة لاحقًا.`);
     return;
   }
+}  
+
+
 
   // Clear cart
   localStorage.removeItem('product_cart');
   alert("تم إنشاء الفاتورة بنجاح!");
 }
+
 
 // Initialize cart on page load
 document.addEventListener('DOMContentLoaded', function () {

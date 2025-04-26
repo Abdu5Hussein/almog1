@@ -46,7 +46,7 @@
 
     <div class="col">
       <label class="form-label">الاسم</label>
-      <select name="employee" id="employee" class="form-control text-end"  style="width: calc(100% - 95px);">
+      <select name="employee" id="employee" class="form-control text-center" >
           <option value="" selected>اختر موظف</option>
           {% for x in employees %}
           <option value="{{ x.employee_id }}" data-salary="{{ x.salary }}">{{ x.name }}</option>
@@ -55,7 +55,7 @@
     </div>
     <div class="col">
         <label for="month" class="form-label fw-bold">الشهر:</label>
-        <select id="month" class="form-select">
+        <select id="month" class="form-select text-center">
           <option value="0">يناير</option>
           <option value="1">فبراير</option>
           <option value="2">مارس</option>
@@ -72,7 +72,7 @@
     </div>
     <div class="col">
       <label for="year" class="form-label fw-bold">السنة:</label>
-      <input type="number" id="year" value="2025" class="form-control">
+      <input type="number" id="year" value="2025" class="form-control text-center">
     </div>
   </div>
   <div class="row align-items-end mb-3">

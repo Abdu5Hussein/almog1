@@ -1,21 +1,9 @@
 # serializers.py
 from rest_framework import serializers
 from . import models
-from .models import ChatMessage, SupportChatMessageSys, CartItem,SellinvoiceTable,SupportChatConversation, AllClientsTable, Feedback,EmployeesTable
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-
-class MainitemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Mainitem
-        fields = '__all__'
-        # fields = [
-        #     'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname', 'eitemname', 'companyproduct',
-        #     'replaceno', 'pno', 'barcodeno', 'memo', 'itemsize', 'itemperbox', 'itemthird', 'itemvalue',
-        #     'itemtemp', 'itemvalueb', 'resvalue', 'itemplace', 'orgprice', 'orderprice', 'costprice',
-        #     'buyprice', 'lessprice',#'shortname',
-        # ]
 
 class EmployeesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,31 +20,9 @@ class SourcesSerializer(serializers.ModelSerializer):
         model = models.AllSourcesTable
         fields = "__all__"
 
-class SubTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Subtypetable
-        fields = "__all__"
-
-
-class MainTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Maintypetable
-        fields = "__all__"
-
 class StorageTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.StorageTransactionsTable
-        fields = "__all__"
-
-
-class ModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Modeltable
-        fields = "__all__"
-
-class EngineSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.enginesTable
         fields = "__all__"
 
 
@@ -65,7 +31,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
     receiver_username = serializers.CharField(source='receiver.username', read_only=True)
 
     class Meta:
-        model = ChatMessage
+        model = models.ChatMessage
         fields = ['id', 'sender', 'receiver', 'sender_username', 'receiver_username', 'message', 'timestamp', 'is_read']
 
 class FeedbackMessageSerializer(serializers.ModelSerializer):
@@ -79,7 +45,7 @@ class SupportChatMessageSysSerializer(serializers.ModelSerializer):
     conversation_id = serializers.IntegerField(source='conversation.conversation_id')
 
     class Meta:
-        model = SupportChatMessageSys
+        model = models.SupportChatMessageSys
         fields = ['message_id', 'conversation_id', 'sender_username', 'sender_type', 'message', 'timestamp', 'is_read']
 
 
@@ -89,14 +55,14 @@ class SupportChatConversationSerializer(serializers.ModelSerializer):
     messages = SupportChatMessageSysSerializer(many=True)
 
     class Meta:
-        model = SupportChatConversation
+        model = models.SupportChatConversation
         fields = ['conversation_id', 'client_name', 'support_agent_name', 'messages']
 
 
 
 class SupportChatMessageSysSerializer1(serializers.ModelSerializer):
     class Meta:
-        model = SupportChatMessageSys
+        model = models.SupportChatMessageSys
         fields = ('message_id', 'sender', 'sender_type', 'message', 'timestamp')
 
 class SupportChatConversationSerializer1(serializers.ModelSerializer):
@@ -105,13 +71,13 @@ class SupportChatConversationSerializer1(serializers.ModelSerializer):
     messages = SupportChatMessageSysSerializer(many=True, read_only=True)
 
     class Meta:
-        model = SupportChatConversation
+        model = models.SupportChatConversation
         fields = ('conversation_id', 'client', 'support_agent', 'created_at', 'updated_at', 'messages')
 
 
 class AllClientsTableSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AllClientsTable
+        model = models.AllClientsTable
         fields =  "__all__"
 
 
@@ -120,7 +86,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
     employee_response = serializers.CharField(required=False)  # Employee response is optional initially
 
     class Meta:
-        model = Feedback
+        model = models.Feedback
         fields = ['id', 'sender', 'feedback_text', 'created_at', 'employee_response', 'is_resolved', 'response_at']
 
 class SellInvoiceSerializer(serializers.ModelSerializer):
@@ -146,10 +112,6 @@ class ReturnPermissionItemsSerializer(serializers.ModelSerializer):
         model = models.return_permission_items
         fields = "__all__"  # Include all fields
 
-class EnginesTableSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.enginesTable
-        fields = ['fileid', 'engine_name', 'maintype_str', 'subtype_str']
 
 class BuyInvoiceSerializer(serializers.ModelSerializer):
     invoice_date = serializers.SerializerMethodField()
@@ -169,36 +131,26 @@ class SellInvoiceItemsSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SellinvoiceTable
+        model = models.SellinvoiceTable
         fields = '__all__'
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EmployeesTable
+        model = models.EmployeesTable
         fields = '__all__'
 
 class EmployeeWithOrderSerializer(serializers.ModelSerializer):
     orders = OrderSerializer(many=True, read_only=True)  # Assuming there is a related field for orders
 
     class Meta:
-        model = EmployeesTable
+        model = models.EmployeesTable
         fields = ['employee_id', 'name', 'is_available', 'orders']
 
 
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CartItem
-        fields = '__all__'
-
-class productImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Imagetable
-        fields = '__all__'
-
-class SubsectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Subsectionstable
+        model = models.CartItem
         fields = '__all__'
 
 
@@ -230,10 +182,6 @@ class BuyinvoiceCostsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LostAndDamagedTableSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.LostAndDamagedTable
-        fields = '__all__'
 
 class BalanceEditionsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -247,7 +195,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 class BasicEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EmployeesTable
+        model = models.EmployeesTable
         # List only the basic, non-sensitive fields.
         fields = [
             'employee_id',

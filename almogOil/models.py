@@ -41,8 +41,8 @@ class AllClientsTable(models.Model):
     last_transaction_amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     geo_location = models.CharField(max_length=200, blank=True, null=True)
     # New fields
-    username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
-    password = models.CharField(max_length=255,null=False)  # This will store the hashed password
+    username = models.CharField(max_length=150, unique=True,null=True)  # Ensure username is unique
+    password = models.CharField(max_length=255,null=True)  # This will store the hashed password
 
     class Meta:
         managed = True
@@ -1092,7 +1092,7 @@ class Attendance_table(models.Model):
 class PreOrderTable(models.Model):
     autoid = models.AutoField(primary_key=True)
     client = models.ForeignKey(AllClientsTable, on_delete=models.CASCADE)
-    invoice_no = models.IntegerField()
+    invoice_no = models.IntegerField(unique=True)
     invoice_date = models.DateTimeField(blank=True, null=True)
     client_rate = models.CharField(max_length=60, blank=True, null=True)
     client_category = models.CharField(max_length=60, blank=True, null=True)
@@ -1108,6 +1108,8 @@ class PreOrderTable(models.Model):
     is_confirmed_by_client = models.BooleanField(default=False)
     is_declined_by_client = models.BooleanField(default=False)
     date_time = models.DateTimeField(default=timezone.now)
+    client_confrim = models.BooleanField(default=False)
+    shop_confrim = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'PreOrderTable'
@@ -1141,6 +1143,7 @@ class ConfirmedOrderTable(models.Model):
 
 class ArchivedOrderTable(models.Model):
     preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
+    
     reason = models.CharField(max_length=255, blank=True, null=True)
     date_archived = models.DateTimeField(auto_now_add=True)
 
@@ -1157,7 +1160,7 @@ class PreOrderItemsTable(models.Model):
     company_no = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     quantity = models.IntegerField(blank=True, null=True)
     quantity_unit = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
-    date = models.CharField(max_length=130, db_collation='Arabic_CI_AS', blank=True, null=True)
+    date = models.DateTimeField(blank=True, null=True)
     place = models.CharField(max_length=130, db_collation='Arabic_CI_AS', blank=True, null=True)
     dinar_unit_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     dinar_total_price = models.DecimalField(max_digits=19, decimal_places=4, default=0)
@@ -1166,13 +1169,14 @@ class PreOrderItemsTable(models.Model):
     prev_quantity = models.IntegerField(blank=True, null=True)
     current_quantity = models.IntegerField(blank=True, null=True)
     current_quantity_after_return = models.IntegerField(blank=True, null=True)
-    invoice_instance = models.ForeignKey(SellinvoiceTable, models.DO_NOTHING)
+    invoice_instance = models.ForeignKey(PreOrderTable, models.DO_NOTHING)
     invoice_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     main_cat = models.CharField(max_length=170, db_collation='Arabic_CI_AS', blank=True, null=True)
     sub_cat = models.CharField(max_length=170, db_collation='Arabic_CI_AS', blank=True, null=True)
     paid = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     remaining = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    confirm_quantity = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = True

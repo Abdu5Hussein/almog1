@@ -52,6 +52,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from decimal import Decimal
 from . import models, serializers
+from products import serializers as product_serializers
 from .models import AllClientsTable, SellinvoiceTable
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -209,16 +210,16 @@ tags=["Drop Boxes"],
 @api_view(["GET"])
 def get_dropboxes(request):
     model = models.Modeltable.objects.all()
-    serialized_model = serializers.ModelSerializer(model, many=True)
+    serialized_model = product_serializers.ModelSerializer(model, many=True)
 
     engines = models.enginesTable.objects.all()
-    serialized_engines = serializers.EngineSerializer(engines, many=True)
+    serialized_engines = product_serializers.EngineSerializer(engines, many=True)
 
     main = models.Maintypetable.objects.all()
-    serialized_main = serializers.MainTypeSerializer(main, many=True)
+    serialized_main = product_serializers.MainTypeSerializer(main, many=True)
 
     sub = models.Subtypetable.objects.all()
-    serialized_sub = serializers.SubTypeSerializer(sub, many=True)
+    serialized_sub = product_serializers.SubTypeSerializer(sub, many=True)
 
     return Response({
         'models':serialized_model.data,
@@ -232,34 +233,34 @@ def get_dropboxes(request):
     list=extend_schema(
         summary="List all engines",
         description="Returns a list of all engine entries in the database.",
-        responses={200: serializers.EnginesTableSerializer(many=True)},
+        responses={200: product_serializers.EnginesTableSerializer(many=True)},
         tags=["Engines"],
     ),
     retrieve=extend_schema(
         summary="Retrieve a single engine",
         description="Get details of a single engine by its ID.",
-        responses={200: serializers.EnginesTableSerializer},
+        responses={200: product_serializers.EnginesTableSerializer},
         tags=["Engines"],
     ),
     create=extend_schema(
         summary="Create a new engine",
         description="Adds a new engine record to the database.",
-        request=serializers.EnginesTableSerializer,
-        responses={201: serializers.EnginesTableSerializer},
+        request=product_serializers.EnginesTableSerializer,
+        responses={201: product_serializers.EnginesTableSerializer},
         tags=["Engines"],
     ),
     update=extend_schema(
         summary="Update an engine",
         description="Updates an existing engine by its ID.",
-        request=serializers.EnginesTableSerializer,
-        responses={200: serializers.EnginesTableSerializer},
+        request=product_serializers.EnginesTableSerializer,
+        responses={200: product_serializers.EnginesTableSerializer},
         tags=["Engines"],
     ),
     partial_update=extend_schema(
         summary="Partially update an engine",
         description="Updates some fields of an engine by its ID.",
-        request=serializers.EnginesTableSerializer,
-        responses={200: serializers.EnginesTableSerializer},
+        request=product_serializers.EnginesTableSerializer,
+        responses={200: product_serializers.EnginesTableSerializer},
         tags=["Engines"],
     ),
     destroy=extend_schema(
@@ -272,7 +273,7 @@ def get_dropboxes(request):
 @permission_classes([IsAuthenticated])
 class EnginesTableViewSet(viewsets.ModelViewSet):
     queryset = models.enginesTable.objects.all()
-    serializer_class = serializers.EnginesTableSerializer
+    serializer_class = product_serializers.EnginesTableSerializer
 @extend_schema_view(
     list=extend_schema(
         summary="List all employees",
@@ -319,6 +320,46 @@ class EmployeesTableViewSet(viewsets.ModelViewSet):
     queryset = models.EmployeesTable.objects.all()
     serializer_class = serializers.EmployeesSerializer
 
+    def create(self, request, *args, **kwargs):
+        # Start a transaction to ensure atomicity
+        with transaction.atomic():
+            try:
+                # First, serialize and validate the employee data
+                employee_serializer = self.get_serializer(data=request.data)
+                if employee_serializer.is_valid():
+                    # Save employee data
+                    employee = employee_serializer.save()
+
+                    # # Create the client instance linked to the employee
+                    # client_data = {
+                    #     'name': request.data.get('client_name'),
+                    #     'employee': employee,  # assuming you have a ForeignKey to Employee in the client model
+                    #     'username': request.data.get('username'),  # Using the username from the request
+                    #     'password': request.data.get('password'),  # Using the password from the request
+                    #     # Add other fields for client as needed
+                    # }
+
+                    # Serialize the client data
+                    client_data = request.data.copy()  # Make a mutable copy of the request data
+                    client_data.pop('last_transaction', None)  # Remove 'last_transaction' if it exists
+
+                    client_serializer = serializers.AllClientsTableSerializer(data=client_data)
+                    if client_serializer.is_valid():
+                        # Save the client
+                        client_serializer.save()
+
+                        # Respond with success and both employee and client data
+                        return Response({
+                            "employee": employee_serializer.data,
+                            "client": client_serializer.data,
+                        }, status=status.HTTP_201_CREATED)
+                    else:
+                        return Response(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response(employee_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @extend_schema(
 description='''
@@ -329,7 +370,7 @@ tags=["Drop Boxes"],
 @api_view(["GET"])
 def get_models(request):
     models_data = models.Modeltable.objects.all()
-    serialized_data = serializers.ModelSerializer(models_data, many=True)
+    serialized_data = product_serializers.ModelSerializer(models_data, many=True)
     return Response({'models': serialized_data.data})
 
 @extend_schema(
@@ -341,7 +382,7 @@ tags=["Drop Boxes"],
 @api_view(["GET"])
 def get_engines(request):
     engines_data = models.enginesTable.objects.all()
-    serialized_data = serializers.EngineSerializer(engines_data, many=True)
+    serialized_data = product_serializers.EngineSerializer(engines_data, many=True)
     return Response({'engines': serialized_data.data})
 
 @extend_schema(
@@ -353,7 +394,7 @@ tags=["Drop Boxes"],
 @api_view(["GET"])
 def get_main_types(request):
     main_types_data = models.Maintypetable.objects.all()
-    serialized_data = serializers.MainTypeSerializer(main_types_data, many=True)
+    serialized_data = product_serializers.MainTypeSerializer(main_types_data, many=True)
     return Response({'main_types': serialized_data.data})
 
 @extend_schema(
@@ -365,7 +406,7 @@ tags=["Drop Boxes"],
 @api_view(["GET"])
 def get_sub_types(request):
     sub_types_data = models.Subtypetable.objects.all()
-    serialized_data = serializers.SubTypeSerializer(sub_types_data, many=True)
+    serialized_data = product_serializers.SubTypeSerializer(sub_types_data, many=True)
     return Response({'sub_types': serialized_data.data})
 
 """ Sell Invoice Api's """
@@ -2418,29 +2459,6 @@ def store_fcm_token(request):
         else:
             return Response({"error": "Invalid role. Role should be 'client' or 'employee'."}, status=status.HTTP_400_BAD_REQUEST)
 
-@extend_schema(
-description="""Upload a logo for maintype ,ex: logo for Mercedes.""",
-tags=["Main Types"],
-)
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def upload_maintype_logo(request, id):
-    if 'logo' not in request.FILES:
-        return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
-
-    image = request.FILES['logo']
-
-    try:
-        maintype = models.Maintypetable.objects.get(fileid=id)
-        maintype.logo_obj = image  # Assign the file object directly
-        maintype.save()
-        return Response({"message": "Logo uploaded successfully!"}, status=status.HTTP_200_OK)
-
-    except models.Maintypetable.DoesNotExist:
-        return Response({"error": "Maintypetable entry not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @extend_schema(
 description="""Upload a logo for companies.""",
@@ -2675,26 +2693,6 @@ def mobile_sign_in(request):
     except Exception as e:
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@extend_schema(
-description="""Get the company's logo by product's pno number.""",
-tags=["Companies","Products"],
-)
-@api_view(['GET'])
-#@permission_classes([IsAuthenticated])
-def get_logo_by_pno(request, id):
-    try:
-        product = get_object_or_404(models.Mainitem, pno=id)
-        company = get_object_or_404(models.Companytable, companyname=product.companyproduct)
-
-        logo = company.logo_obj
-        if logo:
-            logo_url = request.build_absolute_uri(logo.url)  # 👈 Full URL
-            return Response({"logo_url": logo_url}, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "Logo not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @extend_schema(
 description="""Retrieve Token and validate it.""",
@@ -2887,12 +2885,12 @@ def update_employee_balance(employee, amount, operation, description=None):
 
     # Create transaction
     models.TransactionsHistoryTable.objects.create(
-        transaction="Employee Transaction",
+        transaction=f"{operation.capitalize()} transaction",
         credit=amount if operation == "credit" else 0,
         debt=amount if operation == "debit" else 0,
         details=description or f"{operation.capitalize()} transaction",
         content_type=ContentType.objects.get_for_model(employee),
-        object_id=employee.pk
+        object_id=employee.employee_id
     )
 
     # Recalculate balance

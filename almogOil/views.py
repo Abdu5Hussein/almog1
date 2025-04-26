@@ -3,6 +3,7 @@ from decimal import Decimal
 import hashlib
 from .Tasks import assign_orders
 import json
+from django.contrib.contenttypes.models import ContentType
 import os
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -48,7 +49,6 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .serializers import ChatMessageSerializer
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
@@ -58,6 +58,7 @@ from django.http import JsonResponse
 import firebase_admin
 from firebase_admin import credentials, messaging
 from almogOil import serializers,models
+from products import serializers as product_serializers
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
 
@@ -1108,14 +1109,34 @@ def EmployeesDetailsView(req):
 
 @login_required
 def account_statement(request):
-    client_id = request.GET['id']
-    records = models.TransactionsHistoryTable.objects.filter(client_id_id=client_id)
-    client = models.AllClientsTable.objects.get(clientid=client_id)
+    client_id = request.GET.get('id')
+    if not client_id:
+        raise Http404("Missing client ID")
+
+    client = None
+    content_type = None
+
+    try:
+        client = models.AllClientsTable.objects.get(clientid=client_id)
+        content_type = ContentType.objects.get_for_model(models.AllClientsTable)
+    except models.AllClientsTable.DoesNotExist:
+        try:
+            client = models.EmployeesTable.objects.get(employee_id=client_id)
+            content_type = ContentType.objects.get_for_model(models.EmployeesTable)
+        except models.EmployeesTable.DoesNotExist:
+            raise Http404("Client not found")
+
+    records = models.TransactionsHistoryTable.objects.filter(
+        content_type=content_type,
+        object_id=client_id
+    )
+
     context = {
-        'records':records,
-        'client':client,
+        'records': records,
+        'client': client,
     }
-    return render(request,'account-statement.html',context)
+    return render(request, 'account-statement.html', context)
+
 
 @login_required
 def BuyInvoiceItemsView(request):
@@ -1685,7 +1706,7 @@ def sell_invoice_profile(request, id):
 
 class SendMessageView(generics.CreateAPIView):
     queryset = models.ChatMessage.objects.all()
-    serializer_class = ChatMessageSerializer
+    serializer_class = serializers.ChatMessageSerializer
 
     def create(self, request, *args, **kwargs):
 
@@ -1711,7 +1732,7 @@ class SendMessageView(generics.CreateAPIView):
      return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class GetChatMessagesView(generics.ListAPIView):
-    serializer_class = ChatMessageSerializer
+    serializer_class = serializers.ChatMessageSerializer
 
     def get_queryset(self):
      sender_id = self.request.query_params.get('sender')
@@ -1720,7 +1741,7 @@ class GetChatMessagesView(generics.ListAPIView):
 
 class MarkMessageAsReadView(generics.UpdateAPIView):
     queryset = models.ChatMessage.objects.all()
-    serializer_class = ChatMessageSerializer
+    serializer_class = serializers.ChatMessageSerializer
 
     def update(self, request, *args, **kwargs):
         message = self.get_object()
@@ -2085,7 +2106,7 @@ def request_payment_view(request):
 
     for req in requests:
         # Calculate balance from TransactionsHistoryTable
-        balance_data = models.TransactionsHistoryTable.objects.filter(client_id=req.client_id).aggregate(
+        balance_data = models.TransactionsHistoryTable.objects.filter(object_id=req.client_id).aggregate(
             total_debt=Sum('debt'),
             total_credit=Sum('credit')
         )

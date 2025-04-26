@@ -168,8 +168,9 @@
    document.querySelector('.btn-add-to-cart').addEventListener('click', function() {
     // Get the product details from Django template variables
     const product = {
-        pno: '{{ pno }}',                     // Using Django template variable
-        itemno: '{{ pno }}',                  // Using same as pno if itemno not available
+        pno: '{{ pno }}',   
+        Fileid:'{{ fileid }}',                   // Using Django template variable
+        itemno: '{{ itemno }}',                  // Using same as pno if itemno not available
         name: '{{ itemname|escapejs }}',      // Escaping JavaScript special characters
         price: parseFloat('{{ buyprice }}'),  // Using buyprice from template
         image: ''                            // Default empty string (no image in your template)
@@ -181,6 +182,7 @@
     // Add to cart with quantity using the new function
     addToCartWithQuantity(
         product.pno,
+        product.Fileid,
         product.itemno,
         product.name,
         product.price,

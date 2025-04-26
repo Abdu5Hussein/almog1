@@ -751,6 +751,14 @@
             applyFilters();
         });
         });
+        employees_table.on("rowClick", function (e, row) {
+          console.log("Row clicked after data update:", row.getData());
+          const employee_id = row.getData().employee_id; // Get pno of the clicked row
+          console.log("Clicked employee_id:", employee_id);
+
+          Helper_openWindow("/account-statements?id="+ employee_id,"employee_reports");
+        });
+       // http://45.13.59.226/account-statements?id=15
     </script>
   </body>
 </html>
