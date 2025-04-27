@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+          ////'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
         }
       }).then((response) => response.json())
         .then((data) => {
@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+        ////'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
       }
     })
       .then((response) => response.json())
@@ -462,7 +462,7 @@ document.addEventListener("DOMContentLoaded", function () {
       headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
-        'Authorization': `Bearer ${jwtToken_access}`,
+        //'Authorization': `Bearer ${jwtToken_access}`,
       },
       body: JSON.stringify(data),
     })
@@ -543,7 +543,7 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCSRFToken(),
-          'Authorization': `Bearer ${jwtToken_access}`,
+          //'Authorization': `Bearer ${jwtToken_access}`,
         },
         body: JSON.stringify(data),
       })
@@ -584,7 +584,7 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCSRFToken(),
-          'Authorization': `Bearer ${jwtToken_access}`,
+          //'Authorization': `Bearer ${jwtToken_access}`,
         },
         body: JSON.stringify(data),
       })
@@ -786,7 +786,7 @@ document.addEventListener("DOMContentLoaded", function () {
       headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": csrfToken,
-        'Authorization': `Bearer ${jwtToken_access}`,
+        //'Authorization': `Bearer ${jwtToken_access}`,
       },
       body: JSON.stringify(filterValues),
     })
@@ -919,7 +919,7 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,  // Add CSRF token here
-          'Authorization': `Bearer ${jwtToken_access}`,
+          //'Authorization': `Bearer ${jwtToken_access}`,
         },
         body: JSON.stringify({ fileid: fileid }), // Send the fileid or any unique identifier for the record
       })
@@ -951,7 +951,7 @@ document.addEventListener("DOMContentLoaded", function () {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+        //'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
       }
     })
       .then(response => response.json())
@@ -1036,7 +1036,7 @@ document.addEventListener("DOMContentLoaded", function () {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
+        //'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
       }
     })
       .then((response) => response.json())  // Parse the response as JSON
@@ -1314,7 +1314,7 @@ editableCells.forEach((cell) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        'Authorization': `Bearer ${jwtToken_access}`,
+        //'Authorization': `Bearer ${jwtToken_access}`,
       },
       body: JSON.stringify({
         id: userId,

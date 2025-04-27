@@ -1252,41 +1252,23 @@
         logoutFunction();
       });
 
-      function logoutFunction(){
-
-          const access_token = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-          const refresh_token = localStorage.getItem("session_data@refresh_token").replace(/"/g, '');
-
-          const data = {
-              "refresh": refresh_token,
-              "access": access_token,
-          };
-
-          console.log("access: "+ access_token);
-          console.log("refresh: "+ refresh_token);
-
-          customFetch(`/api/user/logout`, {
-              method: "POST",
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${access_token}`, // Correct string interpolation
-              },
-              body: JSON.stringify(data),
-          })
+      function logoutFunction() {
+        fetch(`/api/user/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
           .then((response) => response.json())
           .then((result) => {
             console.log(result);
-                console.log("تم تسجيل الخروج");
+            console.log("Logged out successfully");
 
-                // Clear both localStorage and sessionStorage after successful logout
-                localStorage.clear();
-                sessionStorage.clear();
-
-                // Redirect to login page
-                window.location.href = "/login";
+            // Redirect to login page
+           // window.location.href = "/login";
           })
           .catch((error) => {
-              console.error("Error:", error);
+            console.error("Error logging out:", error);
           });
       }
     </script>

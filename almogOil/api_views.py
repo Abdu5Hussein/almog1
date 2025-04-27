@@ -75,128 +75,112 @@ Logs a user out of the system and end his session.
 ''',
 tags=["User Management"],
 )
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@api_view(['POST'])
 def logout_view(request):
-    # Log out the user by clearing the session (for session-based authentication)
-    logout(request)
+    # Retrieve the refresh token from the cookies first
+    refresh_token = request.COOKIES.get('refresh_token')
 
-    # Handle JWT refresh token blacklisting
-    refresh_token = request.data.get("refresh")  # Get the refresh token from the request body
-    if not refresh_token:
-        return Response({"message": "Refresh token is required to logout", "session": False}, status=status.HTTP_400_BAD_REQUEST)
+    # Optional: Blacklist the refresh token (if you're using a blacklist system)
+    if refresh_token:
+        try:
+            # Create a RefreshToken instance and blacklist it
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # Blacklist the refresh token
 
-    try:
-        token = RefreshToken(refresh_token)
-        token.blacklist()  # Blacklist the token using SimpleJWT's built-in method
+            # Return response indicating that the refresh token has been blacklisted
+            response_data = {
+                "message": "Successfully logged out",
+                "blacklisted": True,
+                "blacklisted_token": refresh_token  # Optionally include the blacklisted token for logging/debugging
+            }
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    else:
+        # In case there's no refresh token to blacklist
+        response_data = {
+            "message": "Successfully logged out, but no refresh token found",
+            "blacklisted": False
+        }
 
-        return Response(
-            {"message": "Successfully logged out", "session": False},
-            status=status.HTTP_200_OK  # This sets the status code to 200 OK
-        )
-    except Exception as e:
-        return Response({"message": "Invalid or expired refresh token", "error": str(e), "session": False}, status=status.HTTP_400_BAD_REQUEST)
+    # Now clear the cookies
+    response = JsonResponse(response_data)
+    response.delete_cookie('access_token', path='/')
+    response.delete_cookie('refresh_token', path='/')
+
+    return response
 
 @extend_schema(
-request=serializers.LoginSerializer,
-description='''
-Login API:
-Logs a user in of the system and starts his session.
-''',
-tags=["User Management"],
+    request=serializers.LoginSerializer,
+    description='''Login API:
+    Logs a user in of the system and starts his session.
+    ''',
+    tags=["User Management"],
 )
 @api_view(["POST"])
 def sign_in(request):
     try:
         if request.method == "POST":
-            try:
-                # Parse JSON request body
-                body = json.loads(request.body)
+            # Parse JSON request body
+            body = json.loads(request.body)
 
-                # Extract fields
-                username = body.get("username")
-                password = body.get("password")
-                role = body.get("role")
+            # Extract fields
+            username = body.get("username")
+            password = body.get("password")
+            role = body.get("role")
 
-                # Check required fields
-                if not username or not password or not role:
-                    return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+            if not username or not password or not role:
+                return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Role-based authentication
-                user = None  # Default value
-                user_id = None
-
-                # if role == "client":
-                #     try:
-                #         user = models.AllClientsTable.objects.get(username=username)
-                #         user_id = f"c-{user.clientid}"
-                #     except models.AllClientsTable.DoesNotExist:
-                #         return Response({"error": "لم يتم التعرف على العميل", "message": "لم يتم التعرف على العميل"}, status=status.HTTP_404_NOT_FOUND)
-
-                if role == "employee":
-                    try:
-                        user = models.EmployeesTable.objects.get(username=username)
-                        user_id = f"e-{user.employee_id}"
-                    except models.EmployeesTable.DoesNotExist:
-                        return Response({"error": "لم يتم التعرف على الموظف", "message": "لم يتم التعرف على الموظف"}, status=status.HTTP_404_NOT_FOUND)
-
-                # elif role == "source":
-                #     try:
-                #         user = models.AllSourcesTable.objects.get(username=username)
-                #         user_id = f"s-{user.clientid}"
-                #     except models.AllSourcesTable.DoesNotExist:
-                #         return Response({"error": "لم يتم التعرف على المصدر", "message": "لم يتم التعرف على المصدر"}, status=status.HTTP_404_NOT_FOUND)
-
-                else:
-                    return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
-
-                # Verify user in Django's auth_user table
+            # Authenticate the user based on the role
+            user = None
+            user_id = None
+            if role == "employee":
                 try:
-                    auth_user = User.objects.get(username=username)
-                    if not check_password(password, auth_user.password):
-                        return Response({"error": "Incorrect password", "message": "كلمة السر غير صحيحة"}, status=status.HTTP_400_BAD_REQUEST)
-                except User.DoesNotExist:
-                    return Response({"error": "User not found in authentication system", "message": "المستخدم غير مسجل"}, status=status.HTTP_404_NOT_FOUND)
+                    user = models.EmployeesTable.objects.get(username=username)
+                    user_id = f"e-{user.employee_id}"
+                except models.EmployeesTable.DoesNotExist:
+                    return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
 
-                # Generate JWT tokens
-                refresh = RefreshToken.for_user(auth_user)
-                access_token = str(refresh.access_token)
+            # Verify password for the user
+            try:
+                auth_user = User.objects.get(username=username)
+                if not check_password(password, auth_user.password):
+                    return Response({"error": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)
+            except User.DoesNotExist:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-                # Log the user in
-                login(request, auth_user)  # ✅ Fix: Using `auth_user` instead of `authed_user`
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(auth_user)
+            access_token = str(refresh.access_token)
 
-                # Store session variables
-                request.session["username"] = user.username
-                request.session["name"] = user.name
-                request.session["role"] = role  # Store role for later use
-                request.session["user_id"] = user_id
-                request.session["is_authenticated"] = True  # Useful for templates
-                request.session.set_expiry(3600)  # ✅ Optional: Set session expiry (1 hour)
+            # Create the response object first
+            response = Response({
+                "message": "Signed in successfully",
+                "role": role,
+                "emp_id": user_id,
+                "user_id": auth_user.id,
+                "access_token": access_token,  # Access token included in the response body
+                "refresh_token": str(refresh),  # Refresh token included in the response body
+            })
 
-                # Successful response with token
-                return Response({
-                    "message": "Signed in successfully",
-                    "role": role,
-                    "access_token": access_token,
-                    "refresh_token": str(refresh),
-                    "session_data": {
-                        "username": request.session.get("username"),
-                        "name": request.session.get("name"),
-                        "role": request.session.get("role"),
-                        "user_id": request.session.get("user_id"),
-                        "is_authenticated": request.session.get("is_authenticated")
-                    }
-                }, status=status.HTTP_200_OK)
+            # Set the access token cookie (15 minutes expiry)
+            response.set_cookie(
+                'access_token', access_token,
+                httponly=True,
+                max_age=15*60,  # 15 minutes
+                path='/'
+            )
+
+            # Set the refresh token cookie (7 days expiry)
+            response.set_cookie(
+                'refresh_token', str(refresh),
+                httponly=True,
+                max_age=7*24*60*60,  # 7 days
+                path='/'
+            )
 
 
-            except json.JSONDecodeError:
-                return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"error": "Only POST method is allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    except FieldError:
-        return Response({"error": "Field does not exist in the model"}, status=status.HTTP_400_BAD_REQUEST)
-
+            return response
     except Exception as e:
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

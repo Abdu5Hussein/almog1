@@ -60,7 +60,7 @@ async function postWithAuth(url, data) {
       if (response.status === 401) {
         alert("تم تسجيل الخروج بسبب انتهاء الجلسة.");
         localStorage.clear();
-        window.location.href = "/hozmalogin/";
+        window.location.href = "/hozma/hozmalogin/";
       }
       return null;
     }

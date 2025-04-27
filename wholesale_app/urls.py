@@ -23,9 +23,15 @@ urlpatterns = [
     path('hozmafaq/', views.faq, name='faq'),
     path('hozmalogin/', views.hozmalogin, name='hozmalogin'),
     path('hozmaterms-conditions/', views.terms_conditions, name='terms_conditions'),
-    path('item-for-inqury-page/<int:pno>/', api_views.item_detail_view, name='item_detail'),
+    path('products/<int:pno>/', api_views.item_detail_view, name='item_detail'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/products/<int:id>/get-images',api_views.get_product_images,name="product-get-images"),
+    #path('api/preorders/', api_views.show_all_preorders, name='show_all_preorders'),
+    path('api/confirm-or-update-preorder-items/', HozmaApi_views.confirm_or_update_preorder_items, name='confirm_or_update_preorder_items'),
+    path('api/preorders/', api_views.show_preorders, name='show_all_preorders'),
+     path('preorder-dashboard/', views.dashboard, name='dashboard'),  # For displaying all PreOrders
+    path('preorder-detail/<str:invoice_no>/', views.preorder_detail, name='preorder_detail'),  # For displaying a specific PreOrder
+
 ]

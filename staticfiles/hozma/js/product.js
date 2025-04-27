@@ -94,7 +94,7 @@ onchange="updateQuantity('${item.pno}', this.value)">
 </td>
 <td>
 
-<a href="/item-for-inqury-page/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
+<a href="/hozma/products/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
 </td>
 `;
 

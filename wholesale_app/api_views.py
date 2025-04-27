@@ -10,12 +10,14 @@ from rest_framework import status
 from decimal import Decimal
 from almogOil import models as almogOil_models
 from wholesale_app import models as hozma_models
+from wholesale_app import serializers as wholesale_serializers
 from almogOil import serializers as almogOil_serializers
 from products import serializers as products_serializers
 from rest_framework.decorators import api_view
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+
 
 @api_view(["GET"])
 def item_detail_view(request, pno):
@@ -162,3 +164,32 @@ def get_product_images(request, id):
     serializer = products_serializers.productImageSerializer(images, many=True)
 
     return Response(serializer.data)  # Added return statement
+
+@api_view(['GET'])
+def show_all_preorders(request):
+    preorders = almogOil_models.PreOrderTable.objects.all()
+    preorder_items = almogOil_models.PreOrderItemsTable.objects.all()
+    preorder_serializer = wholesale_serializers.PreOrderTableSerializer(preorders, many=True)
+    preorder_items_serializer = wholesale_serializers.PreOrderItemsTableSerializer(preorder_items, many=True)
+    return Response({
+        'preorders': preorder_serializer.data,
+        'preorder_items': preorder_items_serializer.data
+    })
+@api_view(['GET'])
+def show_preorders(request):
+    invoice_no = request.query_params.get('invoice_no')  # Get the invoice_no from query params
+    
+    if invoice_no:
+        preorders = almogOil_models.PreOrderTable.objects.filter(invoice_no=invoice_no)
+        preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance__invoice_no=invoice_no)
+    else:
+        preorders = almogOil_models.PreOrderTable.objects.all()
+        preorder_items = almogOil_models.PreOrderItemsTable.objects.all()
+    
+    preorder_serializer = wholesale_serializers.PreOrderTableSerializer(preorders, many=True)
+    preorder_items_serializer = wholesale_serializers.PreOrderItemsTableSerializer(preorder_items, many=True)
+    
+    return Response({
+        'preorders': preorder_serializer.data,
+        'preorder_items': preorder_items_serializer.data
+    })

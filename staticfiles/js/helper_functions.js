@@ -1,43 +1,19 @@
 async function customFetch(url, options = {}) {
-  let accessToken = localStorage.getItem('session_data@access_token') || "";
-  options.headers = {
-    ...(options.headers || {}),
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken.replace(/"/g, '')}`,
-  };
-
+  // Fetch request as usual; cookies will be sent automatically by the browser
   let response = await fetch(url, options);
 
   if (response.status === 401) {
-    const refreshToken = localStorage.getItem('session_data@refresh_token') || "";
-
-    if (!refreshToken) {
-      alert("refresh token NA");
-      logoutFunction();
-      return;
-    }
-    const data = {
-      refresh: refreshToken.replace(/"/g, '')
-    }
-    //alert("data :" + JSON.stringify(data));
+    // Token has expired; attempt to refresh
     const refreshResponse = await fetch('/api/get/tokken/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
     });
 
     if (refreshResponse.ok) {
-      //alert("refresh response ok");
-      const data = await refreshResponse.json();
-      accessToken = data.access;
-      localStorage.setItem('session_data@access_token', accessToken);
-
-      options.headers['Authorization'] = `Bearer ${accessToken.replace(/"/g, '')}`;
+      // Retry the original request with the refreshed token
       response = await fetch(url, options);
     } else {
-      const errorData = await refreshResponse.json();
-      console.error("Error refreshing token:", errorData);
-      alert("refresh response not ok, error: " + JSON.stringify(errorData) + "and refresh: " + refreshToken);
+      console.error("Error refreshing token.");
       logoutFunction();
       return;
     }
@@ -45,6 +21,7 @@ async function customFetch(url, options = {}) {
 
   return response;
 }
+
 
 function getCSRFToken() {
   return document.querySelector("[name=csrfmiddlewaretoken]").value;
@@ -68,42 +45,25 @@ const getChoicesTextById = (id) => {
 };
 
 function logoutFunction() {
-
-  const access_token = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-  const refresh_token = localStorage.getItem("session_data@refresh_token").replace(/"/g, '');
-
-  const data = {
-    "refresh": refresh_token,
-    "access": access_token,
-  };
-
-  console.log("access: " + access_token);
-  console.log("refresh: " + refresh_token);
-
   fetch(`/api/user/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${access_token}`, // Correct string interpolation
     },
-    body: JSON.stringify(data),
   })
     .then((response) => response.json())
     .then((result) => {
       console.log(result);
-      console.log("تم تسجيل الخروج");
-
-      // Clear both localStorage and sessionStorage after successful logout
-      localStorage.clear();
-      sessionStorage.clear();
+      console.log("Logged out successfully");
 
       // Redirect to login page
       window.location.href = "/login";
     })
     .catch((error) => {
-      console.error("Error:", error);
+      console.error("Error logging out:", error);
     });
 }
+
 
 let windows = {}; // Object to keep track of opened windows
 

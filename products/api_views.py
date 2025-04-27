@@ -9,6 +9,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.core.exceptions import FieldError
 from almogOil import models as almogOil_Models # Adjust this import to match your project structure
 from almogOil import serializers as almogOil_Serializers
+from products import serializers as products_serializers
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -66,7 +67,7 @@ def UpdateItemsItemmainApiView(request, item_id):
                 itemmain_list.append(value)
                 item.itemmain = ";".join(itemmain_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -74,13 +75,13 @@ def UpdateItemsItemmainApiView(request, item_id):
                 itemmain_list.remove(value)
                 item.itemmain = ";".join(itemmain_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = almogOil_Serializers.MainitemSerializer(item).data
+        s_data = products_serializers.MainitemSerializer(item).data
         itemmain = s_data['itemmain']
         return Response({'itemmain': itemmain}, status=status.HTTP_200_OK)
 
@@ -112,7 +113,7 @@ def UpdateItemsSubmainApiView(request, item_id):
                 itemsub_list.append(value)
                 item.itemsubmain = ";".join(itemsub_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -120,13 +121,13 @@ def UpdateItemsSubmainApiView(request, item_id):
                 itemsub_list.remove(value)
                 item.itemsubmain = ";".join(itemsub_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = almogOil_Serializers.MainitemSerializer(item).data
+        s_data = products_serializers.MainitemSerializer(item).data
         itemsubmain = s_data['itemsubmain']
         return Response({'itemsub': itemsubmain}, status=status.HTTP_200_OK)
 
@@ -157,7 +158,7 @@ def UpdateItemsModelApiView(request, item_id):
                 model_list.append(value)
                 item.itemthird = ";".join(model_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -165,13 +166,13 @@ def UpdateItemsModelApiView(request, item_id):
                 model_list.remove(value)
                 item.itemthird = ";".join(model_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = almogOil_Serializers.MainitemSerializer(item).data
+        s_data = products_serializers.MainitemSerializer(item).data
         itemthird = s_data['itemthird']
         return Response({'models': itemthird}, status=status.HTTP_200_OK)
 
@@ -202,7 +203,7 @@ def UpdateItemsEngineApiView(request, item_id):
                 engine_list.append(value)
                 item.engine_no = ";".join(engine_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         elif action == "remove":
             # Remove value from list
@@ -210,13 +211,13 @@ def UpdateItemsEngineApiView(request, item_id):
                 engine_list.remove(value)
                 item.engine_no = ";".join(engine_list)
                 item.save()
-                return Response(almogOil_Serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
+                return Response(products_serializers.MainitemSerializer(item).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Default GET method to show current itemmain value
     elif request.method == 'GET':
-        s_data = almogOil_Serializers.MainitemSerializer(item).data
+        s_data = products_serializers.MainitemSerializer(item).data
         engines = s_data['engine_no']
         return Response({'engines': engines}, status=status.HTTP_200_OK)
 
@@ -251,7 +252,7 @@ def app_filter_Items(request):
     paginated_items = paginator.paginate_queryset(items, request)
 
     # Serialize the filtered and paginated items
-    serializer = almogOil_Serializers.MainitemSerializer(paginated_items, many=True)
+    serializer = products_serializers.MainitemSerializer(paginated_items, many=True)
 
     # Return the paginated data as the response
     return paginator.get_paginated_response(serializer.data)
@@ -274,7 +275,7 @@ def get_product_images(request, id):
         return Response({"error": "Product not found!"}, status=404)  # Added return and status
 
     images = almogOil_Models.Imagetable.objects.filter(productid=product.fileid)  # Ensure `productid` is correct
-    serializer = almogOil_Serializers.productImageSerializer(images, many=True)
+    serializer = products_serializers.productImageSerializer(images, many=True)
 
     return Response(serializer.data)  # Added return statement
 
@@ -315,7 +316,7 @@ def get_item_data(request, fileid):
         item = almogOil_Models.Mainitem.objects.get(fileid=fileid)
 
         # Serialize the item data
-        serializer = almogOil_Serializers.MainitemSerializer(item)
+        serializer = products_serializers.MainitemSerializer(item)
 
         # Return the serialized data
         return Response(serializer.data)
@@ -432,7 +433,7 @@ def create_main_item(request):
         }
 
         # Use the serializer with the mapped data
-        serializer = almogOil_Serializers.MainitemSerializer(data=mapped_data)
+        serializer = products_serializers.MainitemSerializer(data=mapped_data)
 
         if serializer.is_valid():
             serializer.save()
@@ -463,7 +464,7 @@ def safe_float(value, default=0.0):
 def get_data(request):
     try:
         items = almogOil_Models.Mainitem.objects.all().order_by('itemname')
-        serializer = almogOil_Serializers.MainitemSerializer(items, many=True)
+        serializer = products_serializers.MainitemSerializer(items, many=True)
 
         total_itemvalue = almogOil_Models.Mainitem.objects.aggregate(total=Sum('itemvalue'))['total']
         total_itemvalueb = almogOil_Models.Mainitem.objects.aggregate(total=Sum('itemvalueb'))['total']
@@ -490,7 +491,7 @@ def get_data(request):
         page_size = int(request.GET.get('size', 20))
         paginator = Paginator(items, page_size)
         page_obj = paginator.get_page(page_number)
-        page_serializer = almogOil_Serializers.MainitemSerializer(page_obj, many=True)
+        page_serializer = products_serializers.MainitemSerializer(page_obj, many=True)
 
         response = {
             "data": page_serializer.data,
@@ -702,7 +703,7 @@ def web_filter_items(request):
             queryset = almogOil_Models.Mainitem.objects.filter(filters_q).order_by('itemname')
 
             # Serialize the filtered data
-            serializer = almogOil_Serializers.MainitemSerializer(queryset, many=True)
+            serializer = products_serializers.MainitemSerializer(queryset, many=True)
             items_data = serializer.data
 
             # Initialize totals

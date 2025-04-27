@@ -105,3 +105,10 @@ def faq(request):
 
 def terms_conditions(request):
     return render(request, 'CarPartsTemplates/terms_conditions.html')
+
+
+def dashboard(request):
+    return render(request, 'CarPartsTemplates/preorder-dashboard.html')  # This will render the dashboard page
+
+def preorder_detail(request, invoice_no):
+    return render(request, 'CarPartsTemplates/preorder-detail.html', {'invoice_no': invoice_no})  # This will render the PreOrder details page
