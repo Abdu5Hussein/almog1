@@ -553,70 +553,70 @@
                   <div class="row border">
                     <div class="col">
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_productdetails" value="template_productdetails" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_productdetails" value="template_productdetails" style="margin-left: 5px" {% if Permissions.template_productdetails %}checked{% endif %} />
                         <label for="template_productdetails">صفحة بيانات الاصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_local_item_reports" value="template_local_item_reports" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_local_item_reports" value="template_local_item_reports" style="margin-left: 5px" {% if Permissions.template_local_item_reports %}checked{% endif %} />
                         <label for="template_local_item_reports">تقارير الاصناف المحلية</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_external_item_reports" value="template_external_item_reports" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_external_item_reports" value="template_external_item_reports" style="margin-left: 5px" {% if Permissions.template_external_item_reports %}checked{% endif %} />
                         <label for="template_external_item_reports">تقارير الاصناف الخارجية</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_price_modifications" value="template_price_modifications" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_price_modifications" value="template_price_modifications" style="margin-left: 5px" {% if Permissions.template_price_modifications %}checked{% endif %} />
                         <label for="template_price_modifications">تعديل الاسعار</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_item_movement_reports" value="template_item_movement_reports" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_item_movement_reports" value="template_item_movement_reports" style="margin-left: 5px" {% if Permissions.template_item_movement_reports %}checked{% endif %} />
                         <label for="template_item_movement_reports">تقرير حركة الاصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_item_revaluation" value="template_item_revaluation" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_item_revaluation" value="template_item_revaluation" style="margin-left: 5px" {% if Permissions.template_item_revaluation %}checked{% endif %} />
                         <label for="template_item_revaluation">اعادة ترصيد الاصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_inventory" value="template_inventory" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_inventory" value="template_inventory" style="margin-left: 5px" {% if Permissions.template_inventory %}checked{% endif %} />
                         <label for="template_inventory">الجرد</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_damage_loss" value="template_damage_loss" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_damage_loss" value="template_damage_loss" style="margin-left: 5px" {% if Permissions.template_damage_loss %}checked{% endif %} />
                         <label for="template_damage_loss">التلف والفقد</label>
                       </div>
                     </div>
 
                     <div class="col">
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_storage_locations" value="template_storage_locations" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_storage_locations" value="template_storage_locations" style="margin-left: 5px" {% if Permissions.template_storage_locations %}checked{% endif %} />
                         <label for="template_storage_locations">اماكن التخزين</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_english_labeling" value="template_english_labeling" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_english_labeling" value="template_english_labeling" style="margin-left: 5px" {% if Permissions.template_english_labeling %}checked{% endif %} />
                         <label for="template_english_labeling">التسمية الانجليزية</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_item_reservation" value="template_item_reservation" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_item_reservation" value="template_item_reservation" style="margin-left: 5px" {% if Permissions.template_item_reservation %}checked{% endif %} />
                         <label for="template_item_reservation">حجز اصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_revaluation" value="template_revaluation" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_revaluation" value="template_revaluation" style="margin-left: 5px" {% if Permissions.template_revaluation %}checked{% endif %} />
                         <label for="template_revaluation">اعادة الترصيد</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_missing_items" value="template_missing_items" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_missing_items" value="template_missing_items" style="margin-left: 5px" {% if Permissions.template_missing_items %}checked{% endif %} />
                         <label for="template_missing_items">النواقص</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_issue_permits" value="template_issue_permits" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_issue_permits" value="template_issue_permits" style="margin-left: 5px" {% if Permissions.template_issue_permits %}checked{% endif %} />
                         <label for="template_issue_permits">اذونات الصرف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_items_with_notes" value="template_items_with_notes" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_items_with_notes" value="template_items_with_notes" style="margin-left: 5px" {% if Permissions.template_items_with_notes %}checked{% endif %} />
                         <label for="template_items_with_notes">اصناف بالملاحظات</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_add_item_specifications" value="template_add_item_specifications" style="margin-left: 5px" />
+                        <input type="checkbox" id="template_add_item_specifications" value="template_add_item_specifications" style="margin-left: 5px" {% if Permissions.template_add_item_specifications %}checked{% endif %} />
                         <label for="template_add_item_specifications">اضافة مواصفات الصنف</label>
                       </div>
                     </div>
