@@ -37,7 +37,7 @@ from rest_framework.status import HTTP_200_OK
 from django.contrib.auth import logout
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated ,AllowAny
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
@@ -52,7 +52,10 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from almogOil.authentication import CookieAuthentication
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
+from .whatsapp_service import send_whatsapp_message_via_green_api
 
 def get_last_PreOrderTable_no():
     last_invoice = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
@@ -64,6 +67,8 @@ def get_last_PreOrderTable_no():
     tags=["PreOrder", "PreOrder Items"],
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def create_pre_order(request):
     if request.method != "POST":
         return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -140,7 +145,8 @@ description="""get last pre order invoice number""",
 tags=["PreOrder", "PreOrder last invoice number"],
 )
 @api_view(['GET'])
-
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_sellinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by invoice_no in descending order
@@ -159,12 +165,14 @@ description="""create a new pre-order item""",
 tags=["PreOrder","PreOrder Items"],
 )
 @api_view(["POST"])
-
+@permission_classes([AllowAny])
+@authentication_classes([])
 def Sell_invoice_create_item(request):
     if request.method == "POST":
         try:
             data = request.data
 
+            # Validate required fields
             required_fields = ["pno", "fileid", "invoice_id", "itemvalue", "sellprice"]
             missing_fields = [field for field in required_fields if field not in data or not data[field]]
             if missing_fields:
@@ -176,7 +184,10 @@ def Sell_invoice_create_item(request):
             except almogOil_models.Mainitem.DoesNotExist:
                 return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            # Get the related invoice
+            # Get the related source information (ForeignKey relationship)
+            source_phone = product.source.mobile if product.source and product.source.mobile else "218942434823"
+
+            # Get the related invoice and update its amount
             try:
                 invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
                 invoice.amount += (Decimal(product.buyprice or 0) * Decimal(data.get("itemvalue") or 0))
@@ -186,7 +197,6 @@ def Sell_invoice_create_item(request):
 
             # Check if sufficient quantity exists
             item_value = int(data.get("itemvalue") or 0)
-          
 
             # Prepare the data for creating a new SellInvoiceItemsTable instance
             item_data = {
@@ -213,22 +223,30 @@ def Sell_invoice_create_item(request):
             if serializer.is_valid():
                 serializer.save()
 
-                
-              
-                return Response({
-                    "message": "Item created successfully",
-                    "item_id": serializer.instance.autoid,
-                    "confirm_status": "confirmed"
-                }, status=status.HTTP_201_CREATED)
+                # Send WhatsApp message to the source after successfully adding the item
+                message_body = f"New item {product.itemname} has been added to invoice {data.get('invoice_id')}. Quantity: {item_value}."
+                response = send_whatsapp_message_via_green_api(source_phone, message_body)
 
+                if response:
+                    # Successfully sent message
+                    return Response({
+                        "message": "Item created successfully and message sent",
+                        "item_id": serializer.instance.autoid,
+                        "confirm_status": "confirmed"
+                    }, status=status.HTTP_201_CREATED)
+                else:
+                    # If message sending failed
+                    return Response({
+                        "message": "Item created successfully, but failed to send WhatsApp message."
+                    }, status=status.HTTP_201_CREATED)
+
+            # If serializer is not valid, return the errors
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
 
 
 
@@ -239,6 +257,8 @@ def Sell_invoice_create_item(request):
     tags=["PreOrder", "Confirm PreOrder Items"],
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def confirm_or_update_preorder_items(request):
     try:
         data = request.data
@@ -374,3 +394,45 @@ def handle_confirm_action(preorder):
     preorder.save()
 
     return Response({"success": True, "message": "PreOrder items confirmed and moved to SellInvoice."}, status=status.HTTP_200_OK)
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Allow access for any user
+@authentication_classes([])  # No authentication required for this view
+def send_test_whatsapp_message(request):
+    """
+    A REST API endpoint to send a WhatsApp message using Green API.
+    This endpoint expects `to` and `body` parameters in the request body.
+    """
+    try:
+        # Extract 'to' and 'body' from the request data
+        to = request.data.get('to')
+        body = request.data.get('body')
+
+        # Validate input
+        if not to or not body:
+            return Response(
+                {'error': 'Both "to" and "body" are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Call the Green API to send the message
+        result = send_whatsapp_message_via_green_api(to, body)
+
+        # Check if the API call was successful
+        if result:
+            return Response(
+                {'success': True, 'response': result},
+                status=status.HTTP_200_OK
+            )
+        else:
+            # Return an error if the message could not be sent
+            return Response(
+                {'success': False, 'message': 'Failed to send message.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    except Exception as e:
+        # Catch any unexpected exceptions and return an internal server error
+        return Response(
+            {'success': False, 'message': f'An error occurred: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

@@ -31,7 +31,7 @@ urlpatterns = [
     #path('api/preorders/', api_views.show_all_preorders, name='show_all_preorders'),
     path('api/confirm-or-update-preorder-items/', HozmaApi_views.confirm_or_update_preorder_items, name='confirm_or_update_preorder_items'),
     path('api/preorders/', api_views.show_preorders, name='show_all_preorders'),
-     path('preorder-dashboard/', views.dashboard, name='dashboard'),  # For displaying all PreOrders
+    path('preorder-dashboard/', views.dashboard, name='dashboard'),  # For displaying all PreOrders
     path('preorder-detail/<str:invoice_no>/', views.preorder_detail, name='preorder_detail'),  # For displaying a specific PreOrder
-
+    path('api/test-send-whatsapp/', HozmaApi_views.send_test_whatsapp_message, name='test-send-whatsapp'),
 ]

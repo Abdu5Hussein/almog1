@@ -83,7 +83,8 @@ class AllSourcesTable(models.Model):
     # New fields
     username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
     password = models.CharField(max_length=255,null=False)  # This will store the hashed password
-
+    
+   
 
     class Meta:
         managed = True
@@ -299,7 +300,8 @@ class Mainitem(models.Model):
     oem_numbers = models.CharField(max_length=1000, blank=True, null=True)
     engine_no = models.CharField(max_length=300, blank=True, null=True)
     json_description = models.JSONField(null=True,blank=True)
-
+     # Adding the foreign key to AllSourcesTable is for HOZMA ATTENTIN IS FOR HOZMA
+    source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     class Meta:
         managed = True
         db_table = 'MainItem'
@@ -490,7 +492,36 @@ class AuthUser(models.Model):
     class Meta:
         managed = False
         db_table = 'auth_user'
-
+        permissions = [
+            ('template_productdetails', 'صفحة بيانات الاصناف'),
+            ('template_local_item_reports', 'تقارير الاصناف المحلية'),
+            ('template_external_item_reports', 'تقارير الاصناف الخارجية'),
+            ('template_price_modifications', 'تعديل الاسعار'),
+            ('template_item_movement_reports', 'تقرير حركة الاصناف'),
+            ('template_item_revaluation', 'اعادة ترصيد الاصناف'),
+            ('template_inventory', 'الجرد'),
+            ('template_damage_loss', 'التلف والفقد'),
+            ('template_storage_locations', 'اماكن التخزين'),
+            ('template_english_labeling', 'التسمية الانجليزية'),
+            ('template_item_reservation', 'حجز اصناف'),
+            ('template_revaluation', 'اعادة الترصيد'),
+            ('template_missing_items', 'النواقص'),
+            ('template_issue_permits', 'اذونات الصرف'),
+            ('template_items_with_notes', 'اصناف بالملاحظات'),
+            ('template_add_item_specifications', 'اضافة مواصفات الصنف'),
+            ('template_local_purchase_invoices', 'فواتير شراء محلية'),
+            ('template_external_purchase_invoices', 'فواتير شراء خارجية'),
+            ('template_initial_sales_invoices', 'ف. البيع المبدئية'),
+            ('template_sales_invoices', 'فواتير البيع'),
+            ('template_returns', 'الترجيعات'),
+            ('template_customers', 'العملاء'),
+            ('template_suppliers', 'الموردين'),
+            ('template_employees', 'الموظفين'),
+            ('template_treasury', 'الخزينة'),
+            ('template_accounts', 'الحسابات'),
+            ('template_users', 'المستخدمين'),
+            ('template_company_data', 'تعديل بيانات الشركة'),
+        ]
 
 class AuthUserGroups(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -1143,7 +1174,7 @@ class ConfirmedOrderTable(models.Model):
 
 class ArchivedOrderTable(models.Model):
     preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
-    
+
     reason = models.CharField(max_length=255, blank=True, null=True)
     date_archived = models.DateTimeField(auto_now_add=True)
 

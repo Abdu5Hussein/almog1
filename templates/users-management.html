@@ -545,6 +545,85 @@
                 </form>
             </div>
             <div id="permissions-container">
+              <div id="products_templates" class="row">
+                <div class="col">
+                  <div class="row border title-container">
+                    <h3 class="text-center">واجهات الاصناف</h3>
+                  </div>
+                  <div class="row border">
+                    <div class="col">
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_productdetails" value="template_productdetails" style="margin-left: 5px" />
+                        <label for="template_productdetails">صفحة بيانات الاصناف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_local_item_reports" value="template_local_item_reports" style="margin-left: 5px" />
+                        <label for="template_local_item_reports">تقارير الاصناف المحلية</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_external_item_reports" value="template_external_item_reports" style="margin-left: 5px" />
+                        <label for="template_external_item_reports">تقارير الاصناف الخارجية</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_price_modifications" value="template_price_modifications" style="margin-left: 5px" />
+                        <label for="template_price_modifications">تعديل الاسعار</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_item_movement_reports" value="template_item_movement_reports" style="margin-left: 5px" />
+                        <label for="template_item_movement_reports">تقرير حركة الاصناف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_item_revaluation" value="template_item_revaluation" style="margin-left: 5px" />
+                        <label for="template_item_revaluation">اعادة ترصيد الاصناف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_inventory" value="template_inventory" style="margin-left: 5px" />
+                        <label for="template_inventory">الجرد</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_damage_loss" value="template_damage_loss" style="margin-left: 5px" />
+                        <label for="template_damage_loss">التلف والفقد</label>
+                      </div>
+                    </div>
+
+                    <div class="col">
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_storage_locations" value="template_storage_locations" style="margin-left: 5px" />
+                        <label for="template_storage_locations">اماكن التخزين</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_english_labeling" value="template_english_labeling" style="margin-left: 5px" />
+                        <label for="template_english_labeling">التسمية الانجليزية</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_item_reservation" value="template_item_reservation" style="margin-left: 5px" />
+                        <label for="template_item_reservation">حجز اصناف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_revaluation" value="template_revaluation" style="margin-left: 5px" />
+                        <label for="template_revaluation">اعادة الترصيد</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_missing_items" value="template_missing_items" style="margin-left: 5px" />
+                        <label for="template_missing_items">النواقص</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_issue_permits" value="template_issue_permits" style="margin-left: 5px" />
+                        <label for="template_issue_permits">اذونات الصرف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_items_with_notes" value="template_items_with_notes" style="margin-left: 5px" />
+                        <label for="template_items_with_notes">اصناف بالملاحظات</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" id="template_add_item_specifications" value="template_add_item_specifications" style="margin-left: 5px" />
+                        <label for="template_add_item_specifications">اضافة مواصفات الصنف</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="row">
                 <div class="col">
                   <div class="row border title-container">
@@ -1370,7 +1449,44 @@
         ],
         placeholder: "لا توجد بيانات متاحة",
     });
+    document.addEventListener("DOMContentLoaded", function () {
+      const checkboxes = document.querySelectorAll('#products_templates input[type="checkbox"]');
 
+      checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+          const permissionCodename = this.value;
+          const action = this.checked ? "grant" : "remove";
+
+          fetch("http://45.13.59.226/api/user/permissions/toggle", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              // Add Authorization if needed
+              // "Authorization": "Bearer YOUR_TOKEN"
+            },
+            body: JSON.stringify({
+              permission_codename: permissionCodename,
+              action: action
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Request failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert('Success:'+ data.message);
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            // Optionally uncheck if request fails
+            this.checked = !this.checked;
+            alert("فشل في حفظ الصلاحية. حاول مجددا.");
+          });
+        });
+      });
+    });
     </script>
 
   </body>

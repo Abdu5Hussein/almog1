@@ -66,19 +66,21 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.addEventListener('DOMContentLoaded', function () {
-    // Check if user session data is available in localStorage
-    const username = JSON.parse(localStorage.getItem("session_data@username"));
-    const userNamePlaceholder = document.getElementById('userNamePlaceholder');
-    
-    if (username) {
-        // If the user is logged in, update the account button text with the username
-        userNamePlaceholder.textContent = `مرحبًا, ${username}`;
-        document.getElementById('accountButton').href = "/hozma/hozmaDashbord/"; // Ensure it's pointing to the user's account page
-    } else {
-        // If no username is found, ensure it's showing the default "حسابي"
-        userNamePlaceholder.textContent = "حسابي";
-        document.getElementById('accountButton').href = "/hozma/login"; // Redirect to login if not logged in
-    }
+    try {
+        const username = localStorage.getItem("session_data@username");
+        const userNamePlaceholder = document.getElementById('userNamePlaceholder');
 
-    // Rest of your navbar functionality like highlighting current page...
+        if (username) {
+            userNamePlaceholder.textContent = `مرحبًا, ${username}`;
+            document.getElementById('accountButton').href = "/hozma/hozmaDashbord/";
+        } else {
+            userNamePlaceholder.textContent = "حسابي";
+            document.getElementById('accountButton').href = "/hozma/login";
+            alert("No user data found. Please log in.");
+        }
+    } catch (e) {
+        console.error('Error accessing localStorage:', e);
+    }
 });
+
+

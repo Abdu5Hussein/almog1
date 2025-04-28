@@ -2275,8 +2275,33 @@ def return_permission_profile(request, id):
 
 @login_required
 def users_management(request):
-    context = {}
-    return render(request,"users-management.html",context)
+    permissions_list = [
+        "template_productdetails",
+        "template_local_item_reports",
+        "template_external_item_reports",
+        "template_price_modifications",
+        "template_item_movement_reports",
+        "template_item_revaluation",
+        "template_inventory",
+        "template_damage_loss",
+        "template_storage_locations",
+        "template_english_labeling",
+        "template_item_reservation",
+        "template_revaluation",
+        "template_missing_items",
+        "template_issue_permits",
+        "template_items_with_notes",
+        "template_add_item_specifications",
+    ]
+
+    permissions = {}
+    for perm in permissions_list:
+        permissions[perm] = request.user.has_perm(f"almogOil.{perm}")
+
+    context = {
+        "Permissions": permissions
+    }
+    return render(request, "users-management.html", context)
 
 @login_required
 def maintype_logo_view(request, id):

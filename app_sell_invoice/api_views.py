@@ -1,3 +1,5 @@
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from almogOil.authentication import CookieAuthentication
 from decimal import Decimal
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -47,6 +49,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_invoice_data(request, autoid):
     try:
         # Fetch the data using the provided autoid (primary key)
@@ -64,6 +67,7 @@ tags=["Sell Invoice","Clients"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def GetClientInvoices(request, id):
     # Filter invoices based on the client ID
     str_id = str(id)
@@ -85,6 +89,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['GET'])
 #@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def GetClientInvoicesByInvoiceNo(request, id):
     # Filter invoices based on the client ID
     str_id = str(id)
@@ -106,6 +111,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_sellinvoice_no(request):
     try:
         # Get the last autoid by ordering the table by invoice_no in descending order
@@ -130,6 +136,7 @@ tags=["Sell Invoice"],
 )
 @api_view(["POST"])
 #@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def create_sell_invoice(request):
     if request.method == "POST":
         try:
@@ -208,6 +215,7 @@ tags=["Sell Invoice","Sell Invoice Items"],
 )
 @api_view(["POST"])
 #@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def Sell_invoice_create_item(request):
     if request.method == "POST":
         try:
@@ -286,6 +294,7 @@ tags=["Sell Invoice","Sell Invoice Items"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def fetch_sell_invoice_items(request):
     invoice_no = request.GET.get("id")
 
@@ -305,6 +314,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def fetch_sellinvoices(request):
     try:
         today = now().date()
@@ -345,6 +355,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def filter_sellinvoices(request):
     try:
         filters = request.data
@@ -416,6 +427,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def prepare_sell_invoice(request):
     try:
         # Get the data from the request body
@@ -448,6 +460,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def validate_sell_invoice(request):
     try:
         # Get the data from the request body
@@ -484,6 +497,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def deliver_sell_invoice(request):
     try:
         data = request.data
@@ -544,6 +558,7 @@ tags=["Sell Invoice"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def cancel_sell_invoice(request):
     try:
         # Get the data from the request body

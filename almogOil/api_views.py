@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from rest_framework import status
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.contrib.auth.hashers import check_password
 import json
 from rest_framework.pagination import PageNumberPagination
@@ -21,7 +21,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.exceptions import NotFound
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
@@ -36,7 +36,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import logout
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
@@ -65,6 +65,12 @@ from firebase_admin import credentials
 from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
+from almogOil.authentication import CookieAuthentication  # Your custom cookie authentication
+import jwt
+from django.conf import settings  # To access the Django SECRET_KEY
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth.models import User
 
 """ Log Out,Login And Authentication Api's"""
 @extend_schema(
@@ -76,34 +82,44 @@ Logs a user out of the system and end his session.
 tags=["User Management"],
 )
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def logout_view(request):
-    # Retrieve the refresh token from the cookies first
     refresh_token = request.COOKIES.get('refresh_token')
 
-    # Optional: Blacklist the refresh token (if you're using a blacklist system)
     if refresh_token:
         try:
-            # Create a RefreshToken instance and blacklist it
+            # Decode the JWT using Django's SECRET_KEY
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('Token has expired')
+        except jwt.InvalidTokenError:
+            raise AuthenticationFailed('Invalid token')
+
+        try:
+            user = User.objects.get(id=payload['user_id'])  # Adjust according to your payload structure
+        except User.DoesNotExist:
+            raise AuthenticationFailed('User not found')
+        try:
             token = RefreshToken(refresh_token)
             token.blacklist()  # Blacklist the refresh token
-
-            # Return response indicating that the refresh token has been blacklisted
-            response_data = {
-                "message": "Successfully logged out",
-                "blacklisted": True,
-                "blacklisted_token": refresh_token  # Optionally include the blacklisted token for logging/debugging
-            }
+            blacklisted = True
+            user_id = payload['user_id']
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            return JsonResponse({"error": f"Token error: {str(e)}"}, status=400)
     else:
-        # In case there's no refresh token to blacklist
-        response_data = {
-            "message": "Successfully logged out, but no refresh token found",
-            "blacklisted": False
-        }
+        blacklisted = False
+        user_id = None
 
-    # Now clear the cookies
-    response = JsonResponse(response_data)
+    # Clear session (optional)
+    logout(request)
+
+    # Prepare response
+    response = JsonResponse({
+        "message": "Successfully logged out",
+        "user_id": user_id,
+        "blacklisted": blacklisted,
+    })
     response.delete_cookie('access_token', path='/')
     response.delete_cookie('refresh_token', path='/')
 
@@ -117,6 +133,8 @@ def logout_view(request):
     tags=["User Management"],
 )
 @api_view(["POST"])
+@authentication_classes([])  # This excludes authentication for this view
+@permission_classes([AllowAny])  # Allows any user to access without authentication
 def sign_in(request):
     try:
         if request.method == "POST":
@@ -141,26 +159,35 @@ def sign_in(request):
                 except models.EmployeesTable.DoesNotExist:
                     return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            # Verify password for the user
-            try:
-                auth_user = User.objects.get(username=username)
-                if not check_password(password, auth_user.password):
-                    return Response({"error": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)
-            except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            # Authenticate against the main User model
+            auth_user = authenticate(username=username, password=password)
+
+            if auth_user is None:
+                return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # If authentication successful, login the user (create session)
+            login(request, auth_user)
+
+            # Store session variables
+            request.session["username"] = user.username
+            request.session["name"] = user.name
+            request.session["role"] = role  # Store role for later use
+            request.session["user_id"] = user_id
+            request.session["is_authenticated"] = True  # Useful for templates
+            request.session.set_expiry(3600)
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(auth_user)
             access_token = str(refresh.access_token)
 
-            # Create the response object first
+            # Create the response object
             response = Response({
                 "message": "Signed in successfully",
                 "role": role,
                 "emp_id": user_id,
                 "user_id": auth_user.id,
-                "access_token": access_token,  # Access token included in the response body
-                "refresh_token": str(refresh),  # Refresh token included in the response body
+                "access_token": access_token,
+                "refresh_token": str(refresh),
             })
 
             # Set the access token cookie (15 minutes expiry)
@@ -179,11 +206,10 @@ def sign_in(request):
                 path='/'
             )
 
-
             return response
+
     except Exception as e:
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 """Drop Boxes"""
 @extend_schema(
@@ -256,6 +282,7 @@ def get_dropboxes(request):
     ),
 )
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 class EnginesTableViewSet(viewsets.ModelViewSet):
     queryset = models.enginesTable.objects.all()
     serializer_class = product_serializers.EnginesTableSerializer
@@ -300,7 +327,8 @@ class EnginesTableViewSet(viewsets.ModelViewSet):
         responses={204: None},
     ),
 )
-#@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 class EmployeesTableViewSet(viewsets.ModelViewSet):
     queryset = models.EmployeesTable.objects.all()
     serializer_class = serializers.EmployeesSerializer
@@ -444,6 +472,7 @@ tags=["Support Desk"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def support_conversations(request):
     if request.method == 'GET':
         conversations = models.SupportChatConversation.objects.all()
@@ -457,6 +486,7 @@ tags=["Support Desk"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_conversation_messages(request, conversation_id):
     if request.method == 'GET':
         try:
@@ -474,6 +504,7 @@ tags=["Support Desk"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def send_message(request, conversation_id=None):
     if request.method == 'POST':
         message_text = request.data.get('message')
@@ -529,6 +560,7 @@ tags=["Support Desk"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def start_conversation(request, client_id):
     if request.method == 'POST':
         try:
@@ -578,6 +610,7 @@ tags=["Support Desk"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def send_feedback(request):
     client_id = request.data.get('client_id')
     feedback_text = request.data.get('feedback_text')
@@ -607,6 +640,7 @@ tags=["Support Desk"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def respond_to_feedback(request, client_id):
     if request.method == 'POST':
         try:
@@ -642,6 +676,7 @@ tags=["Clients"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_all_clients1(request,id=None):
     if request.method == 'GET':
         clients = AllClientsTable.objects.all().filter(clientid=id)
@@ -656,6 +691,7 @@ tags=["Delivery"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_employee_order(request, employee_id):
     """Assign an order directly to an employee while ensuring a fair and accurate queue system."""
     try:
@@ -736,6 +772,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def accept_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -773,6 +810,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def decline_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -816,6 +854,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def deliver_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -859,6 +898,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def skip_order(request, queue_id):
     try:
         # Fetch the order queue entry by ID
@@ -897,6 +937,7 @@ tags=["Delivery"],
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_delivery_availability(request):
     """Toggle the availability of the delivery person based on their employee ID and update their queue position."""
 
@@ -947,6 +988,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def assign_orders(request):
     with transaction.atomic():
         available_employees = EmployeesTable.objects.filter(is_available=True)
@@ -981,6 +1023,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def complete_delivery(request, invoice_id):
     with transaction.atomic():
         try:
@@ -1027,6 +1070,7 @@ tags=["Delivery"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def pending_orders(request):
     orders = SellinvoiceTable.objects.filter(delivery_status="معلقة")
     serializer = serializers.OrderSerializer(orders, many=True)
@@ -1041,6 +1085,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def set_available(request):
     """Mark employee as available and add to queue"""
     delivery_person_id = request.data.get('employee_id')
@@ -1090,6 +1135,7 @@ tags=["Delivery"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def set_unavailable(request):
     """Mark employee as unavailable and remove from queue"""
     delivery_person_id = request.data.get('employee_id')
@@ -1156,6 +1202,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_employee_orders(request, employee_id):
     try:
         # Fetch the employee
@@ -1194,6 +1241,7 @@ tags=["Delivery"],
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def complete_order(request, autoid):
     with transaction.atomic():
         try:
@@ -1244,6 +1292,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_available_employees(request):
     # Get all employees who are available
 
@@ -1261,6 +1310,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def check_assign_status(request):
     # Run asynchronous task to assign orders
     async_task('almogOil.Tasks.assign_orders')
@@ -1317,6 +1367,7 @@ tags=["Sell Invoice","Delivery"],
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_invoice_status(request, invoice_no):
     """Update invoice status and set delivered_date if status is 'تم التوصيل'."""
     try:
@@ -1344,6 +1395,7 @@ tags=["Sell Invoice","Delivery"],
 @csrf_exempt
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_delivery_invoices(request):
     """Fetch all invoices with status 'حضرت'."""
     invoices = SellinvoiceTable.objects.filter(invoice_status="سلمت",mobile=True,is_assigned=False,delivery_status="جاري التوصيل")
@@ -1357,6 +1409,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def check_assign_statusss(request, employee_id):
     try:
         # Get the employee
@@ -1400,6 +1453,7 @@ tags=["Delivery"],
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def confirm_order(request, order_id):
     try:
         # Get the order queue where the order is not accepted
@@ -1435,6 +1489,7 @@ tags=["Delivery"],
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def decline_order(request, order_id):
     try:
         # Get the order queue that is not yet accepted
@@ -1475,6 +1530,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def monitor_order_assignments(request):
     try:
         # Fetch available employees
@@ -1541,6 +1597,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def employee_order_info(request, employee_id):
     try:
         # Get employee object by employee_id
@@ -1589,6 +1646,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def employee_current_order_info(request, employee_id):
     try:
         # Get employee object by employee_id
@@ -1648,6 +1706,7 @@ tags=["Delivery"],
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def confirm_order_arrival(request, order_id):
     try:
         # Find the order in the queue which is assigned but not confirmed
@@ -1682,6 +1741,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_all_confirmed_orders(request):
     confirmed_orders = SellinvoiceTable.objects.filter(delivery_status='تم التوصيل')
 
@@ -1706,6 +1766,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_employee_confirmed_orders(request):
     # Get all orders that have been confirmed as arrived by the employee
     confirmed_orders = SellinvoiceTable.objects.filter(
@@ -1735,6 +1796,7 @@ tags=["Delivery"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_archived_orders(request, employee_id):
     try:
         # Fetch the orders archived for the specific employee
@@ -2030,6 +2092,7 @@ tags=["Return Permission"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_invoice_returned_items(request,id):
     returned_items = models.return_permission_items.objects.filter(invoice_no=id)
     invoice = SellinvoiceTable.objects.get(invoice_no=id)
@@ -2047,6 +2110,7 @@ tags=["Return Permission"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def filter_return_reqs(request):
     try:
         filters = request.data  # DRF automatically parses the JSON body
@@ -2095,6 +2159,7 @@ tags=["Delivery","Drivers","Employees"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def available_employees(request):
     employees = EmployeesTable.objects.filter(is_available=True)
     serializer = serializers.EmployeeSerializer(employees, many=True)
@@ -2110,6 +2175,7 @@ tags=["Payment Requests"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def accept_payment_req(request, id):
     """Accept or reject a payment request from a client."""
     try:
@@ -2186,6 +2252,7 @@ tags=["Sources"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def create_source_record(request):
     data = request.data  # Use DRF's request.data
 
@@ -2258,6 +2325,7 @@ tags=["Notifications"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def register_fcm_token(request):
     """
     Register an FCM token for a user (Employee or Client).
@@ -2289,6 +2357,7 @@ tags=["Notifications"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def send_notification(request):
     """
     Send an FCM notification to an Employee or Client.
@@ -2348,6 +2417,7 @@ tags=["Notifications"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def store_fcm_token(request):
     if request.method == 'POST':
         # Extract the data from the request
@@ -2392,6 +2462,7 @@ tags=["Companies"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def upload_company_logo(request, id):
     if 'logo' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
@@ -2416,6 +2487,7 @@ tags=["Storage Transactions"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_today_storage(request):
     try:
         # Fetch records from StorageTransactionsTable where transaction_date is today
@@ -2435,6 +2507,7 @@ tags=["Storage Transactions"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_all_storage(request):
     try:
         # Fetch records from StorageTransactionsTable where transaction_date is today
@@ -2454,6 +2527,7 @@ tags=["Storage Transactions"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def filter_all_storage(request):
     try:
         filters = request.data  # Decode JSON payload
@@ -2507,6 +2581,7 @@ tags=["Employees"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def employee_detail_get(request, employee_id):
     """
     Retrieve an employee's basic information by employee_id.
@@ -2525,97 +2600,92 @@ description="""sign in api for mobile app.""",
 tags=["User Management","Mobile App"],
 )
 @api_view(["POST"])
+@authentication_classes([])  # This excludes authentication for this view
+@permission_classes([AllowAny])
 def mobile_sign_in(request):
     try:
         if request.method == "POST":
-            try:
-                # Parse JSON request body
-                body = json.loads(request.body)
+            # Parse JSON request body
+            body = json.loads(request.body)
 
-                # Extract fields
-                username = body.get("username")
-                password = body.get("password")
-                role = body.get("role")
+            # Extract fields
+            username = body.get("username")
+            password = body.get("password")
+            role = body.get("role")
 
-                # Check required fields
-                if not username or not password or not role:
-                    return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+            if not username or not password or not role:
+                return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Role-based authentication
-                user = None  # Default value
-                user_id = None
-
-                if role == "client":
+            # Authenticate the user based on the role
+            user = None
+            user_id = None
+            if role == "employee":
+                try:
+                    user = models.EmployeesTable.objects.get(username=username)
+                    user_id = f"e-{user.employee_id}"
+                except models.EmployeesTable.DoesNotExist:
+                    return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+            if role == "client":
                     try:
                         user = models.AllClientsTable.objects.get(username=username)
                         user_id = f"c-{user.clientid}"
                     except models.AllClientsTable.DoesNotExist:
                         return Response({"error": "لم يتم التعرف على العميل", "message": "لم يتم التعرف على العميل"}, status=status.HTTP_404_NOT_FOUND)
 
-                elif role == "employee":
-                    try:
-                        user = models.EmployeesTable.objects.get(username=username)
-                        user_id = f"e-{user.employee_id}"
-                    except models.EmployeesTable.DoesNotExist:
-                        return Response({"error": "لم يتم التعرف على الموظف", "message": "لم يتم التعرف على الموظف"}, status=status.HTTP_404_NOT_FOUND)
+            # Authenticate against the main User model
+            auth_user = authenticate(username=username, password=password)
 
-                # elif role == "source":
-                #     try:
-                #         user = models.AllSourcesTable.objects.get(username=username)
-                #         user_id = f"s-{user.clientid}"
-                #     except models.AllSourcesTable.DoesNotExist:
-                #         return Response({"error": "لم يتم التعرف على المصدر", "message": "لم يتم التعرف على المصدر"}, status=status.HTTP_404_NOT_FOUND)
+            if auth_user is None:
+                return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
 
-                else:
-                    return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
+            # If authentication successful, login the user (create session)
+            login(request, auth_user)
 
-                # Verify user in Django's auth_user table
-                try:
-                    auth_user = User.objects.get(username=username)
-                    if not check_password(password, auth_user.password):
-                        return Response({"error": "Incorrect password", "message": "كلمة السر غير صحيحة"}, status=status.HTTP_400_BAD_REQUEST)
-                except User.DoesNotExist:
-                    return Response({"error": "User not found in authentication system", "message": "المستخدم غير مسجل"}, status=status.HTTP_404_NOT_FOUND)
+            # Store session variables
+            request.session["username"] = user.username
+            request.session["name"] = user.name
+            request.session["role"] = role  # Store role for later use
+            request.session["user_id"] = user_id
+            request.session["is_authenticated"] = True  # Useful for templates
+            request.session.set_expiry(3600)
 
-                # Generate JWT tokens
-                refresh = RefreshToken.for_user(auth_user)
-                access_token = str(refresh.access_token)
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(auth_user)
+            access_token = str(refresh.access_token)
 
-                # Log the user in
-                login(request, auth_user)  # ✅ Fix: Using `auth_user` instead of `authed_user`
+            # Create the response object
+            response = Response({
+                "message": "Signed in successfully",
+                "role": role,
+                "client_id": user_id,
+                "session_data":{
+                                "role": role,
+                                "user_id": user_id,
+                                "username": username,
+                                "name": user.name,
+                                },
+                "user_auth_id": auth_user.id,
+                "access_token": access_token,
+                "refresh_token": str(refresh),
+            })
 
-                # Store session variables
-                request.session["username"] = user.username
-                request.session["name"] = user.name
-                request.session["role"] = role  # Store role for later use
-                request.session["user_id"] = user_id
-                request.session["is_authenticated"] = True  # Useful for templates
-                request.session.set_expiry(3600)  # ✅ Optional: Set session expiry (1 hour)
+            # Set the access token cookie (15 minutes expiry)
+            response.set_cookie(
+                'access_token', access_token,
+                httponly=True,
+                max_age=15*60,  # 15 minutes
+                path='/'
+            )
 
-                # Successful response with token
-                return Response({
-                    "message": "Signed in successfully",
-                    "role": role,
-                    "access_token": access_token,
-                    "refresh_token": str(refresh),
-                    "session_data": {
-                        "username": request.session.get("username"),
-                        "name": request.session.get("name"),
-                        "role": request.session.get("role"),
-                        "user_id": request.session.get("user_id"),
-                        "is_authenticated": request.session.get("is_authenticated")
-                    }
-                }, status=status.HTTP_200_OK)
+            # Set the refresh token cookie (7 days expiry)
+            response.set_cookie(
+                'refresh_token', str(refresh),
+                httponly=True,
+                max_age=7*24*60*60,  # 7 days
+                path='/'
+            )
 
-
-            except json.JSONDecodeError:
-                return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"error": "Only POST method is allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    except FieldError:
-        return Response({"error": "Field does not exist in the model"}, status=status.HTTP_400_BAD_REQUEST)
-
+            return response
     except Exception as e:
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -2626,6 +2696,7 @@ tags=["User Management"],
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def validate_token(request):
     return Response({'detail': 'Token is valid.'})
 
@@ -2634,7 +2705,8 @@ description="""Retrieve an employee data along with his balance.""",
 tags=["Employees"],
 )
 @api_view(['GET'])
-#@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_all_employees_with_balance(request):
     try:
         # Fetch all employees
@@ -2963,7 +3035,8 @@ def Get_balance_editions_by_employee(request, id):
 description="""Filter records from balance_editions.""",
 tags=["Balance Editions"],
 )
-# @permission_classes([IsAuthenticated])  # Uncomment if you want auth
+# @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # Uncomment if you want auth
 @api_view(['POST'])
 def filterBalanceEditions(request):
     try:
@@ -3009,7 +3082,8 @@ description="""filter employees.""",
 tags=["Employees"],
 )
 @api_view(["POST"])
-#@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def filter_employees(request):
     try:
         filters = request.data  # DRF automatically parses the JSON body
@@ -3155,7 +3229,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 @api_view(["POST"])
-# @permission_classes([IsAuthenticated])  # Uncomment if you need authentication
+# @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # Uncomment if you need authentication
 def two_way(request):
     data = request.data  # DRF automatically parses the JSON body
     required_fields = ["service", "accountId", "nid", "email", "phone", "template"]
@@ -3194,3 +3269,30 @@ def two_way(request):
             "data": request.data,
         }
     })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_permission(request):
+    user_id = request.user.id or request.data.get('user_id')  # <== Get user_id from request
+    permission_codename = request.data.get('permission_codename')  # example: "template_productdetails"
+    action = request.data.get('action')  # "grant" or "remove"
+
+    if not user_id or not permission_codename or action not in ['grant', 'remove']:
+        return Response({'error': 'Invalid request. Missing fields.'}, status=400)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=404)
+
+    try:
+        permission = Permission.objects.get(codename=permission_codename, content_type__app_label='almogOil')
+    except Permission.DoesNotExist:
+        return Response({'error': 'Permission not found.'}, status=404)
+
+    if action == 'grant':
+        user.user_permissions.add(permission)
+        return Response({'message': f'Permission {permission_codename} granted to {user.username}.'})
+    else:  # remove
+        user.user_permissions.remove(permission)
+        return Response({'message': f'Permission {permission_codename} removed from {user.username}.'})

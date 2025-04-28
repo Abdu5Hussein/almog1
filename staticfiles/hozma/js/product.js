@@ -24,26 +24,32 @@ async function fetchFilteredData(page = 1) {
     console.debug("Full filters being sent:", JSON.stringify(filters, null, 2));
 
     try {
-        const response = await fetchWithAuth(`${baseUrl}/api/filter-items`, 'POST', filters);
-        console.debug("Full API response:", response);
-        
+        const response = await customFetch(`${baseUrl}/api/filter-items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filters)
+        });
+      
         if (!response) {
-            throw new Error("Empty response from server");
+          throw new Error("Empty response from server");
         }
-
+      
+        const data = await response.json();
+      
         return {
-            data: response?.data || [],
-            last_page: response?.last_page || 1,
-            total: response?.total || 0
+          data: data?.data || [],
+          last_page: data?.last_page || 1,
+          total: data?.total || 0
         };
-    } catch (error) {
+      
+      } catch (error) {
         console.error("API Error:", error);
         return {
-            data: [],
-            last_page: 1,
-            total: 0
+          data: [],
+          last_page: 1,
+          total: 0
         };
-    }
+      }
 }
 
 
@@ -151,12 +157,13 @@ async function showProductImages(pno) {
         modal.show();
 
         // Fetch images
-        const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
+        const response = await customFetch(`${baseUrl}/api/products/${pno}/get-images`);
+         const data = await response.json();
         
         // Process images response
-        if (response && Array.isArray(response) && response.length > 0) {
+        if (data && Array.isArray(data) && data.length > 0) {
             let imagesHTML = '';
-            response.forEach((imgObj) => {
+            data.forEach((imgObj) => {
                 const imgUrl = `${baseUrl}${imgObj.image_obj}`;
                 imagesHTML += `
                     <div class="mb-3">

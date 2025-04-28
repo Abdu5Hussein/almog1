@@ -31,16 +31,11 @@ async function fetchFilteredData(page = 1) {
         size: itemsPerPage,
     };
 
-    // ✅ DEBUG: Log filters
-    console.log("📦 Sending filters to backend:", filters);
-
     try {
         const response = await fetchWithAuth(`${baseUrl}/hozma/api/filter-items`, 'POST', filters);
 
-        // ✅ DEBUG: Log full response
-        console.log("📥 Received response from backend:", response);
-
         if (!response) {
+            alert("فشل في الحصول على البيانات من الخادم.");
             throw new Error("Empty response from server");
         }
 
@@ -50,7 +45,7 @@ async function fetchFilteredData(page = 1) {
             total: response?.total || 0
         };
     } catch (error) {
-        console.error("🔥 API Error:", error);
+        alert("حدث خطأ أثناء الاتصال بالخادم. الرجاء المحاولة لاحقًا.");
         return {
             data: [],
             last_page: 1,
@@ -61,6 +56,7 @@ async function fetchFilteredData(page = 1) {
         document.getElementById('loading-spinner').style.display = 'none';
     }
 }
+
 
 
 // Display items in the table
@@ -118,8 +114,6 @@ async function displayItems(items) {
 
 // Show product images in modal
 async function showProductImages(pno) {
-    console.debug("Fetching images for product with PNO:", pno);
-
     try {
         // Get modal elements
         const modalElement = document.getElementById('imageModal');
@@ -181,7 +175,7 @@ async function showProductImages(pno) {
             `;
         }
     } catch (error) {
-        console.error('Error fetching product images:', error);
+        alert('حدث خطأ أثناء تحميل الصور');
         const modalBody = document.querySelector('#imageModal .modal-body');
         modalBody.innerHTML = `
             <div class="text-center py-4">
@@ -190,10 +184,8 @@ async function showProductImages(pno) {
             </div>
         `;
     }
-    // Debug code - add to your showProductImages function
-console.log('Existing backdrops:', document.querySelectorAll('.modal-backdrop').length);
-console.log('Existing modals:', document.querySelectorAll('.modal.show').length);
 }
+
 
 // Add to cart function
 function addToCart(pno, name, price) {

@@ -1,5 +1,7 @@
 """ Mainitem Api's """
 
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from almogOil.authentication import CookieAuthentication  # Your custom cookie authentication
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 import hashlib
 from django.core.cache import cache
@@ -42,6 +44,7 @@ from django.core.paginator import Paginator
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def UpdateItemsItemmainApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -88,6 +91,7 @@ def UpdateItemsItemmainApiView(request, item_id):
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def UpdateItemsSubmainApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -133,6 +137,7 @@ def UpdateItemsSubmainApiView(request, item_id):
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def UpdateItemsModelApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -178,6 +183,7 @@ def UpdateItemsModelApiView(request, item_id):
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def UpdateItemsEngineApiView(request, item_id):
     try:
         # Retrieve the item by its ID
@@ -268,6 +274,7 @@ class CustomPagination(PageNumberPagination):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_product_images(request, id):
     try:
         product = almogOil_Models.Mainitem.objects.get(pno=id)
@@ -282,6 +289,7 @@ def get_product_images(request, id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def mainitem_add_json_desc(request, id):
     """Add JSON description to a Mainitem product"""
     try:
@@ -310,6 +318,7 @@ def mainitem_add_json_desc(request, id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_item_data(request, fileid):
     try:
         # Retrieve the record from the database
@@ -326,6 +335,7 @@ def get_item_data(request, fileid):
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def edit_main_item(request):
     if request.method == 'PATCH':
         try:
@@ -374,6 +384,7 @@ def edit_main_item(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_mainItem_last_pno(request):
     try:
         # Get the last autoid by ordering the table by autoid in descending order
@@ -393,6 +404,7 @@ def get_mainItem_last_pno(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 @csrf_exempt
 def create_main_item(request):
     if request.method == 'POST':
@@ -461,6 +473,7 @@ def safe_float(value, default=0.0):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_data(request):
     try:
         items = almogOil_Models.Mainitem.objects.all().order_by('itemname')
@@ -513,6 +526,7 @@ def get_data(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_itemvalue(request):
     try:
         data = request.data
@@ -549,6 +563,7 @@ def update_itemvalue(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_storage(request):
     try:
         data = request.data
@@ -567,6 +582,7 @@ def update_storage(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def check_items(request):
     try:
         # Step 1: Parse the incoming JSON data
@@ -597,6 +613,7 @@ def check_items(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 @csrf_exempt
 def delete_record(request):
     try:
@@ -618,8 +635,9 @@ def delete_record(request):
         return Response({"success": False, "message": str(e)}, status=500)
 
 
-@csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def web_filter_items(request):
     if request.method == "POST":
         try:
@@ -779,6 +797,7 @@ tags=["Main Types"],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def upload_maintype_logo(request, id):
     if 'logo' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
@@ -803,6 +822,7 @@ tags=["Companies","Products"],
 )
 @api_view(['GET'])
 #@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_logo_by_pno(request, id):
     try:
         product = get_object_or_404(almogOil_Models.Mainitem, pno=id)

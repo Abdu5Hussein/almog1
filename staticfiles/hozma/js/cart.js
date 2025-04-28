@@ -110,45 +110,39 @@ function updateCartUI() {
 
 async function fetchAndUpdateCartItemImage(pno) {
   try {
-    console.log(`Fetching image for product number: ${pno}`);
-
-    const response = await fetchWithAuth(`${baseUrl}/api/products/${pno}/get-images`);
-    console.log('Raw response from API:', response);
+    const response = await customFetch(`${baseUrl}/api/products/${pno}/get-images`);
 
     let imageUrl = '';
     if (response && Array.isArray(response) && response.length > 0) {
       imageUrl = `${baseUrl}${response[0].image_obj}`;
-      console.log('Image URL constructed:', imageUrl);
-    } else {
-      console.log('No images found in response');
     }
 
     const cartItemDiv = document.getElementById(`cart-item-${pno}`);
     if (!cartItemDiv) {
-      console.warn(`No cart item found for pno: ${pno}`);
+      
       return;
     }
 
     const imgDiv = cartItemDiv.querySelector('.cart-item-img');
     if (!imgDiv) {
-      console.warn(`No image div found inside cart item for pno: ${pno}`);
+     
       return;
     }
 
     if (imageUrl) {
       imgDiv.innerHTML = `<img src="${imageUrl}" class="cart-item-img me-2" alt="Image for ${pno}" style="width:50px; height:50px; object-fit: contain; border-radius: 4px;">`;
-      console.log(`Image tag updated for pno: ${pno}`);
     } else {
       imgDiv.innerHTML = `<div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
         <i class="bi bi-image text-muted"></i>
       </div>`;
-      console.log(`Placeholder image shown for pno: ${pno}`);
+     
     }
 
   } catch (error) {
-    console.error('Error fetching cart item image:', error);
+    
   }
 }
+
 
 
 
@@ -481,29 +475,38 @@ async function checkout() {
   let invoiceNo;
 
   try {
-    const response = await fetch('http://45.13.59.226/hozma/preorder/create/', {
+    // Use customFetch to send the POST request
+    const response = await customFetch('http://45.13.59.226/hozma/preorder/create/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
+      credentials: 'include' // Ensure cookies are included in the request
     });
-
-    const result = await response.json();
-
-    if (response.ok && result.invoice_no) {
-      console.log("Invoice record created successfully:", result);
-      invoiceNo = result.invoice_no;
+  
+    // If response exists, parse the result
+    if (response) {
+      const result = await response.json();
+  
+      // Check if the invoice was created successfully
+      if (response.ok && result.invoice_no) {
+        console.log("Invoice record created successfully:", result);
+        invoiceNo = result.invoice_no;
+      } else {
+        console.error("Failed to create invoice record:", result);
+        alert(result.message || "فشل في إنشاء سجل الفاتورة.");
+        return;
+      }
     } else {
-      console.error("Failed to create invoice record:", result);
-      alert(result.message || "فشل في إنشاء سجل الفاتورة.");
-      return;
+      console.error("No response from server.");
+      alert("حدث خطأ في الاتصال بالخادم. الرجاء المحاولة لاحقًا.");
     }
   } catch (error) {
     console.error("Error while creating invoice record:", error);
     alert("حدث خطأ أثناء إنشاء سجل الفاتورة. الرجاء المحاولة لاحقًا.");
-    return;
   }
+  
 
   console.log("Invoice number:", invoiceNo);
   window.invoiceAutoId = invoiceNo;
@@ -522,31 +525,38 @@ for (let item of cart) {
   console.log("Sending item data:", itemData);
 
   try {
-    const itemResponse = await fetch('http://45.13.59.226/hozma/preorder/add-item/', {
+    // Use customFetch to send the POST request
+    const itemResponse = await customFetch('http://45.13.59.226/hozma/preorder/add-item/', {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(itemData)
+      body: JSON.stringify(itemData),
+      credentials: 'include' // Ensure cookies are included in the request
     });
   
-    const itemResult = await itemResponse.json();
-    console.log("Server response for item:", itemResult);
-    
-    // Check if the response contains a success message or confirmation
-    if (!itemResponse.ok || itemResult.confirm_status !== 'confirmed') {
-      console.error("Failed to add item:", itemResult);
-      alert(`فشل في إضافة عنصر ${item.pno} إلى الفاتورة.`);
-      return;
+    // Check if the response was successful and parse the result
+    if (itemResponse) {
+      const itemResult = await itemResponse.json();
+      console.log("Server response for item:", itemResult);
+  
+      // Check if the response contains a success message or confirmation
+      if (!itemResponse.ok || itemResult.confirm_status !== 'confirmed') {
+        console.error("Failed to add item:", itemResult);
+        alert(`فشل في إضافة عنصر ${itemData.pno} إلى الفاتورة.`);
+        return;
+      } else {
+        console.log("Item added:", itemResult);
+      }
     } else {
-      console.log("Item added:", itemResult);
+      console.error("No response from server.");
+      alert("حدث خطأ في الاتصال بالخادم. الرجاء المحاولة لاحقًا.");
     }
-    
   } catch (error) {
     console.error("Error while adding item:", error);
-    alert(`حدث خطأ أثناء إضافة عنصر ${item.pno}. الرجاء المحاولة لاحقًا.`);
-    return;
+    alert(`حدث خطأ أثناء إضافة عنصر ${itemData.pno}. الرجاء المحاولة لاحقًا.`);
   }
+  
 }  
 
 

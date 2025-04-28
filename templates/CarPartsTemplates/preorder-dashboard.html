@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -156,12 +157,16 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script>
         // Fetch all PreOrders and display them in the table
         document.addEventListener('DOMContentLoaded', function() {
-            axios.get('http://45.13.59.226/hozma/api/preorders/')
+            customFetch('http://45.13.59.226/hozma/api/preorders/')
                 .then(function (response) {
-                    const preorders = response.data.preorders;
+                    return response.json();  // Ensure the response is parsed as JSON
+                })
+                .then(function (data) {
+                    const preorders = data.preorders;
                     const preorderList = document.getElementById('preorder-list');
                     const loadingState = document.getElementById('loading-state');
                     const emptyState = document.getElementById('empty-state');
@@ -207,11 +212,12 @@
                     `;
                 });
         });
-
+    
         function viewPreOrderItems(invoice_no) {
             // Navigate to the specific PreOrder details page
             window.location.href = `/hozma/preorder-detail/${invoice_no}/`;
         }
     </script>
+    
 </body>
 </html>

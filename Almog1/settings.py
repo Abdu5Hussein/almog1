@@ -280,3 +280,6 @@ Q_CLUSTER = {
     'orm': 'default',  # Use Django's ORM for the task broker
     'sync': False,  # Run tasks asynchronously
 }
+
+GREEN_API_TOKEN = '66b95676d3344f3dbbbe3f6bcaa8faa3e5464f6109414ea990'
+GREEN_API_PHONE_NUMBER = '905338389061'
