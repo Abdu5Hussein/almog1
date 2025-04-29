@@ -83,8 +83,8 @@ class AllSourcesTable(models.Model):
     # New fields
     username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
     password = models.CharField(max_length=255,null=False)  # This will store the hashed password
-    
-   
+
+
 
     class Meta:
         managed = True
@@ -509,18 +509,49 @@ class AuthUser(models.Model):
             ('template_issue_permits', 'اذونات الصرف'),
             ('template_items_with_notes', 'اصناف بالملاحظات'),
             ('template_add_item_specifications', 'اضافة مواصفات الصنف'),
-            ('template_local_purchase_invoices', 'فواتير شراء محلية'),
-            ('template_external_purchase_invoices', 'فواتير شراء خارجية'),
-            ('template_initial_sales_invoices', 'ف. البيع المبدئية'),
-            ('template_sales_invoices', 'فواتير البيع'),
-            ('template_returns', 'الترجيعات'),
-            ('template_customers', 'العملاء'),
-            ('template_suppliers', 'الموردين'),
-            ('template_employees', 'الموظفين'),
-            ('template_treasury', 'الخزينة'),
-            ('template_accounts', 'الحسابات'),
-            ('template_users', 'المستخدمين'),
-            ('template_company_data', 'تعديل بيانات الشركة'),
+
+            ('template_sell_invoice_entry', 'ادخال فاتورة بيع'),
+            ('template_sell_invoices', 'فواتير البيع'),
+            ('template_sell_invoice_settlement', 'تسوية حساب فواتير البيع'),
+            ('template_sell_inventory_item_search', 'بحث باصناف المخزن'),
+            ('template_sell_invoice_preparation_reports', 'تقارير التحضير'),
+
+            ('template_buy_invoice_entry', 'ادخال فاتورة شراء'),
+            ('template_buy_invoices', 'فواتير الشراء'),
+            ('template_buy_price_modifications', 'تعديل اسعار البيع'),
+            ('template_buy_invoice_settlement', 'تسوية حساب فواتير الشراء'),
+            ('template_buy_temp_item_posting', 'ترحيل الاصناف المؤقتة'),
+            ('template_buy_invoice_inventory', 'جرد فواتير الشراء'),
+
+            ('template_return_permission_entry', 'ادخال اذن ترجيع'),
+            ('template_return_reports', 'تقارير الترجيع'),
+
+            ('template_customer_guide', 'دليل العملاء'),
+            ('template_customer_reports', 'تقارير العملاء'),
+            ('template_account_settlement', 'تسوية حساب العملاء'),
+            ('template_account_settlement_reports', 'تقارير تسوية حساب العملاء'),
+            ('template_audit_reports', 'تقارير المراجعة للعملاء'),
+
+            ('template_add_supplier', 'اضافة مورد'),
+            ('template_supplier_reports', 'تقارير الموردين'),
+            ('template_supplier_guide', 'دليل الموردين'),
+            ('template_supplier_account_settlement', 'تسوية حساب الموردين'),
+            ('template_supplier_account_settlement_reports', 'تقارير تسوية حساب الموردين'),
+            ('template_audit_reports_suppliers', 'تقارير المراجعة للموردين'),
+
+            ('template_employee_directory', 'دليل الموظفين'),
+            ('template_drivers', 'الموصلين'),
+            ('template_salary_accounts', 'حساب المرتبات'),
+            ('template_settlement_entries', 'قيود التسوية'),
+            ('template_emp_reports', 'تقارير الموظفين'),
+            ('template_settlement_reports', 'تقارير التسوية'),
+            ('template_attendance_absence', 'حضور وغياب'),
+
+            ('template_treasury_entries', 'قيود الخزينة'),
+            ('template_treasury_reports', 'تقارير الخزينة'),
+            ('template_request_value', 'طلب قيمة من الخزينة'),
+
+            ('template_users_management', 'ادارة المستخدمين'),
         ]
 
 class AuthUserGroups(models.Model):
@@ -580,7 +611,7 @@ class BuyInvoiceItemsTable(models.Model):
     invoice_no2 = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     main_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
     sub_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
-
+    source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     class Meta:
         managed = True
         db_table = 'buy_invoice_items_table'
@@ -1212,3 +1243,20 @@ class PreOrderItemsTable(models.Model):
     class Meta:
         managed = True
         db_table = 'pre_order_items_table'
+
+class TempBuyInvoiceItemsTable(models.Model):
+    source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE)
+    item_no = models.IntegerField()
+    pno = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
+    company = models.CharField(max_length=255, null=True, blank=True)
+    quantity = models.FloatField()
+    dinar_unit_price = models.FloatField()
+    dollar_unit_price = models.FloatField()
+    dinar_total_price = models.FloatField()
+    dollar_total_price = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.source} - {self.name} ({self.quantity})"

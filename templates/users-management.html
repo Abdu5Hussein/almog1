@@ -486,13 +486,13 @@
   </head>
   <body>
     <div class="container row">
-        <div class="col h-100 d-flex flex-column">
+        <div class="col-6 h-100 ">
           <div class="title-container mb-2">
             <h3 class="m-0">تقارير الخزينة</h3>
           </div>
 
           <!-- Table Section -->
-          <div class="custom-table mb-1 flex-grow-1">
+          <div class="custom-table mb-1">
             <div
               dir="rtl"
               id="users-table"
@@ -503,7 +503,7 @@
         </div>
 
       <!-- Form Section with 5 input columns -->
-        <div class="col">
+        <div class="col-6">
             <div class="custom-form">
                 <form id="firstForm" lang="ar">
                 {% csrf_token %}
@@ -553,173 +553,283 @@
                   <div class="row border">
                     <div class="col">
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_productdetails" value="template_productdetails" style="margin-left: 5px" {% if Permissions.template_productdetails %}checked{% endif %} />
+                        <input type="checkbox" id="template_productdetails" value="template_productdetails" style="margin-left: 5px" />
                         <label for="template_productdetails">صفحة بيانات الاصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_local_item_reports" value="template_local_item_reports" style="margin-left: 5px" {% if Permissions.template_local_item_reports %}checked{% endif %} />
+                        <input type="checkbox" id="template_local_item_reports" value="template_local_item_reports" style="margin-left: 5px" />
                         <label for="template_local_item_reports">تقارير الاصناف المحلية</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_external_item_reports" value="template_external_item_reports" style="margin-left: 5px" {% if Permissions.template_external_item_reports %}checked{% endif %} />
+                        <input type="checkbox" id="template_external_item_reports" value="template_external_item_reports" style="margin-left: 5px" />
                         <label for="template_external_item_reports">تقارير الاصناف الخارجية</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_price_modifications" value="template_price_modifications" style="margin-left: 5px" {% if Permissions.template_price_modifications %}checked{% endif %} />
+                        <input type="checkbox" id="template_price_modifications" value="template_price_modifications" style="margin-left: 5px" />
                         <label for="template_price_modifications">تعديل الاسعار</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_item_movement_reports" value="template_item_movement_reports" style="margin-left: 5px" {% if Permissions.template_item_movement_reports %}checked{% endif %} />
+                        <input type="checkbox" id="template_item_movement_reports" value="template_item_movement_reports" style="margin-left: 5px" />
                         <label for="template_item_movement_reports">تقرير حركة الاصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_item_revaluation" value="template_item_revaluation" style="margin-left: 5px" {% if Permissions.template_item_revaluation %}checked{% endif %} />
+                        <input type="checkbox" id="template_item_revaluation" value="template_item_revaluation" style="margin-left: 5px" />
                         <label for="template_item_revaluation">اعادة ترصيد الاصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_inventory" value="template_inventory" style="margin-left: 5px" {% if Permissions.template_inventory %}checked{% endif %} />
+                        <input type="checkbox" id="template_inventory" value="template_inventory" style="margin-left: 5px" />
                         <label for="template_inventory">الجرد</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_damage_loss" value="template_damage_loss" style="margin-left: 5px" {% if Permissions.template_damage_loss %}checked{% endif %} />
+                        <input type="checkbox" id="template_damage_loss" value="template_damage_loss" style="margin-left: 5px" />
                         <label for="template_damage_loss">التلف والفقد</label>
+                      </div>
+                      <div class="border p-1">
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="add_mainitem" style="margin-left: 5px" />
+                          <label for="check1">ادخال صنف</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="change_mainitem" style="margin-left: 5px" />
+                          <label for="check1">تعديل صنف</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="delete_mainitem" style="margin-left: 5px" />
+                          <label for="check1">حذف صنف</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="view_mainitem" style="margin-left: 5px" />
+                          <label for="check1">الاطلاع على الاصناف</label>
+                        </div>
                       </div>
                     </div>
 
                     <div class="col">
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_storage_locations" value="template_storage_locations" style="margin-left: 5px" {% if Permissions.template_storage_locations %}checked{% endif %} />
+                        <input type="checkbox" id="template_storage_locations" value="template_storage_locations" style="margin-left: 5px" />
                         <label for="template_storage_locations">اماكن التخزين</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_english_labeling" value="template_english_labeling" style="margin-left: 5px" {% if Permissions.template_english_labeling %}checked{% endif %} />
+                        <input type="checkbox" id="template_english_labeling" value="template_english_labeling" style="margin-left: 5px" />
                         <label for="template_english_labeling">التسمية الانجليزية</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_item_reservation" value="template_item_reservation" style="margin-left: 5px" {% if Permissions.template_item_reservation %}checked{% endif %} />
+                        <input type="checkbox" id="template_item_reservation" value="template_item_reservation" style="margin-left: 5px" />
                         <label for="template_item_reservation">حجز اصناف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_revaluation" value="template_revaluation" style="margin-left: 5px" {% if Permissions.template_revaluation %}checked{% endif %} />
+                        <input type="checkbox" id="template_revaluation" value="template_revaluation" style="margin-left: 5px" />
                         <label for="template_revaluation">اعادة الترصيد</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_missing_items" value="template_missing_items" style="margin-left: 5px" {% if Permissions.template_missing_items %}checked{% endif %} />
+                        <input type="checkbox" id="template_missing_items" value="template_missing_items" style="margin-left: 5px" />
                         <label for="template_missing_items">النواقص</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_issue_permits" value="template_issue_permits" style="margin-left: 5px" {% if Permissions.template_issue_permits %}checked{% endif %} />
+                        <input type="checkbox" id="template_issue_permits" value="template_issue_permits" style="margin-left: 5px" />
                         <label for="template_issue_permits">اذونات الصرف</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_items_with_notes" value="template_items_with_notes" style="margin-left: 5px" {% if Permissions.template_items_with_notes %}checked{% endif %} />
+                        <input type="checkbox" id="template_items_with_notes" value="template_items_with_notes" style="margin-left: 5px" />
                         <label for="template_items_with_notes">اصناف بالملاحظات</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="template_add_item_specifications" value="template_add_item_specifications" style="margin-left: 5px" {% if Permissions.template_add_item_specifications %}checked{% endif %} />
+                        <input type="checkbox" id="template_add_item_specifications" value="template_add_item_specifications" style="margin-left: 5px" />
                         <label for="template_add_item_specifications">اضافة مواصفات الصنف</label>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <div class="row">
+              <div id="buy_invoice_templates" class="row">
                 <div class="col">
                   <div class="row border title-container">
-                    <h3 class="text-center">صلاحيات الاصناف</h3>
+                    <h3 class="text-center">صلاحيات فواتير الشراء</h3>
                   </div>
-                  <div class="row border">
+                  <div class="row border ">
                     <div class="col">
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">بيانات الاصناف</label>
+                        <input type="checkbox" value="template_buy_invoice_entry" style="margin-left: 5px" />
+                        <label for="check1">واجهة ادخال فاتورة شراء</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check2" style="margin-left: 5px" />
-                        <label for="check2">تقارير الاصناف المحلية</label>
+                        <input type="checkbox" value="template_buy_invoices" style="margin-left: 5px" />
+                        <label for="check1">فواتير الشراء</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check3" style="margin-left: 5px" />
-                        <label for="check3">تقارير الاصناف الخارجية</label>
+                        <input type="checkbox" value="template_buy_price_modifications" style="margin-left: 5px" />
+                        <label for="check1">تعديل اسعار البيع</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check4" style="margin-left: 5px" />
-                        <label for="check4">تعديل الاسعار</label>
+                        <input type="checkbox" value="template_buy_invoice_settlement" style="margin-left: 5px" />
+                        <label for="check1">تسوية حساب فواتير الشراء</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check5" style="margin-left: 5px" />
-                        <label for="check5">تقرير حركة الاصناف</label>
+                        <input type="checkbox" value="template_buy_temp_item_posting" style="margin-left: 5px" />
+                        <label for="check1">ترحيل الاصناف المؤقتة</label>
                       </div>
                       <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check6" style="margin-left: 5px" />
-                        <label for="check6">اعادة ترصيد الاصناف</label>
+                        <input type="checkbox" value="template_buy_invoice_inventory" style="margin-left: 5px" />
+                        <label for="check1">جرد فواتير الشراء</label>
                       </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check7" style="margin-left: 5px" />
-                        <label for="check7">الجرد</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check8" style="margin-left: 5px" />
-                        <label for="check8">التلف والفقد</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check9" style="margin-left: 5px" />
-                        <label for="check9">اماكن التخزين</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check10" style="margin-left: 5px" />
-                        <label for="check10">التسمية الانجليزية</label>
-                      </div>
-                    </div>
 
+                    </div>
                     <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check11" style="margin-left: 5px" />
-                        <label for="check11">حجز اصناف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check12" style="margin-left: 5px" />
-                        <label for="check12">اعادة الترصيد</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check13" style="margin-left: 5px" />
-                        <label for="check13">النواقص</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check14" style="margin-left: 5px" />
-                        <label for="check14">اذونات الصرف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check15" style="margin-left: 5px" />
-                        <label for="check15">اصناف بالملاحظات</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check16" style="margin-left: 5px" />
-                        <label for="check16">اضافة مواصفات الصنف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check16" style="margin-left: 5px" />
-                        <label for="check16">ادخال</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check16" style="margin-left: 5px" />
-                        <label for="check16">تعديل</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check16" style="margin-left: 5px" />
-                        <label for="check16">حذف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check16" style="margin-left: 5px" />
-                        <label for="check16">تصدير</label>
+                      <div class="border p-1">
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="add_buyinvoicetable" style="margin-left: 5px" />
+                          <label for="check1">اصدار فاتورة شراء</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="change_buyinvoicetable" style="margin-left: 5px" />
+                          <label for="check1">تعديل</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="delete_buyinvoicetable" style="margin-left: 5px" />
+                          <label for="check1">حذف</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="buy_invoice_export" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
+                        </div>
                       </div>
                     </div>
                   </div>
-
                 </div>
               </div>
-              <div class="row">
+              <div id="sell_invoice_templates" class="row">
+                <div class="col">
+                  <div class="row border title-container">
+                    <h3 class="text-center">صلاحيات فواتير البيع</h3>
+                  </div>
+                  <div class="row border ">
+                    <div class="col">
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="template_sell_invoice_entry" style="margin-left: 5px" />
+                        <label for="check1">واجهة ادخال فاتورة بيع</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="template_sell_invoices" style="margin-left: 5px" />
+                        <label for="check1">فواتير البيع</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="template_sell_invoice_settlement" style="margin-left: 5px" />
+                        <label for="check1">تسوية حساب فواتير البيع</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="template_sell_inventory_item_search" style="margin-left: 5px" />
+                        <label for="check1">بحث بالاصناف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="template_sell_invoice_preparation_reports" style="margin-left: 5px" />
+                        <label for="check1">تقارير التحضير</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="view_sellinvoicetable" style="margin-left: 5px" />
+                        <label for="check1">الاطلاع على الفواتير</label>
+                      </div>
+                      <div class="border p-1">
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="add_sellinvoicetable" style="margin-left: 5px" />
+                          <label for="check1">اصدار فاتورة بيع</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="change_sellinvoicetable" style="margin-left: 5px" />
+                          <label for="check1">تعديل فواتير</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="delete_sellinvoicetable" style="margin-left: 5px" />
+                          <label for="check1">حذف فواتير</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="sell_invoice_export" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col">
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">عرض المجاميع</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">عرض الاصناف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">بيانات التحضير</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">عرض سعر البيع</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">تصدير مخصص</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">تعديل السعر</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">تعديل الكمية</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">حذف صنف</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="check1" style="margin-left: 5px" />
+                        <label for="check1">عرض فواتير الامس</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="return_permission_templates" class="row">
+                <div class="col">
+                  <div class="row border title-container">
+                    <h3 class="text-center">صلاحيات الترجيع</h3>
+                  </div>
+                  <div class="row border ">
+                    <div class="col">
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="template_return_permission_entry" style="margin-left: 5px" />
+                        <label for="check1">ادخال اذن ترجيع</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="template_return_reports" style="margin-left: 5px" />
+                        <label for="check1">تقارير الترجيع</label>
+                      </div>
+
+                    </div>
+                    <div class="col">
+                      <div class="border p-1">
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="add_return_permission" style="margin-left: 5px" />
+                          <label for="check1">اضافة</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="change_return_permission" style="margin-left: 5px" />
+                          <label for="check1">تعديل</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="delete_return_permission" style="margin-left: 5px" />
+                          <label for="check1">حذف</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="return_permission_export" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="manufac_order" class="row">
                 <div class="col">
                   <div class="row border title-container">
                     <h3 class="text-center">اوامر التصنيع</h3>
@@ -763,209 +873,6 @@
                       <div class="row-md-2 d-flex align-items-center mb-2">
                         <input type="checkbox" id="check1" style="margin-left: 5px" />
                         <label for="check1">تعديل السعر</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col">
-                  <div class="row border title-container">
-                    <h3 class="text-center">صلاحيات المشتريات</h3>
-                  </div>
-                  <div class="row border ">
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">ادخال فاتورة شراء</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">فواتير المشتريات</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تعديل اسعار البيع للمشتريات</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تسوية حساب الفواتير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">ترحيل الاصناف المؤقتة</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">جرد فواتير الشراء</label>
-                      </div>
-
-                    </div>
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تعديل</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">حذف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تصدير</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col">
-                  <div class="row border title-container">
-                    <h3 class="text-center">صلاحيات المبيعات المبدئية</h3>
-                  </div>
-                  <div class="row border ">
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">ادخال فاتورة بيع مبدئية</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">فواتير المبيعات المبدئية</label>
-                      </div>
-
-                    </div>
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تعديل فواتير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">حذف فواتير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تصدير</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col">
-                  <div class="row border title-container">
-                    <h3 class="text-center">صلاحيات المبيعات</h3>
-                  </div>
-                  <div class="row border ">
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">ادخال فاتورة بيع</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">فواتير البيع</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تسوية حساب الفواتير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">بحث بالاصناف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تقارير التحضير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تعديل فواتير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">حذف فواتير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تصدير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">عدم تحديد التاريخ</label>
-                      </div>
-                    </div>
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">عرض المجاميع</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">عرض الاصناف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">بيانات التحضير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">عرض سعر البيع</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تصدير مخصص</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تعديل السعر</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تعديل الكمية</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">حذف صنف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">عرض فواتير الامس</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col">
-                  <div class="row border title-container">
-                    <h3 class="text-center">صلاحيات الترجيع</h3>
-                  </div>
-                  <div class="row border ">
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">اخال اذن ترجيع</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">اذونات الترجيع</label>
-                      </div>
-
-                    </div>
-                    <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تعديل</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">حذف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" id="check1" style="margin-left: 5px" />
-                        <label for="check1">تصدير</label>
                       </div>
                     </div>
                   </div>
@@ -1413,9 +1320,8 @@
               <div class="col-12 d-flex justify-content-center gap-2 flex-wrap">
                 <button type="button" id="clear-btn" class="btn btn-primary" style="width: 100px">مسح</button>
                 <button type="button" class="btn btn-primary" style="width: 100px">جديد</button>
-                <button type="button" class="btn btn-primary" style="width: 100px">تعديل</button>
                 <button type="button" class="btn btn-primary" style="width: 100px">حذف</button>
-                <button type="button" class="btn btn-primary" style="width: 100px">اغلاق</button>
+                <button type="button" class="btn btn-primary" style="width: 100px" onClick="window.close()">اغلاق</button>
               </div>
             </div>
 
@@ -1443,19 +1349,103 @@
         columnMenu: true, // Enable column menu
         data: [], // Load dynamically
         columns: [
-            { title: "رقم المستخدم", field: "userno", visible: true },
-            { title: "اسم المستخدم", field: "username", visible: true },
-            { title: "الوظيفة", field: "role", visible: true },
+            { title: "رقم المستخدم", field: "id", visible: true, width: 95},
+            { title: "اسم المستخدم", field: "username", visible: true, width: 95 },
+            {
+              title: "اخر دخول",
+              field: "last_login",
+              visible: true,
+              width: 135,
+              formatter: function(cell) {
+                const value = cell.getValue();
+                if (!value) return "-";
+                const date = new Date(value);
+                return date.toLocaleString(); // You can use options to customize format
+              }
+            },
+            {
+              title: "ادمن",
+              field: "is_superuser",
+              visible: true,
+              formatter: function(cell) {
+                return cell.getValue() ? "✓" : "✗";
+              },
+              width: 60,
+            },
+            {
+              title: "موظف",
+              field: "is_superuser",
+              visible: true,
+              formatter: function(cell) {
+                return cell.getValue() ? "✗":"✓";
+              },
+              width: 60,
+            },
+            {
+              title: "نشط",
+              field: "is_active",
+              visible: true,
+              formatter: function(cell) {
+                return cell.getValue() ? "✓" : "✗";
+              },
+              width: 60,
+            },
+            //{ title: "الاسم", field: "first_name", visible: true },
+            //{ title: "اللقب", field: "last_name", visible: true },
+
         ],
         placeholder: "لا توجد بيانات متاحة",
     });
+    refreshTable();
+    function refreshTable(){
+         customFetch("/api/users/get", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Fetched Data:", data);
+
+            // Set data in Tabulator
+            table.setData(data);
+          })
+          .catch((error) => console.error("Error fetching data:", error)).finally(()=> {
+
+          });
+       }
+       function updatePermissionCheckboxes(responseData) {
+          const permissions = new Set(responseData);  // Convert to Set for fast lookup
+          const checkboxes = document.querySelectorAll('#permissions-container input[type="checkbox"]');
+
+          checkboxes.forEach((checkbox) => {
+            checkbox.checked = permissions.has(checkbox.value);
+          });
+        }
+       function getPermissions(id){
+         customFetch("/api/users/"+ id +"/permissions", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+          .then((response) => response.json())
+          .then((data) => {
+            updatePermissionCheckboxes(data);
+          })
+          .catch((error) => console.error("Error fetching data:", error)).finally(()=> {
+
+          });
+       }
     document.addEventListener("DOMContentLoaded", function () {
-      const checkboxes = document.querySelectorAll('#products_templates input[type="checkbox"]');
+      const checkboxes = document.querySelectorAll('#permissions-container input[type="checkbox"]');
 
       checkboxes.forEach(function (checkbox) {
         checkbox.addEventListener("change", function () {
           const permissionCodename = this.value;
           const action = this.checked ? "grant" : "remove";
+          const id = document.getElementById("user-no").value;
 
           fetch("http://45.13.59.226/api/user/permissions/toggle", {
             method: "POST",
@@ -1465,6 +1455,7 @@
               // "Authorization": "Bearer YOUR_TOKEN"
             },
             body: JSON.stringify({
+              user_id: id,
               permission_codename: permissionCodename,
               action: action
             })
@@ -1476,7 +1467,7 @@
             return response.json();
           })
           .then(data => {
-            alert('Success:'+ data.message);
+            alert('Success:'+ data.arabic_message);
           })
           .catch(error => {
             console.error('Error:', error);
@@ -1487,6 +1478,17 @@
         });
       });
     });
+    table.on("rowClick", function (e, row) {
+          console.log("Row clicked after data update:", row.getData());
+          const id = parseInt(row.getData().id); // Get pno of the clicked row
+          const username = row.getData().username;
+
+          document.getElementById("user-no").value = id;
+          document.getElementById("user-name").value = username;
+
+          getPermissions(id);
+          console.log("Clicked id:", id);
+        });
     </script>
 
   </body>

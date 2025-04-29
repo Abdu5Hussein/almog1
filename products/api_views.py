@@ -27,7 +27,7 @@ from django.utils.timezone import make_aware
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.status import HTTP_200_OK
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import generics, mixins,viewsets
@@ -639,155 +639,157 @@ def delete_record(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def web_filter_items(request):
-    if request.method == "POST":
-        try:
-            # Get the filters from the request body
-            filters = request.data  # Decoding bytes and loading JSON
-            cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
-            cached_data = cache.get(cache_key)
+     if request.method == "POST":
+         try:
+             # Get the filters from the request body
+             filters = request.data  # Decoding bytes and loading JSON
+             cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
+             cached_data = cache.get(cache_key)
+ 
+             if cached_data:
+                 cached_data["cached_flag"] = True
+                 return Response(cached_data, status=status.HTTP_200_OK)
+ 
+             # Initialize the base Q object for filtering
+             filters_q = Q()
+ 
+             # Build the query based on the filters
+             if filters.get('fileid'):
+                 filters_q &= Q(fileid__icontains=filters['fileid'])
+             if filters.get('itemno'):
+                 filters_q &= Q(itemno__icontains=filters['itemno'])
+             if filters.get('itemmain'):
+                 filters_q &= Q(itemmain__icontains=filters['itemmain'])
+             if filters.get('itemsubmain'):
+                 filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
+             if filters.get('engine_no'):
+                 filters_q &= Q(engine_no__icontains=filters['engine_no'])
+             if filters.get('itemthird'):
+                 filters_q &= Q(itemthird__icontains=filters['itemthird'])
+             if filters.get('companyproduct'):
+                 filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
+             if filters.get('itemname'):
+                 filters_q &= Q(itemname__icontains=filters['itemname'])
+             if filters.get('eitemname'):
+                 filters_q &= Q(eitemname__icontains=filters['eitemname'])
+             if filters.get('companyno'):
+                 filters_q &= Q(replaceno__icontains=filters['companyno'])
+             if filters.get('pno'):
+                 filters_q &= Q(pno__icontains=filters['pno'])
+             if filters.get('source'):
+                 filters_q &= Q(ordersource__icontains=filters['source'])
+             if filters.get('model'):
+                 filters_q &= Q(itemthird__icontains=filters['model'])
+             if filters.get('country'):
+                 filters_q &= Q(itemsize__icontains=filters['country'])
+             if filters.get('oem'):
+                 filters_q &= Q(oem_numbers__icontains=filters['oem'])
+ 
+             # Original filters
+             if filters.get('itemvalue') == "0":
+                 filters_q &= Q(itemvalue=0)
+             if filters.get('itemvalue') == ">0":
+                 filters_q &= Q(itemvalue__gt=0)
+ 
+             # New availability logic (switch-case style)
+             availability = filters.get('availability')
+             if availability == "not_available":
+                 filters_q &= Q(itemvalue=0)
+             elif availability == "limited":
+                 filters_q &= Q(itemvalue__lte=10, itemvalue__gt=0)
+             elif availability == "available":
+                 filters_q &= Q(itemvalue__gt=10)
+ 
+             if filters.get('resvalue') == ">0":
+                 filters_q &= Q(resvalue__gt=0)
+             if filters.get('itemvalue_itemtemp') == "lte":
+                 filters_q &= Q(itemvalue__lte=F('itemtemp'))  # Compare fields
+ 
+             # Apply date range filter on `orderlastdate`
+             fromdate = filters.get('fromdate', '').strip()
+             todate = filters.get('todate', '').strip()
+ 
+             if fromdate and todate:
+                 try:
+                     from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                     to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                     filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
+                 except ValueError:
+                     return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+ 
+             # Now filter the queryset using the combined Q object
+             queryset = almogOil_Models.Mainitem.objects.filter(filters_q).order_by('itemname')
+ 
+             # Serialize the filtered data
+             serializer = products_serializers.MainitemSerializer(queryset, many=True)
+             items_data = serializer.data
+ 
+             # Initialize totals
+             total_itemvalue = total_itemvalueb = total_resvalue = total_cost = total_order = total_buy = 0
+ 
+             # Calculate totals
+             for item in items_data:
+                    # Use safe conversion functions
+                 itemvalue = float(item.get('itemvalue') or 0)
+                 itemvalueb = float(item.get('itemvalueb') or 0)
+                 resvalue = float(item.get('resvalue') or 0)
+                 costprice = float(item.get('costprice') or 0)
+                 orderprice = float(item.get('orderprice') or 0)
+                 buyprice = float(item.get('buyprice') or 0)
 
-            if cached_data:
-                cached_data["cached_flag"] = True
-                return Response(cached_data, status=status.HTTP_200_OK)
-
-            # Initialize the base Q object for filtering
-            filters_q = Q()
-
-            # Build the query based on the filters
-            if filters.get('fileid'):
-                filters_q &= Q(fileid__icontains=filters['fileid'])
-            if filters.get('itemno'):
-                filters_q &= Q(itemno__icontains=filters['itemno'])
-            if filters.get('itemmain'):
-                filters_q &= Q(itemmain__icontains=filters['itemmain'])
-            if filters.get('itemsubmain'):
-                filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
-            if filters.get('engine_no'):
-                filters_q &= Q(engine_no__icontains=filters['engine_no'])
-            if filters.get('itemthird'):
-                filters_q &= Q(itemthird__icontains=filters['itemthird'])
-            if filters.get('companyproduct'):
-                filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
-            if filters.get('itemname'):
-                filters_q &= Q(itemname__icontains=filters['itemname'])
-            if filters.get('eitemname'):
-                filters_q &= Q(eitemname__icontains=filters['eitemname'])
-            if filters.get('companyno'):
-                filters_q &= Q(replaceno__icontains=filters['companyno'])
-            if filters.get('pno'):
-                filters_q &= Q(pno__icontains=filters['pno'])
-            if filters.get('source'):
-                filters_q &= Q(ordersource__icontains=filters['source'])
-            if filters.get('model'):
-                filters_q &= Q(itemthird__icontains=filters['model'])
-            if filters.get('country'):
-                filters_q &= Q(itemsize__icontains=filters['country'])
-            if filters.get('oem'):
-                filters_q &= Q(oem_numbers__icontains=filters['oem'])
-
-            # Original filters
-            if filters.get('itemvalue') == "0":
-                filters_q &= Q(itemvalue=0)
-            if filters.get('itemvalue') == ">0":
-                filters_q &= Q(itemvalue__gt=0)
-
-            # New availability logic (switch-case style)
-            availability = filters.get('availability')
-            if availability == "not_available":
-                filters_q &= Q(itemvalue=0)
-            elif availability == "limited":
-                filters_q &= Q(itemvalue__lte=10, itemvalue__gt=0)
-            elif availability == "available":
-                filters_q &= Q(itemvalue__gt=10)
-
-            if filters.get('resvalue') == ">0":
-                filters_q &= Q(resvalue__gt=0)
-            if filters.get('itemvalue_itemtemp') == "lte":
-                filters_q &= Q(itemvalue__lte=F('itemtemp'))  # Compare fields
-
-            # Apply date range filter on `orderlastdate`
-            fromdate = filters.get('fromdate', '').strip()
-            todate = filters.get('todate', '').strip()
-
-            if fromdate and todate:
-                try:
-                    from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
-                    to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
-                    filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
-                except ValueError:
-                    return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Now filter the queryset using the combined Q object
-            queryset = almogOil_Models.Mainitem.objects.filter(filters_q).order_by('itemname')
-
-            # Serialize the filtered data
-            serializer = products_serializers.MainitemSerializer(queryset, many=True)
-            items_data = serializer.data
-
-            # Initialize totals
-            total_itemvalue = total_itemvalueb = total_resvalue = total_cost = total_order = total_buy = 0
-
-            # Calculate totals
-            for item in items_data:
-                itemvalue = float(item.get('itemvalue', 0))
-                itemvalueb = float(item.get('itemvalueb', 0))
-                resvalue = float(item.get('resvalue', 0))
-                costprice = float(item.get('costprice', 0))
-                orderprice = float(item.get('orderprice', 0))
-                buyprice = float(item.get('buyprice', 0))
-
-                total_itemvalue += itemvalue
-                total_itemvalueb += itemvalueb
-                total_resvalue += resvalue
-                total_cost += itemvalue * costprice
-                total_order += itemvalue * orderprice
-                total_buy += itemvalue * buyprice
-
-            fullTable = filters.get('fullTable')
-            if fullTable:
-                response = {
-                    "data": items_data,
-                    "fullTable": True,
-                    "last_page": 1,
-                    "total_rows": queryset.count(),
-                    "page_no": 1,
-                    "total_itemvalue": total_itemvalue,
-                    "total_itemvalueb": total_itemvalueb,
-                    "total_resvalue": total_resvalue,
-                    "total_cost": total_cost,
-                    "total_order": total_order,
-                    "total_buy": total_buy,
-                }
-                return Response(response)
-
-            # Pagination
-            page_number = int(filters.get('page') or 1)
-            page_size = int(filters.get('size') or 20)
-            paginator = Paginator(items_data, page_size)
-            page_obj = paginator.get_page(page_number)
-
-            response = {
-                "data": list(page_obj),
-                "last_page": paginator.num_pages,
-                "total_rows": paginator.count,
-                "page_size": page_size,
-                "page_no": page_number,
-                "total_itemvalue": total_itemvalue,
-                "total_itemvalueb": total_itemvalueb,
-                "total_resvalue": total_resvalue,
-                "total_cost": total_cost,
-                "total_order": total_order,
-                "total_buy": total_buy,
-                "cached_flag": False,
-            }
-
-            cache.set(cache_key, response, timeout=300)
-            return Response(response)
-
-        except json.JSONDecodeError:
-            return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+ 
+                 total_itemvalue += itemvalue
+                 total_itemvalueb += itemvalueb
+                 total_resvalue += resvalue
+                 total_cost += itemvalue * costprice
+                 total_order += itemvalue * orderprice
+                 total_buy += itemvalue * buyprice
+ 
+             fullTable = filters.get('fullTable')
+             if fullTable:
+                 response = {
+                     "data": items_data,
+                     "fullTable": True,
+                     "last_page": 1,
+                     "total_rows": queryset.count(),
+                     "page_no": 1,
+                     "total_itemvalue": total_itemvalue,
+                     "total_itemvalueb": total_itemvalueb,
+                     "total_resvalue": total_resvalue,
+                     "total_cost": total_cost,
+                     "total_order": total_order,
+                     "total_buy": total_buy,
+                 }
+                 return Response(response)
+ 
+             # Pagination
+             page_number = int(filters.get('page') or 1)
+             page_size = int(filters.get('size') or 20)
+             paginator = Paginator(items_data, page_size)
+             page_obj = paginator.get_page(page_number)
+ 
+             response = {
+                 "data": list(page_obj),
+                 "last_page": paginator.num_pages,
+                 "total_rows": paginator.count,
+                 "page_size": page_size,
+                 "page_no": page_number,
+                 "total_itemvalue": total_itemvalue,
+                 "total_itemvalueb": total_itemvalueb,
+                 "total_resvalue": total_resvalue,
+                 "total_cost": total_cost,
+                 "total_order": total_order,
+                 "total_buy": total_buy,
+                 "cached_flag": False,
+             }
+ 
+             cache.set(cache_key, response, timeout=300)
+             return Response(response)
+ 
+         except json.JSONDecodeError:
+             return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
+         except Exception as e:
+             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

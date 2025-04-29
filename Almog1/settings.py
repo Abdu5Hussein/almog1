@@ -139,6 +139,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     "corsheaders.middleware.CorsMiddleware",
+    'almogOil.middleware.RefreshTokenMiddleware',   # Custom middleware to refresh token
 ]
 
 CSRF_COOKIE_HTTPONLY = False  # Allow access to CSRF token in JavaScript

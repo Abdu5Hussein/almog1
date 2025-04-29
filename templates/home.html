@@ -841,22 +841,22 @@
                   ><i class="fas fa-chevron-down"></i>فواتير شراء خارجية</a
                 >
                 <div class="sub-menu">
-                    {% if perms.almogOil.template_purchase_invoice_entry %}
+                    {% if perms.almogOil.template_buy_invoice_entry %}
                         <a class="nav-link" id="item-3-1">ادخال فاتورة شراء</a>
                     {% endif %}
-                    {% if perms.almogOil.template_purchase_invoices %}
+                    {% if perms.almogOil.template_buy_invoices %}
                         <a class="nav-link" id="item-3-2">فواتير الشراء</a>
                     {% endif %}
-                    {% if perms.almogOil.template_price_modifications %}
+                    {% if perms.almogOil.template_buy_price_modifications %}
                         <a class="nav-link" id="item-3-3">تعديل اسعار البيع</a>
                     {% endif %}
-                    {% if perms.almogOil.template_invoice_settlement %}
+                    {% if perms.almogOil.template_buy_invoice_settlement %}
                         <a class="nav-link" id="item-3-4">تسوية حساب الفواتير</a>
                     {% endif %}
-                    {% if perms.almogOil.template_temp_item_posting %}
+                    {% if perms.almogOil.template_buy_temp_item_posting %}
                         <a class="nav-link" id="item-3-5">ترحيل الاصناف المؤقتة</a>
                     {% endif %}
-                    {% if perms.almogOil.template_purchase_invoice_inventory %}
+                    {% if perms.almogOil.template_buy_invoice_inventory %}
                         <a class="nav-link" id="item-3-6">جرد فواتير الشراء</a>
                     {% endif %}
                 </div>
@@ -875,19 +875,19 @@
                   ><i class="fas fa-chevron-down"></i>فواتير البيع</a
                 >
                 <div class="sub-menu">
-                    {% if perms.almogOil.template_sales_invoice_entry %}
+                    {% if perms.almogOil.template_sell_invoice_entry %}
                         <a class="nav-link" id="item-5-1">ادخال فاتورة بيع</a>
                     {% endif %}
-                    {% if perms.almogOil.template_sales_invoices %}
+                    {% if perms.almogOil.template_sell_invoices %}
                         <a class="nav-link" id="item-5-2">فواتير البيع</a>
                     {% endif %}
-                    {% if perms.almogOil.template_invoice_settlement %}
+                    {% if perms.almogOil.template_sell_invoice_settlement %}
                         <a class="nav-link" id="item-5-3">تسوية حساب الفواتير</a>
                     {% endif %}
-                    {% if perms.almogOil.template_inventory_item_search %}
+                    {% if perms.almogOil.template_sell_inventory_item_search %}
                         <a class="nav-link" id="item-5-4">بحث باصناف المخزن</a>
                     {% endif %}
-                    {% if perms.almogOil.template_preparation_reports %}
+                    {% if perms.almogOil.template_sell_invoice_preparation_reports %}
                         <a class="nav-link" id="item-5-5">تقارير التحضير</a>
                     {% endif %}
                 </div>
@@ -948,7 +948,7 @@
                     {% if perms.almogOil.template_employee_directory %}
                         <a class="nav-link" id="item-8-1">دليل الموظفين</a>
                     {% endif %}
-                    {% if perms.almogOil.template_suppliers %}
+                    {% if perms.almogOil.template_drivers %}
                         <a class="nav-link" id="item-8-2">الموصلين</a>
                     {% endif %}
                     {% if perms.almogOil.template_salary_accounts %}
@@ -957,7 +957,7 @@
                     {% if perms.almogOil.template_settlement_entries %}
                         <a class="nav-link" id="item-8-4">قيود التسوية</a>
                     {% endif %}
-                    {% if perms.almogOil.template_reports %}
+                    {% if perms.almogOil.template_emp_reports %}
                         <a class="nav-link" id="item-8-5">تقارير</a>
                     {% endif %}
                     {% if perms.almogOil.template_settlement_reports %}
@@ -998,8 +998,8 @@
                   ><i class="fas fa-chevron-down"></i>المستخدمين</a
                 >
                 <div class="sub-menu">
-                    {% if perms.almogOil.template_users %}
-                        <a class="nav-link" id="item-11-1">المستخدمين</a>
+                    {% if perms.almogOil.template_users_management %}
+                        <a class="nav-link" id="item-11-1">ادارة المستخدمين</a>
                     {% endif %}
                 </div>
               </li>

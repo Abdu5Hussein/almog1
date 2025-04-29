@@ -137,8 +137,11 @@ localStorage.setItem("session_data@user_id", JSON.stringify(cleanedUserId));
               }
               console.log(result);
               // Redirect to dashboard on success
+
+              
+                  window.location.href = "/hozma/products/"; // Change to your actual dashboard route
                // Change to your actual dashboard route
-            } else {
+                          } else {
               // Show error message
               showError(result.message || "Login failed. Please try again.");
             }

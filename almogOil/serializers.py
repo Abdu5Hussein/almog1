@@ -4,6 +4,7 @@ from . import models
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from django.contrib.auth.models import User, Permission
 
 class EmployeesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,7 +13,12 @@ class EmployeesSerializer(serializers.ModelSerializer):
 
 class UsersSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.AllClientsTable
+        model = User
+        fields = "__all__"
+
+class PermissionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
         fields = "__all__"
 
 class SourcesSerializer(serializers.ModelSerializer):

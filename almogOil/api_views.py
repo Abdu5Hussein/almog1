@@ -3270,10 +3270,14 @@ def two_way(request):
         }
     })
 
+@extend_schema(
+description="""toggle a permission either grant/remove for a user.""",
+tags=["User Management"],
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def toggle_permission(request):
-    user_id = request.user.id or request.data.get('user_id')  # <== Get user_id from request
+    user_id = request.data.get('user_id') # <== Get user_id from request
     permission_codename = request.data.get('permission_codename')  # example: "template_productdetails"
     action = request.data.get('action')  # "grant" or "remove"
 
@@ -3292,7 +3296,43 @@ def toggle_permission(request):
 
     if action == 'grant':
         user.user_permissions.add(permission)
-        return Response({'message': f'Permission {permission_codename} granted to {user.username}.'})
+        return Response({
+                            'message': f'Permission {permission.name} granted to {user.username}.',
+                            'arabic_message': f"تم منح صلاحية  {permission.name} لـ {user.username}.",
+                        })
     else:  # remove
         user.user_permissions.remove(permission)
-        return Response({'message': f'Permission {permission_codename} removed from {user.username}.'})
+        return Response({'message': f'Permission {permission.name} removed from {user.username}.',
+                            'arabic_message': f"تمت إزالة صلاحية  {permission.name} من {user.username}.",
+                        })
+
+@extend_schema(
+description="""get all users that can login into the portal.""",
+tags=["User Management"],
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_auth_users(request):
+    try:
+        # Fetch all users with is_staff=True
+        users = User.objects.all()
+        serializer = serializers.UsersSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(
+description="""get all permissions for a user.""",
+tags=["User Management"],
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_auth_user_permissions(request,id):
+    try:
+        # Fetch all users with is_staff=True
+        user = User.objects.get(id=id)
+        permissions = user.get_all_permissions()
+        cleaned_permissions = [perm.split('.')[1] for perm in permissions]
+        return Response(cleaned_permissions, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

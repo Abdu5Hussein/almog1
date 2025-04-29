@@ -1,0 +1,16 @@
+# almogOil/middleware.py
+
+from django.utils.deprecation import MiddlewareMixin
+
+class RefreshTokenMiddleware(MiddlewareMixin):
+    def process_response(self, request, response):
+        token = getattr(request, '_new_access_token', None)
+        if token:
+            response.set_cookie(
+                key='access_token',
+                value=token,
+                httponly=True,
+                max_age=15*60,  # 15 minutes
+                path='/'
+            )
+        return response

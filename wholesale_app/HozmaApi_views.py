@@ -227,17 +227,19 @@ def Sell_invoice_create_item(request):
                 message_body = f"New item {product.itemname} has been added to invoice {data.get('invoice_id')}. Quantity: {item_value}."
                 response = send_whatsapp_message_via_green_api(source_phone, message_body)
 
-                if response:
+                if response and "idMessage" in response:
                     # Successfully sent message
                     return Response({
                         "message": "Item created successfully and message sent",
                         "item_id": serializer.instance.autoid,
-                        "confirm_status": "confirmed"
+                        "confirm_status": "confirmed",
+                        "phone_number": source_phone  # Include the phone number that the message was sent to
                     }, status=status.HTTP_201_CREATED)
                 else:
                     # If message sending failed
                     return Response({
-                        "message": "Item created successfully, but failed to send WhatsApp message."
+                        "message": "Item created successfully, but failed to send WhatsApp message.",
+                        "phone_number": source_phone  # Include the phone number in the response even if the message fails
                     }, status=status.HTTP_201_CREATED)
 
             # If serializer is not valid, return the errors
@@ -248,7 +250,95 @@ def Sell_invoice_create_item(request):
 
     return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def Sell_invoice_create_items(request):
+    if request.method == "POST":
+        try:
+            data = request.data
 
+            required_fields = ["pno", "fileid", "invoice_id", "itemvalue", "sellprice"]
+            missing_fields = [field for field in required_fields if field not in data or not data[field]]
+            if missing_fields:
+                return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get product
+            try:
+                product = almogOil_models.Mainitem.objects.get(pno=data["pno"], fileid=data["fileid"])
+            except almogOil_models.Mainitem.DoesNotExist:
+                return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            item_value = int(data["itemvalue"])
+            buy_price = Decimal(product.buyprice or 0)
+
+            # Get invoice and update amount
+            try:
+                invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data["invoice_id"])
+                invoice.amount += (buy_price * item_value)
+                invoice.save()
+            except almogOil_models.PreOrderTable.DoesNotExist:
+                return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Prepare data for PreOrderItemsTable
+            item_data = {
+                'invoice_instance': invoice.autoid,
+                'invoice_no': data["invoice_id"],
+                'item_no': product.itemno,
+                'pno': product.pno,
+                'main_cat': product.itemmain,
+                'sub_cat': product.itemsubmain,
+                'name': product.itemname,
+                'company': product.companyproduct,
+                'company_no': product.replaceno,
+                'quantity': item_value,
+                'date': timezone.now(),
+                'place': product.itemplace,
+                'dinar_unit_price': buy_price,
+                'dinar_total_price': buy_price * item_value,
+                'prev_quantity': product.itemvalue,
+                'current_quantity': product.itemvalue - item_value,
+            }
+
+            serializer = almogOil_serializers.PreOrderItemsSerializer(data=item_data)
+            if serializer.is_valid():
+                serializer.save()
+
+                # Create or append to TempBuyInvoiceItemsTable
+                from almogOil.models import TempBuyInvoiceItemsTable
+                source = product.source
+                if source:
+                    TempBuyInvoiceItemsTable.objects.create(
+                        source=source,
+                        item_no=product.itemno,
+                        pno=product.pno,
+                        name=product.itemname,
+                        company=product.companyproduct,
+                        quantity=item_value,
+                        dinar_unit_price=buy_price,
+                        dollar_unit_price=Decimal(0),
+                        dinar_total_price=buy_price * item_value,
+                        dollar_total_price=Decimal(0),
+                    )
+
+                # Send WhatsApp message
+                source_phone = source.mobile if source and source.mobile else "218942434823"
+                message_body = f"New item {product.itemname} added to invoice {data['invoice_id']}. Quantity: {item_value}."
+                response = send_whatsapp_message_via_green_api(source_phone, message_body)
+
+                return Response({
+                    "message": "Item created, temp item stored, WhatsApp sent" if response and "idMessage" in response else "Item created, temp item stored, WhatsApp failed",
+                    "item_id": serializer.instance.autoid,
+                    "confirm_status": "confirmed",
+                    "phone_number": source_phone
+                }, status=status.HTTP_201_CREATED)
+
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 @extend_schema(
     description="""Confirm PreOrder items into SellInvoice and move to SellInvoiceMainItem, 
