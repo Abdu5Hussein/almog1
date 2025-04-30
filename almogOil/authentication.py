@@ -16,7 +16,10 @@ class CookieAuthentication(BaseAuthentication):
         try:
             # Try to validate access token
             access = AccessToken(access_token)
-            user_id = access['user_id']
+            #user_id = access['user_id']
+            user_id = access.get('user_id')
+            if not user_id:
+                raise AuthenticationFailed('user_id not found in access token')
 
         except TokenError:
             # Access token is expired or invalid, try refresh token
@@ -24,7 +27,11 @@ class CookieAuthentication(BaseAuthentication):
                 refresh = RefreshToken(refresh_token)
                 new_access_token = str(refresh.access_token)  # Get new access token
                 request._new_access_token = new_access_token  # For middleware to set in response
-                user_id = refresh['user_id']
+                #user_id = refresh['user_id']
+                user_id = refresh.get('user_id')
+                if not user_id:
+                    raise AuthenticationFailed('user_id not found in refresh token')
+
             except TokenError:
                 raise AuthenticationFailed('Both tokens are invalid or expired')
 

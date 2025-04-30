@@ -142,6 +142,7 @@ class Buyinvoicetable(models.Model):
     discount_dinar = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     expenses_dinar = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     confirmed = models.BooleanField(default=False)
+    send = models.BooleanField(default=False)
 
     class Meta:
         managed = True
@@ -493,6 +494,8 @@ class AuthUser(models.Model):
         managed = False
         db_table = 'auth_user'
         permissions = [
+
+            ('category_products', 'قسم الاصناف'),
             ('template_productdetails', 'صفحة بيانات الاصناف'),
             ('template_local_item_reports', 'تقارير الاصناف المحلية'),
             ('template_external_item_reports', 'تقارير الاصناف الخارجية'),
@@ -510,12 +513,14 @@ class AuthUser(models.Model):
             ('template_items_with_notes', 'اصناف بالملاحظات'),
             ('template_add_item_specifications', 'اضافة مواصفات الصنف'),
 
+            ('category_sell_invoice', 'قسم فواتير البيع'),
             ('template_sell_invoice_entry', 'ادخال فاتورة بيع'),
             ('template_sell_invoices', 'فواتير البيع'),
             ('template_sell_invoice_settlement', 'تسوية حساب فواتير البيع'),
             ('template_sell_inventory_item_search', 'بحث باصناف المخزن'),
             ('template_sell_invoice_preparation_reports', 'تقارير التحضير'),
 
+            ('category_buy_invoice', 'قسم فواتير الشراء'),
             ('template_buy_invoice_entry', 'ادخال فاتورة شراء'),
             ('template_buy_invoices', 'فواتير الشراء'),
             ('template_buy_price_modifications', 'تعديل اسعار البيع'),
@@ -523,15 +528,18 @@ class AuthUser(models.Model):
             ('template_buy_temp_item_posting', 'ترحيل الاصناف المؤقتة'),
             ('template_buy_invoice_inventory', 'جرد فواتير الشراء'),
 
+            ('category_return_permission', 'قسم الترجيعات'),
             ('template_return_permission_entry', 'ادخال اذن ترجيع'),
             ('template_return_reports', 'تقارير الترجيع'),
 
+            ('category_clients', 'قسم العملاء'),
             ('template_customer_guide', 'دليل العملاء'),
             ('template_customer_reports', 'تقارير العملاء'),
             ('template_account_settlement', 'تسوية حساب العملاء'),
             ('template_account_settlement_reports', 'تقارير تسوية حساب العملاء'),
             ('template_audit_reports', 'تقارير المراجعة للعملاء'),
 
+            ('category_suppliers', 'قسم الموردين'),
             ('template_add_supplier', 'اضافة مورد'),
             ('template_supplier_reports', 'تقارير الموردين'),
             ('template_supplier_guide', 'دليل الموردين'),
@@ -539,6 +547,7 @@ class AuthUser(models.Model):
             ('template_supplier_account_settlement_reports', 'تقارير تسوية حساب الموردين'),
             ('template_audit_reports_suppliers', 'تقارير المراجعة للموردين'),
 
+            ('category_employees', 'قسم الموظفين'),
             ('template_employee_directory', 'دليل الموظفين'),
             ('template_drivers', 'الموصلين'),
             ('template_salary_accounts', 'حساب المرتبات'),
@@ -547,10 +556,12 @@ class AuthUser(models.Model):
             ('template_settlement_reports', 'تقارير التسوية'),
             ('template_attendance_absence', 'حضور وغياب'),
 
+            ('category_storage', 'قسم الخزينة'),
             ('template_treasury_entries', 'قيود الخزينة'),
             ('template_treasury_reports', 'تقارير الخزينة'),
             ('template_request_value', 'طلب قيمة من الخزينة'),
 
+            ('category_users', 'قسم المستخدمين'),
             ('template_users_management', 'ادارة المستخدمين'),
         ]
 
@@ -1260,3 +1271,74 @@ class TempBuyInvoiceItemsTable(models.Model):
 
     def __str__(self):
         return f"{self.source} - {self.name} ({self.quantity})"
+class OrderBuyinvoicetable(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    original_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+    invoice_date = models.DateTimeField(blank=True, null=True)
+    source = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+    amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    discount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    expenses = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    net_amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    account_amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    arrive_date = models.DateField(blank=True, null=True)
+    ready_date = models.DateField(blank=True, null=True)
+    confirmation_date = models.DateField(blank=True, null=True)
+    remind_before = models.IntegerField(blank=True, null=True)
+    temp_flag = models.BooleanField(blank=True, null=True)
+    order_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+    multi_source_flag = models.BooleanField(blank=True, null=True)
+    currency = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+    exchange_rate = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    invoice_no = models.IntegerField(unique=True)
+    paid_amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    discount_dinar = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    expenses_dinar = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    confirmed = models.BooleanField(default=False)
+    send = models.BooleanField(default=False)
+
+    class Meta:
+        managed = True
+        db_table = 'OrderBuyinvoicetable'
+
+
+class OrderBuyInvoiceItemsTable(models.Model):
+    autoid = models.BigAutoField(primary_key=True)
+    item_no = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
+    pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
+    name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company_no = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    Asked_quantity = models.IntegerField(blank=True, null=True)
+    Confirmed_quantity = models.IntegerField(blank=True, null=True)
+    quantity_unit = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
+    currency = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
+    exchange_rate = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    date = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
+    place = models.CharField(max_length=30, db_collation='Arabic_CI_AS', blank=True, null=True)
+    buysource = models.CharField(max_length=250, db_collation='Arabic_CI_AS', blank=True, null=True)
+    org_unit_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    org_total_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    dinar_unit_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    dinar_total_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    cost_unit_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    cost_total_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    note = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
+    barcodeno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
+    e_name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    prev_quantity = models.IntegerField(blank=True, null=True)
+    prev_cost_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    prev_buy_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    prev_less_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    current_quantity = models.IntegerField(blank=True, null=True)
+    current_cost_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    current_buy_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    current_less_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    invoice_no = models.ForeignKey(OrderBuyinvoicetable, models.DO_NOTHING)
+    invoice_no2 = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+    main_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
+    sub_cat = models.CharField(max_length=70, db_collation='Arabic_CI_AS', blank=True, null=True)
+    source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
+    class Meta:
+        managed = True
+        db_table = 'Orderbuy_invoice_items_table'        

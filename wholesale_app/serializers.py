@@ -10,3 +10,14 @@ class PreOrderItemsTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.PreOrderItemsTable
         fields = '__all__'
+
+
+class OrderBuyInvoiceItemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.OrderBuyInvoiceItemsTable
+        fields = '__all__'
+
+class OrderBuyinvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.OrderBuyinvoicetable
+        fields = '__all__'        

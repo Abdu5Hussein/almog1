@@ -112,3 +112,24 @@ def dashboard(request):
 
 def preorder_detail(request, invoice_no):
     return render(request, 'CarPartsTemplates/preorder-detail.html', {'invoice_no': invoice_no})  # This will render the PreOrder details page
+
+
+
+def Buyinvoice_management(request):
+    #records = models.Buyinvoicetable.objects.all().values()
+    #total_amount = models.Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    #json_data = json.dumps(list(records), default=str)
+    sources = almogOil_models.AllSourcesTable.objects.all().values('clientid','name')
+    context = {
+        "sources":sources,
+        #"data":json_data,
+        #"total_amount":total_amount,
+    }
+    return render(request,"buy-invoice-reports.html",context)
+
+
+
+
+
+def preorders_buy_page(request):
+    return render(request, 'CarPartsTemplates/show_preordersBuy.html')

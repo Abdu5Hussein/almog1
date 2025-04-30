@@ -773,60 +773,62 @@
       <!-- Sidebar -->
           <div id="sidebar" class="sidebar">
             <ul class="nav flex-column">
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#">
-                  <i class="fas fa-chevron-down"></i>الاصناف</a>
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_productdetails %}
-                        <a class="nav-link" id="item-1-1">بيانات الاصناف</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_local_item_reports %}
-                        <a class="nav-link" id="item-1-2">تقارير الاصناف المحلية</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_external_item_reports %}
-                        <a class="nav-link" id="item-1-3">تقارير الاصناف الخارجية</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_price_modifications %}
-                        <a class="nav-link" id="item-1-4">تعديل الاسعار</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_item_movement_reports %}
-                        <a class="nav-link" id="item-1-5">تقرير حركة الاصناف</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_item_revaluation %}
-                        <a class="nav-link" id="item-1-6">اعادة ترصيد الاصناف</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_inventory %}
-                        <a class="nav-link" id="item-1-7">الجرد</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_damage_loss %}
-                        <a class="nav-link" id="item-1-8">التلف والفقد</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_storage_locations %}
-                        <a class="nav-link" id="item-1-9">اماكن التخزين</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_english_labeling %}
-                        <a class="nav-link" id="item-1-10">التسمية الانجليزية</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_item_reservation %}
-                        <a class="nav-link" id="item-1-11">حجز اصناف</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_revaluation %}
-                        <a class="nav-link" id="item-1-12">اعادة الترصيد</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_missing_items %}
-                        <a class="nav-link" id="item-1-13">النواقص</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_issue_permits %}
-                        <a class="nav-link" id="item-1-14">اذونات الصرف</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_items_with_notes %}
-                        <a class="nav-link" id="item-1-15">اصناف بالملاحظات</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_add_item_specifications %}
-                        <a class="nav-link" id="item-1-16">اضافة مواصفات الصنف</a>
-                    {% endif %}
-                </div>
-              </li>
+              {% if perms.almogOil.category_products %}
+                <li class="nav-item">
+                  <a class="nav-link toggle-submenu" href="#">
+                    <i class="fas fa-chevron-down"></i>الاصناف</a>
+                  <div class="sub-menu">
+                      {% if perms.almogOil.template_productdetails %}
+                          <a class="nav-link" id="item-1-1">بيانات الاصناف</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_local_item_reports %}
+                          <a class="nav-link" id="item-1-2">تقارير الاصناف المحلية</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_external_item_reports %}
+                          <a class="nav-link" id="item-1-3">تقارير الاصناف الخارجية</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_price_modifications %}
+                          <a class="nav-link" id="item-1-4">تعديل الاسعار</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_item_movement_reports %}
+                          <a class="nav-link" id="item-1-5">تقرير حركة الاصناف</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_item_revaluation %}
+                          <a class="nav-link" id="item-1-6">اعادة ترصيد الاصناف</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_inventory %}
+                          <a class="nav-link" id="item-1-7">الجرد</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_damage_loss %}
+                          <a class="nav-link" id="item-1-8">التلف والفقد</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_storage_locations %}
+                          <a class="nav-link" id="item-1-9">اماكن التخزين</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_english_labeling %}
+                          <a class="nav-link" id="item-1-10">التسمية الانجليزية</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_item_reservation %}
+                          <a class="nav-link" id="item-1-11">حجز اصناف</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_revaluation %}
+                          <a class="nav-link" id="item-1-12">اعادة الترصيد</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_missing_items %}
+                          <a class="nav-link" id="item-1-13">النواقص</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_issue_permits %}
+                          <a class="nav-link" id="item-1-14">اذونات الصرف</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_items_with_notes %}
+                          <a class="nav-link" id="item-1-15">اصناف بالملاحظات</a>
+                      {% endif %}
+                      {% if perms.almogOil.template_add_item_specifications %}
+                          <a class="nav-link" id="item-1-16">اضافة مواصفات الصنف</a>
+                      {% endif %}
+                  </div>
+                </li>
+              {% endif %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>فواتير شراء محلية</a
@@ -836,6 +838,7 @@
                   <a class="nav-link" id="item-2-2">Subitem</a>
                 </div>
               </li>
+              {% if perms.almogOil.category_buy_invoice %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>فواتير شراء خارجية</a
@@ -861,6 +864,7 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>ف. البيع المبدئية</a
@@ -870,6 +874,7 @@
                   <a class="nav-link" href="#subitem4-2">Subitem 4-2</a>
                 </div>
               </li>
+              {% if perms.almogOil.category_sell_invoice %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>فواتير البيع</a
@@ -892,6 +897,8 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
+              {% if perms.almogOil.category_return_permission %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>الترجيعات</a
@@ -905,6 +912,8 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
+              {% if perms.almogOil.category_clients %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>العملاء</a
@@ -927,6 +936,8 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
+              {% if perms.almogOil.category_suppliers %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>الموردين</a
@@ -940,6 +951,8 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
+              {% if perms.almogOil.category_employees %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>الموظفين</a
@@ -968,6 +981,8 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
+              {% if perms.almogOil.category_storage %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>الخزينة</a
@@ -984,6 +999,7 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>الحسابات</a
@@ -993,6 +1009,7 @@
                   <a class="nav-link" href="#subitem10-2">Subitem 10-2</a>
                 </div>
               </li>
+              {% if perms.almogOil.category_users %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>المستخدمين</a
@@ -1003,6 +1020,7 @@
                     {% endif %}
                 </div>
               </li>
+              {% endif %}
               <li class="nav-item">
                 <a class="nav-link toggle-submenu" href="#"
                   ><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a

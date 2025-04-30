@@ -31,7 +31,10 @@ urlpatterns = [
     #path('api/preorders/', api_views.show_all_preorders, name='show_all_preorders'),
     path('api/confirm-or-update-preorder-items/', HozmaApi_views.confirm_or_update_preorder_items, name='confirm_or_update_preorder_items'),
     path('api/preorders/', api_views.show_preorders, name='show_all_preorders'),
+    path('api/preorders-buy/', HozmaApi_views.show_preordersBuy, name='show_all_preorders'),
     path('preorder-dashboard/', views.dashboard, name='dashboard'),  # For displaying all PreOrders
     path('preorder-detail/<str:invoice_no>/', views.preorder_detail, name='preorder_detail'),  # For displaying a specific PreOrder
     path('api/test-send-whatsapp/', HozmaApi_views.send_test_whatsapp_message, name='test-send-whatsapp'),
+    path('api/full_Sell_invoice_create_item/', HozmaApi_views.full_Sell_invoice_create_item, name='full_Sell_invoice_create_item'),
+    path('preorders-buy/', views.preorders_buy_page, name='preorders_buy_page'),
 ]

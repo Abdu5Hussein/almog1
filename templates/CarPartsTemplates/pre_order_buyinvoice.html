@@ -1,0 +1,1336 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>فواتير الشراء</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/custom-tabulator.css' %}"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'dselect/choices.min.css' %}" />
+
+    <style>
+    .item-disabled {
+        pointer-events: none; /* Prevent clicks */
+        opacity: 0.6; /* Reduce visibility */
+        cursor: not-allowed; /* Show not-allowed cursor */
+      }
+      .page-link {
+          text-align: center;
+          padding: 0.1rem 0.75rem;
+          height: 25px;
+          font-size: 15px;
+          color: #212529;
+      }
+
+      .page-link-active {
+          background-color: #0d6efd;
+          color:rgb(255, 255, 255);
+      }
+      .choices {
+        width: calc(100% - 73px); /*edit later*/
+      }
+      .dropdown {
+        display: none;
+        /* Initially hidden */
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        z-index: 1000;
+      }
+
+      .width-95 {
+        width: 95px;
+      }
+
+      .width-55 {
+        width: 55px;
+      }
+      .width-user {
+        width: calc(100% - 73px);
+      }
+      .width-170 {
+        width: 170px;
+      }
+      .width-73 {
+        width: 73px;
+      }
+
+      .width-80 {
+        width: 110px;
+      }
+
+      .dropdown label {
+        display: block;
+      }
+
+      #contextMenu {
+        display: none;
+        /* Hidden by default */
+        position: absolute;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        min-width: 150px;
+      }
+
+      .bi-question-circle {
+        padding-left: 2px;
+        font-size: 12px;
+      }
+
+      .bi-question-circle:hover {
+        color: #007bff;
+        /* Change color as needed */
+      }
+
+      #contextMenu div {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      #contextMenu div:hover {
+        background-color: #f0f0f0;
+      }
+
+      .large-textarea {
+        height: 235px;
+        /* Set a specific height for the textarea (adjust as needed) */
+      }
+
+      /* Set a fixed height for the Tabulator container */
+      /* Container for the table */
+
+      /* Container for the table */
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+      }
+
+      .row {
+        direction: rtl;
+        /* Set the direction of the row to right-to-left */
+      }
+
+      .form-label,
+      .form-control {
+        direction: ltr;
+        /* Make sure inputs and labels align correctly within the form */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Optional: Add space between buttons */
+      }
+
+      .small-input {
+        width: 50px !important;
+      }
+
+      form label {
+        margin-bottom: 0px;
+      }
+
+      th,
+      td {
+        padding: 2px;
+        /* Decrease padding */
+        font-size: 13px;
+        /* Decrease font size */
+        border: 1px solid #ddd;
+        /* Add borders for visibility */
+      }
+
+      input.form-control {
+        padding: 5px;
+        /* Decrease padding */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height (optional) */
+        border-radius: 0;
+        text-align: right;
+        direction: rtl;
+      }
+
+      select.form-select {
+        padding: 5px;
+        /* Decrease padding for select fields */
+        font-size: 12px;
+        /* Decrease font size */
+        height: 30px;
+        /* Set a fixed height for select fields (optional) */
+        border-radius: 0;
+        text-align: center;
+      }
+
+      h1,
+      h2,
+      h3,
+      label,
+      p,
+      table thead tbody {
+        font-size: 15px;
+        margin: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        text-align: right;
+        font-size: 15px;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-primary {
+        width: 100%;
+      }
+
+      .editable {
+        cursor: pointer;
+        background-color: #f9f9f9;
+        padding-right: 5px;
+      }
+
+      .editable:focus {
+        outline: none;
+        background-color: #e6e6e6;
+      }
+
+      .custom-table {
+        max-height: 200px;
+        min-height: 200px;
+        overflow-y: hidden;
+      }
+      #users-table {
+        max-height: 200px;
+        min-height: 200px;
+      }
+
+      table {
+        width: 100%;
+        margin: 0px;
+      }
+
+      thead {
+        background-color: #b3c9df;
+        color: rgb(0, 0, 0);
+        padding: 2px;
+      }
+
+      table thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        z-index: 1;
+      }
+
+      .title-container {
+        width: 100%;
+        background-color: #b3c9df;
+        text-align: center;
+        padding: 3px 0px;
+        margin-bottom: 4px;
+      }
+
+      /* Create a wrapper around the select element */
+      .custom-select-container {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .button-row {
+        display: flex;
+        justify-content: space-between;
+        /* Distributes space evenly between buttons */
+        width: 100%;
+        /* Full width of the parent container */
+        margin: 0;
+        /* Ensure no extra margins are added */
+        padding: 0 0px;
+        /* Add padding to the row */
+        box-sizing: border-box;
+        /* Ensure padding is included in the width calculation */
+      }
+
+      .button-row .btn {
+        flex: 1;
+        /* Each button takes up equal space */
+        margin: 0 5px;
+        /* Add space between buttons */
+      }
+
+      /* Move the arrow to the left */
+      .form-select {
+        padding-left: 2.5rem;
+        /* Add space on the left for the icon */
+        padding-right: 1rem;
+        /* Adjust right padding */
+        background: none;
+        /* Remove default background */
+      }
+
+      .custom-select-container::before {
+        content: "▾";
+        /* The caret symbol */
+        position: absolute;
+        left: 0.75rem;
+        /* Position it to the left */
+        top: 50%;
+        transform: translateY(-50%);
+        /* Center vertically */
+        pointer-events: none;
+        /* Prevent interaction with the icon */
+        color: #000;
+        /* Icon color (can be customized) */
+      }
+
+      /* Hide default dropdown arrow */
+      .form-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      .form-select-with-icon {
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+        appearance: auto;
+
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 0;
+        direction: rtl;
+        box-sizing: border-box;
+        margin: 0;
+        font-family: inherit;
+        text-transform: none;
+        word-wrap: normal;
+        --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        display: block;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--bs-body-color);
+        border: 1px solid #ced4da;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
+        background: none;
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
+        border-radius: 0;
+        text-align: center;
+        position: relative;
+        flex: 1 1 auto;
+        width: 1%;
+      }
+
+      /*//////////////////*/
+      .custom-form {
+        width: 100%;
+        max-width: 1100px;
+        padding: 0px 10px;
+      }
+
+      .row {
+        display: flex;
+        /* Use flexbox for layout */
+        margin-bottom: 5px;
+        /* Minimize vertical space */
+      }
+
+      .col-md-2,
+      .col-md-3 {
+        padding: 0 5px;
+        /* Reduce horizontal padding */
+      }
+
+      .form-label {
+        font-size: 12px;
+        /* Reduce font size */
+        margin-bottom: 2px;
+        /* Minimize label space */
+        margin-left: 10px;
+      }
+      .form-box {
+        height: 100px;
+        width: 100%;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+      .form-control {
+        height: 30px;
+        /* Adjust input height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .form-select {
+        height: 30px;
+        /* Adjust select height */
+        font-size: 12px;
+        /* Reduce font size */
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: nowrap;
+        /* Prevent wrapping */
+        justify-content: space-between;
+        /* Space buttons evenly */
+        margin-top: 5px;
+        /* Minimize space above button row */
+      }
+
+      button {
+        font-size: 12px;
+        /* Reduce button text size */
+        padding: 2px 5px;
+        /* Reduce button padding */
+      }
+
+      .custom-table table {
+        border-collapse: collapse;
+        /* Combine borders of adjacent cells */
+      }
+
+      .custom-table th,
+      .custom-table td {
+        padding: 0;
+        /* Remove all padding */
+        padding-right: 5px;
+        margin: 0;
+        /* Ensure no margins are applied */
+        height: auto;
+        /* Allow cells to have minimal height */
+      }
+
+      input[type="number"] {
+        direction: rtl;
+        /* For Arabic alignment */
+        padding-left: 2px;
+        /* Adds padding to the left to avoid overflow */
+        text-align: right;
+        /* Aligns the text inside the input to the right */
+        width: 100%;
+        /* Ensure full width */
+      }
+
+      /* Style for number input to always show increment/decrement arrows */
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Adjust for other browsers */
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+        /* Hides spinner on Firefox */
+      }
+
+      .modal-body {
+        max-height: 300px;
+        /* Set max height for modal body */
+        overflow-y: auto;
+        /* Enable scrolling in modal body */
+      }
+
+      .column-menu-btn {
+        font-size: 12px;
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Right-click context menu for operations -->
+      <div id="contextMenu">
+        <div onclick="performAction('Edit')">Edit</div>
+        <div onclick="performAction('Delete')">Delete</div>
+        <div onclick="performAction('View Details')">View Details</div>
+      </div>
+      <!-- Form Section with 5 input columns -->
+      <div class="custom-form">
+        <form id="firstForm" lang="ar">
+          {% csrf_token %}
+
+          <div class="row">
+            <!-- First column -->
+            <div class="col-md-6">
+              <div class="input-group mb-1">
+                <div class="width-95 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >اسم المصدر</label
+                  >
+                </div>
+                <select name="source" id="source" class="form-control text-end">
+                  <option value="" selected>اختر مورد</option>
+                  {% for x in sources %}
+                  <option value="{{ x.clientid }}">{{ x.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="input-group mb-1">
+                <div class="width-95 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >التاريخ</label
+                  >
+                </div>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="from-date"
+                  required
+                /><input
+                  type="date"
+                  class="form-control"
+                  id="to-date"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Second column -->
+            <div class="col-md-3"></div>
+
+            <!-- third column -->
+            <div class="col-md-3">
+              <div class="input-group mb-1">
+                <div class="width-95 d-flex align-items-center">
+                  <label for="storage-balance" class="form-label"
+                    >رقم الفاتورة</label
+                  >
+                </div>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="invoice-autoid"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        </form>
+        <!-- Modal -->
+        <div
+          class="modal fade"
+          id="exampleModal"
+          tabindex="-1"
+          aria-labelledby="exampleModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">
+                  تصدير البيانات
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">اختر احدى خيارات التصدير</div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  data-bs-dismiss="modal"
+                  id="export-btn-excel"
+                  class="btn btn-primary"
+                  style="width: 100px"
+                >
+                  excel تصدير
+                </button>
+                <button
+                  type="button"
+                  id="export-btn-pdf"
+                  class="btn btn-secondary"
+                  style="width: 100px"
+                >
+                  pdf تصدير
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="title-container mb-2">
+        <h3 class="m-0">تقارير الخزينة</h3>
+      </div>
+      <div class="d-flex justify-content-around">
+          <nav aria-label="Page navigation example">
+            <ul class="pagination h-1">
+            <p id="page-total" class="page-link item-disabled">total of x pages</p>
+              <li class="page-first"><a class="page-link" href="#">First</a></li>
+              <li class="page-prev"><a class="page-link" href="#">Previous</a></li>
+              <li class="page-item"><a class="page-link " href="#">1</a></li>
+              <li class="page-item"><a class="page-link" href="#">2</a></li>
+              <li class="page-item"><a class="page-link" href="#">3</a></li>
+              <li class="page-next"><a class="page-link" href="#">Next</a></li>
+              <li class="page-last"><a class="page-link" href="#">Last</a></li>
+              <select name="page-size" id="page-size" class="page-link mx-2">
+              <option disabled value="">اختر حجم الصفحة</option>
+              <option value="100">100</option><option value="200">200</option><option value="300">300</option></select>
+            </ul>
+          </nav>
+        </div>
+      <!-- Table Section -->
+      <div class="custom-table mb-1">
+        <div
+          dir="rtl"
+          id="users-table"
+          data-url="{% url 'get_data' %}"
+          class="table table-striped table-bordered table-hover"
+        ></div>
+      </div>
+      <div id="loader-element" class="d-none align-items-center justify-content-center mb-1" style="font-size: 13px; display: none;">
+          <strong>Loading...</strong>
+          <div class="spinner-border ml-auto mx-2" role="status" aria-hidden="true" style="height:1rem; width:1rem; animation-duration: 5s; "></div>
+      </div>
+      <form id="secondForm">
+        {% csrf_token %}
+
+        <div class="row py-1">
+          <!-- First column -->
+          <div class="col-md-4">
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label">الاجمالي</label>
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="dinar-total"
+                readonly
+              />
+            </div>
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >اجمالي الفاتورة</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="currency-total"
+                readonly
+              />
+            </div>
+          </div>
+
+          <!-- Second column -->
+          <div class="col-md-4">
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label">المدفوع</label>
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="dinar-paid"
+                value="0"
+                readonly
+              />
+            </div>
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >المدفوع للفاتورة</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="currency-paid"
+                readonly
+              />
+            </div>
+          </div>
+
+          <!-- third column -->
+          <div class="col-md-4">
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label">المتبقي</label>
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="dinar-net"
+                readonly
+              />
+            </div>
+            <div class="input-group mb-1">
+              <div class="width-73 d-flex align-items-center">
+                <label for="storage-balance" class="form-label"
+                  >المتبقي للفاتورة</label
+                >
+              </div>
+              <input
+                type="text"
+                class="form-control value-fixed"
+                id="currency-net"
+                readonly
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Button Row -->
+        <div class="row button-row mt-1">
+          <button type="button" class="btn btn-primary m-1" id="clear-btn">
+            مسح
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary m-1"
+            data-bs-toggle="modal"
+            data-bs-target="#exampleModal"
+          >
+            تصدير</button
+          ><button type="button" class="btn btn-primary m-1">طباعة</button>
+          <button type="button" class="btn btn-primary m-1">موافق</button>
+          <button
+            type="button"
+            class="btn btn-secondary m-1"
+            onclick="window.close()"
+          >
+            اغلاق
+          </button>
+        </div>
+      </form>
+    </div>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Use jQuery -->
+
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'dselect/choices.min.js' %}"></script>
+
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script>
+      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+      /*const contextData = {
+        data: JSON.parse("{{ data|escapejs }}"),
+      };
+
+      console.log(contextData.data);*/
+      // Fetch client ID from the URL query string
+
+      // Initialize Tabulator table
+      const table = new Tabulator("#users-table", {
+        index: "fileid", // Use "fileid" as the unique row identifier
+        height: "auto", // Adjust height or set a fixed height
+        layout: "fitColumns",
+        selectable: true,
+        pagination: "local", // Enable local pagination
+        paginationSize: 100, // Show 100 records per page
+        paginationSizeSelector: [50, 100, 200], // Page size options
+        paginationButtonCount: 5, // Number of visible pagination buttons
+        movableColumns: true,
+        columnHeaderVertAlign: "bottom",
+        columnMenu: true, // Enable column menu
+        data: [],//contextData.data, // Placeholder, will be loaded dynamically
+        columns: [
+                { title: "رقم الي", field: "autoid" ,visible:false},
+                { title: "رقم الفاتورة", field: "invoice_no" },
+                { title: "الرقم الاصلي", field: "original_no" },
+                { title: "التاريخ", field: "invoice_date" },
+                { title: "المصدر", field: "source" },
+                { title: "سعر الفاتورة", field: "amount" },
+                { title: "التخفيض", field: "discount" },
+                { title: "صافي الفاتورة", field: "net_amount" },
+                { title: "العملة", field: "currency" },
+                { title: "سعر الصرف", field: "exchange_rate" },
+        ],
+        placeholder: "No Data Available",
+        rowFormatter: function (row) {
+          var rowData = row.getData(); // Get the row data
+
+          // You can add more conditions as needed
+        }, // Message when no data is present or after filtering
+        rowClick: function (e, row) {
+          const clickedPno = row.getData().pno; // Get pno of the clicked row
+          console.log("Clicked Pno:", clickedPno);
+        },
+        tableBuilt: function () {
+          console.log("table built");
+        },
+      });
+function getCSRFToken() {
+            const csrfInput = document.querySelector(
+              "[name=csrfmiddlewaretoken]"
+            );
+            return csrfInput ? csrfInput.value : "";
+}
+let childWindows = [];
+function openWindow(url,width = 600,height = 700) {
+        // Get the parent window's dimensions and position
+        const parentWidth = window.innerWidth;
+        const parentHeight = window.innerHeight;
+        const parentLeft = window.screenX;
+        const parentTop = window.screenY;
+
+        // Calculate the center position for the child window
+        const left = parentLeft + (parentWidth - width) / 2;
+        const top = parentTop + (parentHeight - height) / 2;
+
+        // Open a new child window
+        const childWindow = window.open(
+          url,
+          "_blank",
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+
+        if (!childWindow) {
+          alert("Pop-up blocked! Please allow pop-ups for this website.");
+          return;
+        }
+
+        /* // Set the child window's size and disable resizing by enforcing it every time it's resized
+                      childWindow.addEventListener('resize', () => {
+                        // Enforce fixed size by resetting the size after any resize attempt
+                        childWindow.resizeTo(width, height);
+                      });*/
+
+        // Add the new child window to the array
+        childWindows.push(childWindow);
+
+        // Monitor the child window's state
+        const monitorChild = setInterval(() => {
+          if (childWindow.closed) {
+            // Remove the closed window from the array
+            childWindows = childWindows.filter((win) => win !== childWindow);
+            clearInterval(monitorChild);
+          }
+        }, 300);
+
+        /*// Focus all child windows periodically
+                      setInterval(() => {
+                        childWindows.forEach(win => {
+                          if (!win.closed) {
+                            win.focus();
+                          }
+                        });
+                      }, 500);*/
+
+        // Close all child windows when the parent is closed
+        window.onbeforeunload = function () {
+          childWindows.forEach((win) => {
+            if (!win.closed) {
+              win.close();
+            }
+          });
+        };
+}
+      table.on("rowClick", function (e, row) {
+        console.log("Row clicked:", row.getData().autoid);
+        const data = {
+          id: row.getData().autoid,
+        };
+        console.log("sent id: ",data);
+
+        // Make a POST request to the server
+        customFetch("buy_invoice_add_items", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken(),
+            'Authorization': `Bearer ${jwtToken_access}`,
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => {
+            // Check if the response is a redirect (3xx status code)
+            if (response.redirected) {
+              // Open the new URL in a new window/tab
+              openWindow(response.url,1200,700);
+              return;
+            }
+
+            // If the response is JSON, handle it accordingly
+            return response.json();
+          })
+          .then((data) => {
+            if (data) {
+              console.log("Response from server:", data);
+              if (data.success) {
+                console.log("Invoice sent successfully!");
+              } else {
+                console.log("Error updating invoice:", data.message);
+              }
+            }
+          })
+          .catch((error) => {
+            console.error("Error during fetch:", error);
+            alert("An error occurred: " + error.message);
+          });
+      });
+      //table.setData(contextData.data);
+      ///////////
+
+  let currentPage = 1; // Tracks the current page
+  let lastPage = false; // Indicates if the last page is reached
+  let isLoading = false; // Prevents multiple fetch calls
+  const pageSize = 100; // Number of rows per page
+  const tableContainer = document.getElementById("users-table");// Table scroll container
+  // Function to fetch and append the next page of data
+  const fetchNextPage = () => {
+    if (!lastPage) {
+      currentPage++;
+      console.log(`Fetching page ${currentPage}...`);
+      console.log("fetching active url : ", active_url);
+
+      if (active_url == "server_filtered_data") {
+        //console.log("apply filters current page: ",currentPage);
+        applyFilters(currentPage, pageSize);
+      } else {
+        fetchDataFromServer({ page: currentPage, size: pageSize });
+      }
+      //hideLoader();
+    }
+  };
+
+  // Scroll event listener
+  const handleScroll = () => {
+    //console.log("scroll area");
+    const scrollPosition = tableContainer.scrollTop + tableContainer.clientHeight;
+    const scrollThreshold = tableContainer.scrollHeight - 2000; // Adjust threshold as needed
+    console.log("isLoading: ", isLoading);
+    console.log("lastPage: ", lastPage);
+
+    if (scrollPosition >= scrollThreshold && !lastPage && !isLoading) {
+      console.log("scrollPosition: ", scrollPosition);
+      console.log("scrollThreshold: ", scrollThreshold);
+      console.log("scrollHeight: ", tableContainer.scrollHeight);
+      //console.log("lastPage: ",lastPage);
+      //console.log("isLoading: ",isLoading);
+      isLoading = true;
+      showLoader();
+      fetchNextPage();
+    }
+  };
+  function fetchDataFromServer({ page = 1, size = 100 }) {
+    //if (isLoading) return; // Prevent fetch if already loading
+    //isLoading = true; // Set loading flag before initiating fetch
+
+    // Use the URL in your fetch request
+
+
+    console.time("fetchData"); // Start timer
+
+    customFetch(`fetch-buyinvoices?page=${page}&size=${size}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
+          }
+        })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched Data:", data);
+        active_url = "server_Data_No_Filter";
+        console.log("active_url for pagination:", active_url);
+        //console.log("page:", page);
+
+        console.time("tableTime");
+        //console.log("sort status: ", table.getDataCount());
+        if (page === 1) {
+          // For the first page, replace the existing data
+          table.setData(data.data);
+          console.log("data set to the table");
+          //console.log("getDataCount: ", table.getDataCount());
+          currentPage = 1;
+        } else {
+          let scrollPosition = tableContainer.scrollTop; // Save scroll position
+          //let currentData = table.getData();  // Get current table data
+          //let combinedData = currentData.concat(data.data);  // Combine existing data with new data
+          table.addData(data.data);
+          tableContainer.scrollTop = scrollPosition;
+          console.log("data added to the table");
+          //console.log("getDataCount: ", table.getDataCount());
+        }
+        console.timeEnd("tableTime");
+
+        // Update lastPage flag
+        lastPage = data.page_no == data.last_page ? true : false;
+        console.time("PaginationTime");
+        updatePagination(data.last_page, data.page_no);
+        console.timeEnd("PaginationTime");
+
+        document.getElementById("dinar-total").value = data.total_amount + " دل ";
+        updateCalc();
+
+
+        return data; // Return data for further processing
+      })
+      .catch((error) => console.error("Error fetching data:", error)).finally(() => {
+        console.timeEnd("fetchData"); // End the timer regardless of success or failure
+        isLoading = false; // Reset loading flag after fetch completes
+        hideLoader();
+      });
+  }
+  // Attach the scroll event listener
+  tableContainer.addEventListener("scroll", handleScroll);
+
+// Debounce function definition
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  // Apply debounce to applyFilters with a 300ms delay
+  //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
+  fetchDataFromServer({ page: 1, size: 100 });
+
+      function showLoader() {
+        const loader = document.getElementById("loader-element");
+        loader.classList.remove("d-none"); // Show the loader by removing d-none
+        loader.classList.add("d-flex"); // Ensure d-flex is applied for flexbox display
+        //console.log("loader shown");
+      }
+
+      function hideLoader() {
+        const loader = document.getElementById("loader-element");
+
+        // Set a delay (e.g., 2000ms = 2 seconds)
+        setTimeout(function() {
+          loader.classList.remove("d-flex"); // Remove d-flex
+          loader.classList.add("d-none"); // Hide the loader by adding d-none
+          //console.log("loader hidden after delay");
+        }, 3000); // 2000ms = 2 seconds delay
+      }
+      function updatePagination(lastPage, currentPage) {
+         const pagination = document.querySelector(".pagination");
+          const existingPageLinks = pagination.querySelectorAll(".page-item:not(:first-child):not(:last-child):not(#page-size)");
+          //console.log("existingPageLinks: ",existingPageLinks);
+
+          const startPage = Math.max(1, currentPage);
+          const endPage = Math.min(lastPage, startPage + 2);
+          //console.log("startPage: ",startPage);
+          //console.log("endPage: ",endPage);
+
+          let index = 0; // Track the current index in existing page items
+          for (let i = startPage; i <= endPage; i++) {
+              let pageItem;
+              if (index < existingPageLinks.length) {
+                   //console.log("if: done");
+                  // Update an existing item
+                  pageItem = existingPageLinks[index];
+                  pageItem.querySelector(".page-link").innerText = i;
+                  pageItem.querySelector(".page-link").setAttribute("data-page", i);
+              } else {
+                //console.log("else: done");
+                  // Add a new item if needed
+                  pageItem = document.createElement("li");
+                  pageItem.className = "page-item";
+                  pageItem.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                  pagination.insertBefore(pageItem, pagination.querySelector("li:last-child"));
+              }
+              pageItem.querySelector(".page-link").classList.toggle("page-link-active", i === currentPage); // Set active class
+              index++;
+              //console.log("index: ",index);
+          }
+
+          // Remove any extra items beyond the new range
+          /*while (index < existingPageLinks.length) {
+              pagination.removeChild(existingPageLinks[index]);
+              index++;
+          }*/
+
+          // Update Previous button
+          const previousBtn = document.querySelector(".page-prev");
+          previousBtn.classList.toggle("item-disabled", currentPage === 1);
+          previousBtn.querySelector(".page-link").setAttribute("data-page", currentPage - 1);
+          //console.log("previousBtn: ",previousBtn);
+          // Update Next button
+          const nextBtn = document.querySelector(".page-next");
+          nextBtn.classList.toggle("item-disabled", currentPage === endPage);
+          nextBtn.querySelector(".page-link").setAttribute("data-page", currentPage + 1);
+          //console.log("nextBtn: ",nextBtn);
+          // Update First button
+          const firstBtn = document.querySelector(".page-first");
+          firstBtn.querySelector(".page-link").setAttribute("data-page", 1);
+          //console.log("firstBtn: ",firstBtn);
+          // Update Last button
+          const lastBtn = document.querySelector(".page-last");
+          lastBtn.querySelector(".page-link").setAttribute("data-page", lastPage);
+          //console.log("lastBtn: ",lastBtn);
+          //update no of pages paragraph
+          document.getElementById("page-total").innerHTML = "تم تحميل "+ currentPage + " من اجمالي " + lastPage + " صفحات " ;
+      }
+
+
+      // Example usage with API response
+      //const response = { last_page: 10, page_no: 3 }; // Example data
+      //updatePagination(response.last_page, response.page_no);
+
+      // Event listener for page links
+      document.querySelector(".pagination").addEventListener("click", function (event) {
+    const target = event.target;
+    if (target.classList.contains("page-link") &&
+        !target.parentNode.classList.contains("disabled") &&
+        !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
+        event.preventDefault();
+        const selectedPage = parseInt(target.getAttribute("data-page"), 10);
+        const selectedPageSize = document.getElementById("page-size").value;
+
+        if(lastPage){
+          return
+        }
+
+        // Fetch data for selected page
+        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+        if(active_url=="server_filtered_data"){
+            currentPage = selectedPage;
+            applyFilters(selectedPage,selectedPageSize);
+        }else{
+            currentPage = selectedPage;
+            fetchDataFromServer({page: selectedPage,size: selectedPageSize});
+        }
+    }
+});
+
+
+      // Event listener for page size change
+      document.querySelector("#page-size").addEventListener("change", function () {
+        const selectedPageSize = this.value;
+        const selectedPage = document.querySelector(".page-link.page-link-active").innerHTML;
+
+        //console.log(`Selected page size: ${selectedPageSize}`);
+        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+        if(active_url=="server_filtered_data"){
+            applyFilters(selectedPage,selectedPageSize);
+        }else{
+            fetchDataFromServer({page: selectedPage,size: selectedPageSize});
+        }
+      });
+
+      function applyFilters(pageno = 1, pagesize = pageSize) {
+          console.time("applyFiltersTime");
+          // Helper function to get selected text from a dropdown
+          function getSelectedText(selectId) {
+            const select = document.getElementById(selectId);
+            return select && select.selectedIndex !== 0
+              ? select.options[select.selectedIndex].text
+              : "";
+          }
+
+          // Helper function to get trimmed and lowercased input value
+          function getInputValue(inputId) {
+            const input = document.getElementById(inputId);
+            return input ? input.value.trim().toLowerCase() : "";
+          }
+
+          // Capture filter values dynamically
+          const filterValues = {
+            source: getSelectedText("source"),
+            fromdate: getInputValue("from-date"),
+            todate: getInputValue("to-date"),
+            invoice_no: getInputValue("invoice-autoid"),
+            page: parseInt(pageno, 10) || 1,
+            size: pagesize || 20,
+          };
+
+          console.log("Filter values:", filterValues);
+
+          // Function to get CSRF token
+          function getCSRFToken() {
+            const csrfInput = document.querySelector(
+              "[name=csrfmiddlewaretoken]"
+            );
+            return csrfInput ? csrfInput.value : "";
+          }
+
+          console.time("FilterTime");
+
+          customFetch("filter_buyinvoices", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken(),
+              'Authorization': `Bearer ${jwtToken_access}`,
+            },
+            body: JSON.stringify(filterValues),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`Network error: ${response.status} ${response.statusText}`);
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.time("tableTime");
+              console.log("response: ",data);
+              console.log("filter data",data.data);
+
+              // Update Tabulator table
+              if (pageno === 1) {
+                table.replaceData(data.data);
+                currentPage = 1;
+              } else {
+                const scrollPosition = tableContainer.scrollTop;
+                table.addData(data.data);
+                tableContainer.scrollTop = scrollPosition;
+              }
+
+              lastPage = data.page_no === data.last_page;
+
+              console.timeEnd("tableTime");
+
+              console.time("PaginationTime");
+              updatePagination(data.last_page, data.page_no);
+              console.timeEnd("PaginationTime");
+
+              document.getElementById("dinar-total").value = data.total_amount + " دل ";
+              updateCalc();
+
+            })
+            .catch((error) => {
+              console.error("Error fetching filtered data:", error.message);
+            })
+            .finally(() => {
+              console.timeEnd("FilterTime");
+              console.timeEnd("applyFiltersTime");
+              active_url="server_filtered_data";
+              isLoading = false;
+              hideLoader();
+            });
+        }
+
+        // Add event listeners to all filter inputs
+        const filterInputs = [
+          "invoice-autoid",
+          "source",
+          "from-date",
+          "to-date",
+        ];
+
+         function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Apply debounce to applyFilters with a 300ms delay
+        const debouncedApplyFilters = debounce(() => applyFilters(1,pageSize), 390);
+        filterInputs.forEach((inputId) => {
+          document
+            .getElementById(inputId)
+            .addEventListener("input", () => {
+            debouncedApplyFilters();
+        });
+        });
+        ///////////////////
+
+        document
+          .getElementById("clear-btn")
+          .addEventListener("click", clearForm);
+        function clearForm() {
+          window.requestAnimationFrame(function () {
+            const formElements = document.querySelectorAll(
+              "form input, form select, form textarea"
+            );
+            formElements.forEach(function (element) {
+              if (!element.classList.contains("value-fixed")) {
+                if (
+                  element.tagName.toLowerCase() === "input" ||
+                  element.tagName.toLowerCase() === "textarea"
+                ) {
+                  element.value = ""; // Reset input and textarea values
+                } else if (element.tagName.toLowerCase() === "select") {
+                  element.selectedIndex = 0; // Reset select dropdowns
+                }
+              }
+            });
+
+            if (table) {
+              table.clearFilter(); // Clear all filters applied
+              fetchDataFromServer({ page: 1, size: 100 });
+            }
+          });
+        }
+        function updateCalc(){
+          const total_dinar = document.getElementById("dinar-total").value;
+          const dinar_paid = parseFloat(document.getElementById("dinar-paid").value); // Assuming dinar_paid is another input field
+          const number = total_dinar.replace(/[^\d.]/g, '');
+          const total_amount = parseFloat(number);
+
+          // Calculate the net amount
+          const net_amount = total_amount - dinar_paid;
+
+          // Format the net amount with commas and two decimal places
+          const formatted_net_amount = new Intl.NumberFormat('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+          }).format(net_amount);
+
+          // Set the formatted value with "دل"
+          document.getElementById("dinar-net").value = formatted_net_amount + " دل";
+        }
+    </script>
+  </body>
+</html>

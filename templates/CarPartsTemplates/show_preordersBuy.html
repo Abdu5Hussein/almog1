@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Preorders Buy</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 40px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+
+  <h1>Preorders Buy</h1>
+
+  <input type="text" id="invoiceInput" placeholder="Enter invoice number" />
+  <button onclick="loadPreorders()">Load</button>
+
+  <h2>Invoices</h2>
+  <table id="preordersTable">
+    <thead>
+      <tr>
+        <th>Invoice No</th>
+        <th>Original No</th>
+        <th>Source</th>
+        <th>Net Amount</th>
+        <th>Confirmed</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Items</h2>
+  <table id="itemsTable">
+    <thead>
+      <tr>
+        <th>Item No</th>
+        <th>Name</th>
+        <th>Company</th>
+        <th>Quantity</th>
+        <th>Unit Price (Dinar)</th>
+        <th>Total Price (Dinar)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadPreorders() {
+      const invoiceNo = document.getElementById('invoiceInput').value;
+      const url = invoiceNo 
+      ? `http://45.13.59.226/hozma/api/preorders-buy/?invoice_no=${invoiceNo}` 
+      : `http://45.13.59.226/hozma/api/preorders-buy/`;
+
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const preordersBody = document.querySelector('#preordersTable tbody');
+      const itemsBody = document.querySelector('#itemsTable tbody');
+      preordersBody.innerHTML = '';
+      itemsBody.innerHTML = '';
+
+      data.preorders_buy.forEach(order => {
+        preordersBody.innerHTML += `
+          <tr>
+            <td>${order.invoice_no}</td>
+            <td>${order.original_no || ''}</td>
+            <td>${order.source || ''}</td>
+            <td>${order.net_amount || ''}</td>
+            <td>${order.confirmed ? 'Yes' : 'No'}</td>
+          </tr>
+        `;
+      });
+
+      data.preorder_items_buy.forEach(item => {
+        itemsBody.innerHTML += `
+          <tr>
+            <td>${item.item_no}</td>
+            <td>${item.name}</td>
+            <td>${item.company}</td>
+            <td>${item.Asked_quantity}</td>
+            <td>${item.dinar_unit_price}</td>
+            <td>${item.dinar_total_price}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // Load all initially
+    loadPreorders();
+  </script>
+</body>
+</html>
