@@ -1,0 +1,237 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفاصيل الطلب</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2c3e50;
+      --danger-color: #e74c3c;
+      --warning-color: #f39c12;
+      --success-color: #2ecc71;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .order-header, .order-items {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .status-badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-pending {
+      background-color: var(--warning-color);
+      color: white;
+    }
+
+    .status-confirmed {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .status-sent {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .status-not-sent {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .table th {
+      border-top: none;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .total-row {
+      font-weight: bold;
+      background-color: #f8f9fa;
+    }
+
+    .action-buttons {
+      position: sticky;
+      bottom: 0;
+      background-color: white;
+      padding: 15px;
+      box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.05);
+      border-radius: 0 0 10px 10px;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+
+      body {
+        background-color: white;
+        padding: 0;
+      }
+
+      .order-header, .order-items {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+      <a href="index.html" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right"></i> رجوع إلى الطلبات
+      </a>
+      <button onclick="window.print()" class="btn btn-outline-primary">
+        <i class="bi bi-printer"></i> طباعة
+      </button>
+    </div>
+
+    <div class="order-header">
+      <div class="row">
+        <div class="col-md-6">
+          <h3>طلب شراء رقم: <span id="invoiceNo"></span></h3>
+          <p class="text-muted">التاريخ: <span id="orderDate"></span></p>
+        </div>
+        <div class="col-md-6 text-md-start">
+          <span id="orderStatus" class="status-badge status-pending">قيد الانتظار</span>
+          <p class="mt-2"><strong>المورد:</strong> <span id="customerName"></span></p>
+          <p><strong>الإرسال:</strong> <span id="sendStatus" class="status-badge status-not-sent">لم يتم الإرسال</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="order-items">
+      <h5 class="mb-4">تفاصيل المنتجات</h5>
+      <div class="table-responsive">
+        <table class="table text-center">
+          <thead>
+            <tr>
+              <th>رقم المنتج</th>
+              <th>الاسم</th>
+              <th>الشركة</th>
+              <th>الكمية المطلوبة</th>
+              <th>سعر الوحدة</th>
+              <th>الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody id="orderItemsTable">
+            <!-- يتم تعبئة المنتجات ديناميكيًا -->
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="5" class="text-end">الإجمالي الكلي:</td>
+              <td id="orderTotal">0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="action-buttons no-print">
+      <div class="d-flex justify-content-start gap-2">
+        <button class="btn btn-outline-danger">
+          <i class="bi bi-x-circle"></i> رفض الطلب
+        </button>
+        <button class="btn btn-success">
+          <i class="bi bi-check-circle"></i> تأكيد الطلب
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/helper_functions.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const pathParts = window.location.pathname.split('/');
+      const invoiceNo = pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
+
+      if (invoiceNo && !isNaN(invoiceNo)) {
+        loadOrderDetails(invoiceNo);
+      } else {
+        console.error("رقم الطلب غير صالح.");
+      }
+    });
+
+    async function loadOrderDetails(invoiceNo) {
+      try {
+        const response = await customFetch(`http://45.13.59.226/hozma/api/preorders-buy/?invoice_no=${invoiceNo}`);
+        const data = await response.json();
+
+        if (data.preorders_buy.length > 0) {
+          const order = data.preorders_buy[0];
+
+          document.getElementById('invoiceNo').textContent = order.invoice_no;
+          document.getElementById('orderDate').textContent = new Date(order.invoice_date).toLocaleDateString('en-US');
+          document.getElementById('customerName').textContent = order.source || 'غير معروف';
+
+          // حالة التأكيد
+          const statusBadge = document.getElementById('orderStatus');
+          if (order.confirmed) {
+            statusBadge.className = 'status-badge status-confirmed';
+            statusBadge.textContent = 'تم التأكيد';
+          } else {
+            statusBadge.className = 'status-badge status-pending';
+            statusBadge.textContent = 'قيد الانتظار';
+          }
+
+          // حالة الإرسال
+          const sendBadge = document.getElementById('sendStatus');
+          if (order.send) {
+            sendBadge.className = 'status-badge status-sent';
+            sendBadge.textContent = 'تم الإرسال';
+          } else {
+            sendBadge.className = 'status-badge status-not-sent';
+            sendBadge.textContent = 'لم يتم الإرسال';
+          }
+
+          // العناصر
+          const itemsBody = document.querySelector('#orderItemsTable');
+          itemsBody.innerHTML = '';
+          let totalAmount = 0;
+
+          data.preorder_items_buy.forEach(item => {
+            const itemTotal = parseFloat(item.dinar_total_price) || 0;
+            totalAmount += itemTotal;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${item.item_no}</td>
+              <td>${item.name}</td>
+              <td>${item.company || 'غير محدد'}</td>
+              <td>${item.Asked_quantity}</td>
+              <td>${item.dinar_unit_price ? parseFloat(item.dinar_unit_price).toFixed(2) : '0.00'}</td>
+              <td>${itemTotal.toFixed(2)}</td>
+            `;
+            itemsBody.appendChild(row);
+          });
+
+          document.getElementById('orderTotal').textContent = totalAmount.toFixed(2);
+        } else {
+          alert("لم يتم العثور على الطلب.");
+        }
+      } catch (error) {
+        console.error('خطأ في تحميل التفاصيل:', error);
+        alert('فشل في تحميل تفاصيل الطلب. حاول مرة أخرى.');
+      }
+    }
+  </script>
+</body>
+</html>

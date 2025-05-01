@@ -6,6 +6,7 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 import json
+import random
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -285,11 +286,11 @@ def confirm_or_update_preorder_items(request):
 
         # Process the 'update' action first
         if action_type == "update":
-            return handle_update_action(preorder, item_quantities)
+            return buyhandle_update_action(preorder, item_quantities)
 
         # Process the 'confirm' action
         elif action_type == "confirm":
-            return handle_confirm_action(preorder)
+            return Buyhandle_confirm_action(preorder)
 
         else:
             return Response({"error": "Invalid action_type. Use 'confirm' or 'update'."}, status=status.HTTP_400_BAD_REQUEST)
@@ -298,7 +299,7 @@ def confirm_or_update_preorder_items(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def handle_update_action(preorder, item_quantities):
+def buyhandle_update_action(preorder, item_quantities):
     # Update the quantity for specified items
     preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=preorder.autoid)
 
@@ -332,7 +333,7 @@ def handle_update_action(preorder, item_quantities):
 
 
 
-def handle_confirm_action(preorder):
+def Buyhandle_confirm_action(preorder):
     
     # Confirm the PreOrder and move items to SellInvoiceMainItem
     client = preorder.client
@@ -522,7 +523,8 @@ def full_Sell_invoice_create_item(request):
                         invoice_date=timezone.now(),
                         amount=0,
                         net_amount=0,
-                        invoice_no=int(timezone.now().timestamp())  # unique
+                        invoice_no=int(timezone.now().timestamp()) 
+                          # unique
                     )
 
                 # Check if item already exists in BuyInvoiceItemsTable
@@ -651,3 +653,145 @@ def show_preordersBuy(request):
         'preorders_buy': preorder_serializer.data,
         'preorder_items_buy': preorder_items_serializer.data
     })
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def confirm_or_update_preorderBuy_items(request):
+    try:
+        data = request.data
+        invoice_no = data.get('invoice_no')
+
+        if not invoice_no:
+            return Response({"error": "Missing invoice_no"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get PreOrder for the given invoice
+        preorder = almogOil_models.OrderBuyinvoicetable.objects.filter(invoice_no=invoice_no).first()
+
+        if not preorder:
+            return Response({"error": "No PreOrder found for this invoice"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the PreOrder is already confirmed
+        if preorder.confirmed:
+            return Response({"error": "This PreOrder has already been confirmed and cannot be modified."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Option to update quantity or confirm the order (optional fields)
+        item_quantities = data.get("item_quantities", [])
+        action_type = data.get("action_type", "confirm")  # Default to 'confirm', other option is 'update'
+
+        # Process the 'update' action first
+        if action_type == "update":
+            return Buyhandle_update_action(preorder, item_quantities)
+
+        # Process the 'confirm' action
+        elif action_type == "confirm":
+            return Buyhandle_confirm_action(preorder)
+
+        else:
+            return Response({"error": "Invalid action_type. Use 'confirm' or 'update'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def Buyhandle_update_action(preorder, item_quantities):
+    # Update the quantity for specified items
+    preorder_items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=preorder.autoid)
+
+    for item in item_quantities:
+        item_no = item.get("item_no")  # Ensure we are using item_no from the request JSON
+        new_quantity = item.get("new_quantity")
+
+        if not item_no or new_quantity is None:
+            continue  # Skip if item_no or new_quantity is not provided
+
+        # Check if the item exists in the PreOrderItemsTable using pno
+        preorder_item = preorder_items.filter(pno=item_no).first()  # Now using item_no from the request JSON
+
+        if not preorder_item:
+            return Response({"error": f"Item with pno {item_no} is not part of this PreOrder."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the quantity in PreOrderItemsTable
+        preorder_item.Confirmed_quantity = new_quantity
+        preorder_item.dinar_total_price = preorder_item.dinar_unit_price * new_quantity  # Recalculate the total price
+        preorder_item.save()
+
+    # After updating the quantities for all items, recalculate the total amount for the PreOrder
+    total_amount = sum([item.dinar_total_price for item in preorder_items])  # Sum the dinar_total_price of all items
+
+    # Update the total amount in PreOrderTable
+    preorder.amount = total_amount
+    preorder.save()
+
+    return Response({"success": True, "message": "PreOrder items updated with new quantities."}, status=status.HTTP_200_OK)
+
+def Buyhandle_confirm_action(preorder):
+    
+
+
+    # Confirm the PreOrder and move items to SellInvoiceMainItem
+    source = preorder.source_obj
+    Buy_invoice = almogOil_models.Buyinvoicetable.objects.create(
+        invoice_no=preorder.invoice_no,
+        source=preorder.source,
+        source_obj=source,
+        confirmation_date=timezone.now(),
+        invoice_date=preorder.invoice_date,
+        send_date=preorder.send_date,
+        net_amount=preorder.net_amount,  
+        amount=preorder.amount,
+        
+    )
+
+    # Process the preorder items and move them to SellInvoiceItemsTable
+    preorder_items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=preorder.autoid)
+    for item in preorder_items:
+        # Check if confirm_quantity is None (not set), then set it to the original quantity
+        if item.Confirmed_quantity is None:
+            item.Confirmed_quantity = item.Asked_quantity  # Set confirm_quantity to the original quantity
+            item.save()  # Save the updated PreOrderItemsTable
+
+        # Now send the confirmed quantity to SellInvoiceItemsTable
+        almogOil_models.BuyInvoiceItemsTable.objects.create(
+            
+    invoice_no2=preorder.invoice_no,
+    invoice_no=Buy_invoice,
+    item_no=item.item_no or "",
+    pno=item.pno or "",
+    main_cat=item.main_cat or "",
+    sub_cat=item.sub_cat or "",
+    name=item.name or "",
+    company=item.company or "",
+    company_no=item.company_no or "",
+    quantity=item.Confirmed_quantity or 0,
+    quantity_unit="",
+    currency="",
+    dinar_unit_price=item.dinar_unit_price or 0,
+    dinar_total_price=item.dinar_total_price or 0,
+    exchange_rate=Decimal('1.0000'),
+    
+    buysource=preorder.source_obj,
+    
+    prev_quantity=item.prev_quantity or 0,
+   
+    current_quantity=item.current_quantity or 0,
+ 
+    
+    source=item.source if hasattr(item, "source") else None
+        )
+
+        # Update Mainitem quantity after confirming the order
+        try:
+            mainitem = almogOil_models.Mainitem.objects.get(pno=item.pno)
+            mainitem.itemvalue = max(mainitem.itemvalue + item.Confirmed_quantity, 0)  # Use confirm_quantity here
+            mainitem.save()
+        except almogOil_models.Mainitem.DoesNotExist:
+            pass
+
+    # Mark the PreOrder as confirmed
+    preorder.confirmed = True
+    
+    preorder.save()
+
+    return Response({"success": True, "message": "PreOrder items confirmed and moved to buyinvoice."}, status=status.HTTP_200_OK)
+

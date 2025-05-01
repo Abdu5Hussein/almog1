@@ -127,7 +127,8 @@ def Buyinvoice_management(request):
     }
     return render(request,"buy-invoice-reports.html",context)
 
-
+def preorder_buy_detail(request, invoice_no):
+  return render(request, 'CarPartsTemplates/show_preordersBuyDetails.html', {'invoice_no': invoice_no})  # This will render the PreOrder details page
 
 
 

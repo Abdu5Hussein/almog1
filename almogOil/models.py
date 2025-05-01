@@ -143,6 +143,10 @@ class Buyinvoicetable(models.Model):
     expenses_dinar = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     confirmed = models.BooleanField(default=False)
     send = models.BooleanField(default=False)
+    send_date = models.DateTimeField(blank=True, null=True)
+    source_obj = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
+
+
 
     class Meta:
         managed = True
@@ -1296,6 +1300,9 @@ class OrderBuyinvoicetable(models.Model):
     expenses_dinar = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     confirmed = models.BooleanField(default=False)
     send = models.BooleanField(default=False)
+    send_date = models.DateTimeField(blank=True, null=True)
+    source_obj = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
+ 
 
     class Meta:
         managed = True

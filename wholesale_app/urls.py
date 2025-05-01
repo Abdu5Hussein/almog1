@@ -30,6 +30,8 @@ urlpatterns = [
     path('api/products/<int:id>/get-images',api_views.get_product_images,name="product-get-images"),
     #path('api/preorders/', api_views.show_all_preorders, name='show_all_preorders'),
     path('api/confirm-or-update-preorder-items/', HozmaApi_views.confirm_or_update_preorder_items, name='confirm_or_update_preorder_items'),
+    
+    path('api/confirm-or-update-preorder-items-buy-source/', HozmaApi_views.confirm_or_update_preorderBuy_items, name='confirm_or_update_preorderBuy_items'),
     path('api/preorders/', api_views.show_preorders, name='show_all_preorders'),
     path('api/preorders-buy/', HozmaApi_views.show_preordersBuy, name='show_all_preorders'),
     path('preorder-dashboard/', views.dashboard, name='dashboard'),  # For displaying all PreOrders
@@ -37,4 +39,6 @@ urlpatterns = [
     path('api/test-send-whatsapp/', HozmaApi_views.send_test_whatsapp_message, name='test-send-whatsapp'),
     path('api/full_Sell_invoice_create_item/', HozmaApi_views.full_Sell_invoice_create_item, name='full_Sell_invoice_create_item'),
     path('preorders-buy/', views.preorders_buy_page, name='preorders_buy_page'),
+    path('preorders-buy/<str:invoice_no>/', views.preorder_buy_detail, name='preorder-detail'),
+    
 ]
