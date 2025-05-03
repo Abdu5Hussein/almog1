@@ -1388,6 +1388,11 @@ function openWindow(url,width = 600,height = 700) {
         };
 }
       invoices_table.on("rowClick", function (e, row) {
+        const hasInvoiceItemsPermission = {{ perms.almogOil.show_items_sellinvoice|yesno:"true,false" }};
+        if (!hasInvoiceItemsPermission) {
+          alert("لا تملك صلاحية عرض تفاصيل الفاتورة");
+          return;
+        }
         console.log("Row clicked:", row.getData().autoid);
 
         const id = row.getData().invoice_no;

@@ -33,3 +33,21 @@ def send_whatsapp_message_via_green_api(to, message):
         print(f"Error: {response.text}")
         return None
     
+def send_excel_file_greenapi_upload(phone, filename, file_stream):
+    url = "https://7105.media.greenapi.com/waInstance7105234156/sendFileByUpload/66b95676d3344f3dbbbe3f6bcaa8faa3e5464f6109414ea990"
+    
+    payload = {
+        'chatId': f'{phone}@c.us'
+    }
+
+    files = {
+        'file': (filename, file_stream, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    }
+
+    try:
+        response = requests.post(url, data=payload, files=files)
+        print(response.status_code, response.text)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"[❌ Upload Error] {e}")
+        return False

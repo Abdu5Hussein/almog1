@@ -194,7 +194,7 @@ def sign_in(request):
             response.set_cookie(
                 'access_token', access_token,
                 httponly=True,
-                max_age=15*60,  # 15 minutes
+                max_age=7*60*60,  # 7 hours
                 path='/'
             )
 

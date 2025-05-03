@@ -603,6 +603,7 @@
               class="btn btn-primary"
               style="width: 100px"
               id="add-btn"
+              {% if not perms.almogOil.add_sellinvoicetable %}disabled{% endif %}
             >
             جديد
             </button>

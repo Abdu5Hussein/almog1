@@ -305,6 +305,7 @@ class Mainitem(models.Model):
     oem_numbers = models.CharField(max_length=1000, blank=True, null=True)
     engine_no = models.CharField(max_length=300, blank=True, null=True)
     json_description = models.JSONField(null=True,blank=True)
+    showed = models.IntegerField(default=0)
      # Adding the foreign key to AllSourcesTable is for HOZMA ATTENTIN IS FOR HOZMA
     source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     class Meta:
@@ -516,6 +517,7 @@ class AuthUser(models.Model):
             ('template_issue_permits', 'اذونات الصرف'),
             ('template_items_with_notes', 'اصناف بالملاحظات'),
             ('template_add_item_specifications', 'اضافة مواصفات الصنف'),
+            ('export_mainitems', 'تصدير الاصناف'),
 
             ('category_sell_invoice', 'قسم فواتير البيع'),
             ('template_sell_invoice_entry', 'ادخال فاتورة بيع'),
@@ -523,6 +525,16 @@ class AuthUser(models.Model):
             ('template_sell_invoice_settlement', 'تسوية حساب فواتير البيع'),
             ('template_sell_inventory_item_search', 'بحث باصناف المخزن'),
             ('template_sell_invoice_preparation_reports', 'تقارير التحضير'),
+            ('export_sellinvoice', 'تصدير فواتير البيع'),
+            ('custom_export_sellinvoice', 'تصدير مخصص لفواتير البيع'),
+            ('show_total_sellinvoice', 'عرض مجاميع فواتير البيع'),
+            ('show_items_sellinvoice', 'عرض اصناف فواتير البيع'),
+            ('prepare_input_sellinvoice', 'ادخال تحضير فواتير البيع'),
+            ('show_sell_price_sellinvoice', 'عرض سعر البيع في فواتير البيع'),
+            ('edit_sell_price_sellinvoice', 'تعديل سعر البيع في فواتير البيع'),
+            ('edit_quantity_sellinvoice', 'تعديل الكمية في فواتير البيع'),
+            ('fixed_date_sellinvoice', 'تثبيت التاريخ في فواتير البيع'),
+            ('fixed_date_prepare_sellinvoice', 'تثبيت التاريخ في تقارير التحضير'),
 
             ('category_buy_invoice', 'قسم فواتير الشراء'),
             ('template_buy_invoice_entry', 'ادخال فاتورة شراء'),
@@ -531,10 +543,13 @@ class AuthUser(models.Model):
             ('template_buy_invoice_settlement', 'تسوية حساب فواتير الشراء'),
             ('template_buy_temp_item_posting', 'ترحيل الاصناف المؤقتة'),
             ('template_buy_invoice_inventory', 'جرد فواتير الشراء'),
+            ('export_buyinvoice', 'تصدير فواتير الشراء'),
+            ('show_total_buyinvoice', 'عرض مجاميع فواتير الشراء'),
 
             ('category_return_permission', 'قسم الترجيعات'),
             ('template_return_permission_entry', 'ادخال اذن ترجيع'),
             ('template_return_reports', 'تقارير الترجيع'),
+            ('export_return_permissions', 'تصدير الترجيعات'),
 
             ('category_clients', 'قسم العملاء'),
             ('template_customer_guide', 'دليل العملاء'),
@@ -542,6 +557,9 @@ class AuthUser(models.Model):
             ('template_account_settlement', 'تسوية حساب العملاء'),
             ('template_account_settlement_reports', 'تقارير تسوية حساب العملاء'),
             ('template_audit_reports', 'تقارير المراجعة للعملاء'),
+            ('edit_account_statement_clients', 'تعديل كشف الحساب للعملاء'),
+            ('export_clients', 'تصدير العملاء'),
+            ('show_total_clients', 'عرض مجاميع العملاء'),
 
             ('category_suppliers', 'قسم الموردين'),
             ('template_add_supplier', 'اضافة مورد'),
@@ -550,6 +568,9 @@ class AuthUser(models.Model):
             ('template_supplier_account_settlement', 'تسوية حساب الموردين'),
             ('template_supplier_account_settlement_reports', 'تقارير تسوية حساب الموردين'),
             ('template_audit_reports_suppliers', 'تقارير المراجعة للموردين'),
+            ('edit_account_statement_suppliers', 'تعديل كشف الحساب للموردين'),
+            ('export_suppliers', 'تصدير الموردين'),
+            ('show_total_suppliers', 'عرض مجاميع الموردين'),
 
             ('category_employees', 'قسم الموظفين'),
             ('template_employee_directory', 'دليل الموظفين'),
@@ -559,11 +580,18 @@ class AuthUser(models.Model):
             ('template_emp_reports', 'تقارير الموظفين'),
             ('template_settlement_reports', 'تقارير التسوية'),
             ('template_attendance_absence', 'حضور وغياب'),
+            ('edit_account_employees', 'تعديل حساب الموظفين'),
+            ('export_employees', 'تصدير الموظفين'),
+            ('allow_over_salary_depts_employees', 'السماح بالصرف بتجاوز المرتب للموظف'),
 
             ('category_storage', 'قسم الخزينة'),
             ('template_treasury_entries', 'قيود الخزينة'),
             ('template_treasury_reports', 'تقارير الخزينة'),
             ('template_request_value', 'طلب قيمة من الخزينة'),
+            ('template_treasury_movements', 'حركة الخزينة'),
+            ('export_treasury', 'تصدير بيانات الخزينة'),
+            ('show_withdraw_records_treasury', 'عرض قيود صرف من الخزينة'),
+            ('add_withdraw_records_treasury', 'ادخال قيود صرف للخزينة'),
 
             ('category_users', 'قسم المستخدمين'),
             ('template_users_management', 'ادارة المستخدمين'),
@@ -1302,7 +1330,7 @@ class OrderBuyinvoicetable(models.Model):
     send = models.BooleanField(default=False)
     send_date = models.DateTimeField(blank=True, null=True)
     source_obj = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
- 
+
 
     class Meta:
         managed = True
@@ -1348,4 +1376,4 @@ class OrderBuyInvoiceItemsTable(models.Model):
     source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     class Meta:
         managed = True
-        db_table = 'Orderbuy_invoice_items_table'        
+        db_table = 'Orderbuy_invoice_items_table'

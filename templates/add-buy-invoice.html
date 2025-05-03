@@ -639,6 +639,7 @@
                 class="btn btn-primary w-100"
                 id="createButton"
                 type="button"
+                {% if not perms.almogOil.add_buyinvoicetable %}disabled{% endif %}
               >
                 اعداد الفاتورة
               </button>
@@ -647,6 +648,7 @@
                 id="addProductsButton"
                 type="button"
                 style="display: none;"
+                {% if not perms.almogOil.change_buyinvoicetable %}disabled{% endif %}
               >
                 اضافة اصناف
               </button>
@@ -713,7 +715,7 @@
       <form id="secondForm">
         {% csrf_token %}
 
-        <div class="row py-1">
+        <div class="row py-1" {% if not perms.almogOil.show_total_buyinvoice %}style="display: none;"{% endif %}>
           <!-- First column -->
           <div class="col-md-4">
             <div class="input-group mb-1">
@@ -891,7 +893,7 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+      const jwtToken_access = null;
       function updateExchangeRate() {
         const currencyDropdown = document.getElementById("currency");
         const org_currency = document.getElementById("org-currency");

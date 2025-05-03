@@ -611,10 +611,10 @@
             <!-- second column -->
             <div class="col-2 d-flex flex-column text-center align-items-center justify-content-center">
                 <div class="row g-0">
-                    <button class="btn btn-primary w-100" id="createButton" type="button">اعداد الفاتورة</button>
+                    <button class="btn btn-primary w-100" id="createButton" type="button" {% if not perms.almogOil.add_sellinvoicetable %}disabled{% endif %}>اعداد الفاتورة</button>
                 </div>
                 <div class="row g-0">
-                    <button class="btn btn-primary w-100 mt-1" id="addProductsButton" type="button" style="display: none;">اضافة اصناف</button>
+                    <button class="btn btn-primary w-100 mt-1" id="addProductsButton" type="button" style="display: none;" {% if not perms.almogOil.change_sellinvoicetable %}disabled{% endif %}>اضافة اصناف</button>
                 </div>
             </div>
 

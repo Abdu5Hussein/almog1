@@ -603,8 +603,8 @@
                           <label for="check1">حذف صنف</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox" value="view_mainitem" style="margin-left: 5px" />
-                          <label for="check1">الاطلاع على الاصناف</label>
+                          <input type="checkbox" value="export_mainitems" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
                         </div>
                       </div>
                     </div>
@@ -702,6 +702,10 @@
                           <input type="checkbox" value="buy_invoice_export" style="margin-left: 5px" />
                           <label for="check1">تصدير</label>
                         </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="show_total_buyinvoice" style="margin-left: 5px" />
+                          <label for="check1">عرض تفاصيل المجاميع</label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -757,43 +761,49 @@
                           <label for="check1">حذف فواتير</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox" value="sell_invoice_export" style="margin-left: 5px" />
-                          <label for="check1">x تصدير</label>
+                          <input type="checkbox" value="export_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
                         </div>
                       </div>
                     </div>
                     <div class="col">
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x عرض المجاميع</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x عرض الاصناف</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x بيانات التحضير</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x عرض سعر البيع</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x تصدير مخصص</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x تعديل السعر</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x تعديل الكمية</label>
-                      </div>
-                      <div class="row-md-2 d-flex align-items-center mb-2">
-                        <input type="checkbox" value="check1" style="margin-left: 5px" />
-                        <label for="check1">x عرض فواتير الامس</label>
+                      <div class="border p-1">
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="show_total_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">عرض المجاميع</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="show_items_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">عرض الاصناف</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="prepare_input_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">تحضير فاتورة</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="show_sell_price_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">عرض سعر البيع</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="custom_export_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">تصدير مخصص</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="edit_sell_price_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">تعديل السعر</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="edit_quantity_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">تعديل الكمية</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="fixed_date_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">تثبيت التاريخ في فواتير البيع</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="fixed_date_prepare_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">تثبيت التاريخ في تقارير التحضير</label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -836,8 +846,8 @@
                           <label for="check1">حذف</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox" value="return_permission_export" style="margin-left: 5px" />
-                          <label for="check1">x تصدير</label>
+                          <input type="checkbox" value="export_return_permissions" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
                         </div>
                       </div>
                     </div>
@@ -881,8 +891,8 @@
                       </div>
                       <div class="border p-1">
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x تعديل كشف الحساب</label>
+                          <input type="checkbox" value="edit_account_statement_clients" style="margin-left: 5px" />
+                          <label for="check1">تعديل كشف الحساب</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="add_allclientstable" style="margin-left: 5px" />
@@ -897,12 +907,12 @@
                           <label for="check1">حذف</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x تصدير</label>
+                          <input type="checkbox" value="export_clients" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x عرض تفاصيل المجاميع</label>
+                          <input type="checkbox" value="show_total_clients" style="margin-left: 5px" />
+                          <label for="check1">عرض تفاصيل المجاميع</label>
                         </div>
                       </div>
                     </div>
@@ -951,20 +961,16 @@
                       </div>
                       <div class="border p-1">
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x تعديل كشف الحساب</label>
+                          <input type="checkbox" value="edit_account_statement_suppliers" style="margin-left: 5px" />
+                          <label for="check1">تعديل كشف الحساب</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x تصدير</label>
+                          <input type="checkbox" value="export_suppliers" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x عدم عرض الموردين</label>
-                        </div>
-                        <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x عرض تفاصيل المجاميع</label>
+                          <input type="checkbox" value="show_total_suppliers" style="margin-left: 5px" />
+                          <label for="check1">عرض تفاصيل المجاميع</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="add_allsourcestable" style="margin-left: 5px" />
@@ -1039,16 +1045,16 @@
                           <label for="check1">حذف</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x تصدير</label>
+                          <input type="checkbox" value="export_employees" style="margin-left: 5px" />
+                          <label for="check1">تصدير</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x تعديل الحساب</label>
+                          <input type="checkbox" value="edit_account_employees" style="margin-left: 5px" />
+                          <label for="check1">تعديل الحساب</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox"  style="margin-left: 5px" />
-                          <label for="check1">x السماح بالصرف بتجاوز المرتب</label>
+                          <input type="checkbox" value="allow_over_salary_depts_employees" style="margin-left: 5px" />
+                          <label for="check1">السماح بالصرف بتجاوز المرتب</label>
                         </div>
                       </div>
                     </div>
@@ -1084,8 +1090,8 @@
                     <div class="col">
                       <div class="border p-1">
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox" value="treasury-check2" style="margin-left: 5px" />
-                          <label for="treasury-check2">x حركة الخزينة</label>
+                          <input type="checkbox" value="template_treasury_movements" style="margin-left: 5px" />
+                          <label for="treasury-check2">حركة الخزينة</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="add_storagetransactionstable" style="margin-left: 5px" />
@@ -1100,12 +1106,16 @@
                           <label for="treasury-check2">حذف</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox" id="treasury-check2" style="margin-left: 5px" />
-                          <label for="treasury-check2">x تصدير</label>
+                          <input type="checkbox" value="export_treasury" style="margin-left: 5px" />
+                          <label for="treasury-check2">تصدير</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox" id="treasury-check2" style="margin-left: 5px" />
-                          <label for="treasury-check2">x عرض قيود الصرف</label>
+                          <input type="checkbox" value="show_withdraw_records_treasury" style="margin-left: 5px" />
+                          <label for="treasury-check2">عرض قيود الصرف</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="add_withdraw_records_treasury" style="margin-left: 5px" />
+                          <label for="treasury-check2">ادخال قيود الصرف</label>
                         </div>
                       </div>
                     </div>
@@ -1531,6 +1541,12 @@
           const permissionCodename = this.value;
           const action = this.checked ? "grant" : "remove";
           const id = document.getElementById("user-no").value;
+
+          if (!id) {
+            alert("يرجى اختيار مستخدم أولاً.");
+            this.checked = !this.checked; // Uncheck the checkbox
+            return;
+          }
 
           fetch("http://45.13.59.226/api/user/permissions/toggle", {
             method: "POST",

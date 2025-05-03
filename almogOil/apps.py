@@ -9,9 +9,13 @@ class AlmogOilConfig(AppConfig):
         # ✅ Initialize Firebase
         initialize_firebase()
 
-        # ✅ Schedule background task
+        # ✅ Schedule order assignments (your existing task)
         from almogOil.Tasks import schedule_assign_orders
         schedule_assign_orders()
 
-        # ✅ Register signals
+        # ✅ Start WhatsApp message scheduler
+        from wholesale_app.scheduler import start_scheduler  # <-- Make sure this matches your filename
+        start_scheduler()
+
+        # ✅ Register Django signals
         import almogOil.signals  # noqa

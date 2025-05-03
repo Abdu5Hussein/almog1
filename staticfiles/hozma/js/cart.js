@@ -526,7 +526,7 @@ for (let item of cart) {
 
   try {
     // Use customFetch to send the POST request
-    const itemResponse = await customFetch('http://45.13.59.226/hozma/preorder/add-item/', {
+    const itemResponse = await customFetch('http://45.13.59.226/hozma/api/full_Sell_invoice_create_item/', {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -536,17 +536,18 @@ for (let item of cart) {
     });
   
     // Check if the response was successful and parse the result
+    // Check if the response was successful and parse the result
     if (itemResponse) {
       const itemResult = await itemResponse.json();
       console.log("Server response for item:", itemResult);
   
-      // Check if the response contains a success message or confirmation
-      if (!itemResponse.ok || itemResult.confirm_status !== 'confirmed') {
-        console.error("Failed to add item:", itemResult);
-        alert(`فشل في إضافة عنصر ${itemData.pno} إلى الفاتورة.`);
+      // Check if the response is not ok
+      if (!itemResponse.ok) {
+        console.error("Failed to add item:", itemResult); // Log the error
+        alert(`فشل في إضافة عنصر ${itemData.pno} إلى الفاتورة.`); // Show an error message to the user
         return;
       } else {
-        console.log("Item added:", itemResult);
+        console.log("Item added:", itemResult); // Log the success
       }
     } else {
       console.error("No response from server.");

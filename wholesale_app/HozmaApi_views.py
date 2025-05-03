@@ -515,7 +515,7 @@ def full_Sell_invoice_create_item(request):
                 
                     
                     # force creation of new invoice
-
+                 
                 # If no valid invoice exists, create a new one
                 if not buy_invoice:
                     buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
@@ -523,7 +523,9 @@ def full_Sell_invoice_create_item(request):
                         invoice_date=timezone.now(),
                         amount=0,
                         net_amount=0,
-                        invoice_no=int(timezone.now().timestamp()) 
+                        invoice_no=int(timezone.now().timestamp()) ,
+                        source_obj= product.source
+
                           # unique
                     )
 
@@ -721,6 +723,7 @@ def Buyhandle_update_action(preorder, item_quantities):
 
     # Update the total amount in PreOrderTable
     preorder.amount = total_amount
+    preorder.net_amount= total_amount
     preorder.save()
 
     return Response({"success": True, "message": "PreOrder items updated with new quantities."}, status=status.HTTP_200_OK)

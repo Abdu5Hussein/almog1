@@ -1130,6 +1130,7 @@
               id="new-record-button"
               type="button"
               class="btn btn-primary m-1"
+              {% if not perms.almogOil.add_mainitem %}disabled{% endif %}
             >
               جديد
             </button>
@@ -1142,10 +1143,10 @@
             <button type="button" id="add-main-btn" class="btn btn-primary m-1">
               اضافة بيان
             </button>
-            <button type="submit" class="btn btn-primary m-1" id="editButton">
+            <button type="submit" class="btn btn-primary m-1" id="editButton" {% if not perms.almogOil.change_mainitem %}disabled{% endif %}>
               تعديل
             </button>
-            <button type="button" class="btn btn-primary m-1" id="deleteButton">
+            <button type="button" class="btn btn-primary m-1" id="deleteButton" {% if not perms.almogOil.delete_mainitem %}disabled{% endif %}>
               حذف
             </button>
             <button
