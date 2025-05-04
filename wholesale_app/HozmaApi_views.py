@@ -46,6 +46,7 @@ from rest_framework import generics, mixins,viewsets
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from decimal import Decimal
+from io import BytesIO
 from almogOil import models as almogOil_models
 from wholesale_app import models as hozma_models
 from almogOil import serializers as almogOil_serializers
@@ -56,8 +57,11 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from almogOil.authentication import CookieAuthentication
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
-from .whatsapp_service import send_whatsapp_message_via_green_api
+from .whatsapp_service import send_whatsapp_message_via_green_api ,send_excel_file_greenapi_upload 
 from wholesale_app import serializers as wholesale_serializers
+import xlsxwriter
+from num2words import num2words
+from products import serializers as products_serializers
 
 def get_last_PreOrderTable_no():
     last_invoice = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
@@ -729,10 +733,11 @@ def Buyhandle_update_action(preorder, item_quantities):
     return Response({"success": True, "message": "PreOrder items updated with new quantities."}, status=status.HTTP_200_OK)
 
 def Buyhandle_confirm_action(preorder):
-    
+    # Prevent confirmation unless preorder.send is True
+    if not preorder.send:
+        return Response({"success": False, "message": "Cannot confirm preorder. 'send' must be True."}, status=status.HTTP_400_BAD_REQUEST)
 
-
-    # Confirm the PreOrder and move items to SellInvoiceMainItem
+    # Confirm the PreOrder and move items to BuyInvoiceMainItem
     source = preorder.source_obj
     Buy_invoice = almogOil_models.Buyinvoicetable.objects.create(
         invoice_no=preorder.invoice_no,
@@ -743,58 +748,407 @@ def Buyhandle_confirm_action(preorder):
         send_date=preorder.send_date,
         net_amount=preorder.net_amount,  
         amount=preorder.amount,
-        
     )
 
-    # Process the preorder items and move them to SellInvoiceItemsTable
+    # Process the preorder items and move them to BuyInvoiceItemsTable
     preorder_items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=preorder.autoid)
     for item in preorder_items:
-        # Check if confirm_quantity is None (not set), then set it to the original quantity
         if item.Confirmed_quantity is None:
-            item.Confirmed_quantity = item.Asked_quantity  # Set confirm_quantity to the original quantity
-            item.save()  # Save the updated PreOrderItemsTable
+            item.Confirmed_quantity = item.Asked_quantity
+            item.save()
 
-        # Now send the confirmed quantity to SellInvoiceItemsTable
         almogOil_models.BuyInvoiceItemsTable.objects.create(
-            
-    invoice_no2=preorder.invoice_no,
-    invoice_no=Buy_invoice,
-    item_no=item.item_no or "",
-    pno=item.pno or "",
-    main_cat=item.main_cat or "",
-    sub_cat=item.sub_cat or "",
-    name=item.name or "",
-    company=item.company or "",
-    company_no=item.company_no or "",
-    quantity=item.Confirmed_quantity or 0,
-    quantity_unit="",
-    currency="",
-    dinar_unit_price=item.dinar_unit_price or 0,
-    dinar_total_price=item.dinar_total_price or 0,
-    exchange_rate=Decimal('1.0000'),
-    
-    buysource=preorder.source_obj,
-    
-    prev_quantity=item.prev_quantity or 0,
-   
-    current_quantity=item.current_quantity or 0,
- 
-    
-    source=item.source if hasattr(item, "source") else None
+            invoice_no2=preorder.invoice_no,
+            invoice_no=Buy_invoice,
+            item_no=item.item_no or "",
+            pno=item.pno or "",
+            main_cat=item.main_cat or "",
+            sub_cat=item.sub_cat or "",
+            name=item.name or "",
+            company=item.company or "",
+            company_no=item.company_no or "",
+            quantity=item.Confirmed_quantity or 0,
+            quantity_unit="",
+            currency="",
+            dinar_unit_price=item.dinar_unit_price or 0,
+            dinar_total_price=item.dinar_total_price or 0,
+            exchange_rate=Decimal('1.0000'),
+            buysource=preorder.source_obj,
+            prev_quantity=item.prev_quantity or 0,
+            current_quantity=item.current_quantity or 0,
+            source=item.source if hasattr(item, "source") else None
         )
 
-        # Update Mainitem quantity after confirming the order
+        # Update Mainitem quantity
         try:
             mainitem = almogOil_models.Mainitem.objects.get(pno=item.pno)
-            mainitem.itemvalue = max(mainitem.itemvalue + item.Confirmed_quantity, 0)  # Use confirm_quantity here
+            mainitem.itemvalue = max(mainitem.itemvalue + item.Confirmed_quantity, 0)
             mainitem.save()
         except almogOil_models.Mainitem.DoesNotExist:
             pass
 
-    # Mark the PreOrder as confirmed
     preorder.confirmed = True
-    
     preorder.save()
 
     return Response({"success": True, "message": "PreOrder items confirmed and moved to buyinvoice."}, status=status.HTTP_200_OK)
 
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Allow access for any user
+@authentication_classes([])  # No authentication for this view
+def send_unsent_invoices(request):
+    # Extract the invoice number from the request body
+    invoice_no = request.data.get('invoice_no')
+    
+    if not invoice_no:
+        return Response({'error': 'invoice_no is required'}, status=400)
+
+    try:
+        # Fetch the invoice record from the database
+        record = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=invoice_no, send=False, source_obj__isnull=False)
+    except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
+        return Response({'error': 'Invoice not found or already sent'}, status=404)
+
+    try:
+        # Extract phone number and validate
+        phone = getattr(record.source_obj, 'phone', '')
+        if not phone:
+            return Response({'error': 'Phone number missing for invoice'}, status=400)
+
+        # Get the invoice items
+        items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=record)
+        if not items.exists():
+            return Response({'error': 'No items found for this invoice'}, status=404)
+
+        # Prepare the invoice data
+        invoice_data = prepare_invoice_data(record, items)
+
+        # Create an Excel file with Arabic formatting
+        excel_buffer = create_excel_invoice(invoice_data)
+
+        # Send the invoice via the Green API (you can customize this function)
+        file_name = f"invoice_{invoice_data['invoice_no']}.xlsx"
+        success = send_excel_file_greenapi_upload(phone, file_name, excel_buffer)
+
+        if success:
+            # Update the invoice record as sent
+            record.send = True
+            record.send_date = timezone.now()
+            record.save()
+
+            return Response({'message': f'Invoice {invoice_data["invoice_no"]} sent successfully to {phone}'}, status=200)
+        else:
+            return Response({'error': 'Failed to send invoice'}, status=500)
+
+    except Exception as e:
+        return Response({'error': f'Error processing invoice: {str(e)}'}, status=500)
+
+
+def prepare_invoice_data(record, items):
+    # Extract relevant fields and prepare data for invoice creation
+    invoice_date = record.send_date or timezone.now().date(),
+    total_amount = float(record.amount) if hasattr(record, 'amount') else 0
+
+    # Convert total amount to words (Libyan Dinar)
+    total_in_words = num2words(total_amount, lang='ar') + ' دينار ليبي فقط لا غير'
+
+    invoice_data = {
+        'company_name': 'شركة مارين لاستيراد قطع غيار السيارات و زيوتها',
+        'invoice_no': record.invoice_no,
+        'date': invoice_date,
+        'payment_type':  'آجلة',
+        'customer_name': record.source_obj.name if record.source_obj else '',
+        'customer_info': record.source_obj.address if record.source_obj else '',
+        'items': [],
+        'total': total_amount,
+        'total_in_words': total_in_words,
+        'notes': [
+            '💻 زر موقعنا الإلكتروني الآن واستمتع بالعروض الحصرية: [www.hozma.com]',
+    '📞 لمزيد من التفاصيل، يمكنك الاتصال بنا على الرقم: 123-456-7890.'
+        ]
+    }
+
+    for item in items:
+        invoice_data['items'].append({
+            'pno': item.pno,
+            'name': item.name,
+            'company': item.company,
+            'Asked_quantity': item.Asked_quantity,
+            'Confirmed_quantity': item.Confirmed_quantity,
+            'dinar_unit_price': item.dinar_unit_price,
+            'main_cat': item.main_cat,
+            'sub_cat': item.sub_cat
+        })
+
+    return invoice_data
+
+
+def create_excel_invoice(invoice_data):
+    # Generate the Excel file
+    excel_buffer = BytesIO()
+    workbook = xlsxwriter.Workbook(excel_buffer)
+    worksheet = workbook.add_worksheet('فاتورة')
+
+    # Arabic formatting styles
+    arabic_header_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter',
+        'font_name': 'Arial'
+    })
+
+    arabic_company_format = workbook.add_format({
+        'bold': True,
+        'font_size': 18,
+        'align': 'center',
+        'valign': 'vcenter',
+        'font_name': 'Arial'
+    })
+
+    arabic_info_format = workbook.add_format({
+        'font_size': 14,
+        'align': 'right',
+        'font_name': 'Arial'
+    })
+
+    arabic_table_header_format = workbook.add_format({
+        'bold': True,
+        'font_size': 12,
+        'bg_color': '#DDDDDD',
+        'border': 1,
+        'align': 'center',
+        'font_name': 'Arial'
+    })
+
+    arabic_cell_format = workbook.add_format({
+        'font_size': 12,
+        'border': 1,
+        'align': 'center',
+        'font_name': 'Arial'
+    })
+
+    arabic_right_align_format = workbook.add_format({
+        'font_size': 12,
+        'border': 1,
+        'align': 'right',
+        'font_name': 'Arial'
+    })
+
+    arabic_currency_format = workbook.add_format({
+        'font_size': 12,
+        'border': 1,
+        'align': 'center',
+        'num_format': '#,##0.00 "د.ل"',
+        'font_name': 'Arial'
+    })
+
+    # Write company header (bigger font)
+    worksheet.merge_range('A1:F1', invoice_data['company_name'], arabic_company_format)
+
+    # Write invoice info (bigger cells for invoice number)
+    worksheet.merge_range('A3:B3', f'فاتورة شراء رقم : {invoice_data["invoice_no"]}', arabic_info_format)
+    worksheet.write('C3', f'التاريخ : {invoice_data["date"]}', arabic_info_format)
+    worksheet.write('D3', invoice_data['payment_type'], arabic_info_format)
+
+    # Write customer info (bigger cells for customer name)
+    worksheet.merge_range('A4:B4', f'اسم المورد : {invoice_data["customer_name"]}', arabic_info_format)
+    worksheet.write('C4', invoice_data['customer_info'], arabic_info_format)
+
+    # Write table headers
+    headers = ['رقم الصنف', 'بيان الصنف', 'الكمية المطلوبة', 'الكمية المؤكدة', 'سعر الوحدة', 'التصنيف']
+    for col, header in enumerate(headers):
+        worksheet.write(5, col, header, arabic_table_header_format)
+
+    # Write items
+    row = 6
+    for item in invoice_data['items']:
+        worksheet.write(row, 0, item['pno'], arabic_cell_format)
+        worksheet.write(row, 1, f"{item['name']} / {item['company'] if item['company'] else ''}", arabic_right_align_format)
+        worksheet.write(row, 2, item['Asked_quantity'], arabic_cell_format)
+        worksheet.write(row, 3, item['Confirmed_quantity'] if item['Confirmed_quantity'] else '-', arabic_cell_format)
+        worksheet.write(row, 4, item['dinar_unit_price'], arabic_currency_format)
+        worksheet.write(row, 5, f"{item['main_cat']} / {item['sub_cat']}", arabic_cell_format)
+        row += 1
+
+    # Write total amount in Libyan Dinar
+    worksheet.write(row, 3, 'المبلغ الإجمالي:', arabic_table_header_format)
+    worksheet.write(row, 4, invoice_data['total'], arabic_currency_format)
+    row += 2
+
+    # Write total in words (Libyan Dinar)
+    worksheet.merge_range(f'A{row+1}:F{row+1}', f'فقط {invoice_data["total_in_words"]}', arabic_info_format)
+    row += 2
+
+    # Write notes
+    for note in invoice_data['notes']:
+        worksheet.write(row, 0, note, arabic_right_align_format)
+        row += 1
+
+    # Adjust column widths (larger for Arabic text)
+    worksheet.set_column('A:A', 15)  # Wider for item numbers
+    worksheet.set_column('B:B', 40)  # Much wider for Arabic descriptions
+    worksheet.set_column('C:C', 20)  # Quantity columns wider
+    worksheet.set_column('D:D', 20)
+    worksheet.set_column('E:E', 20)  # Price column
+    worksheet.set_column('F:F', 25)  # Category column
+
+    workbook.close()
+    excel_buffer.seek(0)
+
+    return excel_buffer
+
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def create_mainitem(request):
+    data = request.data.copy()
+
+    source_id = data.get("source")
+    buyprice = data.get("buyprice")
+
+    if not source_id:
+        return Response({"error": "معرف المصدر مفقود"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        source = almogOil_models.AllSourcesTable.objects.get(id=source_id)
+    except almogOil_models.AllSourcesTable.DoesNotExist:
+        return Response({"error": "المصدر غير موجود"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        comstistion = float(source.comstistion or 0)
+        buyprice = float(buyprice or 0)
+        costprice = comstistion * buyprice
+        data["costprice"] = costprice
+    except (TypeError, ValueError):
+        return Response({"error": "بيانات الشراء أو النسبة غير صالحة"}, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = products_serializers.MainitemSerializer(data=data)
+    if serializer.is_valid():
+        instance = serializer.save()
+        return Response({
+            "message": "تم إنشاء العنصر بنجاح.",
+            "data": products_serializers.MainitemSerializer(instance).data
+        }, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["PUT", "PATCH"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def update_mainitem(request, pk):
+    try:
+        instance = almogOil_models.Mainitem.objects.get(pk=pk)
+    except almogOil_models.Mainitem.DoesNotExist:
+        return Response({"error": "Mainitem not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = products_serializers.MainitemSerializer(instance, data=request.data, partial=(request.method == "PATCH"))
+    if serializer.is_valid():
+        instance = serializer.save()
+        return Response({
+            "message": "Mainitem updated successfully.",
+            "data":products_serializers.MainitemSerializer(instance).data
+        }, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])  # No authentication required
+def register_source_user(request):
+    required_fields = ['username', 'password', 'name']
+
+    for field in required_fields:
+        if field not in request.data:
+            return Response({field: "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    username = request.data.get('username')
+    if almogOil_models.AllSourcesTable.objects.filter(username=username).exists():
+        return Response({"username": "This username is already taken."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = almogOil_models.AllSourcesTable.objects.create(
+            username=username,
+            password=make_password(request.data['password']),
+            name=request.data.get('name', ''),
+            email=request.data.get('email', ''),
+            mobile=request.data.get('mobile', ''),
+            type='source'  # Enforce type as "source"
+        )
+        return Response({"message": "Source user created successfully."}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)   
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def show_all_sources(request):
+    sources = almogOil_models.AllSourcesTable.objects.all()
+    serializer = almogOil_serializers.SourcesSerializer(sources, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def show_source_details(request, source_id):
+    try:
+        source = almogOil_models.AllSourcesTable.objects.get(clientid=source_id)
+    except almogOil_models.AllSourcesTable.DoesNotExist:
+        return Response({"detail": "Source not found."}, status=404)
+
+    serializer = almogOil_serializers.SourcesSerializer(source)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def edit_source_info(request, source_id):
+    try:
+        source = almogOil_models.AllSourcesTable.objects.get(clientid=source_id)
+    except almogOil_models.AllSourcesTable.DoesNotExist:
+        return Response({"detail": "Source not found."}, status=404)
+
+    serializer = almogOil_serializers.SourcesSerializer(source, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def create_mainitem_by_source(request):
+    source_id = request.data.get("source")
+
+    if not source_id:
+        return Response({"error": "Source ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        source = almogOil_models.AllSourcesTable.objects.get(pk=source_id)
+    except almogOil_models.AllSourcesTable.DoesNotExist:
+        return Response({"error": "Source not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    data = request.data.copy()
+    data["source"] = source.clientid
+
+    # Compute costprice
+    try:
+        comstistion = float(source.commission or 0)
+        buyprice = float(data.get("buyprice") or 0)
+        costprice = buyprice - (buyprice * comstistion)  # Round to 4 decimal places
+        data["costprice"] = costprice
+    except (TypeError, ValueError):
+        return Response({"error": "Invalid buyprice or comstistion."}, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = products_serializers.MainitemSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save(source=source)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

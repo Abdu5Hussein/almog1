@@ -30,7 +30,8 @@ urlpatterns = [
     path('api/products/<int:id>/get-images',api_views.get_product_images,name="product-get-images"),
     #path('api/preorders/', api_views.show_all_preorders, name='show_all_preorders'),
     path('api/confirm-or-update-preorder-items/', HozmaApi_views.confirm_or_update_preorder_items, name='confirm_or_update_preorder_items'),
-    
+    path('api/mainitems/create/', HozmaApi_views.create_mainitem, name='create_mainitem'),
+    path('api/mainitems/<int:pk>/update/', HozmaApi_views.update_mainitem, name='update_mainitem'),
     path('api/confirm-or-update-preorder-items-buy-source/', HozmaApi_views.confirm_or_update_preorderBuy_items, name='confirm_or_update_preorderBuy_items'),
     path('api/preorders/', api_views.show_preorders, name='show_all_preorders'),
     path('api/preorders-buy/', HozmaApi_views.show_preordersBuy, name='show_all_preorders'),
@@ -40,5 +41,14 @@ urlpatterns = [
     path('api/full_Sell_invoice_create_item/', HozmaApi_views.full_Sell_invoice_create_item, name='full_Sell_invoice_create_item'),
     path('preorders-buy/', views.preorders_buy_page, name='preorders_buy_page'),
     path('preorders-buy/<str:invoice_no>/', views.preorder_buy_detail, name='preorder-detail'),
-    
+    path('send_unsent_invoices/', HozmaApi_views.send_unsent_invoices, name='send_unsent_invoices'),
+    path('products/add/<int:clientid>/', views.mainitem_create_page, name='mainitem_create_page'),
+    path('register-source/', views.source_register_view, name='source-register'),
+    path('api/show_all_sources/', HozmaApi_views.show_all_sources, name='show_all_sources'),
+    path('api/show_source_details/<int:source_id>/', HozmaApi_views.show_source_details, name='show_source_details'),
+    path('api/mainitem/create/', HozmaApi_views.create_mainitem_by_source, name='create_mainitem_by_source'),
+    path('api/edit_source_info/<int:source_id>/', HozmaApi_views.edit_source_info, name='edit_source_info'),
+    path('Handle-source/', views.source_dashboard, name='source_dashboard'),
 ]
+
+

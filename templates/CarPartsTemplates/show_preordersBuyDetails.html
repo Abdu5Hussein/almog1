@@ -14,6 +14,8 @@
       --danger-color: #e74c3c;
       --warning-color: #f39c12;
       --success-color: #2ecc71;
+      --company-primary: #2c3e50; /* Adjust to your company colors */
+      --company-secondary: #e74c3c;
     }
 
     body {
@@ -75,6 +77,105 @@
       border-radius: 0 0 10px 10px;
     }
 
+    /* Print-specific styles */
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+        font-size: 12pt;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .order-header, .order-items {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+      }
+
+      .print-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--company-primary);
+      }
+
+      .company-logo {
+        height: 70px;
+        width: auto;
+      }
+
+      .print-title {
+        text-align: center;
+        color: var(--company-primary);
+        margin: 10px 0;
+      }
+
+      .print-footer {
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid #ddd;
+        font-size: 10pt;
+        text-align: center;
+        color: #666;
+      }
+
+      .print-watermark {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        opacity: 0.1;
+        font-size: 80pt;
+        color: var(--company-primary);
+        transform: rotate(-30deg);
+        z-index: -1;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        padding: 8px;
+        border: 1px solid #ddd;
+      }
+
+      th {
+        background-color: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .total-row td {
+        background-color: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+
+    /* Hide print elements on screen */
+    .print-header,
+    .print-footer,
+    .print-watermark {
+      display: none;
+    }
+
     /* Edit Mode Styles */
     .edit-mode-active .quantity-input {
       display: inline-block !important;
@@ -118,25 +219,24 @@
     .edit-mode-active .table tr:hover td {
       background-color: rgba(255, 193, 7, 0.1);
     }
-
-    @media print {
-      .no-print {
-        display: none !important;
-      }
-
-      body {
-        background-color: white;
-        padding: 0;
-      }
-
-      .order-header, .order-items {
-        box-shadow: none;
-        border: 1px solid #dee2e6;
-      }
-    }
   </style>
 </head>
 <body>
+  <!-- Print Header (only shows when printing) -->
+  <div class="print-header">
+    <div>
+      <img src="{% static 'images/company-logo.png' %}" alt="Company Logo" class="company-logo">
+    </div>
+    <div>
+      <h5>شركة حسونة للتجارة العامة</h5>
+      <p>تلفون: 123456789 | البريد الإلكتروني: info@company.com</p>
+    </div>
+  </div>
+
+  <div class="print-watermark">
+    CONFIDENTIAL
+  </div>
+
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 no-print">
       <a href="/hozma/preorders-buy/" class="btn btn-outline-secondary">
@@ -146,6 +246,8 @@
         <i class="bi bi-printer"></i> طباعة
       </button>
     </div>
+
+    <h2 class="print-title no-print">تفاصيل طلب الشراء</h2>
 
     <div class="order-header">
       <div class="row">
@@ -176,7 +278,7 @@
               <th>الاسم</th>
               <th>الشركة</th>
               <th>الكمية المطلوبة</th>
-              <th>الكمية المؤكدة</th>
+              <th class="no-print">الكمية المؤكدة</th>
               <th>سعر الوحدة</th>
               <th>الإجمالي</th>
             </tr>
@@ -186,7 +288,8 @@
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="5" class="text-end">الإجمالي الكلي:</td>
+              <td colspan="4" class="text-end">الإجمالي الكلي:</td>
+              <td class="no-print"></td>
               <td id="orderTotal">0.00</td>
             </tr>
           </tfoot>
@@ -203,6 +306,11 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <div class="print-footer">
+      <p>شكراً لتعاملكم معنا | تم إنشاء هذه الوثيقة بتاريخ: <span id="printDate"></span></p>
+      <p>هذه الوثيقة سرية ومخصصة للاستخدام الداخلي فقط</p>
     </div>
 
     <div class="action-buttons no-print">
@@ -267,6 +375,9 @@
       let currentOrder = null;
       let originalQuantities = {};
 
+      // Set print date
+      document.getElementById('printDate').textContent = new Date().toLocaleDateString('ar-EG');
+
       // Initialize modals
       const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
       const rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
@@ -317,7 +428,7 @@
                 <td>${item.name}</td>
                 <td>${item.company || 'غير محدد'}</td>
                 <td class="asked-quantity">${item.Asked_quantity}</td>
-                <td>
+                <td class="no-print">
                   <span class="confirmed-quantity quantity-display">${item.Confirmed_quantity || item.Asked_quantity}</span>
                   <input type="number" min="0" class="form-control quantity-input d-none" 
                          value="${item.Confirmed_quantity || item.Asked_quantity}" 
@@ -399,75 +510,75 @@
       }
 
       async function saveChanges() {
-    const itemQuantities = [];
-    let hasChanges = false;
-    
-    // Collect all changed quantities
-    document.querySelectorAll('.quantity-input').forEach(input => {
-        const itemNo = input.dataset.itemNo;
-        const newQuantity = parseInt(input.value);
-        const originalQuantity = parseInt(input.dataset.original);
+        const itemQuantities = [];
+        let hasChanges = false;
         
-        // Only include items with actual changes
-        if (newQuantity !== originalQuantity) {
-            itemQuantities.push({
-                item_no: itemNo.toString(),  // Ensure string type
-                new_quantity: newQuantity
-            });
-            hasChanges = true;
-        }
-    });
-
-    if (!hasChanges) {
-        alert("لم تقم بإجراء أي تغييرات على الكميات.");
-        exitEditMode();
-        return;
-    }
-
-    // Prepare the complete request payload
-    const payload = {
-        invoice_no: currentOrder.invoice_no.toString(),
-        action_type: "update",
-        item_quantities: itemQuantities
-    };
-
-    console.log("Sending update payload:", payload); // For debugging
-
-    try {
-        const response = await customFetch('http://45.13.59.226/hozma/api/confirm-or-update-preorder-items-buy-source/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
+        // Collect all changed quantities
+        document.querySelectorAll('.quantity-input').forEach(input => {
+          const itemNo = input.dataset.itemNo;
+          const newQuantity = parseInt(input.value);
+          const originalQuantity = parseInt(input.dataset.original);
+          
+          // Only include items with actual changes
+          if (newQuantity !== originalQuantity) {
+              itemQuantities.push({
+                  item_no: itemNo.toString(),  // Ensure string type
+                  new_quantity: newQuantity
+              });
+              hasChanges = true;
+          }
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "فشل في تحديث الكميات");
+        if (!hasChanges) {
+          alert("لم تقم بإجراء أي تغييرات على الكميات.");
+          exitEditMode();
+          return;
         }
 
-        const result = await response.json();
-        console.log("Update successful:", result); // For debugging
-        
-        alert("تم تحديث الكميات بنجاح!");
-        loadOrderDetails(currentOrder.invoice_no);
-        exitEditMode();
-        
-    } catch (error) {
-        console.error('خطأ في تحديث الكميات:', error);
-        
-        // More detailed error message
-        let errorMessage = 'فشل في تحديث الكميات';
-        if (error.message.includes("Failed to fetch")) {
+        // Prepare the complete request payload
+        const payload = {
+          invoice_no: currentOrder.invoice_no.toString(),
+          action_type: "update",
+          item_quantities: itemQuantities
+        };
+
+        console.log("Sending update payload:", payload); // For debugging
+
+        try {
+          const response = await customFetch('http://45.13.59.226/hozma/api/confirm-or-update-preorder-items-buy-source/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "فشل في تحديث الكميات");
+          }
+
+          const result = await response.json();
+          console.log("Update successful:", result); // For debugging
+          
+          alert("تم تحديث الكميات بنجاح!");
+          loadOrderDetails(currentOrder.invoice_no);
+          exitEditMode();
+          
+        } catch (error) {
+          console.error('خطأ في تحديث الكميات:', error);
+          
+          // More detailed error message
+          let errorMessage = 'فشل في تحديث الكميات';
+          if (error.message.includes("Failed to fetch")) {
             errorMessage += " - تعذر الاتصال بالخادم";
-        } else if (error.message) {
+          } else if (error.message) {
             errorMessage += `: ${error.message}`;
+          }
+          
+          alert(errorMessage);
         }
-        
-        alert(errorMessage);
-    }
-}
+      }
 
       async function confirmOrder() {
         confirmModal.hide();

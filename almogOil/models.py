@@ -83,6 +83,7 @@ class AllSourcesTable(models.Model):
     # New fields
     username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
     password = models.CharField(max_length=255,null=False)  # This will store the hashed password
+    commission = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
 
 
 

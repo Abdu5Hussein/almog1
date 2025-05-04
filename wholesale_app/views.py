@@ -6,8 +6,7 @@ from rest_framework import status
 
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
-import json
-
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -54,6 +53,7 @@ from almogOil import serializers as almogOil_serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password, check_password
+from products import serializers as products_serializers
 
 
 
@@ -134,3 +134,54 @@ def preorder_buy_detail(request, invoice_no):
 
 def preorders_buy_page(request):
     return render(request, 'CarPartsTemplates/show_preordersBuy.html')
+
+
+class MainitemViewSet(viewsets.ModelViewSet):
+    queryset = almogOil_models.Mainitem.objects.all()
+    serializer_class = products_serializers.MainitemSerializer
+
+    def perform_create(self, serializer):
+        # Here you can customize or log the creation process if needed
+        serializer.save()
+
+    def perform_update(self, serializer):
+        # Here you can customize or log the update process if needed
+        serializer.save()
+
+
+
+def mainitem_create_page(request, clientid):
+    return render(request, 'CarPartsTemplates/source/mainitem_create.html')         
+
+
+def source_register_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        mobile = request.POST.get('mobile')
+
+        # Check if username already exists
+        if almogOil_models.AllSourcesTable.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return render(request, 'source_register.html')
+
+        # Create the source user
+        almogOil_models.AllSourcesTable.objects.create(
+            username=username,
+            password=make_password(password),
+            name=name,
+            email=email,
+            mobile=mobile,
+            type='source'
+        )
+        messages.success(request, 'Source user registered successfully!')
+        return redirect('source-register')  # Reload the form or redirect elsewhere
+
+    return render(request, 'CarPartsTemplates/source/source_register.html')
+
+
+
+def source_dashboard(request):
+    return render(request, 'CarPartsTemplates/source/edit-source.html')

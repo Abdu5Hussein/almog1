@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل مصدر جديد</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        .registration-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-top: 50px;
+            max-width: 600px;
+        }
+        
+        .registration-header {
+            color: var(--secondary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--secondary-color);
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ced4da;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-register {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .btn-register:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .alert-messages {
+            margin-bottom: 25px;
+        }
+        
+        .alert-error {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .registration-card {
+                margin-top: 20px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container d-flex justify-content-center">
+        <div class="registration-card">
+            <div class="registration-header">
+                <h2>
+                    <i class="fas fa-user-plus me-2"></i>تسجيل مصدر جديد
+                </h2>
+                <p class="text-muted">املأ النموذج أدناه لإنشاء حساب جديد</p>
+            </div>
+            
+            <div class="alert-messages">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+                            <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %} me-2"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label">اسم المستخدم*</label>
+                    <input type="text" class="form-control" name="username" placeholder="أدخل اسم المستخدم" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">كلمة المرور*</label>
+                    <input type="password" class="form-control" name="password" placeholder="أدخل كلمة المرور" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">الاسم الكامل</label>
+                    <input type="text" class="form-control" name="name" placeholder="أدخل الاسم الكامل">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" class="form-control" name="email" placeholder="أدخل البريد الإلكتروني">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">رقم الجوال</label>
+                    <input type="text" class="form-control" name="mobile" placeholder="أدخل رقم الجوال">
+                </div>
+                
+                <button type="submit" class="btn-register">
+                    <i class="fas fa-user-plus me-2"></i>تسجيل الحساب
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -241,3 +241,6 @@ class PreOrderItemsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.PreOrderItemsTable
         fields = "__all__"
+
+
+        

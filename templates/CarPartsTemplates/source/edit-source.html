@@ -1,0 +1,477 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المصادر</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        .dashboard-container {
+            margin-top: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            border: none;
+        }
+        
+        .card-header {
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: 500;
+            border: none;
+        }
+        
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .btn-edit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 15px;
+            transition: all 0.2s;
+        }
+        
+        .btn-edit:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .form-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .section-title {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--secondary-color);
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-submit {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+            width: 100%;
+            max-width: 200px;
+            margin-top: 20px;
+        }
+        
+        .btn-submit:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+        
+        .alert-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+        
+        .alert-error {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container dashboard-container">
+        <h1 class="text-center mb-4">
+            <i class="fas fa-user-tie me-2"></i>لوحة تحكم المصادر
+        </h1>
+        
+        <div class="alert-message" id="alertMessage"></div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list me-2"></i>قائمة المصادر
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>الاسم</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>الهاتف</th>
+                                <th>الإجراءات</th>
+                                <th>اضافه المنتجات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="source-table-body">
+                            <!-- Loading state -->
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">جاري التحميل...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">جاري تحميل بيانات المصادر...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" id="edit-form-card" style="display: none;">
+            <div class="card-header">
+                <i class="fas fa-edit me-2"></i>تعديل بيانات المصدر
+            </div>
+            <div class="card-body">
+                <form id="edit-source-form">
+                    <input type="hidden" id="source-id">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-info-circle"></i>المعلومات الأساسية
+                                </h4>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">الاسم الكامل</label>
+                                    <input type="text" class="form-control" id="name" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">البريد الإلكتروني</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">العنوان</label>
+                                    <input type="text" class="form-control" id="address" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">الموقع الإلكتروني</label>
+                                    <input type="text" class="form-control" id="website">
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-phone"></i>معلومات الاتصال
+                                </h4>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">رقم الهاتف</label>
+                                    <input type="text" class="form-control" id="phone">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">رقم الجوال</label>
+                                    <input type="text" class="form-control" id="mobile">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                          
+                            
+                            
+                                
+                                <div class="form-group">
+                                    <label class="form-label">العمولة</label>
+                                    <input type="number" step="0.01" class="form-control" id="commission">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                       
+                        
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-cog"></i>إعدادات إضافية
+                                </h4>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="client_stop">
+                                    <label class="form-check-label" for="client_stop">إيقاف العميل</label>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="curr_flag">
+                                    <label class="form-check-label" for="curr_flag">العلم الحالي</label>
+                                </div>
+                                
+                                
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-save me-2"></i>حفظ التعديلات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            // Load all sources when page loads
+            loadSources();
+            
+            // Handle form submission
+            $('#edit-source-form').on('submit', function(e) {
+                e.preventDefault();
+                updateSourceInfo();
+            });
+        });
+        
+        // Fetch all sources and display them in the table
+        async function loadSources() {
+            try {
+                const response = await customFetch('/hozma/api/show_all_sources/');
+                const data = await response.json();
+                const tableBody = $('#source-table-body');
+                tableBody.empty();
+                
+                if (data.length === 0) {
+                    tableBody.append(`
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="fas fa-box-open fa-2x mb-2"></i>
+                                <p>لا توجد مصادر متاحة</p>
+                            </td>
+                        </tr>
+                    `);
+                    return;
+                }
+                
+                data.forEach(source => {
+    const row = `
+        <tr>
+            <td>${source.name || 'غير متوفر'}</td>
+            <td>${source.email || 'غير متوفر'}</td>
+            <td>${source.phone || 'غير متوفر'}</td>
+            <td>
+                <button class="btn btn-edit" onclick="fetchSourceDetails(${source.clientid})">
+                    <i class="fas fa-edit me-1"></i> تعديل
+                </button>
+            </td>
+            <td>
+                <a href="/hozma/products/add/${source.clientid}/" class="btn btn-success">
+                    <i class="fas fa-plus me-1"></i> إضافة
+                </a>
+            </td>
+        </tr>
+    `;
+    tableBody.append(row);
+});
+            } catch (error) {
+                console.error("Error loading sources:", error);
+                $('#source-table-body').html(`
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-danger">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>حدث خطأ في تحميل المصادر</p>
+                            <button class="btn btn-sm btn-primary" onclick="loadSources()">
+                                <i class="fas fa-sync-alt me-1"></i> إعادة المحاولة
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            }
+        }
+        
+        // Fetch and display source details in the edit form
+        async function fetchSourceDetails(id) {
+            try {
+                const response = await customFetch(`/hozma/api/show_source_details/${id}/`);
+                const data = await response.json();
+                
+                // Populate form fields
+                $('#source-id').val(id);
+                $('#name').val(data.name || '');
+                $('#address').val(data.address || '');
+                $('#email').val(data.email || '');
+                $('#website').val(data.website || '');
+                $('#phone').val(data.phone || '');
+                $('#mobile').val(data.mobile || '');
+               
+                $('#client_stop').prop('checked', data.client_stop || false);
+                $('#curr_flag').prop('checked', data.curr_flag || false);
+                $('#permissions').val(data.permissions || '');
+              
+                $('#commission').val(data.commission || '');
+                
+                // Show the edit form
+                $('#edit-form-card').show();
+                $('html, body').animate({
+                    scrollTop: $('#edit-form-card').offset().top
+                }, 500);
+                
+            } catch (error) {
+                console.error("Error fetching source details:", error);
+                showAlert('حدث خطأ في جلب بيانات المصدر', 'error');
+            }
+        }
+        
+        // Update source information
+  async function updateSourceInfo() {
+    const sourceId = $('#source-id').val();
+
+    const data = {
+        name: $('#name').val(),
+        email: $('#email').val(),
+        address: $('#address').val(),
+        website: $('#website').val(),
+        phone: $('#phone').val(),
+        mobile: $('#mobile').val(),
+        last_transaction_details: $('#last_transaction_details').val(),
+        last_transaction_amount: $('#last_transaction_amount').val(),
+        last_transaction: $('#last_transaction').val(),
+        accountcurr: $('#accountcurr').val(),
+        type: $('#type').val(),
+        category: $('#category').val(),
+        commission: $('#commission').val(),
+        loan_period: $('#loan_period').val(),
+        loan_limit: $('#loan_limit').val(),
+        loan_day: $('#loan_day').val(),
+        subtype: $('#subtype').val(),
+        client_stop: $('#client_stop').is(':checked'),
+        curr_flag: $('#curr_flag').is(':checked'),
+        permissions: $('#permissions').val(),
+        other: $('#other').val()
+    };
+    console.log('Sending data:', data);
+
+    try {
+        const response = await fetch(`/hozma/api/edit_source_info/${sourceId}/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            $('#alertMessage').html(`<div class="alert alert-success">تم تحديث المصدر بنجاح</div>`);
+            loadSources();  // Refresh table
+            $('#edit-form-card').hide();
+        } else {
+            $('#alertMessage').html(`<div class="alert alert-danger">فشل في تحديث البيانات: ${JSON.stringify(result)}</div>`);
+        }
+    } catch (error) {
+        console.error("Error updating source:", error);
+        $('#alertMessage').html(`<div class="alert alert-danger">حدث خطأ أثناء تحديث البيانات</div>`);
+    }
+}
+
+        
+        // Show alert message
+        function showAlert(message, type) {
+            const alertDiv = $('#alertMessage');
+            alertDiv.text(message);
+            alertDiv.removeClass('alert-success alert-error').addClass(`alert-${type}`);
+            alertDiv.show();
+            
+            setTimeout(() => {
+                alertDiv.fadeOut();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

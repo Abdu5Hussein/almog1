@@ -57,8 +57,8 @@ def check_unsent_messages():
                 'total': total_amount,
                 'total_in_words': '',
                 'notes': [
-                    'لا يتم ترجيح أي اصناف بالفاتورة بخصوص السعر',
-                    'يجب استلام البضاعة خلال 3 أيام من تاريخ الفاتورة'
+                     '💻 زر موقعنا الإلكتروني الآن واستمتع بالعروض الحصرية: [www.hozma.com]',
+    '📞 لمزيد من التفاصيل، يمكنك الاتصال بنا على الرقم: 123-456-7890.'
                 ]
             }
 
@@ -199,6 +199,7 @@ def check_unsent_messages():
             if success:
                 print(f"[✅ Scheduler] Sent invoice {invoice_data['invoice_no']} to {phone}")
                 record.send = True
+                record.send_date = timezone.now()
                 record.save()
             else:
                 print(f"[❌ Scheduler] Failed to send invoice {invoice_data['invoice_no']} to {phone}")
@@ -208,7 +209,7 @@ def check_unsent_messages():
             continue
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(check_unsent_messages, 'interval', minutes=0.5)
+    scheduler.add_job(check_unsent_messages, 'interval', minutes=120)
     scheduler.start()
     print("✅ Scheduler started successfully.")
 
