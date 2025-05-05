@@ -412,7 +412,9 @@
                 <label for="json_description" class="form-label">
                   <i class="fas fa-code"></i>وصف JSON
                 </label>
-                <textarea class="form-control" id="json_description" name="json_description" rows="4" placeholder='{"key": "value"}'></textarea>
+                <div id="json-fields"></div>
+                <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="addJsonField()">+ حقل جديد</button>
+                <input type="hidden" name="json_description" id="json_description">
                 <small class="text-muted">يجب أن يكون بتنسيق JSON صالح</small>
               </div>
             </div>
@@ -425,10 +427,10 @@
               <div class="row">
                 <div class="col-md-6">
                   <div class="form-group">
-                    <label for="costprice" class="form-label">
-                      <i class="fas fa-money-bill-alt"></i>سعر التكلفة
+                    <label for="buyprice" class="form-label">
+                      <i class="fas fa-money-bill-alt"></i>سعر البيع
                     </label>
-                    <input type="number" step="0.01" class="form-control" id="costprice" name="costprice" placeholder="أدخل سعر التكلفة">
+                    <input type="number" step="0.01" class="form-control" id="buyprice" name="buyprice" placeholder="أدخل سعر البيع">
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -532,365 +534,378 @@
     });
     
     // Single item form submission
-    document.getElementById("mainitem-form").addEventListener("submit", async function(event) {
-      event.preventDefault();
-      const form = event.target;
-      const formData = new FormData(form);
-      const data = {};
-      
-      for (let [key, value] of formData.entries()) {
-        data[key] = value || null;
-      }
+    function addJsonField(key = '', value = '') {
+    const container = document.getElementById('json-fields');
+    const div = document.createElement('div');
+    div.className = 'd-flex mb-2';
 
-      // Handle JSON description
-      if (data.json_description) {
-        try {
-          data.json_description = JSON.parse(data.json_description);
-        } catch {
-          showResponse("JSON غير صالح", "error");
-          return;
-        }
-      }
+    div.innerHTML = `
+      <input type="text" class="form-control me-2" placeholder="المفتاح" value="${key}" oninput="updateJsonHiddenInput()" />
+      <input type="text" class="form-control me-2" placeholder="القيمة" value="${value}" oninput="updateJsonHiddenInput()" />
+      <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); updateJsonHiddenInput()">-</button>
+    `;
 
+    container.appendChild(div);
+    updateJsonHiddenInput();
+  }
+
+  function updateJsonHiddenInput() {
+    const container = document.getElementById('json-fields');
+    const inputs = container.querySelectorAll('input');
+    const json = {};
+
+    for (let i = 0; i < inputs.length; i += 2) {
+      const key = inputs[i].value.trim();
+      const value = inputs[i + 1].value.trim();
+      if (key) json[key] = value;
+    }
+
+    document.getElementById('json_description').value = JSON.stringify(json);
+  }
+
+  document.getElementById("mainitem-form").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const form = event.target;
+    updateJsonHiddenInput(); // Make sure the hidden input is updated before reading it
+
+    const formData = new FormData(form);
+    const data = {};
+
+    for (let [key, value] of formData.entries()) {
+      data[key] = value || null;
+    }
+
+    // Handle JSON description
+    if (data.json_description) {
       try {
-        const response = await customFetch("/hozma/api/mainitems/create/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-
-        const result = await response.json();
-        
-        if (response.ok) {
-          showResponse(result.message || "تم إنشاء العنصر بنجاح", "success");
-          form.reset();
-        } else {
-          showResponse(result.message || "حدث خطأ أثناء إنشاء العنصر", "error");
-        }
-      } catch (error) {
-        showResponse("حدث خطأ في الاتصال بالخادم", "error");
-        console.error("Error:", error);
+        data.json_description = JSON.parse(data.json_description);
+      } catch {
+        showResponse("JSON غير صالح", "error");
+        return;
       }
-    });
+    }
+
+  
+
+    try {
+      const response = await customFetch("http://45.13.59.226/hozma/api/mainitem/create/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+     
+
+      if (response.ok) {
+        showResponse(result.message || "تم إنشاء العنصر بنجاح", "success");
+        form.reset();
+        document.getElementById('json-fields').innerHTML = ""; // Clear JSON fields
+      } else {
+        showResponse(result.message || "حدث خطأ أثناء إنشاء العنصر", "error");
+      }
+    } catch (error) {
+      showResponse("حدث خطأ في الاتصال بالخادم", "error");
+      console.error("Error:", error);
+    }
+  });
     
     // File upload functionality
     function setupFileUpload() {
-      const dropArea = document.getElementById('drop-area');
-      const fileInput = document.getElementById('file-input');
-      const fileInfo = document.getElementById('file-info');
-      const fileName = document.getElementById('file-name');
-      const removeFile = document.getElementById('remove-file');
-      const uploadBtn = document.getElementById('upload-btn');
-      const progressBar = document.getElementById('progress-bar');
-      
-      let selectedFile = null;
-      
-      // Click event for drop area
-      dropArea.addEventListener('click', () => fileInput.click());
-      
-      // File input change event
-      fileInput.addEventListener('change', function(e) {
-        if (e.target.files.length) {
-          handleFileSelection(e.target.files[0]);
-        }
-      });
-      
-      // Drag and drop events
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, preventDefaults, false);
-      });
-      
-      function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      
-      ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, highlight, false);
-      });
-      
-      ['dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, unhighlight, false);
-      });
-      
-      function highlight() {
-        dropArea.style.borderColor = '#3498db';
-        dropArea.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
-      }
-      
-      function unhighlight() {
-        dropArea.style.borderColor = '#ced4da';
-        dropArea.style.backgroundColor = '#f8f9fa';
-      }
-      
-      // Handle dropped files
-      dropArea.addEventListener('drop', function(e) {
-        const dt = e.dataTransfer;
-        const file = dt.files[0];
-        handleFileSelection(file);
-      });
-      
-      // Remove file
-      removeFile.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        selectedFile = null;
-        fileInput.value = '';
-        fileInfo.style.display = 'none';
-        uploadBtn.disabled = true;
-      });
-      
-      // Upload button click
-      uploadBtn.addEventListener('click', function() {
-        if (selectedFile) {
-          uploadFile(selectedFile);
-        }
-      });
-      
-      function handleFileSelection(file) {
-        const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-        
-        if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/)) {
-          showResponse('الرجاء اختيار ملف إكسل صالح', 'error');
-          return;
-        }
-        
-        selectedFile = file;
-        fileName.textContent = file.name;
-        fileInfo.style.display = 'block';
-        uploadBtn.disabled = false;
-      }
-      
-      async function uploadFile(file) {
-    try {
-        // Show progress bar
-        progressBar.style.display = 'block';
-        const progressBarInner = progressBar.querySelector('.progress-bar');
-        
-        // Read the Excel file
-        const data = await readExcelFile(file, progressBarInner);
-        
-        // Validate data
-        if (!data || data.length === 0) {
-            showResponse('الملف لا يحتوي على بيانات صالحة', 'error');
-            return;
-        }
-        
-        // Extract source ID from URL
-        const pathParts = window.location.pathname.split("/").filter(Boolean);
-        const sourceId = parseInt(pathParts[pathParts.length - 1]);
-        
-        if (isNaN(sourceId)) {
-            showResponse('لا يمكن تحديد معرف المصدر', 'error');
-            return;
-        }
-        
-        // Add source ID to all items
-        data.forEach(item => {
-            item.source = sourceId;
-            
-            // Parse JSON description if exists
-            if (item.json_description && typeof item.json_description === 'string') {
-                try {
-                    item.json_description = JSON.parse(item.json_description);
-                } catch (e) {
-                    console.warn('Failed to parse JSON description', e);
-                    item.json_description = null;
-                }
-            }
-        });
-        
-        // Upload data in batches
-        const batchSize = 10;
-        const results = [];
-        
-        for (let i = 0; i < data.length; i += batchSize) {
-            const batch = data.slice(i, i + batchSize);
-            
-            // Update progress
-            const progress = Math.min(100, Math.round((i / data.length) * 100)); // Fixed missing closing parenthesis
-            progressBarInner.style.width = `${progress}%`;
-            progressBarInner.textContent = `${progress}%`;
-            
-            // Upload batch
-            try {
-                const response = await customFetch("/hozma/api/mainitems/bulk_create/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ items: batch }),
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    results.push(...result.items);
-                } else {
-                    // If batch fails, add error for each item
-                    batch.forEach(item => {
-                        results.push({
-                            pno: item.pno,
-                            success: false,
-                            message: result.message || 'فشل في معالجة الدفعة'
-                        });
-                    });
-                }
-            } catch (error) {
-                batch.forEach(item => {
-                    results.push({
-                        pno: item.pno,
-                        success: false,
-                        message: 'خطأ في الاتصال بالخادم'
-                    });
-                });
-            }
-        }
-        
-        // Complete progress
-        progressBarInner.style.width = '100%';
-        progressBarInner.textContent = '100%';
-        
-        // Show results
-        displayResults(results);
-        
-        // Hide progress bar after delay
-        setTimeout(() => {
-            progressBar.style.display = 'none';
-            progressBarInner.style.width = '0%';
-            progressBarInner.textContent = '';
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Error processing file:', error);
-        showResponse('حدث خطأ أثناء معالجة الملف', 'error');
-        progressBar.style.display = 'none';
+  const dropArea = document.getElementById('drop-area');
+  const fileInput = document.getElementById('file-input');
+  const fileInfo = document.getElementById('file-info');
+  const fileName = document.getElementById('file-name');
+  const removeFile = document.getElementById('remove-file');
+  const uploadBtn = document.getElementById('upload-btn');
+  const progressBar = document.getElementById('progress-bar');
+
+  let selectedFile = null;
+
+ 
+
+  dropArea.addEventListener('click', () => {
+   
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', function(e) {
+    if (e.target.files.length) {
+    
+      handleFileSelection(e.target.files[0]);
     }
+  });
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.addEventListener(eventName, highlight, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, unhighlight, false);
+  });
+
+  function highlight() {
+    dropArea.style.borderColor = '#3498db';
+    dropArea.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
+  }
+
+  function unhighlight() {
+    dropArea.style.borderColor = '#ced4da';
+    dropArea.style.backgroundColor = '#f8f9fa';
+  }
+
+  dropArea.addEventListener('drop', function(e) {
+    const dt = e.dataTransfer;
+    const file = dt.files[0];
+   
+    handleFileSelection(file);
+  });
+
+  removeFile.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+   
+    selectedFile = null;
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    uploadBtn.disabled = true;
+  });
+
+  uploadBtn.addEventListener('click', function() {
+    if (selectedFile) {
+     
+      uploadFile(selectedFile);
+    }
+  });
+
+  function handleFileSelection(file) {
+   
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/)) {
+      console.warn("[ERROR] Invalid file type selected.");
+      showResponse('الرجاء اختيار ملف إكسل صالح', 'error');
+      return;
+    }
+
+    selectedFile = file;
+    fileName.textContent = file.name;
+    fileInfo.style.display = 'block';
+    uploadBtn.disabled = false;
+    
+  }
+
+  async function uploadFile(file) {
+    try {
+     
+      progressBar.style.display = 'block';
+      const progressBarInner = progressBar.querySelector('.progress-bar');
+
+      const data = await readExcelFile(file, progressBarInner);
+      
+
+      if (!data || data.length === 0) {
+        console.warn("[ERROR] No valid data in Excel file.");
+        showResponse('الملف لا يحتوي على بيانات صالحة', 'error');
+        return;
+      }
+
+      const pathParts = window.location.pathname.split("/").filter(Boolean);
+      const sourceId = parseInt(pathParts[pathParts.length - 1]);
+      
+
+      if (isNaN(sourceId)) {
+        showResponse('لا يمكن تحديد معرف المصدر', 'error');
+        return;
+      }
+
+      data.forEach(item => {
+        item.source = sourceId;
+
+        if (item.json_description && typeof item.json_description === 'string') {
+          try {
+            item.json_description = JSON.parse(item.json_description);
+          } catch (e) {
+            console.warn("[WARN] JSON parsing failed for description:", e);
+            item.json_description = null;
+          }
+        }
+      });
+
+      const results = [];
+
+for (let i = 0; i < data.length; i++) {
+  const item = data[i];
+  const progress = Math.min(100, Math.round((i / data.length) * 100));
+  progressBarInner.style.width = `${progress}%`;
+  progressBarInner.textContent = `${progress}%`;
+
+  try {
+   
+
+    const response = await customFetch("http://45.13.59.226/hozma/api/mainitem/create/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(item),
+    });
+
+    const result = await response.json();
+    
+
+    if (response.ok && result.success !== false) {
+      results.push({ ...item, success: true, message: result.message || 'تمت الإضافة بنجاح' });
+    } else {
+      results.push({
+        pno: item.pno,
+        success: false,
+        message: result.message || 'فشل في الإضافة'
+      });
+    }
+  } catch (error) {
+    console.error("[ERROR] Upload failed:", error);
+    results.push({
+      pno: item.pno,
+      success: false,
+      message: 'خطأ في الاتصال بالخادم'
+    });
+  }
 }
 
+
+      progressBarInner.style.width = '100%';
+      progressBarInner.textContent = '100%';
       
-      function readExcelFile(file, progressBar) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          
-          reader.onload = function(e) {
-            try {
-              const data = new Uint8Array(e.target.result);
-              const workbook = XLSX.read(data, { type: 'array' });
-              
-              // Get first sheet
-              const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-              
-              // Convert to JSON
-              const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-              
-              // Update progress
-              progressBar.style.width = '50%';
-              progressBar.textContent = '50%';
-              
-              resolve(jsonData);
-            } catch (error) {
-              reject(error);
-            }
-          };
-          
-          reader.onerror = reject;
-          reader.readAsArrayBuffer(file);
-        });
-      }
-      
-      function displayResults(results) {
-        const resultsBody = document.getElementById('results-body');
-        const bulkResults = document.getElementById('bulk-results');
-        
-        // Clear previous results
-        resultsBody.innerHTML = '';
-        
-        // Add each result to the table
-        results.forEach((result, index) => {
-          const row = document.createElement('tr');
-          
-          if (result.success) {
-            row.classList.add('table-success');
-          } else {
-            row.classList.add('table-danger');
-          }
-          
-          row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${result.pno || 'غير معروف'}</td>
-            <td>${result.success ? 'نجاح' : 'فشل'}</td>
-            <td>${result.message || ''}</td>
-          `;
-          
-          resultsBody.appendChild(row);
-        });
-        
-        // Show summary
-        const successCount = results.filter(r => r.success).length;
-        const totalCount = results.length;
-        
-        // Add summary row
-        const summaryRow = document.createElement('tr');
-        summaryRow.classList.add('table-info');
-        summaryRow.innerHTML = `
-          <td colspan="2"><strong>النتيجة النهائية</strong></td>
-          <td>${successCount}/${totalCount}</td>
-          <td>${Math.round((successCount / totalCount) * 100)}% نجاح</td>
-        `;
-        resultsBody.appendChild(summaryRow);
-        
-        // Show results section
-        bulkResults.style.display = 'block';
-        
-        // Scroll to results
-        bulkResults.scrollIntoView({ behavior: 'smooth' });
-      }
+      displayResults(results);
+
+      setTimeout(() => {
+        progressBar.style.display = 'none';
+        progressBarInner.style.width = '0%';
+        progressBarInner.textContent = '';
+      }, 2000);
+
+    } catch (error) {
+      console.error('[FATAL] Error during upload process:', error);
+      showResponse('حدث خطأ أثناء معالجة الملف', 'error');
+      progressBar.style.display = 'none';
     }
-    
-    function downloadTemplate() {
-      // Create sample data for the template
-      const templateData = [
-        {
-          pno: "89898",
-          itemno: "ITEM001",
-          itemmain: "القسم الرئيسي",
-          itemsubmain: "القسم الفرعي",
-          itemname: "اسم العنصر",
-          short_name: "اسم مختصر",
-          itemthird: "التصنيف الثالث",
-          itemsize: "الحجم",
-          showed: 50,
-          json_description: '{"ملاحظة": "مثال على الوصف"}',
-          costprice: "",
-          buyprice: 120.00
-        },
-        {
-          pno: "8543",
-          itemno: "ITEM002",
-          itemmain: "قسم آخر",
-          itemsubmain: "فرعي آخر",
-          itemname: "عنصر آخر",
-          short_name: "مختصر آخر",
-          itemthird: "تصنيف آخر",
-          itemsize: "حجم آخر",
-          showed: 16,
-          json_description: '{"خاصية": "قيمة"}',
-          costprice: "",
-          buyprice: 250.00
+  }
+
+  function readExcelFile(file, progressBar) {
+    return new Promise((resolve, reject) => {
+      
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+          
+          progressBar.style.width = '50%';
+          progressBar.textContent = '50%';
+          resolve(jsonData);
+        } catch (error) {
+          console.error("[ERROR] Error reading Excel file:", error);
+          reject(error);
         }
-      ];
-      
-      // Create worksheet
-      const ws = XLSX.utils.json_to_sheet(templateData);
-      
-      // Create workbook
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "العناصر");
-      
-      // Generate file and download
-      XLSX.writeFile(wb, "نموذج_العناصر_الرئيسية.xlsx");
-      
-      showResponse('تم تحميل النموذج بنجاح', 'success');
-    }
+      };
+
+      reader.onerror = function(err) {
+        console.error("[ERROR] FileReader failed:", err);
+        reject(err);
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function displayResults(results) {
+    const resultsBody = document.getElementById('results-body');
+    const bulkResults = document.getElementById('bulk-results');
+
+    resultsBody.innerHTML = '';
+    results.forEach((result, index) => {
+      const row = document.createElement('tr');
+
+      row.classList.add(result.success ? 'table-success' : 'table-danger');
+
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${result.pno || 'غير معروف'}</td>
+        <td>${result.success ? 'نجاح' : 'فشل'}</td>
+        <td>${result.message || ''}</td>
+      `;
+
+      resultsBody.appendChild(row);
+    });
+
+    const successCount = results.filter(r => r.success).length;
+    const totalCount = results.length;
+
+    const summaryRow = document.createElement('tr');
+    summaryRow.classList.add('table-info');
+    summaryRow.innerHTML = `
+      <td colspan="2"><strong>النتيجة النهائية</strong></td>
+      <td>${successCount}/${totalCount}</td>
+      <td>${Math.round((successCount / totalCount) * 100)}% نجاح</td>
+    `;
+    resultsBody.appendChild(summaryRow);
+
+    bulkResults.style.display = 'block';
+    bulkResults.scrollIntoView({ behavior: 'smooth' });
+
+   
+  }
+}
+
+    
+function downloadTemplate() {
+  // Generate 100 sample items using a loop
+  const templateData = [];
+
+  for (let i = 1; i <= 100; i++) {
+    templateData.push({
+      pno: `23${1000 + i}`,
+      itemno: `24${2000 + i}`,
+      itemmain: `القسم الرئيسي ${i}`,
+      itemsubmain: `القسم الفرعي ${i}`,
+      itemname: `اسم العنصر ${i}`,
+      short_name: `اسم مختصر ${i}`,
+      itemthird: `التصنيف الثالث ${i}`,
+      itemsize: `${i} مل`,
+      showed: Math.floor(Math.random() * 100), // random stock level
+      json_description: JSON.stringify({ ملاحظة: `مثال ${i}` }),
+      costprice: "",
+      buyprice: (50 + i).toFixed(2)
+    });
+  }
+
+  // Create worksheet
+  const ws = XLSX.utils.json_to_sheet(templateData);
+
+  // Create workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "العناصر");
+
+  // Generate file and download
+  XLSX.writeFile(wb, "نموذج_العناصر_الرئيسية.xlsx");
+
+  showResponse('تم تحميل النموذج بنجاح', 'success');
+}
+
     
     function showResponse(message, type) {
       const responseDiv = document.getElementById("response");

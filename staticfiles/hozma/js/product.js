@@ -24,7 +24,7 @@ async function fetchFilteredData(page = 1) {
     console.debug("Full filters being sent:", JSON.stringify(filters, null, 2));
 
     try {
-        const response = await customFetch(`${baseUrl}/api/filter-items`, {
+        const response = await customFetch(`${baseUrl}/hozma/api/producuts/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(filters)
@@ -68,7 +68,7 @@ document.getElementById('noResults').style.display = 'none';
 
 for (const item of items) {
 const row = document.createElement('tr');
-const stock = parseInt(item.itemvalue) || 0;
+const stock = parseInt(item.showed) || 0;
 const cartItem = cart.find(ci => ci.pno === item.pno);
 const cartQuantity = cartItem ? cartItem.quantity : 0;
 
@@ -93,7 +93,7 @@ onchange="updateQuantity('${item.pno}', this.value)">
 </div>
 </td>
 <td>
-<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value, ${item.itemvalue})">
+<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value, ${item.showed})">
   شراء
 </button>
 

@@ -62,6 +62,9 @@ from wholesale_app import serializers as wholesale_serializers
 import xlsxwriter
 from num2words import num2words
 from products import serializers as products_serializers
+import hashlib
+from django.core.cache import cache
+from django.core.paginator import Paginator
 
 def get_last_PreOrderTable_no():
     last_invoice = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
@@ -463,8 +466,7 @@ def full_Sell_invoice_create_item(request):
             except almogOil_models.Mainitem.DoesNotExist:
                 return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            source_phone = product.source.mobile if product.source and product.source.mobile else "218942434823"
-            source_name = product.source.name if product.source else "Unknown"
+            
 
             try:
                 invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
@@ -474,8 +476,16 @@ def full_Sell_invoice_create_item(request):
                 return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
             item_value = int(data.get("itemvalue") or 0)
-            dinar_unit_price = Decimal(product.buyprice or 0)
-            dinar_total_price = dinar_unit_price * item_value
+            if item_value > product.showed:
+                # Handle insufficient quantity
+                return Response({"error": "Insufficient quantity available"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                if item_value < product.showed:
+                  product_showed = product.showed - item_value
+                  product.showed  = product_showed
+                  product.save()
+                  dinar_unit_price = Decimal(product.buyprice or 0)
+                  dinar_total_price = dinar_unit_price * item_value
 
             # Create Sell Item
             item_data = {
@@ -493,9 +503,13 @@ def full_Sell_invoice_create_item(request):
                 'place': product.itemplace,
                 'dinar_unit_price': product.buyprice,
                 'dinar_total_price': dinar_total_price,
-                'prev_quantity': product.itemvalue,
-                'current_quantity': product.itemvalue - item_value,
+                'prev_quantity': product.showed,
+                'current_quantity': product.showed - item_value,
+                
             }
+            client_phone = invoice.client.mobile if invoice.client and invoice.client.mobile else "218942434823"
+            source_name = product.source.name if product.source else "Unknown"
+                    
 
             serializer = almogOil_serializers.PreOrderItemsSerializer(data=item_data)
             if serializer.is_valid():
@@ -516,8 +530,7 @@ def full_Sell_invoice_create_item(request):
                 ).first()
 
                 # If invoice would exceed 200, mark it as sent and create a new one
-                
-                    
+          
                     # force creation of new invoice
                  
                 # If no valid invoice exists, create a new one
@@ -577,31 +590,27 @@ def full_Sell_invoice_create_item(request):
 
                 # === BUY INVOICE LOGIC END ===
 
-                # Send WhatsApp
-                buy_items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=buy_invoice)
-
-                items_details = "\n".join([
-                    f"- {item.name} | الكمية: {item.Asked_quantity} | السعر: {item.dinar_unit_price} | الإجمالي: {item.dinar_total_price}"
-                    for item in buy_items
-                ])
-
                 message_body = (
-                    f"تمت إضافة منتج {product.itemname} إلى فاتورة البيع رقم {data.get('invoice_id')}.\n"
-                    f"📦 تفاصيل فاتورة الشراء رقم {buy_invoice.invoice_no}:\n"
-                    f"{items_details}\n"
-                    f"المجموع الكلي: {buy_invoice.amount}"
-                )
+                      f"👋 مرحبًا، تمت إضافة المنتج ({product.itemname}) إلى فاتورتك رقم {data.get('invoice_id')}.\n"
+                      f"الكمية: {item_value}\n"
+                      f"السعر للوحدة: {product.buyprice}\n"
+                      f"الإجمالي: {dinar_total_price}\n"
+                      f"📦 شكراً لتعاملك معنا!"
+                        )
 
-                response = send_whatsapp_message_via_green_api(source_phone, message_body)
+
+                response = send_whatsapp_message_via_green_api(client_phone, message_body)
 
                 return Response({
                     "message": "Item created successfully.",
                     "item_id": serializer.instance.autoid,
                     "whatsapp_sent": "idMessage" in response if response else False,
-                    "phone_number": source_phone,
+                    "phone_number": client_phone,
                     "buy_invoice_send": buy_invoice.send,
                     "confirmation": buy_invoice.confirmed,
-                    "buy_invoice_id": buy_invoice.invoice_no
+                    "buy_invoice_id": buy_invoice.invoice_no,
+                    "source_name" : source_name,
+                    "left item": product.showed
                 }, status=status.HTTP_201_CREATED)
 
             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
@@ -1135,20 +1144,208 @@ def create_mainitem_by_source(request):
         return Response({"error": "Source not found."}, status=status.HTTP_404_NOT_FOUND)
 
     data = request.data.copy()
-    data["source"] = source.clientid
+    data["source"] = source.clientid  # Set actual client ID
 
     # Compute costprice
     try:
-        comstistion = float(source.commission or 0)
+        commission = float(source.commission or 0)
         buyprice = float(data.get("buyprice") or 0)
-        costprice = buyprice - (buyprice * comstistion)  # Round to 4 decimal places
+        costprice = buyprice - (buyprice * commission)
         data["costprice"] = costprice
     except (TypeError, ValueError):
-        return Response({"error": "Invalid buyprice or comstistion."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Invalid buyprice or commission."}, status=status.HTTP_400_BAD_REQUEST)
 
-    serializer = products_serializers.MainitemSerializer(data=data)
+    pno = data.get("pno")
+    if not pno:
+        return Response({"error": "pno is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Try to get an existing Mainitem with same pno and source
+    try:
+        existing_item = almogOil_models.Mainitem.objects.get(pno=pno, source=source)
+        serializer = products_serializers.MainitemSerializer(existing_item, data=data, partial=True)
+    except almogOil_models.Mainitem.DoesNotExist:
+        serializer = products_serializers.MainitemSerializer(data=data)
+
     if serializer.is_valid():
         serializer.save(source=source)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def web_filter_items(request):
+     if request.method == "POST":
+         try:
+             # Get the filters from the request body
+             filters = request.data  # Decoding bytes and loading JSON
+             cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
+             cached_data = cache.get(cache_key)
+ 
+             if cached_data:
+                 cached_data["cached_flag"] = True
+                 return Response(cached_data, status=status.HTTP_200_OK)
+ 
+             # Initialize the base Q object for filtering
+             filters_q = Q()
+ 
+             # Build the query based on the filters
+             if filters.get('fileid'):
+                 filters_q &= Q(fileid__icontains=filters['fileid'])
+             if filters.get('itemno'):
+                 filters_q &= Q(itemno__icontains=filters['itemno'])
+             if filters.get('itemmain'):
+                 filters_q &= Q(itemmain__icontains=filters['itemmain'])
+             if filters.get('itemsubmain'):
+                 filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
+             if filters.get('engine_no'):
+                 filters_q &= Q(engine_no__icontains=filters['engine_no'])
+             if filters.get('itemthird'):
+                 filters_q &= Q(itemthird__icontains=filters['itemthird'])
+             if filters.get('companyproduct'):
+                 filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
+             if filters.get('itemname'):
+                 filters_q &= Q(itemname__icontains=filters['itemname'])
+             if filters.get('eitemname'):
+                 filters_q &= Q(eitemname__icontains=filters['eitemname'])
+             if filters.get('companyno'):
+                 filters_q &= Q(replaceno__icontains=filters['companyno'])
+             if filters.get('pno'):
+                 filters_q &= Q(pno__icontains=filters['pno'])
+             if filters.get('source'):
+                 filters_q &= Q(ordersource__icontains=filters['source'])
+             if filters.get('model'):
+                 filters_q &= Q(itemthird__icontains=filters['model'])
+             if filters.get('country'):
+                 filters_q &= Q(itemsize__icontains=filters['country'])
+             if filters.get('oem'):
+                 filters_q &= Q(oem_numbers__icontains=filters['oem'])
+ 
+           # Original filters (replacing itemvalue with showed)
+             if filters.get('showed') == "0":
+                filters_q &= Q(showed=0)
+             if filters.get('showed') == ">0":
+                 filters_q &= Q(showed__gt=0)
+
+# New availability logic (based on 'showed' field)
+             availability = filters.get('availability')
+             if availability == "not_available":
+                filters_q &= Q(showed=0)
+             elif availability == "limited":
+                 filters_q &= Q(showed__lte=10, showed__gt=0)
+             elif availability == "available":
+                  filters_q &= Q(showed__gt=10)
+
+# Replacing itemvalue-related logic
+             if filters.get('resvalue') == ">0":
+                 filters_q &= Q(rshowed__gt=0)
+             if filters.get('showed_itemtemp') == "lte":
+                 filters_q &= Q(showed__lte=F('itemtemp'))  # Compare fields
+ 
+             # Apply date range filter on `orderlastdate`
+             fromdate = filters.get('fromdate', '').strip()
+             todate = filters.get('todate', '').strip()
+ 
+             if fromdate and todate:
+                 try:
+                     from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                     to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+                     filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
+                 except ValueError:
+                     return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+ 
+             # Now filter the queryset using the combined Q object
+             queryset = almogOil_models.Mainitem.objects.filter(filters_q).order_by('itemname')
+ 
+             # Serialize the filtered data
+             serializer = products_serializers.MainitemSerializer(queryset, many=True)
+             items_data = serializer.data
+ 
+             # Initialize totals
+             total_itemvalue = total_itemvalueb = total_resvalue = total_cost = total_order = total_buy = 0
+ 
+             # Calculate totals
+             for item in items_data:
+                    # Use safe conversion functions
+                 itemvalue = float(item.get('itemvalue') or 0)
+                 itemvalueb = float(item.get('itemvalueb') or 0)
+                 resvalue = float(item.get('resvalue') or 0)
+                 costprice = float(item.get('costprice') or 0)
+                 orderprice = float(item.get('orderprice') or 0)
+                 buyprice = float(item.get('buyprice') or 0)
+
+ 
+                 total_itemvalue += itemvalue
+                 total_itemvalueb += itemvalueb
+                 total_resvalue += resvalue
+                 total_cost += itemvalue * costprice
+                 total_order += itemvalue * orderprice
+                 total_buy += itemvalue * buyprice
+ 
+             fullTable = filters.get('fullTable')
+             if fullTable:
+                 response = {
+                     "data": items_data,
+                     "fullTable": True,
+                     "last_page": 1,
+                     "total_rows": queryset.count(),
+                     "page_no": 1,
+                     "total_itemvalue": total_itemvalue,
+                     "total_itemvalueb": total_itemvalueb,
+                     "total_resvalue": total_resvalue,
+                     "total_cost": total_cost,
+                     "total_order": total_order,
+                     "total_buy": total_buy,
+                 }
+                 return Response(response)
+ 
+             # Pagination
+             page_number = int(filters.get('page') or 1)
+             page_size = int(filters.get('size') or 20)
+             paginator = Paginator(items_data, page_size)
+             page_obj = paginator.get_page(page_number)
+ 
+             response = {
+                 "data": list(page_obj),
+                 "last_page": paginator.num_pages,
+                 "total_rows": paginator.count,
+                 "page_size": page_size,
+                 "page_no": page_number,
+                 "total_itemvalue": total_itemvalue,
+                 "total_itemvalueb": total_itemvalueb,
+                 "total_resvalue": total_resvalue,
+                 "total_cost": total_cost,
+                 "total_order": total_order,
+                 "total_buy": total_buy,
+                 "cached_flag": False,
+             }
+ 
+             cache.set(cache_key, response, timeout=300)
+             return Response(response)
+ 
+         except json.JSONDecodeError:
+             return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
+         except Exception as e:
+             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+         
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def delete_invoice(request):
+    invoice_no = request.data.get('invoice_no')
+
+    if not invoice_no:
+        return Response({'error': 'invoice_no is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        invoice = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=invoice_no)
+
+        # Delete related items first
+        almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=invoice).delete()
+
+        # Then delete the invoice
+        invoice.delete()
+
+        return Response({'message': 'Invoice and related items deleted successfully.'}, status=status.HTTP_200_OK)
+    except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
+        return Response({'error': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
