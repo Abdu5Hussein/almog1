@@ -49,8 +49,12 @@ urlpatterns = [
     path('api/mainitem/create/', HozmaApi_views.create_mainitem_by_source, name='create_mainitem_by_source'),
     path('api/edit_source_info/<int:source_id>/', HozmaApi_views.edit_source_info, name='edit_source_info'),
     path('Handle-source/', views.source_dashboard, name='source_dashboard'),
+    path('Admin-Dashboard/', views.Admin_Dashboard, name='Admin_Dashboard'),
     path('api/producuts/',HozmaApi_views.web_filter_items , name='producuts_detail'),
     path('api/delete-invoice/', HozmaApi_views.delete_invoice, name='delete-invoice'),
+    path('api/preorder/<int:invoice_no>/delete-items/', HozmaApi_views.delete_preorder_and_items, name='delete-preorder-items-by-invoice-no'),
+     path('api/preorders/delete-all/', HozmaApi_views.delete_all_preorders_and_items, name='delete-all-preorders-and-items'),
 ]
+
 
 

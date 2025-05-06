@@ -135,6 +135,8 @@ def preorder_buy_detail(request, invoice_no):
 def preorders_buy_page(request):
     return render(request, 'CarPartsTemplates/show_preordersBuy.html')
 
+def Admin_Dashboard(request):
+    return render(request, 'CarPartsTemplates/e-commerce admin panel.html')
 
 class MainitemViewSet(viewsets.ModelViewSet):
     queryset = almogOil_models.Mainitem.objects.all()

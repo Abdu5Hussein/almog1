@@ -18,4 +18,5 @@ class AlmogOilConfig(AppConfig):
         start_scheduler()
 
         # ✅ Register Django signals
-        import almogOil.signals  # noqa
+        import almogOil.signals
+        import wholesale_app.signals  # noqa

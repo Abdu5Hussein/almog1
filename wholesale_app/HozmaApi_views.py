@@ -297,7 +297,7 @@ def confirm_or_update_preorder_items(request):
 
         # Process the 'confirm' action
         elif action_type == "confirm":
-            return Buyhandle_confirm_action(preorder)
+            return handle_confirm_action(preorder)
 
         else:
             return Response({"error": "Invalid action_type. Use 'confirm' or 'update'."}, status=status.HTTP_400_BAD_REQUEST)
@@ -338,9 +338,7 @@ def buyhandle_update_action(preorder, item_quantities):
     return Response({"success": True, "message": "PreOrder items updated with new quantities."}, status=status.HTTP_200_OK)
 
 
-
-
-def Buyhandle_confirm_action(preorder):
+def handle_confirm_action(preorder):
     
     # Confirm the PreOrder and move items to SellInvoiceMainItem
     client = preorder.client
@@ -504,8 +502,9 @@ def full_Sell_invoice_create_item(request):
                 'dinar_unit_price': product.buyprice,
                 'dinar_total_price': dinar_total_price,
                 'prev_quantity': product.showed,
-                'current_quantity': product.showed - item_value,
-                
+                "remaining": 0,
+                "returned": 0,
+                'current_quantity': product.showed - item_value,                
             }
             client_phone = invoice.client.mobile if invoice.client and invoice.client.mobile else "218942434823"
             source_name = product.source.name if product.source else "Unknown"
@@ -573,8 +572,11 @@ def full_Sell_invoice_create_item(request):
                         company_no=product.replaceno,
                         Asked_quantity=buyitem_value,
                         date=str(timezone.now().date()),
-                        dinar_unit_price=buy_dinar_unit_price,
-                        dinar_total_price=buy_dinar_total_price,
+                        quantity_unit="",
+                        dinar_unit_price=product.buyprice,
+                        dinar_total_price=dinar_total_price,
+                        cost_unit_price=product.costprice,
+                        cost_total_price=buy_dinar_total_price,
                         prev_quantity=product.itemvalue,
                         invoice_no2=buy_invoice.invoice_no,
                         invoice_no=buy_invoice,
@@ -619,6 +621,7 @@ def full_Sell_invoice_create_item(request):
             return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 
 
@@ -779,8 +782,8 @@ def Buyhandle_confirm_action(preorder):
             quantity=item.Confirmed_quantity or 0,
             quantity_unit="",
             currency="",
-            dinar_unit_price=item.dinar_unit_price or 0,
-            dinar_total_price=item.dinar_total_price or 0,
+            cost_unit_price=item.cost_unit_price or 0,
+            cost_total_price=item.cost_total_price or 0,
             exchange_rate=Decimal('1.0000'),
             buysource=preorder.source_obj,
             prev_quantity=item.prev_quantity or 0,
@@ -1349,3 +1352,38 @@ def delete_invoice(request):
         return Response({'message': 'Invoice and related items deleted successfully.'}, status=status.HTTP_200_OK)
     except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
         return Response({'error': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        
+
+
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def delete_preorder_and_items(request, invoice_no):
+    try:
+        preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
+    except almogOil_models.PreOrderTable.DoesNotExist:
+        return Response({"detail": "PreOrder with this invoice number not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Delete related items
+    deleted_items_count, _ = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=preorder).delete()
+    
+    # Delete the preorder itself
+    preorder.delete()
+
+    return Response({
+        "message": f"Deleted order and {deleted_items_count} items for invoice number {invoice_no}."
+    }, status=status.HTTP_200_OK)
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def delete_all_preorders_and_items(request):
+    # Delete all preorder items first (to avoid FK issues)
+    items_deleted, _ = almogOil_models.PreOrderItemsTable.objects.all().delete()
+    orders_deleted, _ = almogOil_models.PreOrderTable.objects.all().delete()
+
+    return Response({
+        "message": f"Deleted {orders_deleted} orders and {items_deleted} items."
+    }, status=status.HTTP_200_OK)    

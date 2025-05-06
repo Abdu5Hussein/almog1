@@ -409,8 +409,8 @@
             <td>${item.name || '--'}</td>
             <td>${item.company || '--'}</td>
             <td>${item.Asked_quantity || '0'}</td>
-            <td>${item.dinar_unit_price ? parseFloat(item.dinar_unit_price).toFixed(2) : '0.00'} دينار</td>
-            <td>${item.dinar_total_price ? parseFloat(item.dinar_total_price).toFixed(2) : '0.00'} دينار</td>
+            <td>${item.cost_unit_price ? parseFloat(item.cost_unit_price).toFixed(2) : '0.00'} دينار</td>
+            <td>${item.cost_total_price ? parseFloat(item.cost_total_price).toFixed(2) : '0.00'} دينار</td>
           `;
           itemsBody.appendChild(row);
         });

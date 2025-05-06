@@ -435,7 +435,7 @@
                          data-item-no="${item.pno}"
                          data-original="${item.Asked_quantity}">
                 </td>
-                <td>${parseFloat(item.dinar_unit_price || 0).toFixed(2)}</td>
+                <td>${parseFloat(item.cost_total_price || 0).toFixed(2)}</td>
                 <td>${itemTotal.toFixed(2)}</td>
               `;
               itemsBody.appendChild(row);
