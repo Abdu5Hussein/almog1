@@ -21,3 +21,10 @@ class OrderBuyinvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.OrderBuyinvoicetable
         fields = '__all__'        
+
+class PreorderSerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(source="client.name", default="Unknown")
+
+    class Meta:
+        model = almogOil_models.PreOrderTable
+        fields = '__all__'  # Or list specific fields        

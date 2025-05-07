@@ -120,7 +120,7 @@ def create_pre_order(request):
             'client_category': client_obj.subtype,
             'client_limit': client_obj.loan_limit,
             'client_balance': client_balance,
-            'invoice_date': data.get("invoice_date"),
+            'invoice_date': timezone.now(),
             'invoice_status': "لم تحضر",
             'payment_status': data.get("payment_status"),
             'for_who': for_who,
@@ -534,16 +534,20 @@ def full_Sell_invoice_create_item(request):
                  
                 # If no valid invoice exists, create a new one
                 if not buy_invoice:
-                    buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
-                        source=source_name,
-                        invoice_date=timezone.now(),
-                        amount=0,
-                        net_amount=0,
-                        invoice_no=int(timezone.now().timestamp()) ,
-                        source_obj= product.source
+                   buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
+                   source=source_name,
+                   invoice_date=timezone.now(),
+                   amount=0,
+                   net_amount=0,
+                   invoice_no=int(timezone.now().timestamp()),
+                   source_obj=product.source
+                   )
 
-                          # unique
-                    )
+# Always add the preorder to the buy invoice (even if it already exists)
+                buy_invoice.related_preorders.add(invoice)
+
+                  
+
 
                 # Check if item already exists in BuyInvoiceItemsTable
                 existing_buy_item = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(
@@ -552,9 +556,10 @@ def full_Sell_invoice_create_item(request):
                 ).first()
 
                 if existing_buy_item:
-                    existing_buy_item.Asked_quantity = (existing_buy_item.Asked_quantity or 0) + item_value
-                    existing_buy_item.dinar_total_price = (existing_buy_item.dinar_total_price or Decimal(0)) + buy_dinar_total_price
-
+                    new_total_quantity = existing_buy_item.Asked_quantity + item_value
+                    existing_buy_item.Asked_quantity = new_total_quantity
+                    existing_buy_item.dinar_total_price = Decimal(new_total_quantity) * Decimal(product.buyprice or 0)
+                    existing_buy_item.cost_total_price = Decimal(new_total_quantity) * Decimal(product.costprice or 0)
                     existing_buy_item.invoice_no2 = buy_invoice.invoice_no
                     existing_buy_item.date = timezone.now().date()
                     existing_buy_item.prev_quantity = product.itemvalue
@@ -575,11 +580,11 @@ def full_Sell_invoice_create_item(request):
                         quantity_unit="",
                         dinar_unit_price=product.buyprice,
                         dinar_total_price=dinar_total_price,
-                        cost_unit_price=product.costprice,
-                        cost_total_price=buy_dinar_total_price,
+                        cost_unit_price=buy_dinar_unit_price,
+                        cost_total_price=buyitem_value * buy_dinar_unit_price,
                         prev_quantity=product.itemvalue,
                         invoice_no2=buy_invoice.invoice_no,
-                        invoice_no=buy_invoice,
+                        invoice_no=buy_invoice, 
                         main_cat=product.itemmain,
                         sub_cat=product.itemsubmain,
                         source=source_obj
@@ -782,6 +787,8 @@ def Buyhandle_confirm_action(preorder):
             quantity=item.Confirmed_quantity or 0,
             quantity_unit="",
             currency="",
+            dinar_unit_price=item.dinar_unit_price or 0,
+            dinar_total_price=item.dinar_total_price or 0,
             cost_unit_price=item.cost_unit_price or 0,
             cost_total_price=item.cost_total_price or 0,
             exchange_rate=Decimal('1.0000'),
@@ -1387,3 +1394,166 @@ def delete_all_preorders_and_items(request):
     return Response({
         "message": f"Deleted {orders_deleted} orders and {items_deleted} items."
     }, status=status.HTTP_200_OK)    
+
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def get_buy_invoices_for_preorder(request, invoice_no):
+    try:
+        preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
+        buy_invoices = preorder.related_buy_invoices.all()
+
+        data = [
+            {
+                "buy_invoice_no": invoice.invoice_no,
+                "amount": invoice.amount,
+                "net_amount": invoice.net_amount,
+                "source": invoice.source,
+                "confirmed": invoice.confirmed,
+                "send": invoice.send,
+            }
+            for invoice in buy_invoices
+        ]
+        return Response({"preorder_invoice": invoice_no, "related_buy_invoices": data}, status=200)
+
+    except almogOil_models.PreOrderTable.DoesNotExist:
+        return Response({"error": "PreOrder invoice not found"}, status=404)
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def get_preorders_for_buy_invoice(request, buy_invoice_no):
+    try:
+        buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=buy_invoice_no)
+        preorders = buy_invoice.related_preorders.all()
+
+        data = [
+            {
+                "preorder_invoice_no": preorder.invoice_no,
+                "client_name": preorder.client.name if preorder.client else "",
+                "amount": preorder.amount,
+                "date": preorder.date,
+            }
+            for preorder in preorders
+        ]
+        return Response({"buy_invoice_no": buy_invoice_no, "related_preorders": data}, status=200)
+
+    except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
+        return Response({"error": "Buy invoice not found"}, status=404)
+
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def get_related_preorders(request, buy_invoice_id):
+    try:
+        buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=buy_invoice_id)
+        related_preorders = buy_invoice.related_preorders.all()
+
+        if not related_preorders.exists():
+            return Response({"message": "No related preorders found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = wholesale_serializers.PreorderSerializer(related_preorders, many=True)
+
+        return Response({
+            "message": "Successfully retrieved related preorders.",
+            "related_preorders": serializer.data
+        }, status=status.HTTP_200_OK)
+
+    except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
+        return Response({"error": "Buy invoice not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])  # Adjust if any authentication is needed
+def api_auto_confirm_preorder(request):
+    invoice_no = request.data.get('invoice_no')
+    if not invoice_no:
+        return Response({'error': 'Missing invoice_no'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Attempt to get preorder based on invoice_no
+        preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
+    except almogOil_models.PreOrderTable.DoesNotExist:
+        logger.error(f"PreOrder with invoice_no {invoice_no} does not exist.")
+        return Response({'error': 'Preorder not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.exception(f"Error occurred while fetching PreOrder with invoice_no {invoice_no}: {e}")
+        return Response({'error': 'Internal server error. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    try:
+        # Fetch related buy invoices
+        related_buy_invoices = almogOil_models.OrderBuyinvoicetable.objects.filter(
+            related_preorders=preorder
+        )
+        
+        # Fetch preorder items based on invoice
+        preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=preorder.autoid)
+
+        available_items = {}
+        missing_items = []
+        
+        # Check each item availability
+        for item in preorder_items:
+            try:
+                product = almogOil_models.Mainitem.objects.filter(pno=item.pno)
+                available_qty = product.itemvalue or 4
+                request_qty = item.confirm_quantity or item.quantity
+                if available_qty >= request_qty:
+                    available_items[item.pno] = request_qty
+                else:
+                    missing_items.append(item.pno)
+            except almogOil_models.Mainitem.DoesNotExist:
+                missing_items.append(item.pno)
+            except Exception as e:
+                logger.exception(f"Error checking availability for item {item.pno}: {e}")
+                missing_items.append(item.pno)
+
+        if all(invoice.confirmed for invoice in related_buy_invoices):
+    # If all items are available
+         if len(available_items) == preorder_items.count():
+            handle_confirm_action(preorder)  # Preorder fully confirmed
+            return Response({
+            'status': 'fully_confirmed',
+            'message': 'Preorder fully confirmed.',
+            'confirmed_items': available_items,
+            'available_qty':available_qty
+            }, status=status.HTTP_200_OK)
+
+         return Response({
+        'status': 'waiting_for_inventory',
+        'message': 'Some items are still not available.',
+        'missing_items': missing_items,
+        
+        'available_items': available_items  # Include available items with their quantities
+     }, status=status.HTTP_200_OK)
+
+        if available_items:
+            buyhandle_update_action(preorder, available_items)  # Call action for available items
+            handle_confirm_action(preorder)  # Proceed with confirmation
+            return Response({
+                'status': 'partially_confirmed',
+                'message': 'Some items were confirmed. Waiting for the rest.',
+                'confirmed_items': available_items,
+                'missing_items': missing_items
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            'status': 'not_ready',
+            'message': 'Waiting for item availability or invoice confirmation.',
+            'missing_items': missing_items
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.exception(f"Unexpected error during processing preorder with invoice_no {invoice_no}: {e}")
+        return Response({'error': 'Internal server error. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -53,8 +53,13 @@ urlpatterns = [
     path('api/producuts/',HozmaApi_views.web_filter_items , name='producuts_detail'),
     path('api/delete-invoice/', HozmaApi_views.delete_invoice, name='delete-invoice'),
     path('api/preorder/<int:invoice_no>/delete-items/', HozmaApi_views.delete_preorder_and_items, name='delete-preorder-items-by-invoice-no'),
-     path('api/preorders/delete-all/', HozmaApi_views.delete_all_preorders_and_items, name='delete-all-preorders-and-items'),
+    path('api/preorders/delete-all/', HozmaApi_views.delete_all_preorders_and_items, name='delete-all-preorders-and-items'),
+    path('api/preorder/<str:invoice_no>/buy-invoices/', HozmaApi_views.get_buy_invoices_for_preorder),
+    path('api/buy-invoice/<int:buy_invoice_no>/preorders/', HozmaApi_views.get_preorders_for_buy_invoice),
+    path('api/auto-confirm-preorder/', HozmaApi_views.api_auto_confirm_preorder, name='auto_confirm_preorder'),
+    path('check-preorder-related/<int:buy_invoice_id>/', HozmaApi_views.get_related_preorders, name='check-preorder-related')
 ]
+
 
 
 

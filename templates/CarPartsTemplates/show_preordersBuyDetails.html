@@ -219,6 +219,25 @@
     .edit-mode-active .table tr:hover td {
       background-color: rgba(255, 193, 7, 0.1);
     }
+
+    .related-orders {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.related-orders .table th {
+  background-color: #f8f9fa;
+}
+
+@media print {
+  .related-orders {
+    page-break-inside: avoid;
+    border: 1px solid #ddd;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -366,6 +385,35 @@
     </div>
   </div>
 
+  <!-- Add this section right after the order-header div -->
+<div class="related-orders mb-4">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">طلبات العملاء المرتبطة بهذا الطلب</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover" id="relatedOrdersTable">
+          <thead>
+            <tr>
+              <th>رقم الطلب</th>
+              <th>اسم العميل</th>
+              <th>التصنيف</th>
+              <th>المبلغ</th>
+              <th>حالة الدفع</th>
+              <th>حالة الطلب</th>
+              <th>التاريخ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{% static 'js/helper_functions.js' %}"></script>
   <script>
@@ -376,7 +424,7 @@
       let originalQuantities = {};
 
       // Set print date
-      document.getElementById('printDate').textContent = new Date().toLocaleDateString('ar-EG');
+      document.getElementById('printDate').textContent = new Date().toLocaleDateString('en-GB');
 
       // Initialize modals
       const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
@@ -393,10 +441,11 @@
 
       // Load order details
       if (invoiceNo && !isNaN(invoiceNo)) {
-        loadOrderDetails(invoiceNo);
-      } else {
-        console.error("رقم الطلب غير صالح.");
-      }
+  loadOrderDetails(invoiceNo);
+  loadRelatedOrders(invoiceNo); // Add this line
+} else {
+  console.error("رقم الطلب غير صالح.");
+}
 
       async function loadOrderDetails(invoiceNo) {
         try {
@@ -406,7 +455,7 @@
           if (data.preorders_buy.length > 0) {
             currentOrder = data.preorders_buy[0];
             document.getElementById('invoiceNo').textContent = currentOrder.invoice_no;
-            document.getElementById('orderDate').textContent = new Date(currentOrder.invoice_date).toLocaleDateString('ar-EG');
+            document.getElementById('orderDate').textContent = new Date(currentOrder.invoice_date).toLocaleDateString('en-GB');
             document.getElementById('customerName').textContent = currentOrder.source || 'غير معروف';
 
             // Update status badges
@@ -418,7 +467,7 @@
             let totalAmount = 0;
 
             data.preorder_items_buy.forEach(item => {
-              const itemTotal = parseFloat(item.dinar_total_price) || 0;
+              const itemTotal = parseFloat(item.cost_total_price) || 0;
               totalAmount += itemTotal;
               originalQuantities[item.item_no] = item.Confirmed_quantity || item.Asked_quantity;
 
@@ -435,7 +484,7 @@
                          data-item-no="${item.pno}"
                          data-original="${item.Asked_quantity}">
                 </td>
-                <td>${parseFloat(item.cost_total_price || 0).toFixed(2)}</td>
+                <td>${parseFloat(item.cost_unit_price || 0).toFixed(2)}</td>
                 <td>${itemTotal.toFixed(2)}</td>
               `;
               itemsBody.appendChild(row);
@@ -643,6 +692,46 @@
         }
       });
     });
+
+
+    async function loadRelatedOrders(invoiceNo) {
+  try {
+    const response = await customFetch(`http://45.13.59.226/hozma/check-preorder-related/${invoiceNo}/`);
+    const data = await response.json();
+    console.log("Related orders data:", data); // For debugging
+    if (data.related_preorders && data.related_preorders.length > 0) {
+      const tbody = document.querySelector('#relatedOrdersTable tbody');
+      tbody.innerHTML = '';
+      
+      data.related_preorders.forEach(order => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${order.invoice_no}</td>
+          <td>${order.client_name}</td>
+          <td>${order.client_rate} (${order.client_category || 'غير محدد'})</td>
+          <td>${parseFloat(order.amount || 0).toFixed(2)}</td>
+          <td>${order.payment_status}</td>
+          <td>${order.invoice_status}</td>
+          <td>${order.date_time ? new Date(order.date_time).toLocaleDateString('en-GB') : 'غير محدد'}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    } else {
+      document.querySelector('.related-orders').innerHTML = `
+        <div class="alert alert-info m-3">
+          لا توجد طلبات عملاء مرتبطة بهذا الطلب
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('Error loading related orders:', error);
+    document.querySelector('.related-orders').innerHTML = `
+      <div class="alert alert-danger m-3">
+        فشل في تحميل طلبات العملاء المرتبطة: ${error.message}
+      </div>
+    `;
+  }
+}
   </script>
 </body>
 </html>

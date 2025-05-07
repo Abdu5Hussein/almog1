@@ -1216,6 +1216,9 @@ class PreOrderTable(models.Model):
     date_time = models.DateTimeField(default=timezone.now)
     client_confrim = models.BooleanField(default=False)
     shop_confrim = models.BooleanField(default=False)
+    processing_status = models.CharField(max_length=20, default="pending") # or "waiting", "done"
+    processing_status_confirmed = models.BooleanField(default=False)
+
 
     class Meta:
         db_table = 'PreOrderTable'
@@ -1242,6 +1245,7 @@ class ConfirmedOrderTable(models.Model):
     date_time = models.DateTimeField(default=timezone.now)
     preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
     date_confirmed = models.DateTimeField(auto_now_add=True)
+    
 
     class Meta:
         db_table = 'ConfirmedOrderTable'
@@ -1283,6 +1287,7 @@ class PreOrderItemsTable(models.Model):
     remaining = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     confirm_quantity = models.IntegerField(blank=True, null=True)
+    
 
     class Meta:
         managed = True
@@ -1331,6 +1336,11 @@ class OrderBuyinvoicetable(models.Model):
     send = models.BooleanField(default=False)
     send_date = models.DateTimeField(blank=True, null=True)
     source_obj = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
+    related_preorders = models.ManyToManyField(
+        'PreOrderTable',
+        blank=True,
+        related_name='related_buy_invoices'
+    )
 
 
     class Meta:
