@@ -57,6 +57,7 @@ urlpatterns = [
     path('api/preorder/<str:invoice_no>/buy-invoices/', HozmaApi_views.get_buy_invoices_for_preorder),
     path('api/buy-invoice/<int:buy_invoice_no>/preorders/', HozmaApi_views.get_preorders_for_buy_invoice),
     path('api/auto-confirm-preorder/', HozmaApi_views.api_auto_confirm_preorder, name='auto_confirm_preorder'),
+    path('api/invoice-summary/', HozmaApi_views.invoice_summary, name='invoice-summary'),
     path('check-preorder-related/<int:buy_invoice_id>/', HozmaApi_views.get_related_preorders, name='check-preorder-related')
 ]
 

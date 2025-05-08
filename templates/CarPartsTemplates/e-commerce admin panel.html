@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -312,13 +314,13 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="text-muted">العملاء الجدد</h6>
-                                        <h3>42</h3>
+                                        <h6 class="text-muted">إجمالي المبيعات</h6>
+                                        <h3 id="total-amount">جاري التحميل...</h3>
                                     </div>
-                                    <i class="fas fa-users fa-2x text-info"></i>
+                                    <i class="fas fa-shopping-cart fa-2x text-primary"></i>
                                 </div>
                                 <div class="mt-2">
-                                    <span class="text-danger"><i class="fas fa-caret-down"></i> 3%</span>
+                                    <span id="change-rate" class="text-muted"><i class="fas fa-caret-up"></i> ...</span>
                                     <span class="text-muted">منذ الشهر الماضي</span>
                                 </div>
                             </div>
@@ -346,62 +348,25 @@
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><i class="fas fa-list-alt me-2"></i> أحدث الطلبات</span>
-                        <a href="#" class="btn btn-sm btn-primary">عرض الكل</a>
+                        <a href="/hozma/preorder-dashboard/" class="btn btn-sm btn-primary">عرض الكل</a>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table table-hover" id="preordersTable">
                                 <thead>
                                     <tr>
                                         <th>رقم الطلب</th>
-                                        <th>العميل</th>
+                                        <th>رقم العميل</th>
+                                        <th>اسم العميل</th>
                                         <th>التاريخ</th>
                                         <th>المبلغ</th>
                                         <th>الحالة</th>
+                                        <th>تآكيد الشراء</th>
                                         <th>إجراءات</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>#ORD-2023-001</td>
-                                        <td>أحمد محمد</td>
-                                        <td>2023-06-15</td>
-                                        <td>1,250 ر.س</td>
-                                        <td><span class="badge bg-success">مكتمل</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-edit">التفاصيل</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>#ORD-2023-002</td>
-                                        <td>سارة عبدالله</td>
-                                        <td>2023-06-14</td>
-                                        <td>850 ر.س</td>
-                                        <td><span class="badge bg-warning text-dark">قيد التجهيز</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-edit">التفاصيل</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>#ORD-2023-003</td>
-                                        <td>خالد سعيد</td>
-                                        <td>2023-06-14</td>
-                                        <td>2,300 ر.س</td>
-                                        <td><span class="badge bg-primary">قيد الشحن</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-edit">التفاصيل</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>#ORD-2023-004</td>
-                                        <td>نورة عبدالرحمن</td>
-                                        <td>2023-06-13</td>
-                                        <td>1,750 ر.س</td>
-                                        <td><span class="badge bg-danger">ملغي</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-edit">التفاصيل</button>
-                                        </td>
-                                    </tr>
+                                <tbody id="preordersBody">
+                                    <!-- Dynamic rows will be inserted here -->
                                 </tbody>
                             </table>
                         </div>
@@ -500,6 +465,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
     <script>
         // Example JavaScript for form submission
         document.getElementById('productForm').addEventListener('submit', function(e) {
@@ -509,6 +475,65 @@
                 document.getElementById('successAlert').style.display = 'none';
             }, 3000);
         });
+
+        customFetch("http://45.13.59.226/hozma/api/preorders/")
+  .then(response => response.json())
+  .then(data => {
+    const tbody = document.getElementById("preordersBody");
+
+    // Get the last 4 preorders
+    const preorders = data.preorders.slice(-4).reverse(); // To show newest at top
+
+    preorders.forEach(order => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+  <td>${order.invoice_no.toString()}</td>
+  <td>${order.client}</td>
+  <td>${order.client_name}</td>
+  <td>${new Date(order.date_time).toLocaleDateString('en-UK')}</td>
+  <td>${parseFloat(order.amount).toLocaleString('en-US')} د٫ل</td>
+  <td>
+    <span class="badge bg-warning text-dark">${order.invoice_status}</span></td>
+     <td>
+        <span class="badge ${order.shop_confrim ? 'bg-success' : 'bg-danger'}">
+      ${order.shop_confrim ? 'تم التأكيد' : 'غير مؤكد'}
+    </span>
+  </td>
+  <td><a href="/hozma/preorder-detail/${order.invoice_no}/" class="btn btn-sm btn-edit">التفاصيل</a></td>
+`;
+
+      tbody.appendChild(row);
+    });
+  })
+  .catch(error => {
+    console.error("Failed to load preorders:", error);
+  });
+
+  customFetch('http://45.13.59.226/hozma/api/invoice-summary/')
+        .then(response => response.json())
+        .then(data => {
+            const totalAmount = data.total_amount.toLocaleString('ar-EG', { style: 'currency', currency: 'SAR' });
+            const changeRate = data.change_rate;
+
+            // Update the amount
+            document.getElementById('total-amount').textContent = totalAmount;
+
+            // Update the change rate
+            const rateElement = document.getElementById('change-rate');
+            rateElement.innerHTML = `
+                <i class="fas ${changeRate >= 0 ? 'fa-caret-up text-success' : 'fa-caret-down text-danger'}"></i>
+                ${Math.abs(changeRate)}%
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching invoice summary:', error);
+            document.getElementById('total-amount').textContent = 'خطأ في التحميل';
+            document.getElementById('change-rate').textContent = '';
+        });
+
+    
     </script>
+  
 </body>
 </html>

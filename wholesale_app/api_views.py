@@ -191,13 +191,13 @@ def show_preorders(request):
     invoice_no = request.query_params.get('invoice_no')  # Get the invoice_no from query params
     
     if invoice_no:
-        # Filter by invoice_no and where shop_confirm is False
-        preorders = almogOil_models.PreOrderTable.objects.filter(invoice_no=invoice_no, shop_confrim=False)
-        preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance__invoice_no=invoice_no, invoice_instance__shop_confrim=False)
+        # Filter only by invoice_no
+        preorders = almogOil_models.PreOrderTable.objects.filter(invoice_no=invoice_no)
+        preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance__invoice_no=invoice_no)
     else:
-        # If no invoice_no is provided, fetch all preorders where shop_confirm is False
-        preorders = almogOil_models.PreOrderTable.objects.filter(shop_confrim=False)
-        preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance__shop_confrim=False)
+        # Fetch all preorders and preorder items
+        preorders = almogOil_models.PreOrderTable.objects.all()
+        preorder_items = almogOil_models.PreOrderItemsTable.objects.all()
     
     preorder_serializer = wholesale_serializers.PreOrderTableSerializer(preorders, many=True)
     preorder_items_serializer = wholesale_serializers.PreOrderItemsTableSerializer(preorder_items, many=True)
@@ -206,5 +206,3 @@ def show_preorders(request):
         'preorders': preorder_serializer.data,
         'preorder_items': preorder_items_serializer.data
     })
-
-

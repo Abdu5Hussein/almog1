@@ -1198,6 +1198,7 @@ class Attendance_table(models.Model):
 class PreOrderTable(models.Model):
     autoid = models.AutoField(primary_key=True)
     client = models.ForeignKey(AllClientsTable, on_delete=models.CASCADE)
+    client_name = models.CharField(max_length=200, blank=True, null=True)
     invoice_no = models.IntegerField(unique=True)
     invoice_date = models.DateTimeField(blank=True, null=True)
     client_rate = models.CharField(max_length=60, blank=True, null=True)
@@ -1287,6 +1288,7 @@ class PreOrderItemsTable(models.Model):
     remaining = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     confirm_quantity = models.IntegerField(blank=True, null=True)
+    quantity_proccessed = models.BooleanField(default=False)
     
 
     class Meta:

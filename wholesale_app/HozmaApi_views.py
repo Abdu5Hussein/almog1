@@ -57,7 +57,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from almogOil.authentication import CookieAuthentication
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
-from .whatsapp_service import send_whatsapp_message_via_green_api ,send_excel_file_greenapi_upload 
+from .whatsapp_service import send_whatsapp_message_via_green_api ,send_excel_file_greenapi_upload
 from wholesale_app import serializers as wholesale_serializers
 import xlsxwriter
 from num2words import num2words
@@ -121,7 +121,7 @@ def create_pre_order(request):
             'client_limit': client_obj.loan_limit,
             'client_balance': client_balance,
             'invoice_date': timezone.now(),
-            'invoice_status': "لم تحضر",
+            'invoice_status': "لم تشتري",
             'payment_status': data.get("payment_status"),
             'for_who': for_who,
             'date_time': timezone.now(),
@@ -261,8 +261,8 @@ def Sell_invoice_create_item(request):
 
 
 @extend_schema(
-    description="""Confirm PreOrder items into SellInvoice and move to SellInvoiceMainItem, 
-                   or update quantity of PreOrder items if specified. 
+    description="""Confirm PreOrder items into SellInvoice and move to SellInvoiceMainItem,
+                   or update quantity of PreOrder items if specified.
                    Also provides the ability to confirm without any changes to quantity.""",
     tags=["PreOrder", "Confirm PreOrder Items"],
 )
@@ -339,7 +339,7 @@ def buyhandle_update_action(preorder, item_quantities):
 
 
 def handle_confirm_action(preorder):
-    
+
     # Confirm the PreOrder and move items to SellInvoiceMainItem
     client = preorder.client
     sell_invoice = almogOil_models.SellinvoiceTable.objects.create(
@@ -357,7 +357,7 @@ def handle_confirm_action(preorder):
         for_who="حزمة",  # You can change based on your logic
         date_time=timezone.now(),
         price_status="",
-        
+
         amount=preorder.amount,
     )
 
@@ -464,7 +464,7 @@ def full_Sell_invoice_create_item(request):
             except almogOil_models.Mainitem.DoesNotExist:
                 return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            
+
 
             try:
                 invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
@@ -504,11 +504,11 @@ def full_Sell_invoice_create_item(request):
                 'prev_quantity': product.showed,
                 "remaining": 0,
                 "returned": 0,
-                'current_quantity': product.showed - item_value,                
+                'current_quantity': product.showed - item_value,
             }
             client_phone = invoice.client.mobile if invoice.client and invoice.client.mobile else "218942434823"
             source_name = product.source.name if product.source else "Unknown"
-                    
+
 
             serializer = almogOil_serializers.PreOrderItemsSerializer(data=item_data)
             if serializer.is_valid():
@@ -529,9 +529,9 @@ def full_Sell_invoice_create_item(request):
                 ).first()
 
                 # If invoice would exceed 200, mark it as sent and create a new one
-          
+
                     # force creation of new invoice
-                 
+
                 # If no valid invoice exists, create a new one
                 if not buy_invoice:
                    buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
@@ -546,7 +546,7 @@ def full_Sell_invoice_create_item(request):
 # Always add the preorder to the buy invoice (even if it already exists)
                 buy_invoice.related_preorders.add(invoice)
 
-                  
+
 
 
                 # Check if item already exists in BuyInvoiceItemsTable
@@ -584,7 +584,7 @@ def full_Sell_invoice_create_item(request):
                         cost_total_price=buyitem_value * buy_dinar_unit_price,
                         prev_quantity=product.itemvalue,
                         invoice_no2=buy_invoice.invoice_no,
-                        invoice_no=buy_invoice, 
+                        invoice_no=buy_invoice,
                         main_cat=product.itemmain,
                         sub_cat=product.itemsubmain,
                         source=source_obj
@@ -754,8 +754,15 @@ def Buyhandle_confirm_action(preorder):
     if not preorder.send:
         return Response({"success": False, "message": "Cannot confirm preorder. 'send' must be True."}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Get all related preorders (not just the first)
+    related_preorders = preorder.related_preorders.all().order_by('autoid')
+    if not related_preorders.exists():
+        return Response({"success": False, "message": "No related preorder found."}, status=status.HTTP_400_BAD_REQUEST)
+
     # Confirm the PreOrder and move items to BuyInvoiceMainItem
     source = preorder.source_obj
+
+    # Create Buy Invoice
     Buy_invoice = almogOil_models.Buyinvoicetable.objects.create(
         invoice_no=preorder.invoice_no,
         source=preorder.source,
@@ -763,17 +770,20 @@ def Buyhandle_confirm_action(preorder):
         confirmation_date=timezone.now(),
         invoice_date=preorder.invoice_date,
         send_date=preorder.send_date,
-        net_amount=preorder.net_amount,  
+        net_amount=preorder.net_amount,
         amount=preorder.amount,
     )
 
-    # Process the preorder items and move them to BuyInvoiceItemsTable
+    # Process PreOrder items and move them to BuyInvoiceItemsTable
     preorder_items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=preorder.autoid)
+    confirmed_quantity = sum(item.Confirmed_quantity or 0 for item in preorder_items)
+
     for item in preorder_items:
         if item.Confirmed_quantity is None:
             item.Confirmed_quantity = item.Asked_quantity
             item.save()
 
+        # Save to BuyInvoiceItemsTable
         almogOil_models.BuyInvoiceItemsTable.objects.create(
             invoice_no2=preorder.invoice_no,
             invoice_no=Buy_invoice,
@@ -798,7 +808,29 @@ def Buyhandle_confirm_action(preorder):
             source=item.source if hasattr(item, "source") else None
         )
 
-        # Update Mainitem quantity
+        # Distribute confirmed quantity to ALL related preorder items (FIFO)
+        related_preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(
+            invoice_instance__in=related_preorders,
+            pno=item.pno
+        ).order_by('invoice_instance', 'autoid')  # Order to ensure fair distribution
+
+        remaining_quantity = item.Confirmed_quantity or 0
+        for pre_item in related_preorder_items:
+            if remaining_quantity < 0:
+                break
+
+            requested_quantity = pre_item.quantity or 0
+            assign_quantity = min(remaining_quantity, requested_quantity)
+
+            pre_item.confirm_quantity = assign_quantity
+            pre_item.quantity_proccessed = True
+            pre_item.dinar_total_price = pre_item.dinar_unit_price * assign_quantity
+            pre_item.current_quantity = pre_item.prev_quantity - assign_quantity
+            pre_item.save()
+
+            remaining_quantity -= assign_quantity
+
+        # Update stock in Mainitem
         try:
             mainitem = almogOil_models.Mainitem.objects.get(pno=item.pno)
             mainitem.itemvalue = max(mainitem.itemvalue + item.Confirmed_quantity, 0)
@@ -811,14 +843,13 @@ def Buyhandle_confirm_action(preorder):
 
     return Response({"success": True, "message": "PreOrder items confirmed and moved to buyinvoice."}, status=status.HTTP_200_OK)
 
-
 @api_view(["POST"])
 @permission_classes([AllowAny])  # Allow access for any user
 @authentication_classes([])  # No authentication for this view
 def send_unsent_invoices(request):
     # Extract the invoice number from the request body
     invoice_no = request.data.get('invoice_no')
-    
+
     if not invoice_no:
         return Response({'error': 'invoice_no is required'}, status=400)
 
@@ -1099,7 +1130,7 @@ def register_source_user(request):
         )
         return Response({"message": "Source user created successfully."}, status=status.HTTP_201_CREATED)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)   
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -1191,14 +1222,14 @@ def web_filter_items(request):
              filters = request.data  # Decoding bytes and loading JSON
              cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
              cached_data = cache.get(cache_key)
- 
+
              if cached_data:
                  cached_data["cached_flag"] = True
                  return Response(cached_data, status=status.HTTP_200_OK)
- 
+
              # Initialize the base Q object for filtering
              filters_q = Q()
- 
+
              # Build the query based on the filters
              if filters.get('fileid'):
                  filters_q &= Q(fileid__icontains=filters['fileid'])
@@ -1230,7 +1261,7 @@ def web_filter_items(request):
                  filters_q &= Q(itemsize__icontains=filters['country'])
              if filters.get('oem'):
                  filters_q &= Q(oem_numbers__icontains=filters['oem'])
- 
+
            # Original filters (replacing itemvalue with showed)
              if filters.get('showed') == "0":
                 filters_q &= Q(showed=0)
@@ -1251,11 +1282,11 @@ def web_filter_items(request):
                  filters_q &= Q(rshowed__gt=0)
              if filters.get('showed_itemtemp') == "lte":
                  filters_q &= Q(showed__lte=F('itemtemp'))  # Compare fields
- 
+
              # Apply date range filter on `orderlastdate`
              fromdate = filters.get('fromdate', '').strip()
              todate = filters.get('todate', '').strip()
- 
+
              if fromdate and todate:
                  try:
                      from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
@@ -1263,17 +1294,17 @@ def web_filter_items(request):
                      filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
                  except ValueError:
                      return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
- 
+
              # Now filter the queryset using the combined Q object
              queryset = almogOil_models.Mainitem.objects.filter(filters_q).order_by('itemname')
- 
+
              # Serialize the filtered data
              serializer = products_serializers.MainitemSerializer(queryset, many=True)
              items_data = serializer.data
- 
+
              # Initialize totals
              total_itemvalue = total_itemvalueb = total_resvalue = total_cost = total_order = total_buy = 0
- 
+
              # Calculate totals
              for item in items_data:
                     # Use safe conversion functions
@@ -1284,14 +1315,14 @@ def web_filter_items(request):
                  orderprice = float(item.get('orderprice') or 0)
                  buyprice = float(item.get('buyprice') or 0)
 
- 
+
                  total_itemvalue += itemvalue
                  total_itemvalueb += itemvalueb
                  total_resvalue += resvalue
                  total_cost += itemvalue * costprice
                  total_order += itemvalue * orderprice
                  total_buy += itemvalue * buyprice
- 
+
              fullTable = filters.get('fullTable')
              if fullTable:
                  response = {
@@ -1308,13 +1339,13 @@ def web_filter_items(request):
                      "total_buy": total_buy,
                  }
                  return Response(response)
- 
+
              # Pagination
              page_number = int(filters.get('page') or 1)
              page_size = int(filters.get('size') or 20)
              paginator = Paginator(items_data, page_size)
              page_obj = paginator.get_page(page_number)
- 
+
              response = {
                  "data": list(page_obj),
                  "last_page": paginator.num_pages,
@@ -1329,15 +1360,15 @@ def web_filter_items(request):
                  "total_buy": total_buy,
                  "cached_flag": False,
              }
- 
+
              cache.set(cache_key, response, timeout=300)
              return Response(response)
- 
+
          except json.JSONDecodeError:
              return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
          except Exception as e:
              return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-         
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @authentication_classes([])
@@ -1360,7 +1391,7 @@ def delete_invoice(request):
     except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
         return Response({'error': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        
+
 
 
 
@@ -1375,7 +1406,7 @@ def delete_preorder_and_items(request, invoice_no):
 
     # Delete related items
     deleted_items_count, _ = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=preorder).delete()
-    
+
     # Delete the preorder itself
     preorder.delete()
 
@@ -1393,7 +1424,7 @@ def delete_all_preorders_and_items(request):
 
     return Response({
         "message": f"Deleted {orders_deleted} orders and {items_deleted} items."
-    }, status=status.HTTP_200_OK)    
+    }, status=status.HTTP_200_OK)
 
 
 
@@ -1465,7 +1496,7 @@ def get_related_preorders(request, buy_invoice_id):
 
     except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
         return Response({"error": "Buy invoice not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
 
 
 import logging
@@ -1496,13 +1527,13 @@ def api_auto_confirm_preorder(request):
         related_buy_invoices = almogOil_models.OrderBuyinvoicetable.objects.filter(
             related_preorders=preorder
         )
-        
+
         # Fetch preorder items based on invoice
         preorder_items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=preorder.autoid)
 
         available_items = {}
         missing_items = []
-        
+
         # Check each item availability
         for item in preorder_items:
             try:
@@ -1534,7 +1565,7 @@ def api_auto_confirm_preorder(request):
         'status': 'waiting_for_inventory',
         'message': 'Some items are still not available.',
         'missing_items': missing_items,
-        
+
         'available_items': available_items  # Include available items with their quantities
      }, status=status.HTTP_200_OK)
 
@@ -1557,3 +1588,38 @@ def api_auto_confirm_preorder(request):
     except Exception as e:
         logger.exception(f"Unexpected error during processing preorder with invoice_no {invoice_no}: {e}")
         return Response({'error': 'Internal server error. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def invoice_summary(request):
+    today = now().date()
+    this_month = today.replace(day=1)
+
+    # First day of previous month
+    last_month = (this_month - timedelta(days=1)).replace(day=1)
+
+    # Total invoices and amount for current month
+    current_month_invoices = almogOil_models.SellinvoiceTable.objects.filter(invoice_date__date__gte=this_month)
+    current_count = current_month_invoices.count()
+    current_amount = current_month_invoices.aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # Total invoices for last month
+    last_month_invoices = almogOil_models.SellinvoiceTable.objects.filter(
+        invoice_date__date__gte=last_month,
+        invoice_date__date__lt=this_month
+    )
+    last_count = last_month_invoices.count()
+
+    # Calculate rate of change
+    if last_count == 0:
+        change_rate = 100 if current_count > 0 else 0
+    else:
+        change_rate = ((current_count - last_count) / last_count) * 100
+
+    return Response({
+        "total_invoices": current_count,
+        "total_amount": float(current_amount),
+        "change_rate": round(change_rate, 2)
+    })

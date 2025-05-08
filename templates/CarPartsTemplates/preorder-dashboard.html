@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PreOrder Dashboard</title>
+    <title>لوحة الطلبات المسبقة</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -109,16 +109,16 @@
         }
     </style>
 </head>
-<body>
+<body dir="rtl">
     <div class="container">
         <div class="dashboard-card">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="dashboard-title">
-                    <i class="fas fa-clipboard-list me-2"></i>PreOrder Dashboard
+                    <i class="fas fa-clipboard-list me-2"></i>لوحة الطلبات المسبقة
                 </h1>
                 <div>
                     <span class="badge bg-primary p-2">
-                        <i class="fas fa-sync-alt me-1"></i> Last updated: Just now
+                        <i class="fas fa-sync-alt me-1"></i> آخر تحديث: الآن
                     </span>
                 </div>
             </div>
@@ -127,20 +127,23 @@
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-file-invoice me-2"></i>Invoice No</th>
-                            <th><i class="fas fa-user me-2"></i>Client Name</th>
-                            <th><i class="fas fa-money-bill-wave me-2"></i>Amount</th>
-                            <th><i class="fas fa-cog me-2"></i>Actions</th>
+                            <th><i class="fas fa-file-invoice me-2"></i>رقم الفاتورة</th>
+                            <th><i class="fas fa-money-bill-wave me-2"></i>المبلغ</th>
+                            <th><i class="fas fa-credit-card me-2"></i>حالة الدفع</th>
+                            <th><i class="fas fa-info-circle me-2"></i>حالة الفاتورة</th>
+                            <th><i class="fas fa-check-circle me-2"></i>تأكيد المعالجة</th>
+                            <th><i class="fas fa-clock me-2"></i>التاريخ والوقت</th>
+                            <th><i class="fas fa-cog me-2"></i>الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="preorder-list">
-                        <!-- Loading state -->
+                        <!-- حالة التحميل -->
                         <tr id="loading-state">
-                            <td colspan="4" class="text-center py-4">
+                            <td colspan="7" class="text-center py-4">
                                 <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+                                    <span class="visually-hidden">جارٍ التحميل...</span>
                                 </div>
-                                <p class="mt-2 mb-0">Loading preorders...</p>
+                                <p class="mt-2 mb-0">جارٍ تحميل الطلبات المسبقة...</p>
                             </td>
                         </tr>
                     </tbody>
@@ -149,8 +152,8 @@
             
             <div id="empty-state" class="empty-state" style="display: none;">
                 <i class="fas fa-box-open"></i>
-                <h4>No PreOrders Found</h4>
-                <p class="text-muted">There are currently no preorders to display.</p>
+                <h4>لا توجد طلبات مسبقة</h4>
+                <p class="text-muted">لا توجد طلبات مسبقة لعرضها حالياً.</p>
             </div>
         </div>
     </div>
@@ -159,40 +162,45 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <script>
-        // Fetch all PreOrders and display them in the table
         document.addEventListener('DOMContentLoaded', function() {
             customFetch('http://45.13.59.226/hozma/api/preorders/')
                 .then(function (response) {
-                    return response.json();  // Ensure the response is parsed as JSON
+                    return response.json();
                 })
                 .then(function (data) {
                     const preorders = data.preorders;
                     const preorderList = document.getElementById('preorder-list');
                     const loadingState = document.getElementById('loading-state');
                     const emptyState = document.getElementById('empty-state');
-                    
+
                     loadingState.style.display = 'none';
-                    
+
                     if (preorders.length === 0) {
                         emptyState.style.display = 'block';
                         return;
                     }
-                    
+
                     preorders.forEach(function (preorder) {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td>
-                                <span class="fw-semibold">${preorder.invoice_no}</span>
-                            </td>
-                            <td>${preorder.client}</td>
+                            <td><strong>${preorder.invoice_no}</strong></td>
                             <td>
                                 <span class="badge bg-success rounded-pill">
                                     $${parseFloat(preorder.amount).toFixed(2)}
                                 </span>
                             </td>
+                            <td>${preorder.payment_status || 'غير محدد'}</td>
+                            <td>${preorder.invoice_status || 'غير محدد'}</td>
+                            <td>
+                                ${preorder.shop_confrim ? 
+                                    '<span class="badge bg-success">تم</span>' : 
+                                    '<span class="badge bg-warning text-dark">قيد الانتظار</span>'
+                                }
+                            </td>
+                            <td>${new Date(preorder.date_time).toLocaleString('EN-UK')}</td>
                             <td>
                                 <button class="btn btn-sm btn-view" onclick="viewPreOrderItems('${preorder.invoice_no}')">
-                                    <i class="fas fa-eye me-1"></i> View
+                                    <i class="fas fa-eye me-1"></i> عرض
                                 </button>
                             </td>
                         `;
@@ -200,24 +208,21 @@
                     });
                 })
                 .catch(function (error) {
-                    console.log('Error fetching PreOrders:', error);
+                    console.log('خطأ في جلب الطلبات المسبقة:', error);
                     document.getElementById('loading-state').innerHTML = `
-                        <td colspan="4" class="text-center py-4 text-danger">
+                        <td colspan="7" class="text-center py-4 text-danger">
                             <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                            <p>Failed to load preorders. Please try again later.</p>
+                            <p>فشل تحميل الطلبات المسبقة. الرجاء المحاولة لاحقاً.</p>
                             <button class="btn btn-sm btn-primary" onclick="window.location.reload()">
-                                <i class="fas fa-sync-alt me-1"></i> Retry
+                                <i class="fas fa-sync-alt me-1"></i> إعادة المحاولة
                             </button>
                         </td>
                     `;
                 });
         });
-    
+
         function viewPreOrderItems(invoice_no) {
-            // Navigate to the specific PreOrder details page
             window.location.href = `/hozma/preorder-detail/${invoice_no}/`;
         }
     </script>
-    
 </body>
-</html>
