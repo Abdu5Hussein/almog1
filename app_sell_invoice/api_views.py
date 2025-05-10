@@ -245,6 +245,7 @@ def Sell_invoice_create_item(request):
             if product.itemvalue < item_value:
                 return Response({"error": "Insufficient product quantity"}, status=status.HTTP_400_BAD_REQUEST)
 
+            sell_price = Decimal(data.get("sellprice")) if data.get("sellprice") else Decimal(product.buyprice or 0)
             # Prepare the data for creating a new SellInvoiceItemsTable instance
             item_data = {
                 'invoice_instance': invoice.autoid,
@@ -259,8 +260,8 @@ def Sell_invoice_create_item(request):
                 'quantity': item_value,
                 'date': f"{timezone.now().date()}",
                 'place': product.itemplace,
-                'dinar_unit_price': Decimal(product.buyprice or 0),
-                'dinar_total_price': Decimal(product.buyprice or 0) * item_value,
+                'dinar_unit_price': Decimal(sell_price or 0),
+                'dinar_total_price': Decimal(sell_price or 0) * item_value,
                 'prev_quantity': product.itemvalue,
                 'current_quantity': product.itemvalue - item_value,
             }

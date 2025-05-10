@@ -820,7 +820,7 @@
             class="btn btn-primary m-1"
           >
             الغاء</button
-          ><button type="button" class="btn btn-primary m-1" id="save-btn" >
+          ><button type="button" class="btn btn-primary m-1" id="save-btn" {% if not perms.almogOil.change_sellinvoicetable %}disabled{% endif %}>
             حفظ</button
           ><button
             type="button"
@@ -835,17 +835,15 @@
             class="btn btn-primary m-1"
             data-bs-toggle="modal"
             data-bs-target="#exampleModal"
-          >
-            تصدير</button
-          ><button type="button" class="btn btn-primary m-1">طباعة</button>
-          <button type="button" class="btn btn-primary m-1">حذف</button>
+            {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}
+          >تصدير</button>
+          <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}>طباعة</button>
+          <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.delete_sellinvoicetable %}disabled{% endif %}>حذف</button>
           <button
             type="button"
             class="btn btn-secondary m-1"
             onclick="window.close()"
-          >
-            اغلاق
-          </button>
+          >اغلاق</button>
         </div>
       </form>
     </div>

@@ -643,10 +643,10 @@
           <strong>Loading...</strong>
           <div class="spinner-border ml-auto mx-2" role="status" aria-hidden="true" style="height:1rem; width:1rem; animation-duration: 5s; "></div>
       </div>
-      <form id="secondForm">
+      <form id="secondForm" >
         {% csrf_token %}
 
-        <div class="row py-1">
+        <div class="row py-1" {% if not perms.almogOil.show_total_buyinvoice %}style="display:none;"{% endif %}>
           <!-- First column -->
           <div class="col-md-4">
             <div class="input-group mb-1">
@@ -744,9 +744,10 @@
             class="btn btn-primary m-1"
             data-bs-toggle="modal"
             data-bs-target="#exampleModal"
+            {% if not perms.almogOil.export_buyinvoice %}disabled{% endif %}
           >
             تصدير</button
-          ><button type="button" class="btn btn-primary m-1">طباعة</button>
+          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_buyinvoice %}disabled{% endif %}>طباعة</button>
           <button type="button" class="btn btn-primary m-1">موافق</button>
           <button
             type="button"

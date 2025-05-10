@@ -627,6 +627,7 @@
               class="btn btn-primary"
               style="width: 100px"
               id="add-btn"
+              {% if not perms.almogOil.add_return_permission %}disabled{% endif %}
             >
             جديد
             </button>
@@ -637,6 +638,7 @@
               class="btn btn-primary"
               style="width: 100px"
               id="return-all-btn"
+              {% if not perms.almogOil.add_return_permission %}disabled{% endif %}
             >
             ترجيع الكل
             </button>

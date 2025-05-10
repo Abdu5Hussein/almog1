@@ -583,7 +583,7 @@
         <div class="row mt-4">
             <div class="col-12 d-flex justify-content-center gap-2 flex-wrap">
                 <button type="button" id="clear-btn" class="btn btn-primary" style="width: 100px">مسح</button>
-                <button type="button" class="btn btn-primary" style="width: 100px">تصدير</button>
+                <button type="button" class="btn btn-primary" style="width: 100px" {% if not perms.almogOil.export_employees %}disabled{% endif %}>تصدير</button>
                 <button type="button" class="btn btn-primary" style="width: 100px" onclick="window.close()">اغلاق</button>
             </div>
         </div>

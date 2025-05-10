@@ -688,10 +688,11 @@
           class="btn btn-primary m-1"
           data-bs-toggle="modal"
           data-bs-target="#exampleModal"
+          {% if not perms.almogOil.export_clients %}disabled{% endif %}
         >
           تصدير
         </button>
-        <button type="button" class="btn btn-primary m-1" id="">طباعة</button>
+        <button type="button" class="btn btn-primary m-1" id="" {% if not perms.almogOil.export_clients %}disabled{% endif %}>طباعة</button>
         <button
           type="button"
           class="btn btn-secondary m-1"

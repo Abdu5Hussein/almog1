@@ -575,10 +575,10 @@
 
               </div>
               <div class="row g-0 mt-2">
-                    <button class="btn btn-primary w-100" id="createButton" type="button">اعداد الاذن</button>
+                    <button class="btn btn-primary w-100" id="createButton" type="button" {% if not perms.almogOil.add_return_permission %}disabled{% endif %}>اعداد الاذن</button>
               </div>
               <div class="row g-0 mt-2">
-                    <button class="btn btn-primary w-100" id="returnButton" type="button" style="display:none;">ترجيع اصناف</button>
+                    <button class="btn btn-primary w-100" id="returnButton" type="button" style="display:none;" {% if not perms.almogOil.change_return_permission %}disabled{% endif %}>ترجيع اصناف</button>
               </div>
             </div>
 
@@ -740,9 +740,10 @@
             class="btn btn-primary m-1"
             data-bs-toggle="modal"
             data-bs-target="#exampleModal"
+            {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}
           >
             تصدير</button
-          ><button type="button" class="btn btn-primary m-1">طباعة</button>
+          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}>طباعة</button>
           <button type="button" class="btn btn-primary m-1">حذف</button>
           <button
             type="button"

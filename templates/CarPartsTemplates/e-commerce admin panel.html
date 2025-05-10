@@ -8,54 +8,132 @@
     <title>لوحة تحكم المتجر الإلكتروني</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #3498db;
+            --primary-color: #4e73df;
             --secondary-color: #2c3e50;
             --danger-color: #e74c3c;
-            --success-color: #2ecc71;
-            --warning-color: #f39c12;
+            --success-color: #1cc88a;
+            --warning-color: #f6c23e;
+            --info-color: #36b9cc;
+            --light-color: #f8f9fc;
+            --dark-color: #5a5c69;
         }
         
         body {
             background-color: #f5f7fa;
             font-family: 'Tajawal', sans-serif;
+            color: #333;
         }
         
         .dashboard-container {
-            margin-top: 30px;
-            margin-bottom: 50px;
+            margin-top: 20px;
+            margin-bottom: 30px;
         }
         
+        /* Navbar */
+        .navbar {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 0.5rem 1rem;
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.2rem;
+        }
+        
+        /* Cards */
         .card {
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            margin-bottom: 30px;
             border: none;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.3);
         }
         
         .card-header {
-            background-color: var(--secondary-color);
-            color: white;
-            border-radius: 10px 10px 0 0 !important;
-            padding: 15px 20px;
-            font-weight: 600;
+            background-color: var(--light-color);
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.35rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            border-radius: 0.35rem 0.35rem 0 0 !important;
         }
         
+        /* Stats Cards */
+        .stats-card {
+            border-left: 0.25rem solid;
+            transition: all 0.3s;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stats-card .card-body {
+            padding: 1rem;
+        }
+        
+        .stats-card .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--dark-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stats-card .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .stats-card .card-icon {
+            font-size: 2rem;
+            opacity: 0.3;
+            position: absolute;
+            left: 1rem;
+            top: 1rem;
+        }
+        
+        .stats-card.primary {
+            border-left-color: var(--primary-color);
+        }
+        
+        .stats-card.success {
+            border-left-color: var(--success-color);
+        }
+        
+        .stats-card.info {
+            border-left-color: var(--info-color);
+        }
+        
+        .stats-card.warning {
+            border-left-color: var(--warning-color);
+        }
+        
+        /* Tables */
         .table-responsive {
-            border-radius: 8px;
+            border-radius: 0.35rem;
             overflow: hidden;
         }
         
         .table {
             margin-bottom: 0;
+            color: var(--dark-color);
         }
         
         .table thead th {
-            background-color: var(--secondary-color);
+            background-color: var(--primary-color);
             color: white;
-            font-weight: 500;
+            font-weight: 600;
             border: none;
+            padding: 1rem;
         }
         
         .table tbody tr {
@@ -63,102 +141,126 @@
         }
         
         .table tbody tr:hover {
-            background-color: #f8f9fa;
+            background-color: rgba(78, 115, 223, 0.05);
         }
         
-        .btn-edit {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 5px 15px;
-            transition: all 0.2s;
+        .table td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            border-top: 1px solid #e3e6f0;
         }
         
-        .btn-edit:hover {
-            background-color: #2980b9;
-            transform: translateY(-1px);
-        }
-        
-        .form-section {
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .section-title {
-            color: var(--secondary-color);
+        /* Buttons */
+        .btn {
+            border-radius: 0.35rem;
             font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--secondary-color);
-        }
-        
-        .form-control {
-            border-radius: 8px;
-            padding: 10px 15px;
-            border: 1px solid #ced4da;
+            padding: 0.5rem 1rem;
             transition: all 0.3s;
         }
         
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
         }
         
-        .btn-submit {
-            background-color: var(--success-color);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s;
-            width: 100%;
-            max-width: 200px;
-            margin-top: 20px;
-        }
-        
-        .btn-submit:hover {
-            background-color: #27ae60;
-            transform: translateY(-2px);
-        }
-        
-        .alert-message {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-        }
-        
-        .alert-success {
-            background-color: rgba(46, 204, 113, 0.2);
-            color: var(--success-color);
-            border: 1px solid var(--success-color);
-        }
-        
-        .alert-error {
-            background-color: rgba(231, 76, 60, 0.2);
-            color: var(--danger-color);
-            border: 1px solid var(--danger-color);
-        }
-        
-        .form-check-input:checked {
+        .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
         }
         
-        @media (max-width: 768px) {
-            .card {
-                padding: 15px;
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: #000;
+        }
+        
+        /* Badges */
+        .badge {
+            font-weight: 600;
+            padding: 0.35em 0.65em;
+            border-radius: 0.25rem;
+        }
+        
+        /* Status Badges */
+        .badge-pending {
+            background-color: #f6c23e;
+            color: #000;
+        }
+        
+        .badge-processing {
+            background-color: #36b9cc;
+            color: #fff;
+        }
+        
+        .badge-completed {
+            background-color: #1cc88a;
+            color: #fff;
+        }
+        
+        .badge-cancelled {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: #fff;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border-radius: 0.35rem;
+        }
+        
+        .sidebar .card-body {
+            padding: 0;
+        }
+        
+        .sidebar .list-group-item {
+            border: none;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            transition: all 0.3s;
+        }
+        
+        .sidebar .list-group-item:hover {
+            color: var(--primary-color);
+            background-color: rgba(78, 115, 223, 0.05);
+        }
+        
+        .sidebar .list-group-item i {
+            margin-left: 0.5rem;
+            color: #d1d3e2;
+        }
+        
+        /* Alerts */
+        .alert {
+            border-radius: 0.35rem;
+            padding: 1rem;
+        }
+        
+        /* Charts */
+        .chart-area, .chart-pie {
+            position: relative;
+            height: 20rem;
+            width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-area {
+                height: 20rem;
+            }
+            
+            .chart-pie {
+                height: 15rem;
             }
         }
         
@@ -185,44 +287,102 @@
             margin-left: 10px;
             margin-right: 0;
         }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Loading Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .stats-card {
+                margin-bottom: 1rem;
+            }
+            
+            .card-header {
+                padding: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--secondary-color);">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow" style="background-color: var(--secondary-color);">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">متجرنا الإلكتروني</a>
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-store-alt me-2"></i>متجرنا الإلكتروني
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#">لوحة التحكم</a>
+                        <a class="nav-link active" href="#"><i class="fas fa-tachometer-alt me-1"></i>لوحة التحكم</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">المنتجات</a>
+                        <a class="nav-link" href="#"><i class="fas fa-box-open me-1"></i>المنتجات</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">الطلبات</a>
+                        <a class="nav-link" href="#"><i class="fas fa-shopping-cart me-1"></i>الطلبات</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">العملاء</a>
+                        <a class="nav-link" href="#"><i class="fas fa-users me-1"></i>العملاء</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">التقارير</a>
+                        <a class="nav-link" href="#"><i class="fas fa-chart-bar me-1"></i>التقارير</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i> مدير النظام
+                            <img src="https://via.placeholder.com/30" class="rounded-circle me-1" alt="صورة المدير">
+                            <span class="d-none d-lg-inline">مدير النظام</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">الملف الشخصي</a></li>
-                            <li><a class="dropdown-item" href="#">الإعدادات</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-1"></i>الملف الشخصي</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-1"></i>الإعدادات</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">تسجيل الخروج</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-1"></i>تسجيل الخروج</a></li>
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="#">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                5
+                                <span class="visually-hidden">إشعارات غير مقروءة</span>
+                            </span>
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -231,124 +391,147 @@
 
     <div class="container-fluid dashboard-container">
         <div class="row">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <img src="https://via.placeholder.com/150" class="rounded-circle mb-3" alt="صورة المدير" width="100">
-                        <h5 class="card-title">مدير النظام</h5>
-                        <p class="text-muted">آخر دخول: اليوم 10:30 ص</p>
+            <div class="col-lg-3 mb-4">
+                <div class="card sidebar">
+                    <div class="card-body text-center py-4">
+                        <img src="https://via.placeholder.com/150" class="rounded-circle mb-3 border shadow" alt="صورة المدير" width="100">
+                        <h5 class="card-title mb-1">مدير النظام</h5>
+                        <p class="text-muted small mb-3">admin@example.com</p>
+                        <p class="text-muted small"><i class="fas fa-clock me-1"></i>آخر دخول: اليوم 10:30 ص</p>
                     </div>
-                </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <i class="fas fa-tachometer-alt me-2"></i> التنقل السريع
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="http://45.13.59.226/hozma/Handle-source/" class="text-decoration-none">لوحة تحكم المصادر
-                                </a>
-                                <i class="fas fa-plus-circle text-primary"></i>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="http://45.13.59.226/hozma/preorder-dashboard/" class="text-decoration-none">الطلبات الجديدة</a>
-                                <span class="badge bg-danger rounded-pill">5</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="http://45.13.59.226/hozma/preorders-buy/" class="text-decoration-none">نظام إدارة طلبات الشراء المبدئية
-                                </a>
-                                <i class="fas fa-chart-line text-success"></i>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="#" class="text-decoration-none">إدارة المستخدمين</a>
-                                <i class="fas fa-users-cog text-warning"></i>
-                            </li>
-                        </ul>
+                    
+                    <div class="list-group list-group-flush">
+                        <a href="http://45.13.59.226/hozma/Handle-source/" class="list-group-item list-group-item-action">
+                            <i class="fas fa-database me-1"></i>لوحة تحكم المصادر
+                        </a>
+                        <a href="http://45.13.59.226/hozma/preorder-dashboard/" class="list-group-item list-group-item-action">
+                            <i class="fas fa-shopping-bag me-1"></i>الطلبات الجديدة
+                            <span class="badge bg-danger float-start rounded-pill" id="new-orders-count1">5</span>
+                        </a>
+                        <a href="http://45.13.59.226/hozma/preorders-buy/" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cart-plus me-1"></i>طلبات الشراء المبدئية
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users-cog me-1"></i>إدارة المستخدمين
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-tags me-1"></i>التصنيفات
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-pie me-1"></i>التحليلات
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog me-1"></i>الإعدادات
+                        </a>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-9">
-                <div class="alert-message alert-success" id="successAlert">
-                    تم حفظ التغييرات بنجاح!
+            <div class="col-lg-9">
+                <div class="alert alert-success alert-dismissible fade show" id="successAlert" style="display: none;">
+                    <i class="fas fa-check-circle me-1"></i>
+                    <span id="alertMessage">تم حفظ التغييرات بنجاح!</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card stats-card">
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stats-card primary h-100">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted">إجمالي المبيعات</h6>
-                                        <h3>24,500 ر.س</h3>
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col me-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            إجمالي المبيعات</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-amount"></div>
+                                        <div class="mt-2 text-xs">
+                                            <span class="text-success me-1" id="change-rate">
+                                                <i class="fas fa-arrow-up me-1"></i>
+                                            </span>
+                                            <span class="text-nowrap">منذ الشهر الماضي</span>
+                                        </div>
                                     </div>
-                                    <i class="fas fa-shopping-cart fa-2x text-primary"></i>
-                                </div>
-                                <div class="mt-2">
-                                    <span class="text-success"><i class="fas fa-caret-up"></i> 12%</span>
-                                    <span class="text-muted">منذ الشهر الماضي</span>
+                                    <div class="col-auto">
+                                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card stats-card">
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stats-card success h-100">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted">الطلبات الجديدة</h6>
-                                        <h3>156</h3>
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col me-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            الطلبات الجديدة</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="new-orders-count">24</div>
+                                        <div class="mt-2 text-xs">
+                                            <span class="text-success me-1" id="percentage-increase">
+                                                <i class="fas fa-arrow-up me-1"></i>16%
+                                            </span>
+                                            <span class="text-nowrap">منذ الشهر الماضي</span>
+                                        </div>
                                     </div>
-                                    <i class="fas fa-shopping-bag fa-2x text-success"></i>
-                                </div>
-                                <div class="mt-2">
-                                    <span class="text-success"><i class="fas fa-caret-up"></i> 8%</span>
-                                    <span class="text-muted">منذ الأسبوع الماضي</span>
+                                    <div class="col-auto">
+                                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card stats-card">
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stats-card info h-100">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted">إجمالي المبيعات</h6>
-                                        <h3 id="total-amount">جاري التحميل...</h3>
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col me-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            الطلبات المؤكدة</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="shop-confirmed-count"></div>
+                                        <div class="mt-2 text-xs">
+                                            <span class="text-nowrap">إجمالي الفواتير الشهر: </span>
+                                            <span class="font-weight-bold" id="current-month-invoice-count"></span>
+                                        </div>
                                     </div>
-                                    <i class="fas fa-shopping-cart fa-2x text-primary"></i>
-                                </div>
-                                <div class="mt-2">
-                                    <span id="change-rate" class="text-muted"><i class="fas fa-caret-up"></i> ...</span>
-                                    <span class="text-muted">منذ الشهر الماضي</span>
+                                    <div class="col-auto">
+                                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card stats-card">
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stats-card warning h-100">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted">المنتجات</h6>
-                                        <h3>287</h3>
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col me-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            إجمالي المنتجات</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalItems">156</div>
+                                        <div class="mt-2 text-xs">
+                                            <span class="text-success me-1">
+                                                <i class="fas fa-arrow-up me-1"></i>8%
+                                            </span>
+                                            <span class="text-nowrap">منذ الشهر الماضي</span>
+                                        </div>
                                     </div>
-                                    <i class="fas fa-boxes fa-2x text-warning"></i>
-                                </div>
-                                <div class="mt-2">
-                                    <span class="text-success"><i class="fas fa-caret-up"></i> 5%</span>
-                                    <span class="text-muted">منذ الشهر الماضي</span>
+                                    <div class="col-auto">
+                                        <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-list-alt me-2"></i> أحدث الطلبات</span>
-                        <a href="/hozma/preorder-dashboard/" class="btn btn-sm btn-primary">عرض الكل</a>
+
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">أحدث الطلبات</h6>
+                        <a href="/hozma/preorder-dashboard/" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>عرض الكل
+                        </a>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -356,125 +539,451 @@
                                 <thead>
                                     <tr>
                                         <th>رقم الطلب</th>
-                                        <th>رقم العميل</th>
-                                        <th>اسم العميل</th>
+                                        <th>العميل</th>
                                         <th>التاريخ</th>
                                         <th>المبلغ</th>
                                         <th>الحالة</th>
-                                        <th>تآكيد الشراء</th>
+                                        <th>تآكيد</th>
                                         <th>إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody id="preordersBody">
-                                    <!-- Dynamic rows will be inserted here -->
+                                   
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
                 
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <i class="fas fa-plus-circle me-2"></i> إضافة منتج جديد
+                <div class="row mb-4">
+                    <!-- Monthly Sales Chart -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">حجم المبيعات الشهري</h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                        <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                        <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                                        <li><a class="dropdown-item" href="#">طباعة التقرير</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="salesChart1"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+        
+                    <!-- Top Clients Chart -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">أفضل العملاء</h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink2" 
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink2">
+                                        <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                        <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="clientsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="row">
+                    <!-- Top Items Table -->
+                    <div class="col-lg-12 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">أفضل العناصر مبيعاً</h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink3" 
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink3">
+                                        <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                        <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>اسم المنتج</th>
+                                                <th>الشركة</th>
+                                                <th>الكمية</th>
+                                                <th>إجمالي المبيعات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topItemsTable">
+                                            <!-- Will be filled by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
+                    
+                </div>
+                
+                
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">أعلى المنتجات مبيعاً</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush" id="topProductsList"></div> <!-- This is where products will be listed -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">حالة المخزون</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-4 mb-3">
+                                        <div class="text-success">
+                                            <i class="fas fa-check-circle fa-3x mb-2"></i>
+                                            <h5 class="font-weight-bold" id="availableItems">124</h5>
+                                            <p class="small">متاح</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 mb-3">
+                                        <div class="text-warning">
+                                            <i class="fas fa-exclamation-triangle fa-3x mb-2"></i>
+                                            <h5 class="font-weight-bold" id="lowStock">18</h5>
+                                            <p class="small">مخزون منخفض</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 mb-3">
+                                        <div class="text-danger">
+                                            <i class="fas fa-times-circle fa-3x mb-2"></i>
+                                            <h5 class="font-weight-bold" id="outOfStock">14</h5>
+                                            <p class="small">منتهية</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <h6 class="font-weight-bold mb-2">المنتجات التي تحتاج إعادة تخزين</h6>
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: 25%">5 منتجات</div>
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 35%">7 منتجات</div>
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 40%">8 منتجات</div>
+                                    </div>
+                                    <small class="text-muted">20 منتج يحتاج إلى إعادة تخزين خلال الأسبوع الحالي</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Monthly Purchases Chart -->
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">المشتريات الشهرية</h6>
+                        <div class="dropdown no-arrow">
+                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink1" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink1">
+                                <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <form id="productForm">
-                            <div class="form-section">
-                                <h5 class="section-title">
-                                    <i class="fas fa-info-circle"></i> المعلومات الأساسية
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="productName" class="form-label">اسم المنتج</label>
-                                            <input type="text" class="form-control" id="productName" placeholder="أدخل اسم المنتج" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="productCategory" class="form-label">الفئة</label>
-                                            <select class="form-select" id="productCategory" required>
-                                                <option value="" selected disabled>اختر الفئة</option>
-                                                <option value="electronics">إلكترونيات</option>
-                                                <option value="clothing">ملابس</option>
-                                                <option value="home">منزلية</option>
-                                                <option value="beauty">الجمال والعناية</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="productDescription" class="form-label">الوصف</label>
-                                    <textarea class="form-control" id="productDescription" rows="3" placeholder="أدخل وصف المنتج"></textarea>
-                                </div>
-                            </div>
-                            
-                            <div class="form-section">
-                                <h5 class="section-title">
-                                    <i class="fas fa-money-bill-wave"></i> التسعير والمخزون
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="productPrice" class="form-label">السعر (ر.س)</label>
-                                            <input type="number" class="form-control" id="productPrice" placeholder="0.00" step="0.01" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="productDiscount" class="form-label">الخصم (%)</label>
-                                            <input type="number" class="form-control" id="productDiscount" placeholder="0" min="0" max="100">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="productStock" class="form-label">الكمية المتاحة</label>
-                                            <input type="number" class="form-control" id="productStock" placeholder="0" min="0" required>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-section">
-                                <h5 class="section-title">
-                                    <i class="fas fa-images"></i> صور المنتج
-                                </h5>
-                                <div class="mb-3">
-                                    <label for="productImages" class="form-label">رفع الصور</label>
-                                    <input class="form-control" type="file" id="productImages" multiple accept="image/*">
-                                    <div class="form-text">يمكنك رفع أكثر من صورة باختيارها مع الضغط على زر Ctrl</div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="productFeatured">
-                                <label class="form-check-label" for="productFeatured">
-                                    منتج مميز
-                                </label>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-submit">
-                                <i class="fas fa-save me-2"></i> حفظ المنتج
-                            </button>
-                        </form>
+                        <div class="chart-container">
+                            <canvas id="monthlyPurchasesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Vendors Chart -->
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">أفضل الموردين</h6>
+                        <div class="dropdown no-arrow">
+                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink2" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink2">
+                                <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="vendorsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <!-- Purchased Items with Profit -->
+            <div class="col-lg-12">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">أفضل العناصر المشتراة مع هامش الربح</h6>
+                        <div class="dropdown no-arrow">
+                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink3" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink3">
+                                <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>اسم المنتج</th>
+                                        <th>الشركة</th>
+                                        <th>الكمية</th>
+                                        <th>إجمالي السعر</th>
+                                        <th>إجمالي التكلفة</th>
+                                        <th>الربح</th>
+                                        <th>هامش الربح %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchasedItemsTable">
+                                    <!-- Will be filled by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="sticky-footer bg-white">
+        <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+                <span>حقوق النشر &copy; متجرنا الإلكتروني 2023</span>
+            </div>
+        </div>
+
+    </footer>
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function loadAnalytics() {
+    const response = await fetch("http://45.13.59.226/hozma/api/analytics/items/?period=300");
+    const data = await response.json();
+
+    // Inventory stats
+    document.getElementById('totalItems').textContent = data.inventory_stats.total_items;
+    document.getElementById('availableItems').textContent = data.inventory_stats.available_items;
+    document.getElementById('outOfStock').textContent = data.inventory_stats.out_of_stock;
+    document.getElementById('lowStock').textContent = data.inventory_stats.low_stock;
+
+    // Sales Chart
+    new Chart(document.getElementById('salesChart'), {
+        type: 'line',
+        data: {
+            labels: data.sales_trends.map(s => new Date(s.day).toLocaleDateString('ar-EG')),
+            datasets: [{
+                label: 'إجمالي المبيعات',
+                data: data.sales_trends.map(s => s.total_sales),
+                borderColor: '#0d6efd',
+                fill: false,
+                tension: 0.3
+            }]
+        },
+        options: {
+            plugins: { legend: { display: true } },
+            responsive: true
+        }
+    });
+
+    // Payment Methods (source_analysis)
+    new Chart(document.getElementById('paymentMethodsChart'), {
+        type: 'doughnut',
+        data: {
+            labels: data.source_analysis.map(s => s.buysource),
+            datasets: [{
+                data: data.source_analysis.map(s => s.total_sales),
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#28a745', '#6f42c1']
+            }]
+        }
+    });
+
+    // Categories chart
+    new Chart(document.getElementById('categoriesChart'), {
+        type: 'bar',
+        data: {
+            labels: data.categories.map(c => c.itemmain || 'غير معروف'),
+            datasets: [{
+                label: 'عدد العناصر',
+                data: data.categories.map(c => c.count),
+                backgroundColor: '#198754'
+            }]
+        }
+    });
+
+    // Price Ranges
+    new Chart(document.getElementById('priceRangeChart'), {
+        type: 'pie',
+        data: {
+            labels: data.price_ranges.map(p => p.price_range),
+            datasets: [{
+                data: data.price_ranges.map(p => p.count),
+                backgroundColor: ['#ffc107', '#dc3545', '#17a2b8', '#6610f2', '#20c997']
+            }]
+        }
+    });
+
+    // Top Products
+    const topList = document.getElementById("topProductsList");
+    topList.innerHTML = ""; // Clear existing list
+    data.top_items.forEach(item => {
+        const li = document.createElement("div");
+        li.className = "list-group-item d-flex align-items-center";
+        li.innerHTML = `
+            <img src="https://via.placeholder.com/40" class="rounded me-3" alt="Product">
+            <div class="flex-grow-1">
+                <h6 class="mb-1">${item.itemname}</h6>
+                <small class="text-muted">تم بيع ${item.total_sales} قطعة</small>
+            </div>
+            <span class="badge bg-primary rounded-pill">${item.total_sales}</span>
+        `;
+        topList.appendChild(li);
+    });
+
+    // Recent Orders Chart (bar chart horizontal)
+    const recentOrders = data.recent_orders;
+    const itemLabels = recentOrders.map(item => item.itemname);
+    const buyPrices = recentOrders.map(item => item.buyprice);
+    const buySources = recentOrders.map(item => item.buysource);
+
+    const ctx = document.getElementById("recentOrdersChart").getContext("2d");
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: itemLabels,
+            datasets: [{
+                label: "سعر الشراء",
+                data: buyPrices,
+                backgroundColor: "rgba(54, 162, 235, 0.7)",
+                borderColor: "rgba(54, 162, 235, 1)",
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            return "المصدر: " + buySources[context.dataIndex];
+                        }
+                    }
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "السعر"
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "المنتج"
+                    }
+                }
+            }
+        }
+    });
+}
+
+loadAnalytics();
+
+
+// Fetch top products
+customFetch('http://45.13.59.226/hozma/api/top-products/')
+    .then(response => response.json())
+    .then(data => {
+        const topProductsList = document.getElementById('topProductsList');
+        data.products.forEach(product => {
+            const item = document.createElement('li');
+            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+            item.innerHTML = `
+                ${product.name}
+                <span class="badge bg-primary rounded-pill">${product.sales} مبيعاً</span>
+            `;
+            topProductsList.appendChild(item);
+        });
+    });
+ 
         // Example JavaScript for form submission
-        document.getElementById('productForm').addEventListener('submit', function(e) {
+       /* document.getElementById('productForm').addEventListener('submit', function(e) {
             e.preventDefault();
             document.getElementById('successAlert').style.display = 'block';
             setTimeout(function() {
                 document.getElementById('successAlert').style.display = 'none';
             }, 3000);
-        });
+        });*/
 
         customFetch("http://45.13.59.226/hozma/api/preorders/")
   .then(response => response.json())
@@ -513,7 +1022,7 @@
   customFetch('http://45.13.59.226/hozma/api/invoice-summary/')
         .then(response => response.json())
         .then(data => {
-            const totalAmount = data.total_amount.toLocaleString('ar-EG', { style: 'currency', currency: 'SAR' });
+            const totalAmount = data.total_amount.toLocaleString('EN-UK', { style: 'currency', currency: 'LYD' });
             const changeRate = data.change_rate;
 
             // Update the amount
@@ -531,6 +1040,349 @@
             document.getElementById('total-amount').textContent = 'خطأ في التحميل';
             document.getElementById('change-rate').textContent = '';
         });
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+    customFetch('http://45.13.59.226/hozma/api/invoice-stats/')  // Replace with your actual API endpoint
+        .then(res => res.json())
+        .then(data => {
+            // Update the number of new orders
+            document.getElementById('new-orders-count1').textContent = data.new_unconfirmed_orders_today;
+            document.getElementById('new-orders-count').textContent = data.new_unconfirmed_orders_today;
+            // Update the shop confirmed count and set active color
+            document.getElementById('shop-confirmed-count').textContent = 'تم تأكيدها من قبل المتجر: ' + data.shop_confirmed_this_month;
+            let confirmedStatusElement = document.getElementById('shop-confirmed-count');
+            if (data.shop_confirmed_this_month > 0) {
+                confirmedStatusElement.classList.remove('text-danger');
+                confirmedStatusElement.classList.add('text-success'); // Green color for confirmed
+            } else {
+                confirmedStatusElement.classList.remove('text-success');
+                confirmedStatusElement.classList.add('text-danger'); // Red color for unconfirmed
+            }
+
+            // Update the total invoice count
+            document.getElementById('current-month-invoice-count').textContent = 'إجمالي الفواتير: ' + data.current_month_invoice_count;
+
+            // Update the percentage increase from last week
+            document.getElementById('percentage-increase').textContent = data.percentage_increase + '%';
+        })
+        .catch(err => console.error("Error loading stats:", err));
+});
+// Fetch inventory data
+customFetch('http://45.13.59.226/hozma/api/inventory/')
+    .then(response => response.json())
+    .then(data => {
+        const inventoryTable = document.getElementById('inventoryTable');
+        
+        data.products.forEach(product => {
+            const row = document.createElement('tr');
+            
+            // Determine stock status
+            let statusBadge = '';
+            if(product.quantity > 10) {
+                statusBadge = '<span class="badge bg-success">متوفر</span>';
+            } else if(product.quantity > 0) {
+                statusBadge = '<span class="badge bg-warning text-dark">كمية محدودة</span>';
+            } else {
+                statusBadge = '<span class="badge bg-danger">نفذ من المخزون</span>';
+            }
+            
+            row.innerHTML = `
+                <td><img src="${product.image || 'https://via.placeholder.com/50'}" width="50"></td>
+                <td>${product.name}</td>
+                <td>${product.price.toLocaleString()} د.ل</td>
+                <td>${product.quantity}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            
+            inventoryTable.appendChild(row);
+        });
+    });
+// Fetch sales trends and top items
+
+
+document.addEventListener('DOMContentLoaded', function() {
+        // Fetch data from API
+        fetch('http://45.13.59.226/hozma/api/sales-analysis/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(apiData => {
+                // Process monthly sales data
+                const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                const monthlySales = apiData.monthly_sales
+                    .filter(item => item.month !== null)
+                    .map(item => {
+                        const date = new Date(item.month);
+                        return {
+                            month: arabicMonths[date.getMonth()] + ' ' + date.getFullYear(),
+                            sales: item.total_sales
+                        };
+                    });
+
+                // Create Monthly Sales Chart
+                const salesCtx = document.getElementById('salesChart1').getContext('2d');
+                const salesChart = new Chart(salesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: monthlySales.map(item => item.month),
+                        datasets: [{
+                            label: 'إجمالي المبيعات',
+                            data: monthlySales.map(item => item.sales),
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                rtl: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'المبلغ: ' + context.raw.toLocaleString('en-UK') + 'د٫ل';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString('en-UK') + 'د٫ل';
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Process top clients data (take top 5)
+                const topClients = apiData.top_clients.slice(0, 5);
+
+                // Create Top Clients Chart
+                const clientsCtx = document.getElementById('clientsChart').getContext('2d');
+                const clientsChart = new Chart(clientsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: topClients.map(client => client.client_name),
+                        datasets: [{
+                            data: topClients.map(client => client.total_purchase),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 206, 86, 0.7)',
+                                'rgba(75, 192, 192, 0.7)',
+                                'rgba(153, 102, 255, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'left',
+                                rtl: true
+                            },
+                            tooltip: {
+                                rtl: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.raw.toLocaleString('en-UK') + 'د٫ل';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+
+                // Populate Top Items Table
+                const topItemsTable = document.getElementById('topItemsTable');
+                // Clear any existing rows first
+                topItemsTable.innerHTML = '';
+                apiData.top_items.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${item.name}</td>
+                        <td>${item.company || 'غير محدد'}</td>
+                        <td>${item.total_quantity}</td>
+                        <td>${item.total_price.toLocaleString('en-UK')} ر.س</td>
+                    `;
+                    topItemsTable.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                // You might want to display an error message to the user here
+                alert('حدث خطأ أثناء جلب البيانات. يرجى المحاولة مرة أخرى لاحقاً.');
+            });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+    fetch('http://45.13.59.226/hozma/api/purchase-analysis/')
+        .then(response => response.json())
+        .then(apiData => {
+            // Arabic months
+            const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+            // Monthly purchases
+            const monthlyPurchases = apiData.monthly_purchases
+                .filter(item => item.month !== null)
+                .map(item => {
+                    const date = new Date(item.month);
+                    return {
+                        month: arabicMonths[date.getMonth()] + ' ' + date.getFullYear(),
+                        amount: item.total_purchased
+                    };
+                });
+
+            // Draw Monthly Purchases Chart
+            const monthlyPurchasesCtx = document.getElementById('monthlyPurchasesChart').getContext('2d');
+            new Chart(monthlyPurchasesCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyPurchases.map(item => item.month),
+                    datasets: [{
+                        label: 'إجمالي المشتريات',
+                        data: monthlyPurchases.map(item => item.amount),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            rtl: true,
+                            callbacks: {
+                                label: context => 'المبلغ: ' + context.raw.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: value => value.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Top Vendors
+            const topVendors = apiData.top_vendors
+                .filter(vendor => vendor.source !== null && vendor.total_purchase > 0)
+                .slice(0, 5);
+
+            const vendorsCtx = document.getElementById('vendorsChart').getContext('2d');
+            new Chart(vendorsCtx, {
+                type: 'bar',
+                data: {
+                    labels: topVendors.map(v => v.source_obj__name || v.source),
+                    datasets: [{
+                        label: 'إجمالي المشتريات',
+                        data: topVendors.map(v => v.total_purchase),
+                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            rtl: true,
+                            callbacks: {
+                                label: context => 'المبلغ: ' + context.raw.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => value.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Purchased Items Table
+            const purchasedItemsTable = document.getElementById('purchasedItemsTable');
+            apiData.top_purchased_items.forEach((item, index) => {
+                const row = document.createElement('tr');
+                const totalPrice = item.total_price || 0;
+                const totalCost = item.total_cost || 0;
+                const profit = totalPrice - totalCost;
+
+                let profitMargin = 0;
+                if (totalCost > 0) profitMargin = ((profit) / totalCost) * 100;
+                else if (totalPrice > 0) profitMargin = 100;
+
+                let profitClass = 'profit-neutral';
+                if (profit > 0) profitClass = 'profit-positive';
+                else if (profit < 0) profitClass = 'profit-negative';
+
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.company || 'غير محدد'}</td>
+                    <td>${item.total_quantity}</td>
+                    <td>${totalPrice.toLocaleString('en-UK')} ر.س</td>
+                    <td>${totalCost.toLocaleString('en-UK')} ر.س</td>
+                    <td class="${profitClass}">${profit.toLocaleString('en-UK')} ر.س</td>
+                    <td class="${profitClass}">${profitMargin.toFixed(2)}%</td>
+                `;
+                purchasedItemsTable.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching purchase analysis:', error);
+        });
+});
 
     
     </script>

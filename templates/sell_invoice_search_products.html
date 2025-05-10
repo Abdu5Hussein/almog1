@@ -608,6 +608,7 @@
               type="button"
               class="btn btn-primary"
               style="width: 100px"
+              {% if not perms.almogOil.delete_sellinvoicetable %}disabled{% endif %}
             >
               طباعة
             </button>
@@ -619,13 +620,14 @@
               class="btn btn-primary"
               data-bs-toggle="modal"
               data-bs-target="#exampleModal"
+              {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}
             >
               تصدير
             </button>
           </div>
 
           <div class="col-auto m-1">
-            <button type="button" class="btn btn-primary" style="width: 150px">
+            <button type="button" class="btn btn-primary" style="width: 150px" {% if not perms.almogOil.custom_export_sellinvoice %}disabled{% endif %}>
               تصدير مخصص
             </button>
           </div>
@@ -643,7 +645,7 @@
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <script>
-      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
+      const show_sell_price_permission = {{ perms.almogOil.show_sell_price_sellinvoice|yesno:"true,false" }};
 
        const table = new Tabulator("#users-table", {
           height: "auto", // Adjust height or set a fixed height
@@ -703,7 +705,7 @@
               field: "buyprice",
               headerMenu: false,
               width: 75,
-              visible: true,
+              visible: show_sell_price_permission,
             },
             {
               title: "الموقع",
@@ -911,7 +913,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -1051,7 +1052,6 @@
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           })
       .then((response) => response.json())
@@ -1277,7 +1277,7 @@
     }
     document.getElementById("contextMenu").style.display = "none"; // Hide context menu after action
     };
-    let windows = {}; // Object to keep track of opened windows
+    //let windows = {}; // Object to keep track of opened windows
 
       // Function to open a new window or focus an existing one
       function openWindow(url, name, width = 1100, height = 700) {

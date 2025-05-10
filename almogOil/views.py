@@ -62,6 +62,7 @@ from products import serializers as product_serializers
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
 from app_sell_invoice import serializers as sell_invoice_serializers
+from django.contrib.auth.decorators import login_required, permission_required
 
 
 
@@ -130,6 +131,7 @@ def LogInView(request):
         return render(request, 'login.html')
 
 @login_required
+@permission_required('almogOil.template_treasury_entries', raise_exception=True)
 def StorageManagement(req):
     Clients= models.AllClientsTable.objects.all()
     sections = models.Sectionstable.objects.all()
@@ -142,6 +144,7 @@ def StorageManagement(req):
     return render(req,'storage-management.html',context)
 
 @login_required
+@permission_required('almogOil.template_treasury_reports', raise_exception=True)
 def StorageReports(req):
     Clients= models.AllClientsTable.objects.all()
     sections = models.Sectionstable.objects.all()
@@ -155,6 +158,7 @@ def StorageReports(req):
 
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def MoreDetails(req):
     productId = req.GET.get('product_id')
     item = models.Mainitem.objects.filter(fileid=productId)
@@ -165,6 +169,7 @@ def MoreDetails(req):
 
 
 @login_required
+@permission_required('almogOil.template_buy_invoice_entry', raise_exception=True)
 def BuyInvoicesAdd(request):
     sources = models.AllSourcesTable.objects.all().values('clientid','name')
     Currency = models.CurrenciesTable.objects.all()
@@ -177,6 +182,7 @@ def BuyInvoicesAdd(request):
 from django.utils.dateparse import parse_date
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def ImageView(request):
     # Retrieve all images to display in the template
     product_id = request.GET.get("product_id")
@@ -203,6 +209,7 @@ def ImageView(request):
     return render(request, 'image-table.html', {'images': images})
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def ModelView(request):
     sub_types = models.Subtypetable.objects.all()
     models_ = models.Modeltable.objects.select_related('subtype_fk').all()
@@ -250,6 +257,7 @@ def HomeView(request):
     return render(request, 'home.html')
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def SectionAndSubSection(request):
     sections = models.Sectionstable.objects.all()
     subSections = models.Subsectionstable.objects.all()
@@ -303,6 +311,7 @@ def SectionAndSubSection(request):
 #until here
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def MainCat(request):
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -341,6 +350,7 @@ def MainCat(request):
     return render(request, 'main-cat.html', context)
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def SubCat(request):
     main_types = models.Maintypetable.objects.all()
     subtypes = models.Subtypetable.objects.select_related('maintype_fk').all()
@@ -388,6 +398,7 @@ def SubCat(request):
     })
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def manage_companies(request):
     if request.method == 'POST':
         action = request.POST.get('action')  # Get action: add, edit, delete
@@ -425,6 +436,7 @@ def manage_companies(request):
     return render(request, 'company-table.html', context)
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def manage_countries(request):
     if request.method == "POST":
         action = request.POST.get("action")
@@ -449,6 +461,8 @@ def manage_countries(request):
     countries = models.Manufaccountrytable.objects.all().order_by('countryname')
     return render(request, 'countries-table.html', {'countries': countries})
 
+@login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def Measurements(request):
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -511,7 +525,9 @@ COLUMN_TITLES = {
     "dateproduct":"date product"
 }
 
+
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def ProductsDetails(req):
     company = models.Companytable.objects.values('fileid', 'companyname')
     measurements = models.MeasurementsTable.objects.all()
@@ -549,6 +565,8 @@ def ProductsDetails(req):
 #until here
 
 @csrf_exempt
+@login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def OemNumbers(req):
     if req.method == 'GET':
         company_name = req.session.get('oem_company_name')
@@ -959,10 +977,12 @@ def generate_pdf(request):
         return HttpResponse(status=405)  # Method Not Allowed if not POST
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def ImportExcel(request):
     return render(request,'import-excel.html')
 
 @login_required
+@permission_required('almogOil.template_storage_locations', raise_exception=True)
 def StoragePlaces(request):
     company = models.Companytable.objects.all()
     mainType = models.Maintypetable.objects.all()
@@ -989,6 +1009,7 @@ def safe_float(value, default=0.0):
         return default
 
 @login_required
+@permission_required('almogOil.template_external_item_reports', raise_exception=True)
 def ProductsReports(req):
     if req.method == 'POST':
         return JsonResponse({'message': 'Invalid request method.'}, status=405)
@@ -1025,12 +1046,14 @@ def ProductsReports(req):
     return render(req, 'products-reports.html', context)
 
 @login_required
+@permission_required('almogOil.template_local_item_reports', raise_exception=True)
 def PartialProductsReports(req):
     users = []  # Fetch users or relevant data from your new model if needed
     context = {'users': users}
     return render(req, 'products-reports.html', context)
 
 @login_required
+@permission_required('almogOil.template_item_movement_reports', raise_exception=True)
 def ProductsMovementReport(req):
     company = models.Companytable.objects.all()
     mainType = models.Maintypetable.objects.all()
@@ -1043,6 +1066,7 @@ def ProductsMovementReport(req):
     return render(req, 'products-movement.html', context)
 
 @login_required
+@permission_required('almogOil.template_revaluation', raise_exception=True)
 def ProductsBalance(req):
     company = models.Companytable.objects.all()
     mainType = models.Maintypetable.objects.all()
@@ -1055,6 +1079,7 @@ def ProductsBalance(req):
     return render(req, 'products-balance.html', context)
 
 @login_required
+@permission_required('almogOil.template_customer_guide', raise_exception=True)
 def ClientsManagement(request):
     types = models.Clienttypestable.objects.all().values('fileid', 'tname')
     context = {
@@ -1070,6 +1095,7 @@ def DataInventory(req):
 
 
 @login_required
+@permission_required('almogOil.template_damage_loss', raise_exception=True)
 def LostDamaged(req):
     company = models.Companytable.objects.all()
     mainType = models.Maintypetable.objects.all()
@@ -1082,6 +1108,7 @@ def LostDamaged(req):
     return render(req, 'lost-and-damaged.html', context)
 
 @login_required
+@permission_required('almogOil.template_customer_reports', raise_exception=True)
 def ClientsReports(req):
     types = models.Clienttypestable.objects.all()
     context = {
@@ -1090,12 +1117,14 @@ def ClientsReports(req):
     return render(req, 'clients-reports.html', context)
 
 @login_required
+@permission_required('almogOil.template_price_modifications', raise_exception=True)
 def EditPrices(req):
     users = []  # Fetch users or relevant data from your new model if needed
     context = {'users': users}
     return render(req, 'edit-prices.html', context)
 
 @login_required
+@permission_required('almogOil.template_attendance_absence', raise_exception=True)
 def EmployeesAttendanceView(req):
     employees= models.EmployeesTable.objects.all().values("name","employee_id","salary")
     context = {
@@ -1104,11 +1133,13 @@ def EmployeesAttendanceView(req):
     return render(req, 'employees-attendance.html', context)
 
 @login_required
+@permission_required('almogOil.template_employee_directory', raise_exception=True)
 def EmployeesDetailsView(req):
     context = {}
     return render(req, 'employees-details.html', context)
 
 @login_required
+@permission_required('almogOil.category_storage', raise_exception=True)
 def account_statement(request):
     client_id = request.GET.get('id')
     if not client_id:
@@ -1140,6 +1171,7 @@ def account_statement(request):
 
 
 @login_required
+@permission_required('almogOil.category_buy_invoice', raise_exception=True)
 def BuyInvoiceItemsView(request):
     company = models.Companytable.objects.all()
     mainType = models.Maintypetable.objects.all()
@@ -1160,6 +1192,7 @@ def BuyInvoiceItemsView(request):
     return render(request,'add-invoice-items.html',context)
 
 @csrf_exempt
+@permission_required('almogOil.category_buy_invoice', raise_exception=True)
 def cost_management(request):
     if request.method == "POST":
         try:
@@ -1217,6 +1250,7 @@ def format_number(number):
     return f"{number:,.2f}"
 
 @login_required
+@permission_required('almogOil.category_storage', raise_exception=True)
 def payment_installments(request):
     return render(request,'payment.installments.html')
 
@@ -1288,6 +1322,7 @@ def process_add_data(request):
     return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
 
 @login_required
+@permission_required('almogOil.template_buy_invoices', raise_exception=True)
 def manage_buy_invoice(request):
     auto_id = request.session.get('auto_id')
     currency = request.session.get('currency')
@@ -1304,6 +1339,8 @@ def manage_buy_invoice(request):
 
     return render(request, 'manage-buy-invoice.html', context)
 
+@login_required
+@permission_required('almogOil.category_buy_invoice', raise_exception=True)
 def buyInvoice_excell(request):
     if request.method == "POST":
         try:
@@ -1467,6 +1504,7 @@ def process_buyInvoice_excel(request):
     return JsonResponse({"status": "error", "message": "Invalid request."})
 
 @login_required
+@permission_required('almogOil.template_buy_temp_item_posting', raise_exception=True)
 def temp_confirm(request):
     invoices = models.Buyinvoicetable.objects.filter(temp_flag=1)
     context={
@@ -1532,10 +1570,12 @@ def process_temp_confirm(request):
         return JsonResponse({'status': 'error', 'message': 'Invalid request method. Only POST is allowed.'}, status=405)
 
 @login_required
+@permission_required('almogOil.template_buy_price_modifications', raise_exception=True)
 def buyInvoice_edit_prices(request):
     return render(request,"buy-invoice-edit-price.html")
 
 @login_required
+@permission_required('almogOil.template_buy_invoices', raise_exception=True)
 def Buyinvoice_management(request):
     #records = models.Buyinvoicetable.objects.all().values()
     #total_amount = models.Buyinvoicetable.objects.aggregate(Sum('amount'))['amount__sum'] or 0
@@ -1550,6 +1590,7 @@ def Buyinvoice_management(request):
 
 
 @login_required
+@permission_required('almogOil.template_buy_invoice_entry', raise_exception=True)
 def buy_invoice_add_items(request):
     if request.method == "POST":
         data = json.loads(request.body.decode("utf-8"))
@@ -1581,6 +1622,7 @@ def buy_invoice_add_items(request):
     return render(request,'buy-invoice-add-items.html',context)
 
 @login_required
+@permission_required('almogOil.template_sell_inventory_item_search', raise_exception=True)
 def sell_invoice_search_storage(request):
     company = models.Companytable.objects.all()
     mainType = models.Maintypetable.objects.all()
@@ -1595,6 +1637,7 @@ def sell_invoice_search_storage(request):
     return render(request,'sell_invoice_search_products.html',context)
 
 @login_required
+@permission_required('almogOil.template_sell_invoice_entry', raise_exception=True)
 def sell_invoice_add_invoice(request):
     Clients= models.AllClientsTable.objects.all().values()
     context = {
@@ -1603,16 +1646,20 @@ def sell_invoice_add_invoice(request):
     return render(request,'sell_invoice_add_invoice.html',context)
 
 @login_required
+@permission_required('almogOil.template_sell_invoices', raise_exception=True)
 def sell_invoice_management(request):
     clients =models.AllClientsTable.objects.all().values('clientid','name')
     client_types = models.Clienttypestable.objects.all()
+    today = timezone.now().date().isoformat()
     context = {
         "clients":clients,
         "types":client_types,
+        "today":today,
     }
     return render(request,'sell_invoice_management.html',context)
 
-
+@login_required
+@permission_required('almogOil.template_sell_invoice_entry', raise_exception=True)
 def sell_invoice_add_items(request):
     if request.method == "POST":
         try:
@@ -1658,14 +1705,18 @@ def get_sellinvoice_no(request):
     return JsonResponse(response_data)
 
 @login_required
+@permission_required('almogOil.template_sell_invoice_preparation_reports', raise_exception=True)
 def sell_invoice_prepare_report(request):
     client = models.AllClientsTable.objects.all().values("clientid","name")
+    today = timezone.now().date().isoformat()
     context = {
+        'today':today,
         "clients":client,
     }
     return render(request,'sell_invoice_prepare_report.html',context)
 
 @login_required
+@permission_required('almogOil.template_sell_invoice_preparation_reports', raise_exception=True)
 def sell_invoice_storage_management(request):
     id = request.GET.get("inv")
     invoice = models.SellinvoiceTable.objects.get(invoice_no=id)
@@ -1692,6 +1743,7 @@ def sell_invoice_storage_management(request):
     return render(request,'sell_invoice_storage_management.html',context)
 
 @login_required
+@permission_required('almogOil.category_sell_invoice', raise_exception=True)
 def sell_invoice_profile(request, id):
     invoice = get_object_or_404(models.SellinvoiceTable, invoice_no=id)
 
@@ -2023,6 +2075,7 @@ def fetch_feedback_messages(request, feedback_id):
 
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def addMoreCatView(request,id):
     item = models.Mainitem.objects.get(pno=id)
 
@@ -2055,6 +2108,7 @@ def notifications_page(request):
     return render(request, 'notifications.html')
 
 @login_required
+@permission_required('almogOil.template_return_permission_entry', raise_exception=True)
 def return_items_view(request):
     clients = models.AllClientsTable.objects.all().values('clientid','name')
     invoices = models.SellinvoiceTable.objects.all().values('invoice_no','client_id','client_name')
@@ -2065,6 +2119,7 @@ def return_items_view(request):
     return render(request, 'return-permission-add.html',context)
 
 @login_required
+@permission_required('almogOil.template_return_reports', raise_exception=True)
 def return_items_report_view(request):
     clients = models.AllClientsTable.objects.all().values('clientid','name')
     context = {
@@ -2073,6 +2128,7 @@ def return_items_report_view(request):
     return render(request, 'return-permission-report.html',context)
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def engines_view(request):
     engines = models.enginesTable.objects.values('fileid', 'engine_name','subtype_str','maintype_str')
     subtypes =   models.Subtypetable.objects.all().values()
@@ -2085,6 +2141,7 @@ def engines_view(request):
     })
 
 @login_required
+@permission_required('almogOil.template_return_permission_entry', raise_exception=True)
 def return_items_add_items(request, id, permission):
     try:
         invoice_items = models.SellInvoiceItemsTable.objects.filter(invoice_no=id)
@@ -2101,6 +2158,7 @@ def return_items_add_items(request, id, permission):
     return render(request, 'return_permission_add_items.html', context)
 
 @login_required
+@permission_required('almogOil.template_request_value', raise_exception=True)
 def request_payment_view(request):
     requests = models.PaymentRequestTable.objects.select_related('client').all()  # Fetch requests with clients
     updated_data = []  # List to store modified request objects
@@ -2136,6 +2194,7 @@ def request_payment_view(request):
     return render(request, 'request-payment.html', context)
 
 @login_required
+@permission_required('almogOil.template_add_item_specifications', raise_exception=True)
 def main_item_add_json_description(request):
     products = models.Mainitem.objects.all().values('pno','itemname','companyproduct').order_by('pno')
     context = {
@@ -2216,6 +2275,7 @@ def invoice_notifications(request):
     return render(request, 'WStest.html')
 
 @login_required
+@permission_required('almogOil.category_suppliers', raise_exception=True)
 def sources_management_View(request):
     context = {}
     return render(request,'sources-management.html',context)
@@ -2264,6 +2324,7 @@ class AddToCartView(APIView):
         return Response(serializers.CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
 
 @login_required
+@permission_required('almogOil.category_return_permission', raise_exception=True)
 def return_permission_profile(request, id):
     return_permission = get_object_or_404(models.return_permission, autoid=id)
     context = {
@@ -2274,6 +2335,7 @@ def return_permission_profile(request, id):
     return render(request, 'return_permission_profile.html', context)
 
 @login_required
+@permission_required('almogOil.template_users_management', raise_exception=True)
 def users_management(request):
     permissions_list = [
         "template_productdetails",
@@ -2304,6 +2366,7 @@ def users_management(request):
     return render(request, "users-management.html", context)
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def maintype_logo_view(request, id):
     # Retrieve the specific Maintypetable entry
     maintype = get_object_or_404(models.Maintypetable, fileid=id)
@@ -2319,6 +2382,7 @@ def maintype_logo_view(request, id):
     return render(request, "maintype_logo_upload.html", context)
 
 @login_required
+@permission_required('almogOil.template_productdetails', raise_exception=True)
 def company_logo_view(request, id):
     # Retrieve the specific Maintypetable entry
     company = get_object_or_404(models.Companytable, fileid=id)
@@ -2339,6 +2403,7 @@ def assign_orders_page(request, invoice_id):
     return render(request, 'assign_orders.html', {'invoice_id': invoice_id})
 
 @login_required
+@permission_required('almogOil.template_emp_reports', raise_exception=True)
 def employees_report_view(request):
     employees= models.EmployeesTable.objects.all().values("name","employee_id")
     context = {
@@ -2347,6 +2412,7 @@ def employees_report_view(request):
     return render(request,'employees-report.html',context)
 
 @login_required
+@permission_required('almogOil.template_salary_accounts', raise_exception=True)
 def employees_salary_view(request):
     employees= models.EmployeesTable.objects.all().values("name","employee_id")
     context = {
@@ -2355,6 +2421,7 @@ def employees_salary_view(request):
     return render(request,'employees-salary.html',context)
 
 @login_required
+@permission_required('almogOil.category_employees', raise_exception=True)
 def employees_salary_edit_view(request):
     employees= models.EmployeesTable.objects.all().values("name","employee_id")
     context = {
@@ -2363,6 +2430,7 @@ def employees_salary_edit_view(request):
     return render(request,'employees-salary-edit.html',context)
 
 @login_required
+@permission_required('almogOil.category_employees', raise_exception=True)
 def employees_cash_reports_view(request):
     employees= models.EmployeesTable.objects.all().values("name","employee_id")
     context = {

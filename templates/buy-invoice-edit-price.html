@@ -625,7 +625,7 @@
           مسح
         </button>
 
-        <button type="button" class="btn btn-primary m-1" id="confirm-btn">
+        <button type="button" class="btn btn-primary m-1" id="export-btn" {% if not perms.almogOil.export_buyinvoice %}disabled{% endif %}>
           تصدير
         </button>
         <button

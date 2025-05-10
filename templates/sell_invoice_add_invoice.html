@@ -861,11 +861,12 @@
           <button
             type="button"
             class="btn btn-primary m-1"
+            {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}
             data-bs-toggle="modal"
             data-bs-target="#exampleModal"
           >
             تصدير</button
-          ><button type="button" class="btn btn-primary m-1">طباعة</button>
+          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}>طباعة</button>
           <button type="button" class="btn btn-primary m-1">حذف</button>
           <button
             type="button"

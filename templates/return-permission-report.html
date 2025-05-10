@@ -675,8 +675,9 @@
                 class="btn btn-primary m-1"
                 data-bs-toggle="modal"
                 data-bs-target="#exampleModal"
+                {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}
             >تصدير</button>
-            <button type="button" class="btn btn-primary m-1">طباعة</button>
+            <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}>طباعة</button>
             <button
                 type="button"
                 class="btn btn-secondary m-1"

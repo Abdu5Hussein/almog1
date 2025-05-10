@@ -1123,6 +1123,7 @@
               type="button"
               onclick="openWindow('import-excel')"
               class="btn btn-primary m-1"
+              {% if not perms.almogOil.export_mainitems %}disabled{% endif %}
             >
               استيراد
             </button>

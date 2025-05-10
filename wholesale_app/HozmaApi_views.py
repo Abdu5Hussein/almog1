@@ -7,6 +7,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 import json
 import random
+from django.db.models import Count, Sum, Avg, F, Q, Case, When, Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
+from django.db.models.functions import TruncMonth, TruncDay
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -65,6 +67,7 @@ from products import serializers as products_serializers
 import hashlib
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from dateutil.relativedelta import relativedelta
 
 def get_last_PreOrderTable_no():
     last_invoice = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
@@ -834,6 +837,8 @@ def Buyhandle_confirm_action(preorder):
         try:
             mainitem = almogOil_models.Mainitem.objects.get(pno=item.pno)
             mainitem.itemvalue = max(mainitem.itemvalue + item.Confirmed_quantity, 0)
+            mainitem.buylastdate= timezone.now()
+            mainitem.buysource=mainitem.source.name
             mainitem.save()
         except almogOil_models.Mainitem.DoesNotExist:
             pass
@@ -1623,3 +1628,455 @@ def invoice_summary(request):
         "total_amount": float(current_amount),
         "change_rate": round(change_rate, 2)
     })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def invoice_statistics(request):
+    today = now()
+
+    # Current month range
+    start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    end_of_month = (start_of_month + relativedelta(months=1)) - timedelta(seconds=1)
+
+    # Last month range
+    start_of_last_month = start_of_month - relativedelta(months=1)
+    end_of_last_month = start_of_month - timedelta(seconds=1)
+
+    # Count invoices this month
+    current_month_count = almogOil_models.PreOrderTable.objects.filter(
+        date_time__range=(start_of_month, end_of_month)
+    ).count()
+
+    # Count invoices last month
+    last_month_count = almogOil_models.PreOrderTable.objects.filter(
+        date_time__range=(start_of_last_month, end_of_last_month)
+    ).count()
+
+    # Percentage increase calculation
+    if last_month_count > 0:
+        percentage_increase = ((current_month_count - last_month_count) / last_month_count) * 100
+    else:
+        percentage_increase = 100.0 if current_month_count > 0 else 0.0
+
+    # Count confirmed by shop this month
+    shop_confirmed_count = almogOil_models.PreOrderTable.objects.filter(
+        date_time__range=(start_of_month, end_of_month),
+        shop_confrim=True
+    ).count()
+
+    # Count new orders today not confirmed by shop
+    start_of_today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_today = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+    new_unconfirmed_today = almogOil_models.PreOrderTable.objects.filter(
+        date_time__range=(start_of_today, end_of_today),
+        shop_confrim=False
+    ).count()
+
+    return Response({
+        'current_month_invoice_count': current_month_count,
+        'last_month_invoice_count': last_month_count,
+        'percentage_increase': round(percentage_increase, 2),
+        'shop_confirmed_this_month': shop_confirmed_count,
+        'new_unconfirmed_orders_today': new_unconfirmed_today
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def item_analytics(request):
+    # Get time period from query params (default: last 30 days)
+    period = request.GET.get('period', '30d')
+    
+    # Calculate date ranges
+    end_date = datetime.now()
+    if period == '7d':
+        start_date = end_date - timedelta(days=7)
+    elif period == '30d':
+        start_date = end_date - timedelta(days=30)
+    elif period == '90d':
+        start_date = end_date - timedelta(days=90)
+    elif period == '1y':
+        start_date = end_date - timedelta(days=365)
+    else:
+        # Custom period in days
+        try:
+            days = int(period[:-1])
+            start_date = end_date - timedelta(days=days)
+        except:
+            start_date = end_date - timedelta(days=30)
+
+    # 1. Sales Trends Over Time
+    sales_trends = (
+        almogOil_models.Mainitem.objects
+        .filter(buylastdate__range=[start_date, end_date])
+        .annotate(day=TruncDay('buylastdate'))
+        .values('day')
+        .annotate(
+            total_sales=Sum('buyprice'),
+            count=Count('fileid')
+        )
+        .order_by('day')
+    )
+
+    # 2. Top Selling Items
+    top_items = (
+       almogOil_models.Mainitem.objects
+        .filter(buylastdate__range=[start_date, end_date])
+        .values('itemname', 'companyproduct')
+        .annotate(
+            total_sales=Sum('buyprice'),
+            count=Count('fileid'),
+            avg_price=Avg('buyprice')
+        )
+        .order_by('-total_sales')[:10]
+    )
+
+    # 3. Inventory Analysis
+    inventory_stats = {
+        'total_items':  almogOil_models.Mainitem.objects.count(),
+        'available_items':  almogOil_models.Mainitem.objects.filter(showed__gt=0).count(),
+        'out_of_stock':  almogOil_models.Mainitem.objects.filter(showed=0).count(),
+        'low_stock': almogOil_models.Mainitem.objects.filter(showed__lt=10).count(),
+        'avg_price':  almogOil_models.Mainitem.objects.aggregate(avg=Avg('buyprice'))['avg'],
+        'total_inventory_value':  almogOil_models.Mainitem.objects.aggregate(total=Sum(F('buyprice') * F('itemvalue')))['total']
+    }
+
+    # 4. Category Distribution
+    categories = (
+         almogOil_models.Mainitem.objects
+        .values('itemmain')
+        .annotate(
+            count=Count('fileid'),
+            percentage=100 * Count('fileid') /  almogOil_models.Mainitem.objects.count()
+        )
+        .order_by('-count')[:5]
+    )
+
+    # 5. Price Range Distribution
+    price_ranges = (
+         almogOil_models.Mainitem.objects
+        .annotate(price_range=Case(
+            When(buyprice__lt=100, then=Value('0-100')),
+            When(buyprice__gte=100, buyprice__lt=500, then=Value('100-500')),
+            When(buyprice__gte=500, buyprice__lt=1000, then=Value('500-1000')),
+            When(buyprice__gte=1000, buyprice__lt=5000, then=Value('1000-5000')),
+            When(buyprice__gte=5000, then=Value('5000+')),
+            default=Value('Unknown'),
+            output_field=CharField()
+        ))
+        .values('price_range')
+        .annotate(count=Count('fileid'))
+        .order_by('price_range')
+    )
+
+    # 6. Recent Activity
+    recent_orders = (
+         almogOil_models.Mainitem.objects
+        .filter(buylastdate__isnull=False)
+        .order_by('-buylastdate')[:5]
+        .values('itemname', 'buyprice', 'buylastdate', 'buysource')
+    )
+
+    # 7. Source Analysis
+    source_analysis = (
+         almogOil_models.Mainitem.objects
+        .filter(buylastdate__range=[start_date, end_date])
+        .values('buysource')
+        .annotate(
+            count=Count('fileid'),
+            total_sales=Sum('buyprice'),
+            avg_price=Avg('buyprice')
+        )
+        .order_by('-total_sales')[:5]
+    )
+
+    return Response({
+        'period': {
+            'start': start_date.strftime('%Y-%m-%d'),
+            'end': end_date.strftime('%Y-%m-%d')
+        },
+        'sales_trends': list(sales_trends),
+        'top_items': list(top_items),
+        'inventory_stats': inventory_stats,
+        'categories': list(categories),
+        'price_ranges': list(price_ranges),
+        'recent_orders': list(recent_orders),
+        'source_analysis': list(source_analysis),
+    })
+
+   
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def item_category_analysis(request):
+    analysis = (
+        almogOil_models.Mainitem.objects
+        .values('itemmain', 'itemsubmain', 'itemname')
+        .annotate(
+            count=Count('fileid'),
+            total_value=Sum(ExpressionWrapper(F('buyprice') * F('showed'), output_field=FloatField())),
+            avg_price=Avg('buyprice'),
+            min_price=Min('buyprice'),
+            max_price=Max('buyprice')
+        )
+        .order_by('itemmain', 'itemsubmain', 'itemname')
+    )
+
+    hierarchical_data = {}
+    for item in analysis:
+        main = item['itemmain'] or 'Uncategorized'
+        sub = item['itemsubmain'] or 'Uncategorized'
+        name = item['itemname'] or 'Unnamed'
+
+        if main not in hierarchical_data:
+            hierarchical_data[main] = {
+                'name': main,
+                'count': 0,
+                'total_value': 0,
+                'children': {}
+            }
+
+        if sub not in hierarchical_data[main]['children']:
+            hierarchical_data[main]['children'][sub] = {
+                'name': sub,
+                'count': 0,
+                'total_value': 0,
+                'children': []
+            }
+
+        hierarchical_data[main]['children'][sub]['children'].append({
+            'name': name,
+            'count': item['count'],
+            'total_value': item['total_value'],
+            'avg_price': item['avg_price'],
+            'min_price': item['min_price'],
+            'max_price': item['max_price']
+        })
+
+        hierarchical_data[main]['count'] += item['count']
+        hierarchical_data[main]['total_value'] += item['total_value']
+        hierarchical_data[main]['children'][sub]['count'] += item['count']
+        hierarchical_data[main]['children'][sub]['total_value'] += item['total_value']
+
+    result = []
+    for main_data in hierarchical_data.values():
+        main_entry = {
+            'name': main_data['name'],
+            'count': main_data['count'],
+            'total_value': main_data['total_value'],
+            'children': []
+        }
+        for sub_data in main_data['children'].values():
+            main_entry['children'].append(sub_data)
+        result.append(main_entry)
+
+    return Response(result)
+
+def calculate_percentile(sorted_data, percentile):
+    if not sorted_data:
+        return None
+    index = (len(sorted_data) - 1) * Decimal(str(percentile))
+    lower = int(index)
+    upper = lower + 1
+    if upper >= len(sorted_data):
+        return sorted_data[lower]
+    weight = index - lower
+    return sorted_data[lower] * (Decimal(1) - weight) + sorted_data[upper] * weight
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def item_price_analysis(request):
+    try:
+        prices = list(
+            almogOil_models.Mainitem.objects
+            .filter(buyprice__isnull=False)
+            .values_list('buyprice', flat=True)
+        )
+        prices.sort()
+
+        price_stats = {
+            'avg_price': almogOil_models.Mainitem.objects.aggregate(avg=Avg('buyprice'))['avg'],
+            'min_price': almogOil_models.Mainitem.objects.aggregate(min=Min('buyprice'))['min'],
+            'max_price': almogOil_models.Mainitem.objects.aggregate(max=Max('buyprice'))['max'],
+            'price_stddev': almogOil_models.Mainitem.objects.aggregate(stddev=StdDev('buyprice'))['stddev'],
+            'median_price': calculate_percentile(prices, 0.5),
+            'q1': calculate_percentile(prices, 0.25),
+            'q3': calculate_percentile(prices, 0.75),
+        }
+
+        scatter_data = (
+            almogOil_models.Mainitem.objects
+            .filter(buyprice__isnull=False, itemvalue__isnull=False)
+            .values_list('buyprice', 'itemvalue')[:500]
+        )
+
+        return Response({
+            'price_stats': price_stats,
+            'scatter_data': list(scatter_data),
+        })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def item_source_analysis(request):
+    try:
+        # Annotate lead time
+        items_with_lead_time = (
+            almogOil_models.Mainitem.objects
+            .exclude(source__isnull=True)
+            .annotate(
+                lead_time=ExpressionWrapper(
+                    F('buylastdate') - F('orderlastdate'),
+                    output_field=DurationField()
+                )
+            )
+        )
+
+        # Aggregate source stats
+        source_stats = (
+            items_with_lead_time
+            .values('source__name')
+            .annotate(
+                count=Count('fileid'),
+                total_value=Sum(ExpressionWrapper(F('buyprice') * F('showed'), output_field=None)),
+                avg_price=Avg('buyprice'),
+                avg_lead_time=Avg('lead_time'),
+            )
+            .order_by('-count')
+        )
+
+        # Raw stats for replacement calculation
+        all_sources = almogOil_models.Mainitem.objects.exclude(source__isnull=True).values('source__name')
+
+        replacement_raw = (
+            all_sources
+            .annotate(
+                total_count=Count('fileid'),
+                replacement_count=Count('fileid', filter=Q(replaceno__isnull=False))
+            )
+        )
+
+        # Calculate replacement rate safely in Python
+        replacement_stats = []
+        for row in replacement_raw:
+            total = row['total_count']
+            replacements = row['replacement_count']
+            rate = (replacements / total * 100) if total > 0 else 0
+            replacement_stats.append({
+                'source__name': row['source__name'],
+                'replacement_count': replacements,
+                'total_count': total,
+                'replacement_rate': rate,
+            })
+
+        return Response({
+            'source_stats': list(source_stats),
+            'replacement_stats': replacement_stats,
+        })
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def SalesAnalysisView(request):
+    # 1. Top 10 Clients by Total Purchases
+    top_clients = (
+        almogOil_models.SellinvoiceTable.objects
+        .values('client_name', 'client_id')
+        .annotate(
+            total_purchase=Sum('amount'),
+         
+            total_quantity=Sum('quantity')
+        )
+        .order_by('-total_purchase')[:10]
+    )
+
+    # 2. Top 10 Items by Quantity Sold
+    top_items = (
+        almogOil_models.SellInvoiceItemsTable.objects
+        .values('name', 'pno', 'company')
+        .annotate(
+            total_quantity=Sum('quantity'),
+            total_price=Sum('dinar_total_price'),
+           
+        )
+        .order_by('-total_quantity')[:10]
+    )
+
+    # 3. Monthly Sales Totals
+    monthly_sales = (
+        almogOil_models.SellinvoiceTable.objects
+        .annotate(month=TruncMonth('date_time'))
+        .values('month')
+        .annotate(
+            total_sales=Sum('amount'),
+        
+        )
+        .order_by('month')
+    )
+
+    return Response({
+        "top_clients": list(top_clients),
+        "top_items": list(top_items),
+        "monthly_sales": list(monthly_sales),
+    })
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def purchase_analysis(request):
+    # 1. Top 10 Vendors by Total Purchases
+    top_vendors = (
+        almogOil_models.Buyinvoicetable.objects
+        .values('source', 'source_obj__name')  # assuming AllSourcesTable has a 'name' field
+        .annotate(
+            total_purchase=Sum('net_amount'),
+            
+            total_paid=Sum('amount')
+        )
+        .order_by('-total_purchase')[:10]
+    )
+
+    # 2. Top 10 Purchased Items by Quantity
+    top_items = (
+        almogOil_models.BuyInvoiceItemsTable.objects
+        .values('name', 'pno', 'company')
+        .annotate(
+            total_quantity=Sum('quantity'),
+            total_price=Sum('dinar_total_price'),
+            total_cost=Sum('cost_total_price')
+        )
+        .order_by('-total_quantity')[:10]
+    )
+
+    # 3. Monthly Purchase Totals
+    monthly_purchases = (
+        almogOil_models.Buyinvoicetable.objects
+        .annotate(month=TruncMonth('invoice_date'))
+        .values('month')
+        .annotate(
+            total_purchased=Sum('amount'),
+     
+          
+        )
+        .order_by('month')
+    )
+
+    return Response({
+        "top_vendors": list(top_vendors),
+        "top_purchased_items": list(top_items),
+        "monthly_purchases": list(monthly_purchases),
+    })
+       

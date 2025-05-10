@@ -254,7 +254,7 @@
             <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-5" style="background-color: #7f8000;">س. جزئيا</button>
             <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-6" style="background-color: #d5fef0;">ترجيع كلي</button>
             <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-7" style="background-color: #dee7a0;">ترجيع جزئي</button>
-            <button type="button" class="btn btn-primary m-1">طباعة</button>
+            <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}>طباعة</button>
         </div>
 
         <div class="col custome-width">
@@ -283,8 +283,8 @@
                                 <div class="width-95 d-flex align-items-center">
                                     <label for="for-who" class="form-label">التاريخ</label>
                                 </div>
-                                <input type="date" class="form-control" id="from-date" />
-                                <input type="date" class="form-control" id="to-date" />
+                                <input type="date" class="form-control" id="from-date" value="{{ today }}" {% if perms.almogOil.fixed_date_prepare_sellinvoice %}disabled{% endif %} />
+                                <input type="date" class="form-control" id="to-date" value="{{ today }}" {% if perms.almogOil.fixed_date_prepare_sellinvoice %}disabled{% endif %} />
                             </div>
                         </div>
 
@@ -479,48 +479,16 @@ function openWindow(url,width = 600,height = 700) {
         };
 }
       invoices_table.on("rowClick", function (e, row) {
+        const hasInvoicePreparePermission = {{ perms.almogOil.prepare_input_sellinvoice|yesno:"true,false" }};
+        if (!hasInvoicePreparePermission) {
+          alert("لا تملك صلاحية تحضير الفاتورة");
+          return;
+        }
         console.log("Row clicked:", row.getData().autoid);
         const id = row.getData().invoice_no;
         console.log("sent id: ",id);
         openWindow("sell_invoice_storage_manage?inv="+ id,1000,700);
-
-        /*// Make a POST request to the server
-        customFetch("buy_invoice_add_items", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCSRFToken(),
-            'Authorization': `Bearer ${jwtToken_access}`,
-          },
-          body: JSON.stringify(data),
-        })
-          .then((response) => {
-            // Check if the response is a redirect (3xx status code)
-            if (response.redirected) {
-              // Open the new URL in a new window/tab
-              openWindow(response.url,1200,700);
-              return;
-            }
-
-            // If the response is JSON, handle it accordingly
-            return response.json();
-          })
-          .then((data) => {
-            if (data) {
-              console.log("Response from server:", data);
-              if (data.success) {
-                console.log("Invoice sent successfully!");
-              } else {
-                console.log("Error updating invoice:", data.message);
-              }
-            }
-          })
-          .catch((error) => {
-            console.error("Error during fetch:", error);
-            alert("An error occurred: " + error.message);
-          });*/
       });
-      //invoices_table.setData(contextData.data);
       ///////////
 
   let currentInvoicesPage = 1; // Tracks the current page

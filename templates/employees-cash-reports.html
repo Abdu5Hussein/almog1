@@ -670,6 +670,7 @@
         class="btn btn-primary m-1"
         data-bs-toggle="modal"
         data-bs-target="#exampleModal"
+        {% if not perms.almogOil.export_employees %}disabled{% endif %}
         >
         تصدير</button
         ><button type="button" class="btn btn-primary m-1">طباعة</button>
