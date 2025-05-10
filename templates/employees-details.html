@@ -632,9 +632,9 @@
         <div class="row mt-4">
             <div class="col-12 d-flex justify-content-center gap-2 flex-wrap">
                 <button type="button" id="clear-btn" class="btn btn-primary" style="width: 100px">مسح</button>
-                <button type="button" class="btn btn-primary" style="width: 100px" id="add-btn">جديد</button>
-                <button type="button" class="btn btn-primary" style="width: 100px" id="edit-btn">تعديل</button>
-                <button type="button" class="btn btn-primary" style="width: 100px" id="delete-btn">حذف</button>
+                <button type="button" class="btn btn-primary" style="width: 100px" id="add-btn" {% if not perms.almogOil.add_employeestable %}disabled{% endif %}>جديد</button>
+                <button type="button" class="btn btn-primary" style="width: 100px" id="edit-btn" {% if not perms.almogOil.change_employeestable %}disabled{% endif %}>تعديل</button>
+                <button type="button" class="btn btn-primary" style="width: 100px" id="delete-btn" {% if not perms.almogOil.delete_employeestable %}disabled{% endif %}>حذف</button>
                 <button type="button" class="btn btn-primary" style="width: 100px" onClick="window.close()">اغلاق</button>
             </div>
         </div>
