@@ -51,6 +51,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_invoice_data(request, autoid):
+    if not request.user.has_perm('almogOil.category_sell_invoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         # Fetch the data using the provided autoid (primary key)
         invoice_data = almogOil_models.SellinvoiceTable.objects.get(autoid=autoid)
@@ -69,6 +72,9 @@ tags=["Sell Invoice","Clients"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def GetClientInvoices(request, id):
+    if not request.user.has_perm('almogOil.category_sell_invoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     # Filter invoices based on the client ID
     str_id = str(id)
     invoices = almogOil_models.SellinvoiceTable.objects.filter(client_id=str_id)
@@ -91,6 +97,9 @@ tags=["Sell Invoice"],
 #@permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def GetClientInvoicesByInvoiceNo(request, id):
+    if not request.user.has_perm('almogOil.category_sell_invoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     # Filter invoices based on the client ID
     str_id = str(id)
     invoices = almogOil_models.SellinvoiceTable.objects.filter(invoice_no=str_id)
@@ -113,6 +122,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_sellinvoice_no(request):
+    if not request.user.has_perm('almogOil.category_sell_invoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         # Get the last autoid by ordering the table by invoice_no in descending order
         last_invoice = almogOil_models.SellinvoiceTable.objects.order_by('-invoice_no').first()
@@ -138,6 +150,9 @@ tags=["Sell Invoice"],
 #@permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def create_sell_invoice(request):
+    if not request.user.has_perm('almogOil.add_sellinvoicetable'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     if request.method == "POST":
         try:
             data = request.data
@@ -217,6 +232,9 @@ tags=["Sell Invoice","Sell Invoice Items"],
 #@permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def Sell_invoice_create_item(request):
+    if not request.user.has_perm('almogOil.add_sellinvoicetable'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     if request.method == "POST":
         try:
             data = request.data
@@ -297,6 +315,9 @@ tags=["Sell Invoice","Sell Invoice Items"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def fetch_sell_invoice_items(request):
+    if not request.user.has_perm('almogOil.category_sell_invoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     invoice_no = request.GET.get("id")
 
     if not invoice_no:
@@ -317,6 +338,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def fetch_sellinvoices(request):
+    if not request.user.has_perm('almogOil.category_sell_invoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         today = now().date()
         records = almogOil_models.SellinvoiceTable.objects.filter(invoice_date__date=today)
@@ -358,6 +382,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def filter_sellinvoices(request):
+    if not request.user.has_perm('almogOil.category_sell_invoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         filters = request.data
 
@@ -430,6 +457,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def prepare_sell_invoice(request):
+    if not request.user.has_perm('almogOil.prepare_input_sellinvoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         # Get the data from the request body
         data = request.data
@@ -463,6 +493,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def validate_sell_invoice(request):
+    if not request.user.has_perm('almogOil.prepare_input_sellinvoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         # Get the data from the request body
         data = request.data
@@ -500,6 +533,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def deliver_sell_invoice(request):
+    if not request.user.has_perm('almogOil.prepare_input_sellinvoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         data = request.data
         # Extract the data from the request.
@@ -561,6 +597,9 @@ tags=["Sell Invoice"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def cancel_sell_invoice(request):
+    if not request.user.has_perm('almogOil.prepare_input_sellinvoice'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         # Get the data from the request body
         data = request.data

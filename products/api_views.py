@@ -46,6 +46,8 @@ from django.core.paginator import Paginator
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def UpdateItemsItemmainApiView(request, item_id):
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
     try:
         # Retrieve the item by its ID
         item = almogOil_Models.Mainitem.objects.get(pno=item_id)
@@ -93,6 +95,11 @@ def UpdateItemsItemmainApiView(request, item_id):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def UpdateItemsSubmainApiView(request, item_id):
+
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
+
     try:
         # Retrieve the item by its ID
         item = almogOil_Models.Mainitem.objects.get(pno=item_id)
@@ -139,6 +146,11 @@ def UpdateItemsSubmainApiView(request, item_id):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def UpdateItemsModelApiView(request, item_id):
+
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
+
     try:
         # Retrieve the item by its ID
         item = almogOil_Models.Mainitem.objects.get(pno=item_id)
@@ -185,6 +197,11 @@ def UpdateItemsModelApiView(request, item_id):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def UpdateItemsEngineApiView(request, item_id):
+
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
+
     try:
         # Retrieve the item by its ID
         item = almogOil_Models.Mainitem.objects.get(pno=item_id)
@@ -276,6 +293,10 @@ class CustomPagination(PageNumberPagination):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_product_images(request, id):
+
+    if not request.user.has_perm('almogOil.category_products'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         product = almogOil_Models.Mainitem.objects.get(pno=id)
     except almogOil_Models.Mainitem.DoesNotExist:
@@ -291,6 +312,10 @@ def get_product_images(request, id):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def mainitem_add_json_desc(request, id):
+
+    if not request.user.has_perm('almogOil.template_add_item_specifications'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     """Add JSON description to a Mainitem product"""
     try:
         data = request.data
@@ -320,6 +345,10 @@ def mainitem_add_json_desc(request, id):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_item_data(request, fileid):
+
+    if not request.user.has_perm('almogOil.category_products'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         # Retrieve the record from the database
         item = almogOil_Models.Mainitem.objects.get(fileid=fileid)
@@ -337,6 +366,9 @@ def get_item_data(request, fileid):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def edit_main_item(request):
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     if request.method == 'PATCH':
         try:
             data = request.data  # DRF automatically parses JSON into a Python dict
@@ -386,6 +418,9 @@ def edit_main_item(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_mainItem_last_pno(request):
+    if not request.user.has_perm('almogOil.category_products'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         # Get the last autoid by ordering the table by autoid in descending order
         last_pno = almogOil_Models.Mainitem.objects.order_by('-pno').first()
@@ -407,6 +442,9 @@ def get_mainItem_last_pno(request):
 @authentication_classes([CookieAuthentication])
 @csrf_exempt
 def create_main_item(request):
+    if not request.user.has_perm('almogOil.add_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     if request.method == 'POST':
         data = request.data
 
@@ -475,6 +513,10 @@ def safe_float(value, default=0.0):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_data(request):
+
+    if not request.user.has_perm('almogOil.category_products'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         items = almogOil_Models.Mainitem.objects.all().order_by('itemname')
         serializer = products_serializers.MainitemSerializer(items, many=True)
@@ -528,6 +570,9 @@ def get_data(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def update_itemvalue(request):
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         data = request.data
         fileid = data.get('fileid')
@@ -565,6 +610,9 @@ def update_itemvalue(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def update_storage(request):
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         data = request.data
         fileid = data.get('fileid')
@@ -584,6 +632,10 @@ def update_storage(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def check_items(request):
+    if not request.user.has_perm('almogOil.category_products'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
+
     try:
         # Step 1: Parse the incoming JSON data
         data = request.data
@@ -616,6 +668,9 @@ def check_items(request):
 @authentication_classes([CookieAuthentication])
 @csrf_exempt
 def delete_record(request):
+    if not request.user.has_perm('almogOil.delete_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         data = request.data
         fileid = data.get('fileid')
@@ -639,20 +694,23 @@ def delete_record(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def web_filter_items(request):
+     if not request.user.has_perm('almogOil.category_products'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
      if request.method == "POST":
          try:
              # Get the filters from the request body
              filters = request.data  # Decoding bytes and loading JSON
              cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
              cached_data = cache.get(cache_key)
- 
+
              if cached_data:
                  cached_data["cached_flag"] = True
                  return Response(cached_data, status=status.HTTP_200_OK)
- 
+
              # Initialize the base Q object for filtering
              filters_q = Q()
- 
+
              # Build the query based on the filters
              if filters.get('fileid'):
                  filters_q &= Q(fileid__icontains=filters['fileid'])
@@ -684,13 +742,13 @@ def web_filter_items(request):
                  filters_q &= Q(itemsize__icontains=filters['country'])
              if filters.get('oem'):
                  filters_q &= Q(oem_numbers__icontains=filters['oem'])
- 
+
              # Original filters
              if filters.get('itemvalue') == "0":
                  filters_q &= Q(itemvalue=0)
              if filters.get('itemvalue') == ">0":
                  filters_q &= Q(itemvalue__gt=0)
- 
+
              # New availability logic (switch-case style)
              availability = filters.get('availability')
              if availability == "not_available":
@@ -699,16 +757,16 @@ def web_filter_items(request):
                  filters_q &= Q(itemvalue__lte=10, itemvalue__gt=0)
              elif availability == "available":
                  filters_q &= Q(itemvalue__gt=10)
- 
+
              if filters.get('resvalue') == ">0":
                  filters_q &= Q(resvalue__gt=0)
              if filters.get('itemvalue_itemtemp') == "lte":
                  filters_q &= Q(itemvalue__lte=F('itemtemp'))  # Compare fields
- 
+
              # Apply date range filter on `orderlastdate`
              fromdate = filters.get('fromdate', '').strip()
              todate = filters.get('todate', '').strip()
- 
+
              if fromdate and todate:
                  try:
                      from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
@@ -716,17 +774,17 @@ def web_filter_items(request):
                      filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
                  except ValueError:
                      return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
- 
+
              # Now filter the queryset using the combined Q object
              queryset = almogOil_Models.Mainitem.objects.filter(filters_q).order_by('itemname')
- 
+
              # Serialize the filtered data
              serializer = products_serializers.MainitemSerializer(queryset, many=True)
              items_data = serializer.data
- 
+
              # Initialize totals
              total_itemvalue = total_itemvalueb = total_resvalue = total_cost = total_order = total_buy = 0
- 
+
              # Calculate totals
              for item in items_data:
                     # Use safe conversion functions
@@ -737,14 +795,14 @@ def web_filter_items(request):
                  orderprice = float(item.get('orderprice') or 0)
                  buyprice = float(item.get('buyprice') or 0)
 
- 
+
                  total_itemvalue += itemvalue
                  total_itemvalueb += itemvalueb
                  total_resvalue += resvalue
                  total_cost += itemvalue * costprice
                  total_order += itemvalue * orderprice
                  total_buy += itemvalue * buyprice
- 
+
              fullTable = filters.get('fullTable')
              if fullTable:
                  response = {
@@ -761,13 +819,13 @@ def web_filter_items(request):
                      "total_buy": total_buy,
                  }
                  return Response(response)
- 
+
              # Pagination
              page_number = int(filters.get('page') or 1)
              page_size = int(filters.get('size') or 20)
              paginator = Paginator(items_data, page_size)
              page_obj = paginator.get_page(page_number)
- 
+
              response = {
                  "data": list(page_obj),
                  "last_page": paginator.num_pages,
@@ -782,10 +840,10 @@ def web_filter_items(request):
                  "total_buy": total_buy,
                  "cached_flag": False,
              }
- 
+
              cache.set(cache_key, response, timeout=300)
              return Response(response)
- 
+
          except json.JSONDecodeError:
              return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
          except Exception as e:
@@ -801,6 +859,9 @@ tags=["Main Types"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def upload_maintype_logo(request, id):
+    if not request.user.has_perm('almogOil.change_mainitem'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     if 'logo' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -826,6 +887,9 @@ tags=["Companies","Products"],
 #@permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_logo_by_pno(request, id):
+    if not request.user.has_perm('almogOil.category_products'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         product = get_object_or_404(almogOil_Models.Mainitem, pno=id)
         company = get_object_or_404(almogOil_Models.Companytable, companyname=product.companyproduct)

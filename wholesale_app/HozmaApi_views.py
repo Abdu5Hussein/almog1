@@ -1739,7 +1739,7 @@ def item_analytics(request):
         'total_items':  almogOil_models.Mainitem.objects.count(),
         'available_items':  almogOil_models.Mainitem.objects.filter(showed__gt=0).count(),
         'out_of_stock':  almogOil_models.Mainitem.objects.filter(showed=0).count(),
-        'low_stock': almogOil_models.Mainitem.objects.filter(showed__lt=10).count(),
+        'low_stock': almogOil_models.Mainitem.objects.filter(showed__range=(1, 10)).count(),
         'avg_price':  almogOil_models.Mainitem.objects.aggregate(avg=Avg('buyprice'))['avg'],
         'total_inventory_value':  almogOil_models.Mainitem.objects.aggregate(total=Sum(F('buyprice') * F('itemvalue')))['total']
     }

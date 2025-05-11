@@ -12,19 +12,28 @@
     <style>
         :root {
             --primary-color: #4e73df;
+            --primary-light: #e8f1ff;
             --secondary-color: #2c3e50;
             --danger-color: #e74c3c;
+            --danger-light: #fde8e6;
             --success-color: #1cc88a;
+            --success-light: #e6f8f2;
             --warning-color: #f6c23e;
+            --warning-light: #fff6e1;
             --info-color: #36b9cc;
+            --info-light: #e6f7fa;
             --light-color: #f8f9fc;
             --dark-color: #5a5c69;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         
         body {
             background-color: #f5f7fa;
             font-family: 'Tajawal', sans-serif;
             color: #333;
+            line-height: 1.6;
         }
         
         .dashboard-container {
@@ -34,42 +43,82 @@
         
         /* Navbar */
         .navbar {
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            padding: 0.5rem 1rem;
+            box-shadow: 0 4px 12px rgba(58, 59, 69, 0.1);
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #1a2a3a 100%);
         }
         
         .navbar-brand {
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .navbar-brand i {
+            color: var(--primary-color);
+        }
+        
+        .nav-link {
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: white !important;
         }
         
         /* Cards */
         .card {
             border: none;
-            border-radius: 0.35rem;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
             margin-bottom: 1.5rem;
-            transition: all 0.3s;
+            transition: var(--transition);
+            overflow: hidden;
+            background-color: white;
         }
         
         .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(58, 59, 69, 0.15);
         }
         
         .card-header {
-            background-color: var(--light-color);
-            border-bottom: 1px solid #e3e6f0;
-            padding: 1rem 1.35rem;
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.25rem 1.5rem;
             font-weight: 700;
             color: var(--dark-color);
-            border-radius: 0.35rem 0.35rem 0 0 !important;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         /* Stats Cards */
         .stats-card {
-            border-left: 0.25rem solid;
-            transition: all 0.3s;
+            border-left: 0.35rem solid;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            z-index: 1;
         }
         
         .stats-card:hover {
@@ -77,50 +126,60 @@
         }
         
         .stats-card .card-body {
-            padding: 1rem;
+            padding: 1.25rem;
+            position: relative;
+            z-index: 2;
         }
         
         .stats-card .card-title {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 700;
             text-transform: uppercase;
             color: var(--dark-color);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
         }
         
         .stats-card .card-value {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
         }
         
         .stats-card .card-icon {
-            font-size: 2rem;
-            opacity: 0.3;
+            font-size: 2.5rem;
+            opacity: 0.2;
             position: absolute;
-            left: 1rem;
-            top: 1rem;
+            left: 1.25rem;
+            top: 1.25rem;
+            z-index: 0;
         }
         
         .stats-card.primary {
             border-left-color: var(--primary-color);
+            background-color: var(--primary-light);
         }
         
         .stats-card.success {
             border-left-color: var(--success-color);
+            background-color: var(--success-light);
         }
         
         .stats-card.info {
             border-left-color: var(--info-color);
+            background-color: var(--info-light);
         }
         
         .stats-card.warning {
             border-left-color: var(--warning-color);
+            background-color: var(--warning-light);
         }
         
         /* Tables */
         .table-responsive {
-            border-radius: 0.35rem;
+            border-radius: var(--border-radius);
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         
         .table {
@@ -133,11 +192,14 @@
             color: white;
             font-weight: 600;
             border: none;
-            padding: 1rem;
+            padding: 1rem 1.25rem;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
         }
         
         .table tbody tr {
-            transition: all 0.2s ease;
+            transition: var(--transition);
         }
         
         .table tbody tr:hover {
@@ -145,78 +207,87 @@
         }
         
         .table td {
-            padding: 0.75rem;
+            padding: 1rem 1.25rem;
             vertical-align: middle;
-            border-top: 1px solid #e3e6f0;
+            border-top: 1px solid rgba(0, 0, 0, 0.03);
         }
         
         /* Buttons */
         .btn {
-            border-radius: 0.35rem;
+            border-radius: var(--border-radius);
             font-weight: 600;
-            padding: 0.5rem 1rem;
-            transition: all 0.3s;
+            padding: 0.5rem 1.25rem;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            border: none;
+            letter-spacing: 0.3px;
         }
         
         .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
         }
         
         .btn-primary {
             background-color: var(--primary-color);
-            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a5bc7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
         }
         
         .btn-success {
             background-color: var(--success-color);
-            border-color: var(--success-color);
         }
         
         .btn-danger {
             background-color: var(--danger-color);
-            border-color: var(--danger-color);
         }
         
         .btn-warning {
             background-color: var(--warning-color);
-            border-color: var(--warning-color);
             color: #000;
         }
         
         /* Badges */
         .badge {
             font-weight: 600;
-            padding: 0.35em 0.65em;
-            border-radius: 0.25rem;
+            padding: 0.4em 0.75em;
+            border-radius: 10rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         
         /* Status Badges */
         .badge-pending {
-            background-color: #f6c23e;
+            background-color: var(--warning-color);
             color: #000;
         }
         
         .badge-processing {
-            background-color: #36b9cc;
+            background-color: var(--info-color);
             color: #fff;
         }
         
         .badge-completed {
-            background-color: #1cc88a;
+            background-color: var(--success-color);
             color: #fff;
         }
         
         .badge-cancelled {
-            background-color: #e74c3c;
+            background-color: var(--danger-color);
             color: #fff;
         }
         
         /* Sidebar */
         .sidebar {
             background: #fff;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            border-radius: 0.35rem;
+            box-shadow: var(--box-shadow);
+            border-radius: var(--border-radius);
+            height: 100%;
         }
         
         .sidebar .card-body {
@@ -225,26 +296,38 @@
         
         .sidebar .list-group-item {
             border: none;
-            padding: 1rem 1.5rem;
+            padding: 0.9rem 1.5rem;
             font-weight: 600;
             color: var(--dark-color);
-            transition: all 0.3s;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
         }
         
         .sidebar .list-group-item:hover {
             color: var(--primary-color);
             background-color: rgba(78, 115, 223, 0.05);
+            border-left-color: var(--primary-color);
         }
         
         .sidebar .list-group-item i {
-            margin-left: 0.5rem;
-            color: #d1d3e2;
+            margin-left: 0.75rem;
+            color: #b4b7c1;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar .list-group-item .badge {
+            margin-right: auto;
         }
         
         /* Alerts */
         .alert {
-            border-radius: 0.35rem;
-            padding: 1rem;
+            border-radius: var(--border-radius);
+            padding: 1rem 1.25rem;
+            box-shadow: var(--box-shadow);
+            border: none;
         }
         
         /* Charts */
@@ -254,14 +337,31 @@
             width: 100%;
         }
         
-        @media (min-width: 768px) {
-            .chart-area {
-                height: 20rem;
-            }
-            
-            .chart-pie {
-                height: 15rem;
-            }
+        /* Profile Section */
+        .profile-section {
+            text-align: center;
+            padding: 2rem 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .profile-img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        
+        /* Progress Bars */
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-bar {
+            border-radius: 5px;
         }
         
         /* RTL Specific Styles */
@@ -271,6 +371,24 @@
         
         .dropdown-menu {
             text-align: right;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border: none;
+            padding: 0.5rem 0;
+        }
+        
+        .dropdown-item {
+            padding: 0.5rem 1.5rem;
+            transition: var(--transition);
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(78, 115, 223, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .dropdown-item i {
+            margin-left: 0.5rem;
         }
         
         .form-check-label {
@@ -296,11 +414,12 @@
         
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
+            border-radius: 10px;
         }
         
         ::-webkit-scrollbar-thumb {
             background: #888;
-            border-radius: 4px;
+            border-radius: 10px;
         }
         
         ::-webkit-scrollbar-thumb:hover {
@@ -323,6 +442,71 @@
             margin: 20px auto;
         }
         
+        /* Inventory Status */
+        .inventory-status {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .inventory-status i {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .inventory-status h5 {
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+        
+        .inventory-status p {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        /* Top Products List */
+        .top-product-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+            transition: var(--transition);
+        }
+        
+        .top-product-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .top-product-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-left: 0.75rem;
+        }
+        
+        .top-product-info {
+            flex: 1;
+        }
+        
+        .top-product-name {
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+        
+        .top-product-sales {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .top-product-badge {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 10rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        
         /* Responsive Adjustments */
         @media (max-width: 768px) {
             .stats-card {
@@ -330,13 +514,43 @@
             }
             
             .card-header {
-                padding: 0.75rem;
+                padding: 1rem;
             }
+            
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Hover Effects */
+        .hover-scale {
+            transition: var(--transition);
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.03);
+        }
+        
+        /* Tooltip Customization */
+        .tooltip-inner {
+            border-radius: var(--border-radius);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark shadow" style="background-color: var(--secondary-color);">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-store-alt me-2"></i>متجرنا الإلكتروني
@@ -392,9 +606,9 @@
     <div class="container-fluid dashboard-container">
         <div class="row">
             <div class="col-lg-3 mb-4">
-                <div class="card sidebar">
-                    <div class="card-body text-center py-4">
-                        <img src="https://via.placeholder.com/150" class="rounded-circle mb-3 border shadow" alt="صورة المدير" width="100">
+                <div class="card sidebar hover-scale">
+                    <div class="profile-section">
+                        <img src="https://via.placeholder.com/150" class="profile-img rounded-circle" alt="صورة المدير">
                         <h5 class="card-title mb-1">مدير النظام</h5>
                         <p class="text-muted small mb-3">admin@example.com</p>
                         <p class="text-muted small"><i class="fas fa-clock me-1"></i>آخر دخول: اليوم 10:30 ص</p>
@@ -406,7 +620,7 @@
                         </a>
                         <a href="http://45.13.59.226/hozma/preorder-dashboard/" class="list-group-item list-group-item-action">
                             <i class="fas fa-shopping-bag me-1"></i>الطلبات الجديدة
-                            <span class="badge bg-danger float-start rounded-pill" id="new-orders-count1">5</span>
+                            <span class="badge bg-danger rounded-pill" id="new-orders-count1">5</span>
                         </a>
                         <a href="http://45.13.59.226/hozma/preorders-buy/" class="list-group-item list-group-item-action">
                             <i class="fas fa-cart-plus me-1"></i>طلبات الشراء المبدئية
@@ -436,16 +650,16 @@
                 
                 <div class="row mb-4">
                     <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stats-card primary h-100">
+                        <div class="card stats-card primary h-100 hover-scale">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col me-2">
                                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                             إجمالي المبيعات</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-amount"></div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-amount">$24,000</div>
                                         <div class="mt-2 text-xs">
                                             <span class="text-success me-1" id="change-rate">
-                                                <i class="fas fa-arrow-up me-1"></i>
+                                                <i class="fas fa-arrow-up me-1"></i>12%
                                             </span>
                                             <span class="text-nowrap">منذ الشهر الماضي</span>
                                         </div>
@@ -459,7 +673,7 @@
                     </div>
                     
                     <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stats-card success h-100">
+                        <div class="card stats-card success h-100 hover-scale">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col me-2">
@@ -482,16 +696,16 @@
                     </div>
                     
                     <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stats-card info h-100">
+                        <div class="card stats-card info h-100 hover-scale">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col me-2">
                                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                             الطلبات المؤكدة</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="shop-confirmed-count"></div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="shop-confirmed-count">18</div>
                                         <div class="mt-2 text-xs">
                                             <span class="text-nowrap">إجمالي الفواتير الشهر: </span>
-                                            <span class="font-weight-bold" id="current-month-invoice-count"></span>
+                                            <span class="font-weight-bold" id="current-month-invoice-count">24</span>
                                         </div>
                                     </div>
                                     <div class="col-auto">
@@ -503,7 +717,7 @@
                     </div>
                     
                     <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stats-card warning h-100">
+                        <div class="card stats-card warning h-100 hover-scale">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col me-2">
@@ -526,7 +740,7 @@
                     </div>
                 </div>
 
-                <div class="card mb-4">
+                <div class="card mb-4 hover-scale">
                     <div class="card-header d-flex justify-content-between align-items-center py-3">
                         <h6 class="m-0 font-weight-bold text-primary">أحدث الطلبات</h6>
                         <a href="/hozma/preorder-dashboard/" class="btn btn-sm btn-primary">
@@ -548,7 +762,8 @@
                                     </tr>
                                 </thead>
                                 <tbody id="preordersBody">
-                                   
+                                    <!-- Sample row - will be filled by JavaScript -->
+                                
                                 </tbody>
                             </table>
                         </div>
@@ -558,7 +773,7 @@
                 <div class="row mb-4">
                     <!-- Monthly Sales Chart -->
                     <div class="col-lg-8 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 hover-scale">
                             <div class="card-header d-flex justify-content-between align-items-center py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">حجم المبيعات الشهري</h6>
                                 <div class="dropdown no-arrow">
@@ -583,7 +798,7 @@
         
                     <!-- Top Clients Chart -->
                     <div class="col-lg-4 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 hover-scale">
                             <div class="card-header d-flex justify-content-between align-items-center py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">أفضل العملاء</h6>
                                 <div class="dropdown no-arrow">
@@ -609,7 +824,7 @@
                 <div class="row">
                     <!-- Top Items Table -->
                     <div class="col-lg-12 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 hover-scale">
                             <div class="card-header d-flex justify-content-between align-items-center py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">أفضل العناصر مبيعاً</h6>
                                 <div class="dropdown no-arrow">
@@ -636,7 +851,8 @@
                                             </tr>
                                         </thead>
                                         <tbody id="topItemsTable">
-                                            <!-- Will be filled by JavaScript -->
+                                            <!-- Sample data - will be filled by JavaScript -->
+                                      
                                         </tbody>
                                     </table>
                                 </div>
@@ -644,48 +860,46 @@
                         </div>
                     </div>
                 </div>
-                    
-                    
-                </div>
-                
-                
                 
                 <div class="row">
                     <div class="col-md-6 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 hover-scale">
                             <div class="card-header d-flex justify-content-between align-items-center py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">أعلى المنتجات مبيعاً</h6>
                             </div>
                             <div class="card-body">
-                                <div class="list-group list-group-flush" id="topProductsList"></div> <!-- This is where products will be listed -->
+                                <div class="list-group list-group-flush" id="topProductsList">
+                                    <!-- Sample product items -->
+                                    
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="col-md-6 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 hover-scale">
                             <div class="card-header d-flex justify-content-between align-items-center py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">حالة المخزون</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row text-center">
                                     <div class="col-4 mb-3">
-                                        <div class="text-success">
-                                            <i class="fas fa-check-circle fa-3x mb-2"></i>
+                                        <div class="inventory-status text-success">
+                                            <i class="fas fa-check-circle"></i>
                                             <h5 class="font-weight-bold" id="availableItems">124</h5>
                                             <p class="small">متاح</p>
                                         </div>
                                     </div>
                                     <div class="col-4 mb-3">
-                                        <div class="text-warning">
-                                            <i class="fas fa-exclamation-triangle fa-3x mb-2"></i>
+                                        <div class="inventory-status text-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
                                             <h5 class="font-weight-bold" id="lowStock">18</h5>
                                             <p class="small">مخزون منخفض</p>
                                         </div>
                                     </div>
                                     <div class="col-4 mb-3">
-                                        <div class="text-danger">
-                                            <i class="fas fa-times-circle fa-3x mb-2"></i>
+                                        <div class="inventory-status text-danger">
+                                            <i class="fas fa-times-circle"></i>
                                             <h5 class="font-weight-bold" id="outOfStock">14</h5>
                                             <p class="small">منتهية</p>
                                         </div>
@@ -998,7 +1212,7 @@ customFetch('http://45.13.59.226/hozma/api/top-products/')
 
       row.innerHTML = `
   <td>${order.invoice_no.toString()}</td>
-  <td>${order.client}</td>
+  
   <td>${order.client_name}</td>
   <td>${new Date(order.date_time).toLocaleDateString('en-UK')}</td>
   <td>${parseFloat(order.amount).toLocaleString('en-US')} د٫ل</td>

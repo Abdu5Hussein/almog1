@@ -84,3 +84,33 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
+
+  function toggleFilters() {
+    const filterDiv = document.getElementById('filterContainer');
+    const button = document.getElementById('toggleFilterBtn');
+    
+    if (filterDiv.classList.contains('show')) {
+      filterDiv.classList.remove('show');
+      filterDiv.classList.add('collapse');
+      button.innerHTML = '<i class="bi bi-funnel"></i> إظهار الفلاتر';
+    } else {
+      filterDiv.classList.remove('collapse');
+      filterDiv.classList.add('show');
+      button.innerHTML = '<i class="bi bi-funnel"></i> إخفاء الفلاتر';
+    }
+  }
+
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 10) {
+      document.querySelector('.navbar').classList.add('scrolled');
+    } else {
+      document.querySelector('.navbar').classList.remove('scrolled');
+    }
+  });
+  
+  // Cart badge animation
+  function animateCart() {
+    const badge = document.getElementById('cartBadge');
+    badge.classList.add('pulse');
+    setTimeout(() => badge.classList.remove('pulse'), 500);
+  }
