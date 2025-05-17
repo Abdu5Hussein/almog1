@@ -1293,7 +1293,7 @@
                   </div>
                 </div>
               </div>
-              <div class="row">
+              <div class="row disabled-div">
                 <div class="col">
                   <div class="row border title-container">
                     <h3 class="text-center">x صلاحيات الاعدادات</h3>
@@ -1578,7 +1578,110 @@
           });
         });
       });
+      all_permissions_check.addEventListener("change", function () {
+        const id = document.getElementById("user-no").value;
+
+          if (!id) {
+            alert("يرجى اختيار مستخدم أولاً.");
+            this.checked = !this.checked; // Uncheck the checkbox
+            return;
+          }
+
+          fetch("/api/user/permissions/give-all-permissions/toggle", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: id,
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Request failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert('Success:'+ data.message);
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            // Optionally uncheck if request fails
+            this.checked = !this.checked;
+            alert("فشل في حفظ الصلاحية. حاول مجددا.");
+          });
+      });
+      is_active_toggle_check.addEventListener("change", function () {
+        const id = document.getElementById("user-no").value;
+
+          if (!id) {
+            alert("يرجى اختيار مستخدم أولاً.");
+            this.checked = !this.checked; // Uncheck the checkbox
+            return;
+          }
+
+          fetch("/api/user/activate/toggle", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: id,
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Request failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert('Success:'+ data.message);
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            // Optionally uncheck if request fails
+            this.checked = !this.checked;
+            alert("فشل في حفظ الصلاحية. حاول مجددا.");
+          });
+      });
+
     });
+    async function updateUserStatusCheckboxes(userId) {
+      const allPermissionsCheck = document.getElementById("all_permissions_check");
+      const isActiveToggleCheck = document.getElementById("is_active_toggle_check");
+
+      if (!userId) {
+        console.error("User ID is required.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/user-status/?id=${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error:", errorData.error || "Failed to fetch user status.");
+          return;
+        }
+
+        const data = await response.json();
+
+        // Set checkbox states
+        isActiveToggleCheck.checked = data.is_active;
+        allPermissionsCheck.checked = data.in_full_access_group;
+
+      } catch (error) {
+        console.error("Error fetching user status:", error);
+      }
+    }
+
     table.on("rowClick", function (e, row) {
           console.log("Row clicked after data update:", row.getData());
           const id = parseInt(row.getData().id); // Get pno of the clicked row
