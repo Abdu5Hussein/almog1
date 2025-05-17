@@ -363,7 +363,8 @@ class Oemtable(models.Model):
     fileid = models.AutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
     cname = models.CharField(db_column='CName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     cno = models.CharField(db_column='CNo', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    oemno = models.CharField(db_column='OEMNO', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    oemno = models.TextField(db_column='OEMNO', db_collation='Arabic_CI_AS', blank=True, null=True)
+  # Field name made lowercase.
 
     class Meta:
         managed = True
@@ -883,7 +884,7 @@ class EmployeesTable(models.Model):
     active = models.BooleanField(default=True)
     category = models.CharField(blank=True, null=True, max_length=50)
     notes = models.CharField(blank=True, null=True, max_length=300)
-    phone = models.CharField(blank=True, null=True, max_length=100)
+    phone = models.CharField(max_length=100,unique=True)
     address = models.CharField(blank=True, null=True, max_length=100)
     bank_details = models.CharField(blank=True, null=True, max_length=200)
     bank_account_no = models.CharField(blank=True, null=True, max_length=100)
@@ -1246,7 +1247,7 @@ class ConfirmedOrderTable(models.Model):
     date_time = models.DateTimeField(default=timezone.now)
     preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
     date_confirmed = models.DateTimeField(auto_now_add=True)
-    
+
 
     class Meta:
         db_table = 'ConfirmedOrderTable'
@@ -1289,7 +1290,7 @@ class PreOrderItemsTable(models.Model):
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     confirm_quantity = models.IntegerField(blank=True, null=True)
     quantity_proccessed = models.BooleanField(default=False)
-    
+
 
     class Meta:
         managed = True

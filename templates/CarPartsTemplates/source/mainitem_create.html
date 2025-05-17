@@ -318,10 +318,10 @@
                 </div>
                 <div class="col-md-6">
                   <div class="form-group">
-                    <label for="itemno" class="form-label">
+                    <label for="oem_number" class="form-label">
                       <i class="fas fa-tag"></i>رقم العنصر
                     </label>
-                    <input type="text" class="form-control" id="itemno" name="itemno" placeholder="أدخل رقم العنصر">
+                    <input type="text" class="form-control" id="oem_number" name="oem_number" placeholder="أدخل رقم العنصر">
                   </div>
                 </div>
               </div>
@@ -379,6 +379,15 @@
                       <i class="fas fa-ruler-combined"></i>الحجم
                     </label>
                     <input type="text" class="form-control" id="itemsize" name="itemsize" placeholder="أدخل الحجم">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="companyproduct" class="form-label">
+                      <i class="fas fa-ruler-combined"></i>الشركة المصنعة
+                    </label>
+                    <input type="text" class="form-control" id="companyproduct" name="companyproduct" placeholder="أدخل الشركة المصنعة">
                   </div>
                 </div>
               </div>
@@ -588,10 +597,12 @@
   
 
     try {
+      console.log("Request Body:", JSON.stringify(data));
       const response = await customFetch("http://45.13.59.226/hozma/api/mainitem/create/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        
       });
 
       const result = await response.json();
@@ -708,100 +719,96 @@
   }
 
   async function uploadFile(file) {
-    try {
-     
-      progressBar.style.display = 'block';
-      const progressBarInner = progressBar.querySelector('.progress-bar');
-
-      const data = await readExcelFile(file, progressBarInner);
-      
-
-      if (!data || data.length === 0) {
-        console.warn("[ERROR] No valid data in Excel file.");
-        showResponse('الملف لا يحتوي على بيانات صالحة', 'error');
-        return;
-      }
-
-      const pathParts = window.location.pathname.split("/").filter(Boolean);
-      const sourceId = parseInt(pathParts[pathParts.length - 1]);
-      
-
-      if (isNaN(sourceId)) {
-        showResponse('لا يمكن تحديد معرف المصدر', 'error');
-        return;
-      }
-
-      data.forEach(item => {
-        item.source = sourceId;
-
-        if (item.json_description && typeof item.json_description === 'string') {
-          try {
-            item.json_description = JSON.parse(item.json_description);
-          } catch (e) {
-            console.warn("[WARN] JSON parsing failed for description:", e);
-            item.json_description = null;
-          }
-        }
-      });
-
-      const results = [];
-
-for (let i = 0; i < data.length; i++) {
-  const item = data[i];
-  const progress = Math.min(100, Math.round((i / data.length) * 100));
-  progressBarInner.style.width = `${progress}%`;
-  progressBarInner.textContent = `${progress}%`;
-
   try {
-   
+    progressBar.style.display = 'block';
+    const progressBarInner = progressBar.querySelector('.progress-bar');
 
-    const response = await customFetch("http://45.13.59.226/hozma/api/mainitem/create/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(item),
-    });
-
-    const result = await response.json();
+    const data = await readExcelFile(file, progressBarInner);
     
-
-    if (response.ok && result.success !== false) {
-      results.push({ ...item, success: true, message: result.message || 'تمت الإضافة بنجاح' });
-    } else {
-      results.push({
-        pno: item.pno,
-        success: false,
-        message: result.message || 'فشل في الإضافة'
-      });
+    if (!data || data.length === 0) {
+      console.warn("[ERROR] No valid data in Excel file.");
+      showResponse('الملف لا يحتوي على بيانات صالحة', 'error');
+      return;
     }
-  } catch (error) {
-    console.error("[ERROR] Upload failed:", error);
-    results.push({
-      pno: item.pno,
-      success: false,
-      message: 'خطأ في الاتصال بالخادم'
+
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const sourceId = pathParts[pathParts.length - 1]; // Now as string
+    
+    if (!sourceId) {
+      showResponse('لا يمكن تحديد معرف المصدر', 'error');
+      return;
+    }
+
+    data.forEach(item => {
+      item.source = sourceId; // Sending as string
+
+      if (item.json_description && typeof item.json_description === 'string') {
+        try {
+          item.json_description = JSON.parse(item.json_description);
+        } catch (e) {
+          console.warn("[WARN] JSON parsing failed for description:", e);
+          item.json_description = null;
+        }
+      }
     });
+
+    const results = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const item = data[i];
+      const progress = Math.min(100, Math.round((i / data.length) * 100));
+      progressBarInner.style.width = `${progress}%`;
+      progressBarInner.textContent = `${progress}%`;
+
+      console.log(`[DEBUG] Sending item ${i + 1}/${data.length}:`, JSON.stringify(item, null, 2));
+
+      try {
+        const response = await customFetch("http://45.13.59.226/hozma/api/mainitem/create/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(item),
+        });
+
+        const result = await response.json();
+        
+        console.log(`[DEBUG] Response for item ${i + 1}/${data.length} (PNO: ${item.pno || 'N/A'}):`, result);
+
+        if (response.ok && result.success !== false) {
+          results.push({ ...item, success: true, message: result.message || 'تمت الإضافة بنجاح' });
+        } else {
+          results.push({
+            pno: item.pno,
+            success: false,
+            message: result.message || 'فشل في الإضافة'
+          });
+        }
+      } catch (error) {
+        console.error(`[ERROR] Upload failed for item ${i + 1}/${data.length} (PNO: ${item.pno || 'N/A'}):`, error);
+        results.push({
+          pno: item.pno,
+          success: false,
+          message: 'خطأ في الاتصال بالخادم'
+        });
+      }
+    }
+
+    progressBarInner.style.width = '100%';
+    progressBarInner.textContent = '100%';
+    
+    displayResults(results);
+
+    setTimeout(() => {
+      progressBar.style.display = 'none';
+      progressBarInner.style.width = '0%';
+      progressBarInner.textContent = '';
+    }, 2000);
+
+  } catch (error) {
+    console.error('[FATAL] Error during upload process:', error);
+    showResponse('حدث خطأ أثناء معالجة الملف', 'error');
+    progressBar.style.display = 'none';
   }
 }
-
-
-      progressBarInner.style.width = '100%';
-      progressBarInner.textContent = '100%';
-      
-      displayResults(results);
-
-      setTimeout(() => {
-        progressBar.style.display = 'none';
-        progressBarInner.style.width = '0%';
-        progressBarInner.textContent = '';
-      }, 2000);
-
-    } catch (error) {
-      console.error('[FATAL] Error during upload process:', error);
-      showResponse('حدث خطأ أثناء معالجة الملف', 'error');
-      progressBar.style.display = 'none';
-    }
-  }
-
   function readExcelFile(file, progressBar) {
     return new Promise((resolve, reject) => {
       
@@ -871,25 +878,35 @@ for (let i = 0; i < data.length; i++) {
   }
 }
 
-    
 function downloadTemplate() {
-  // Generate 100 sample items using a loop
   const templateData = [];
 
+  const itemMainList = ['زيوت', 'فلاتر', 'قطع كهربائية', 'إطارات', 'بطاريات'];
+  const itemSubMainList = ['زيت محرك', 'فلتر هواء', 'بطارية جافة', 'كشاف أمامي', 'إطار خلفي'];
+  const itemNameList = ['زيت شل 10W-40', 'فلتر تويوتا أصلي', 'بطارية النسر 70 أمبير', 'كشاف LED عالي', 'إطار ميشلان 16 إنش'];
+  const shortNameList = ['زيت شل', 'فلتر تويوتا', 'بطارية النسر', 'كشاف LED', 'إطار ميشلان'];
+  const companylist = ['Stelx', 'febi', 'hipton', 'mobis', 'tiabo'];
+  const itemThirdList = ['استهلاكي', 'كهربائي', 'محرك', 'هيكل', 'نظام تعليق'];
+
+  const notesList = ['مناسب لجميع السيارات', 'ذو جودة عالية', 'ضمان لمدة سنة', 'صناعة يابانية', 'سعر منافس'];
+
   for (let i = 1; i <= 100; i++) {
+    const randomIndex = () => Math.floor(Math.random() * 5);
+
     templateData.push({
-      pno: `27${1000 + i}`,
-      itemno: `24${2000 + i}`,
-      itemmain: `القسم الرئيسي ${i}`,
-      itemsubmain: `القسم الفرعي ${i}`,
-      itemname: `اسم العنصر ${i}`,
-      short_name: `اسم مختصر ${i}`,
-      itemthird: `التصنيف الثالث ${i}`,
-      itemsize: `${i} مل`,
-      showed: Math.floor(Math.random() * 100), // random stock level
-      json_description: JSON.stringify({ ملاحظة: `مثال ${i}` }),
+      pno: `48${1000 + i}`,
+      oem_number: `24${2000 + i}`,
+      itemmain: itemMainList[randomIndex()],
+      itemsubmain: itemSubMainList[randomIndex()],
+      itemname: itemNameList[randomIndex()],
+      short_name: shortNameList[randomIndex()],
+      itemthird: itemThirdList[randomIndex()],
+      itemsize: `${(Math.floor(Math.random() * 10) + 1) * 100} مل`,
+      companyproduct: companylist[randomIndex()],
+      showed: Math.floor(Math.random() * 100),
+      json_description: JSON.stringify({ ملاحظة: notesList[randomIndex()] }),
       costprice: "",
-      buyprice: (50 + i).toFixed(2)
+      buyprice: (1 + i).toFixed(2)
     });
   }
 
@@ -905,6 +922,7 @@ function downloadTemplate() {
 
   showResponse('تم تحميل النموذج بنجاح', 'success');
 }
+
 
     
     function showResponse(message, type) {

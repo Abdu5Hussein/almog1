@@ -285,8 +285,12 @@ urlpatterns = [
     path('api/filter/balance-editions-api/',api_views.filterBalanceEditions, name='filter-balance-editions'),
     path('api/filter/employees-api/',api_views.filter_employees, name='filter-employees'),
     path('api/user/permissions/toggle',api_views.toggle_permission, name='toggle_permission'),
+    path('api/user/activate/toggle',api_views.toggle_user_active_status, name='toggle_user_active_status'),
+    path('api/user/permissions/give-all-permissions/toggle', api_views.give_all_permissions, name='give_all_permissions'),
     path('api/users/get', api_views.get_all_auth_users, name='get_all_auth_users'),
+    path('api/user/user-status-and-all-permissions/get', api_views.get_user_status, name='get_user_status'),
     path('api/users/<int:id>/permissions', api_views.get_all_auth_user_permissions, name='get_user_permissions'),
+    path('api/users/create-auth-user/', api_views.create_user, name='create_auth_user'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode

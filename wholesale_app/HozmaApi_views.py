@@ -1174,49 +1174,152 @@ def edit_source_info(request, source_id):
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
 
-
-@api_view(["POST"])
+@api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
 def create_mainitem_by_source(request):
-    source_id = request.data.get("source")
-
-    if not source_id:
-        return Response({"error": "Source ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        source = almogOil_models.AllSourcesTable.objects.get(pk=source_id)
-    except almogOil_models.AllSourcesTable.DoesNotExist:
-        return Response({"error": "Source not found."}, status=status.HTTP_404_NOT_FOUND)
-
     data = request.data.copy()
-    data["source"] = source.clientid  # Set actual client ID
 
-    # Compute costprice
+    # 1) Validate required fields
+    required = ['oem_number', 'companyproduct', 'buyprice', 'pno', 'showed', 'source']
+    if missing := [f for f in required if not data.get(f)]:
+        return Response({'error': f'Missing fields: {", ".join(missing)}'}, status=400)
+
     try:
-        commission = float(source.commission or 0)
-        buyprice = float(data.get("buyprice") or 0)
-        costprice = buyprice - (buyprice * commission)
-        data["costprice"] = costprice
-    except (TypeError, ValueError):
-        return Response({"error": "Invalid buyprice or commission."}, status=status.HTTP_400_BAD_REQUEST)
+        pno = data['pno'].strip()
+        oem_in = data['oem_number'].strip()
+        company = data['companyproduct'].strip()
+        new_price = Decimal(str(data['buyprice'])).quantize(Decimal('0.0000'))
+        showed = data['showed']
+        source = data['source'].strip()
 
-    pno = data.get("pno")
-    if not pno:
-        return Response({"error": "pno is required."}, status=status.HTTP_400_BAD_REQUEST)
+        # Get commission from AllSourcesTable
+        try:
+            source_obj = almogOil_models.AllSourcesTable.objects.get(clientid__iexact=source)
+            commission = Decimal(str(source_obj.commission)).quantize(Decimal('0.0000'))
+            # Calculate costprice with proper decimal handling
+            costprice = (new_price - (new_price * commission)).quantize(Decimal('0.0000'))
+            data['costprice'] = str(costprice)  # Convert to string for serialization
+        except almogOil_models.AllSourcesTable.DoesNotExist:
+            return Response({'error': f'Source "{source}" not found in AllSourcesTable'}, status=400)
 
-    # Try to get an existing Mainitem with same pno and source
-    try:
-        existing_item = almogOil_models.Mainitem.objects.get(pno=pno, source=source)
-        serializer = products_serializers.MainitemSerializer(existing_item, data=data, partial=True)
-    except almogOil_models.Mainitem.DoesNotExist:
-        serializer = products_serializers.MainitemSerializer(data=data)
+        # First check if product with this pno already exists
+        existing_product = almogOil_models.Mainitem.objects.filter(pno=pno).first()
+        if existing_product:
+            # Just update the showed field of existing product
+            update_data = {
+                'showed': showed,
+                'costprice': str(costprice)  # Update costprice even if only updating showed
+            }
+            serializer = products_serializers.MainitemSerializer(
+                existing_product, 
+                data=update_data,
+                partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message': 'Updated showed and costprice fields for existing product'}, status=200)
+            return Response(serializer.errors, status=400)
 
+        # If pno is new, proceed with the OEM matching logic
+        with transaction.atomic():
+            # 2) Check OEM table for any matching OEM number
+            oem_matches = almogOil_models.Oemtable.objects.filter(oemno__icontains=oem_in)
+            
+            # Case 1: OEM exists in system
+            if oem_matches.exists():
+                # Find if this company already has this OEM group
+                company_oem = oem_matches.filter(cname__iexact=company).first()
+                
+                if company_oem:
+                    # Case 1A: Same company + OEM → Check for existing products
+                    all_oems = [o.strip() for o in company_oem.oemno.split(',') if o.strip()]
+                    
+                    # Find ALL existing items with matching OEMs and company
+                    existing_items = almogOil_models.Mainitem.objects.filter(
+                        companyproduct__iexact=company
+                    )
+                    
+                    # Check each item for OEM matches
+                    item_to_update = None
+                    for item in existing_items:
+                        item_oems = [o.strip() for o in item.oem_numbers.split(',') if o.strip()]
+                        if set(item_oems) & set(all_oems):  # Any OEM match
+                            item_to_update = item
+                            break
+                    
+                    if item_to_update:
+                        # Only update if price is lower
+                        if Decimal(str(item_to_update.buyprice)) > new_price:
+                            data['oem_numbers'] = company_oem.oemno
+                            serializer = products_serializers.MainitemSerializer(
+                                item_to_update, 
+                                data=data, 
+                                partial=True
+                            )
+                            if serializer.is_valid():
+                                instance = serializer.save()
+                                instance.oem_numbers = company_oem.oemno
+                                instance.save()
+                                return Response({'message': 'Updated existing product with lower price'}, status=200)
+                            return Response(serializer.errors, status=400)
+                        return Response({'message': 'Existing product has same or better price'}, status=200)
+                    
+                    # No existing product found → Create new
+                    data['oem_numbers'] = company_oem.oemno
+                    serializer = products_serializers.MainitemSerializer(data=data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=201)
+                    return Response(serializer.errors, status=400)
+                
+                else:
+                    # Case 1B: Different company → Create new OEM entry
+                    new_oem_row = almogOil_models.Oemtable.objects.create(
+                        cname=company,
+                        oemno=oem_in
+                    )
+                    data['oem_numbers'] = new_oem_row.oemno
+                    
+                    serializer = products_serializers.MainitemSerializer(data=data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=201)
+                    return Response(serializer.errors, status=400)
+            
+            else:
+                # Case 2: New OEM → Create new OEM entry and product
+                new_oem_row = almogOil_models.Oemtable.objects.create(
+                    cname=company,
+                    oemno=oem_in
+                )
+                data['oem_numbers'] = new_oem_row.oemno
+                
+                serializer = products_serializers.MainitemSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=201)
+                return Response(serializer.errors, status=400)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])  # anonymous OK
+def create_oem_entry(request):
+    """
+    POST payload:
+      - cname : str  (e.g. "Toyota")
+      - cno   : str  (e.g. "58634")
+      - oemno : str  (comma-separated OEM codes, e.g. "6589,123456")
+    """
+    serializer = wholesale_serializers.OemTableSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(source=source)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @authentication_classes([])

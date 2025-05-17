@@ -545,7 +545,7 @@
                       <div class="width-95 d-flex align-items-center">
                         <label for="name" class="form-label">اسم الموظف</label>
                       </div>
-                      <input type="text" class="form-control" id="name" />
+                      <input type="text" class="form-control" id="name" required/>
                     </div>
                     <div class="input-group mb-1">
                       <div class="width-95 d-flex align-items-center">
@@ -577,7 +577,7 @@
                       <div class="width-95 d-flex align-items-center">
                         <label class="form-label mb-0">رقم الهاتف</label>
                       </div>
-                      <input type="text" class="form-control" id="phone" />
+                      <input type="text" class="form-control" id="phone" required/>
                     </div>
                   </div>
                   <div class="col">
@@ -658,6 +658,7 @@
         columns: [
           { title: "رقم الموظف", field: "employee_id", hozAlign: "center", width: 120 },
           { title: "اسم الموظف", field: "name", hozAlign: "right" },
+          { title: "رقم الهاتف", field: "phone", hozAlign: "center" },
           {
             title: "المرتب الشهري",
             field: "salary",
@@ -708,6 +709,10 @@
 
       // Add
     document.getElementById('add-btn').addEventListener("click", function () {
+      if (!document.getElementById("name").value || !document.getElementById("phone").value) {
+          alert("الرجاء إدخال اسم ورقم هاتف الموظف");
+          return;
+      }
       const today = new Date();
 
       const newEmployee = {
@@ -738,7 +743,11 @@
       .then(res => res.json())
       .then(data => {
           clearForm();
-      });
+          alert("تم إضافة الموظف بنجاح");
+      }).catch(error => {
+            console.error('Error:', error);
+            alert("فشل إضافة الموظف. حاول مجددا.");
+          });
     });
 
     document.getElementById('edit-btn').addEventListener("click", function () {

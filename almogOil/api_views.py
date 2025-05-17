@@ -4,8 +4,9 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from rest_framework import status
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission,Group
 from django.contrib.auth.hashers import check_password
+from rest_framework.permissions import DjangoModelPermissions
 import json
 from rest_framework.pagination import PageNumberPagination
 from django.core.exceptions import FieldError
@@ -154,7 +155,7 @@ def sign_in(request):
             user_id = None
             if role == "employee":
                 try:
-                    user = models.EmployeesTable.objects.get(username=username)
+                    user = models.EmployeesTable.objects.get(phone=username)
                     user_id = f"e-{user.employee_id}"
                 except models.EmployeesTable.DoesNotExist:
                     return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -281,7 +282,7 @@ def get_dropboxes(request):
         tags=["Engines"],
     ),
 )
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
 @authentication_classes([CookieAuthentication])
 class EnginesTableViewSet(viewsets.ModelViewSet):
     queryset = models.enginesTable.objects.all()
@@ -327,7 +328,7 @@ class EnginesTableViewSet(viewsets.ModelViewSet):
         responses={204: None},
     ),
 )
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
 @authentication_classes([CookieAuthentication])
 class EmployeesTableViewSet(viewsets.ModelViewSet):
     queryset = models.EmployeesTable.objects.all()
@@ -337,6 +338,9 @@ class EmployeesTableViewSet(viewsets.ModelViewSet):
         # Start a transaction to ensure atomicity
         with transaction.atomic():
             try:
+                if not request.user.has_perm('almogOil.add_employeestable'):
+                    return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
                 # First, serialize and validate the employee data
                 employee_serializer = self.get_serializer(data=request.data)
                 if employee_serializer.is_valid():
@@ -1870,6 +1874,8 @@ Creates a return permission record.
         tags=["Return Permission"],
     )
 )
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
+@authentication_classes([CookieAuthentication])
 class ReturnPermissionViewSet(viewsets.ModelViewSet):
     queryset = models.return_permission.objects.all()
     serializer_class = serializers.ReturnPermissionSerializer
@@ -1954,6 +1960,8 @@ Required Fields:
         tags=["Return Permission Items"],
     ),
 )
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
+@authentication_classes([CookieAuthentication])
 class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
     queryset = models.return_permission_items.objects.all()
     serializer_class = serializers.ReturnPermissionItemsSerializer
@@ -2161,6 +2169,8 @@ tags=["Delivery","Drivers","Employees"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def available_employees(request):
+    if not request.user.has_perm('almogOil.category_employees'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
     employees = EmployeesTable.objects.filter(is_available=True)
     serializer = serializers.EmployeeSerializer(employees, many=True)
     return Response(serializer.data, status=200)
@@ -2587,6 +2597,9 @@ def employee_detail_get(request, employee_id):
     Retrieve an employee's basic information by employee_id.
     URL pattern: /employee-detail/<employee_id>/
     """
+    if not request.user.has_perm('almogOil.category_employees'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         employee = EmployeesTable.objects.get(employee_id=employee_id)
     except EmployeesTable.DoesNotExist:
@@ -2709,6 +2722,9 @@ tags=["Employees"],
 @authentication_classes([CookieAuthentication])
 def get_all_employees_with_balance(request):
     try:
+        if not request.user.has_perm('almogOil.category_employees'):
+            return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
         # Fetch all employees
         employees = models.EmployeesTable.objects.all()
         data = []
@@ -2919,6 +2935,9 @@ tags=["Employees"],
 @csrf_exempt
 @api_view(["POST"])
 def Edit_employee_balance(request, id):
+    if not request.user.has_perm('almogOil.change_employeestable'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         employee = models.EmployeesTable.objects.get(employee_id=id)
     except models.EmployeesTable.DoesNotExist:
@@ -2970,11 +2989,16 @@ def Edit_employee_balance(request, id):
         tags=["Employees","Balance","Transactions History","Balance Editions"],
     ),
 )
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
+@authentication_classes([CookieAuthentication])
 class BalanceEditionsTableViewSet(viewsets.ModelViewSet):
     queryset = models.balance_editions.objects.all()
     serializer_class = serializers.BalanceEditionsSerializer
 
     def create(self, request, *args, **kwargs):
+        if not request.user.has_perm('almogOil.edit_account_employees'):
+            return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
         data = request.data
         employee_id = data.get("employee")
         amount = data.get("amount")
@@ -3023,6 +3047,9 @@ tags=["Employees","Balance","Transactions History","Balance Editions"],
 )
 @api_view(['GET'])
 def Get_balance_editions_by_employee(request, id):
+    if not request.user.has_perm('almogOil.category_employees'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         instance = models.balance_editions.objects.filter(employee=id)
         serializer = serializers.BalanceEditionsSerializer(instance,many=True)
@@ -3040,6 +3067,9 @@ tags=["Balance Editions"],
 @api_view(['POST'])
 def filterBalanceEditions(request):
     try:
+        if not request.user.has_perm('almogOil.category_employees'):
+            return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
         filters = request.data
         query = Q()
 
@@ -3085,6 +3115,9 @@ tags=["Employees"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def filter_employees(request):
+    if not request.user.has_perm('almogOil.category_employees'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
     try:
         filters = request.data  # DRF automatically parses the JSON body
         query_filter = Q()  # Initialize an empty Q object for combining filters
@@ -3156,11 +3189,16 @@ def calculate_daily_hours(start_time, end_time):
         responses={204: None}
     ),
 )
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
+@authentication_classes([CookieAuthentication])
 class AttendanceTableViewSet(viewsets.ModelViewSet):
     queryset = models.Attendance_table.objects.all()
     serializer_class = serializers.AttendanceSerializer
 
     def create(self, request, *args, **kwargs):
+        if not request.user.has_perm('almogOil.category_employees'):
+            return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
         data = request.data
         employee_id = data.get("employee")
         coming_time_str = data.get("coming_time")  # e.g. "08:30"
@@ -3212,6 +3250,8 @@ tags=["Attendance","Employees"],
 )
 @api_view(["GET"])
 def fetch_attendance_per_employee(request, id):
+    if not request.user.has_perm('almogOil.category_employees'):
+        return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
     try:
         employee = models.EmployeesTable.objects.get(employee_id=id)
     except models.EmployeesTable.DoesNotExist:
@@ -3314,6 +3354,9 @@ tags=["User Management"],
 @permission_classes([IsAuthenticated])
 def get_all_auth_users(request):
     try:
+        if not request.user.has_perm('almogOil.category_users'):
+            return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
         # Fetch all users with is_staff=True
         users = User.objects.all()
         serializer = serializers.UsersSerializer(users, many=True)
@@ -3329,6 +3372,9 @@ tags=["User Management"],
 @permission_classes([IsAuthenticated])
 def get_all_auth_user_permissions(request,id):
     try:
+        if not request.user.has_perm('almogOil.category_users'):
+            return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+
         # Fetch all users with is_staff=True
         user = User.objects.get(id=id)
         permissions = user.get_all_permissions()
@@ -3336,3 +3382,125 @@ def get_all_auth_user_permissions(request,id):
         return Response(cleaned_permissions, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(
+description="""give all permissions to a user.""",
+tags=["User Management"],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Only allow admins
+@authentication_classes([CookieAuthentication])  # Adjust as needed
+def give_all_permissions(request):
+    user_id = request.data.get('id')
+    group_name = "all_permissions"
+
+    if not user_id:
+        return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get or create the group with all permissions
+    group, created = Group.objects.get_or_create(name=group_name)
+    if created or group.permissions.count() == 0:
+        all_permissions = Permission.objects.all()
+        group.permissions.set(all_permissions)
+
+    if user.groups.filter(name=group_name).exists():
+        # User is already in the group, remove them
+        user.groups.remove(group)
+        action = "removed from"
+    else:
+        # User is not in the group, add them
+        user.groups.add(group)
+        action = "added to"
+
+    return Response({
+        "message": f"User '{user.username}' has been {action} the '{group_name}' group."
+    }, status=status.HTTP_200_OK)
+
+@extend_schema(
+description="""toggle a user active status.""",
+tags=["User Management"],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Only superusers/admins can access
+@authentication_classes([CookieAuthentication])  # Or use your custom auth
+def toggle_user_active_status(request):
+    user_id = request.data.get('id')
+
+    if not user_id:
+        return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Toggle the user's active status
+    user.is_active = not user.is_active
+    user.save()
+
+    status_str = "activated" if user.is_active else "deactivated"
+    return Response({"message": f"User '{user.username}' has been {status_str}."}, status=status.HTTP_200_OK)
+
+@extend_schema(
+description="""get user active and all_permissions status.""",
+tags=["User Management"],
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def get_user_status(request):
+    user_id = request.query_params.get('id')  # or use request.data.get() for POST
+
+    if not user_id:
+        return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    group_name = "all_permissions"
+    is_in_group = user.groups.filter(name=group_name).exists()
+
+    return Response({
+        "username": user.username,
+        "is_active": user.is_active,
+        "all_permissions": is_in_group
+    }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+description="""Create a new user in the system.""",
+tags=["User Management"],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Only admins can create users
+@authentication_classes([CookieAuthentication])
+def create_user(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+
+    if not username or not password:
+        return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(username=username).exists():
+        return Response({"error": "Username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        employee = models.EmployeesTable.objects.get(phone=username)
+    except models.EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        user = User.objects.create_user(username=username, password=password, first_name=employee.name)
+        return Response({
+            "message": f"User '{username}' created successfully.",
+            "user_id": user.id
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

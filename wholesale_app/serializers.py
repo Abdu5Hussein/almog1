@@ -28,3 +28,8 @@ class PreorderSerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.PreOrderTable
         fields = '__all__'  # Or list specific fields        
+
+class OemTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.Oemtable
+        fields = ['fileid', 'cname', 'cno', 'oemno']       
