@@ -51,6 +51,7 @@ document.getElementById('navbarCartIcon').addEventListener('keydown', function(e
 function updateCartUI() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   document.getElementById('cartBadge').textContent = totalItems;
+  document.getElementById('cartBadge1').textContent = totalItems;
   
   const cartContainer = document.getElementById('cartItemsContainer');
   
@@ -573,28 +574,95 @@ document.addEventListener('DOMContentLoaded', function () {
   console.log("Page loaded. Initializing cart UI...");
   updateCartPageUI();
 });
-
-
-
-
-
-
+// Get elements
 const cartIcon = document.getElementById('floatingCartIcon');
+const cartBadge = document.getElementById('cartBadge1');
+
+// Draggable functionality
 let offsetX, offsetY, isDragging = false;
 
-cartIcon.addEventListener('mousedown', function (e) {
+cartIcon.addEventListener('mousedown', (e) => {
   isDragging = true;
-  offsetX = e.clientX - cartIcon.offsetLeft;
-  offsetY = e.clientY - cartIcon.offsetTop;
+  const rect = cartIcon.getBoundingClientRect();
+  offsetX = e.clientX - rect.left;
+  offsetY = e.clientY - rect.top;
+  cartIcon.style.cursor = 'grabbing';
 });
 
-document.addEventListener('mousemove', function (e) {
-  if (isDragging) {
-    cartIcon.style.left = (e.clientX - offsetX) + 'px';
-    cartIcon.style.top = (e.clientY - offsetY) + 'px';
-  }
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  cartIcon.style.left = `${e.clientX - offsetX}px`;
+  cartIcon.style.top = `${e.clientY - offsetY}px`;
 });
 
-document.addEventListener('mouseup', function () {
+document.addEventListener('mouseup', () => {
   isDragging = false;
+  cartIcon.style.cursor = 'move';
 });
+
+// Animation function with FIXES
+function updateCartCount(count) {
+  if (!cartBadge) {
+    console.error('Cart badge element not found!');
+    return;
+  }
+
+  const oldCount = parseInt(cartBadge.textContent) || 0;
+  cartBadge.textContent = count;
+
+  // Only animate if count increased
+  if (count > oldCount) {
+    // 1. First remove any existing animation
+    cartBadge.classList.remove('jump-animation');
+    
+    // 2. Force reflow (required to restart animation)
+    void cartBadge.offsetWidth;
+    
+    // 3. Add animation class
+    cartBadge.classList.add('jump-animation');
+    
+    // 4. Play sound and speech
+    playNotificationEffects(count);
+  }
+}
+
+function playNotificationEffects(count) {
+  // Play sound
+  const dingSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
+  dingSound.volume = 0.3;
+  dingSound.play().catch(e => console.log('Sound playback prevented:', e));
+
+  // Speak update
+  if (window.speechSynthesis) {
+    const speech = new SpeechSynthesisUtterance();
+    speech.text = `Cart updated. ${count} ${count === 1 ? 'item' : 'items'} in cart.`;
+    speech.rate = 0.9;
+    window.speechSynthesis.speak(speech);
+  }
+}
+
+// Add animation styles DIRECTLY to the head
+const animationStyles = document.createElement('style');
+animationStyles.textContent = `
+  /* Make sure badge is visible and transformable */
+  #cartBadge1 {
+    display: inline-block;
+    transform-origin: center;
+  }
+  
+  /* Jump animation */
+  .jump-animation {
+    animation: jump 0.5s ease-out;
+  }
+  
+  @keyframes jump {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-15px) scale(1.2); }
+    50% { transform: translateY(0) scale(1); }
+    70% { transform: translateY(-7px) scale(1.1); }
+    100% { transform: translateY(0) scale(1); }
+  }
+`;
+document.head.appendChild(animationStyles);
+
+// TEST - Simulate a cart update

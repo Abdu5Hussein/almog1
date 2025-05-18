@@ -4,9 +4,15 @@ let isLoading = false;
 let currentFilters = {};
 let itemsPerPage = 10;
 let datl = {};
+let pageCache = {}; // *** simple in-memory cache ***
 
 // Main function to fetch filtered data
 async function fetchFilteredData(page = 1) {
+    // Serve from cache if present
+    if (pageCache[page]) {
+        return Promise.resolve(pageCache[page]);
+    }
+
     console.debug("Fetching filtered data for page:", page);
 
     const filters = {
@@ -25,54 +31,67 @@ async function fetchFilteredData(page = 1) {
 
     try {
         const response = await customFetch(`${baseUrl}/hozma/api/producuts/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(filters)
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(filters)
         });
-      
+
         if (!response) {
-          throw new Error("Empty response from server");
+            throw new Error("Empty response from server");
         }
-      
+
         const data = await response.json();
-      
-        return {
-          data: data?.data || [],
-          last_page: data?.last_page || 1,
-          total: data?.total || 0
+
+        const formatted = {
+            data: data?.data || [],
+            last_page: data?.last_page || 1,
+            total: data?.total || 0
         };
-      
-      } catch (error) {
+
+        // Cache the result
+        pageCache[page] = formatted;
+        return formatted;
+
+    } catch (error) {
         console.error("API Error:", error);
         return {
-          data: [],
-          last_page: 1,
-          total: 0
+            data: [],
+            last_page: 1,
+            total: 0
         };
-      }
+    }
 }
 
+// Prefetch next pages (up to four pages ahead)
+function prefetchPages(start, distance = 5) {
+    const end = Math.min(start + distance - 1, lastPage);   // e.g. 6-10
+    for (let p = start; p <= end; p++) {
+      if (!pageCache[p]) {
+        fetchFilteredData(p).catch(err => console.error("Prefetch error:", err));
+      }
+    }
+  }
 
 // Display items in the table
 async function displayItems(items) {
-const productList = document.getElementById('productList');
-productList.innerHTML = '';
+    const productList = document.getElementById('productList');
+    productList.innerHTML = '';
 
-if (items.length === 0) {
-document.getElementById('noResults').style.display = 'block';
-document.getElementById('loading-spinner').style.display = 'none';
-return;
-}
+    if (items.length === 0) {
+        document.getElementById('noResults').style.display = 'block';
+        document.getElementById('loading-spinner').style.display = 'none';
+        return;
+    }
 
-document.getElementById('noResults').style.display = 'none';
+    document.getElementById('noResults').style.display = 'none';
 
-for (const item of items) {
-const row = document.createElement('tr');
-const stock = parseInt(item.showed) || 0;
-const cartItem = cart.find(ci => ci.pno === item.pno);
-const cartQuantity = cartItem ? cartItem.quantity : 0;
+    for (const item of items) {
+        const row = document.createElement('tr');
+        const stock = parseInt(item.showed) || 0;
+        const cartItem = cart.find(ci => ci.pno === item.pno);
+        const cartQuantity = cartItem ? cartItem.quantity : 0;
 
-row.innerHTML = `
+        row.innerHTML = `
 <td class="clickable-cell" data-pno="${item.pno}">${item.pno ?? '-'}</td>
 <td class="clickable-cell" data-pno="${item.pno}">${item.itemname ?? '-'}</td>
 
@@ -83,6 +102,10 @@ stock > 0 && stock <= 9 ? `<span class="badge bg-warning text-dark">كمية م�
 `<span class="badge bg-danger">غير متوفر</span>`}
 </td>
 <td>${parseFloat(item.buyprice || 0).toFixed(2)} د.ل</td>
+<td>
+
+<a href="/hozma/products/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
+</td>
 <td>
 <div class="quantity-control">
 <button class="btn btn-sm btn-outline-secondary quantity-btn" onclick="decrementQuantity('${item.pno}')">-</button>
@@ -98,25 +121,21 @@ onchange="updateQuantity('${item.pno}', this.value)">
 </button>
 
 </td>
-<td>
 
-<a href="/hozma/products/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
-</td>
 `;
 
+        row.querySelectorAll('.clickable-cell').forEach(cell => {
+            cell.style.cursor = 'pointer';
+            cell.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('quantity-btn') &&
+                    !e.target.classList.contains('quantity-input')) {
+                    showProductImages(item.pno);
+                }
+            });
+        });
 
-row.querySelectorAll('.clickable-cell').forEach(cell => {
-    cell.style.cursor = 'pointer';
-    cell.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('quantity-btn') && 
-          !e.target.classList.contains('quantity-input')) {
-        showProductImages(item.pno);
-      }
-    });
-  });
-  
-  productList.appendChild(row);
-}
+        productList.appendChild(row);
+    }
 }
 
 let currentImageModal = null;
@@ -128,7 +147,7 @@ async function showProductImages(pno) {
         // Get modal elements
         const modalElement = document.getElementById('imageModal');
         const modalBody = modalElement.querySelector('.modal-body');
-        
+
         // Remove any existing modal instances
         const existingModal = bootstrap.Modal.getInstance(modalElement);
         if (existingModal) {
@@ -148,18 +167,18 @@ async function showProductImages(pno) {
 
         // Initialize new modal properly
         const modal = new bootstrap.Modal(modalElement, {
-            backdrop: 'static', // Changed to static to prevent multiple backdrops
+            backdrop: 'static', // Prevent multiple backdrops
             keyboard: true,
             focus: true
         });
-        
-        // Show modal before fetching images for better UX
+
+        // Show modal before fetching images
         modal.show();
 
         // Fetch images
         const response = await customFetch(`${baseUrl}/api/products/${pno}/get-images`);
-         const data = await response.json();
-        
+        const data = await response.json();
+
         // Process images response
         if (data && Array.isArray(data) && data.length > 0) {
             let imagesHTML = '';
@@ -195,44 +214,82 @@ async function showProductImages(pno) {
             </div>
         `;
     }
-    // Debug code - add to your showProductImages function
-console.log('Existing backdrops:', document.querySelectorAll('.modal-backdrop').length);
-console.log('Existing modals:', document.querySelectorAll('.modal.show').length);
+    // Debug info
+    console.log('Existing backdrops:', document.querySelectorAll('.modal-backdrop').length);
+    console.log('Existing modals:', document.querySelectorAll('.modal.show').length);
 }
-
 function changeItemMain(value) {
-    // Set the hidden input value
+    // Update the hidden input
     document.getElementById('itemmain').value = value;
     
-    // Update active state visually
+    // Remove active class from all icons
     document.querySelectorAll('.itemmain-icon').forEach(icon => {
         icon.classList.toggle('active', icon.dataset.value === value);
     });
     
-    // Apply filters
+    // Move the highlight to the selected icon
+    const selectedIcon = document.querySelector(`.itemmain-icon[data-value="${value}"]`);
+    if (selectedIcon) {
+        moveHighlight(selectedIcon);
+    }
+    
     applyFilters();
 }
+
+// New helper function for smooth highlight movement
+function moveHighlight(selectedElement) {
+    const highlight = document.querySelector('.brand-highlight');
+    if (!highlight) return;
+    
+    const elementRect = selectedElement.getBoundingClientRect();
+    const containerRect = selectedElement.parentElement.getBoundingClientRect();
+    
+    highlight.style.width = `${elementRect.width}px`;
+    highlight.style.height = `${elementRect.height}px`;
+    highlight.style.left = `${elementRect.left - containerRect.left}px`;
+    highlight.style.top = `${elementRect.top - containerRect.top}px`;
+}
+
+// Initialize highlight on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Create highlight element if it doesn't exist
+    if (!document.querySelector('.brand-highlight')) {
+        const highlight = document.createElement('div');
+        highlight.className = 'brand-highlight';
+        document.querySelector('.brand-selector').prepend(highlight);
+    }
+    
+    // Position highlight on initially active icon
+    const activeIcon = document.querySelector('.itemmain-icon.active');
+    if (activeIcon) {
+        moveHighlight(activeIcon);
+    }
+});
+
 // Apply filters from input fields
 function applyFilters() {
     console.debug("Applying filters...");
-  
+
     currentFilters = {
-      pno: document.getElementById('pnoFilter').value.trim(),
-      companyno: document.getElementById('companynoFilter').value.trim(),
-      oem: document.getElementById('oemFilter').value.trim(),
-      itemname: document.getElementById('itemnameFilter').value.trim(),
-      companyproduct: document.getElementById('companyproductFilter').value.trim(),
-      availability: document.getElementById('availabilityFilter').value, // Removed trim() as it's a select value
-      itemmain: document.getElementById('itemmain') ? document.getElementById('itemmain').value : '',
+        pno: document.getElementById('pnoFilter').value.trim(),
+        companyno: document.getElementById('companynoFilter').value.trim(),
+        oem: document.getElementById('oemFilter').value.trim(),
+        itemname: document.getElementById('itemnameFilter').value.trim(),
+        companyproduct: document.getElementById('companyproductFilter').value.trim(),
+        availability: document.getElementById('availabilityFilter').value,
+        itemmain: document.getElementById('itemmain') ? document.getElementById('itemmain').value : '',
     };
-  
+
     console.debug("Current filters:", currentFilters);
-  
+
     currentPage = 1;
     document.getElementById('pageInput').value = 1;
     document.getElementById('productList').innerHTML = "";
     document.getElementById('loading-spinner').style.display = 'block';
-  
+
+    // Clear cache on new filter set
+    pageCache = {};
+
     loadMoreItems();
 }
 
@@ -246,164 +303,169 @@ function resetFilters() {
     document.getElementById('itemnameFilter').value = '';
     document.getElementById('companyproductFilter').value = '';
     document.getElementById('availabilityFilter').value = '';
-    
+
     // Reset itemmain
     document.getElementById('itemmain').value = '';
     document.querySelectorAll('.itemmain-icon').forEach(icon => {
         icon.classList.remove('active');
     });
-    
+
     applyFilters();
 }
 
 // Load more items with pagination
 async function loadMoreItems() {
-if (isLoading) return;
-isLoading = true;
-
-console.debug("Loading more items for page:", currentPage);
-
-const { data, last_page, total } = await fetchFilteredData(currentPage);
-
-lastPage = last_page || 1;
-
-await displayItems(data);
-updatePaginationInfo(total);
-
-document.getElementById('loading-spinner').style.display = 'none';
-isLoading = false;
+    if (isLoading) return;
+    isLoading = true;
+  
+    console.debug("Loading items for page:", currentPage);
+  
+    const { data, last_page, total } = await fetchFilteredData(currentPage);
+    lastPage = last_page || 1;
+  
+    await displayItems(data);
+    
+    updatePaginationInfo(total);
+  
+    /* ----- NEW: always prefetch the next 5 pages ----- */
+    prefetchPages(currentPage + 1, 5);
+  
+    document.getElementById('loading-spinner').style.display = 'none';
+    isLoading = false;
+    
+    // Scroll to top of the table after loading new items
+    const tableContainer = document.querySelector('.scroll-table-container');
+    if (tableContainer) {
+        tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
 
 // Update pagination information
 function updatePaginationInfo(totalItems) {
-console.debug("Total items:", totalItems, "Current page:", currentPage, "Last page:", lastPage);
-document.getElementById('pageInfo').textContent =
-`الصفحة ${currentPage} من ${lastPage} | إجمالي العناصر: ${totalItems}`;
+    console.debug("Total items:", totalItems, "Current page:", currentPage, "Last page:", lastPage);
+    document.getElementById('pageInfo').textContent =
+        `الصفحة ${currentPage} من ${lastPage} | إجمالي العناصر: ${totalItems}`;
 }
 
 // Change page based on input
 function changePage() {
-const pageInput = document.getElementById('pageInput');
-const newPage = parseInt(pageInput.value, 10);
+    const pageInput = document.getElementById('pageInput');
+    const newPage = parseInt(pageInput.value, 10);
 
-console.debug("Changing page to:", newPage);
+    console.debug("Changing page to:", newPage);
 
-if (newPage > 0 && newPage <= lastPage && newPage !== currentPage) {
-currentPage = newPage;
-document.getElementById('productList').innerHTML = "";
-document.getElementById('loading-spinner').style.display = 'block';
-loadMoreItems();
-} else {
-pageInput.value = currentPage;
+    if (newPage > 0 && newPage <= lastPage && newPage !== currentPage) {
+        currentPage = newPage;
+        document.getElementById('productList').innerHTML = "";
+        document.getElementById('loading-spinner').style.display = 'block';
+        
+        // Scroll to top before loading new items
+        const tableContainer = document.querySelector('.scroll-table-container');
+        if (tableContainer) {
+            tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        loadMoreItems();
+    } else {
+        pageInput.value = currentPage;
+    }
 }
-}
 
-// Go to previous page
 function prevPage() {
-if (currentPage > 1) {
-document.getElementById('pageInput').value = currentPage - 1;
-changePage();
-}
+    if (currentPage > 1) {
+        document.getElementById('pageInput').value = currentPage - 1;
+        changePage();
+    }
 }
 
-// Go to next page
 function nextPage() {
-if (currentPage < lastPage) {
-document.getElementById('pageInput').value = currentPage + 1;
-changePage();
-}
+    if (currentPage < lastPage) {
+        document.getElementById('pageInput').value = currentPage + 1;
+        changePage();
+    }
 }
 
 // Change items per page
 function changeItemsPerPage() {
-itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
-console.debug("Changing items per page to:", itemsPerPage);
+    itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
+    console.debug("Changing items per page to:", itemsPerPage);
 
-currentPage = 1;
-document.getElementById('pageInput').value = 1;
-document.getElementById('productList').innerHTML = "";
-document.getElementById('loading-spinner').style.display = 'block';
+    currentPage = 1;
+    document.getElementById('pageInput').value = 1;
+    document.getElementById('productList').innerHTML = "";
+    document.getElementById('loading-spinner').style.display = 'block';
 
-loadMoreItems();
+    // Clear cache on size change
+    pageCache = {};
+
+    loadMoreItems();
 }
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
-// Add event listeners for filter inputs
-document.getElementById('pnoFilter').addEventListener('keyup', function(e) {
-if (e.key === 'Enter') applyFilters();
-});
-document.getElementById('companynoFilter').addEventListener('keyup', function(e) {
-if (e.key === 'Enter') applyFilters();
-});
-document.getElementById('oemFilter').addEventListener('keyup', function(e) {
-if (e.key === 'Enter') applyFilters();
-});
-document.getElementById('itemnameFilter').addEventListener('keyup', function(e) {
-if (e.key === 'Enter') applyFilters();
-});
-document.getElementById('companyproductFilter').addEventListener('keyup', function(e) {
-if (e.key === 'Enter') applyFilters();
-});
-document.getElementById('availabilityFilter').addEventListener('keyup', function(e) {
-    if (e.key === 'Enter') applyFilters();
+document.addEventListener('DOMContentLoaded', function () {
+    // Add event listeners for filter inputs
+    document.getElementById('pnoFilter').addEventListener('keyup', function (e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+    document.getElementById('companynoFilter').addEventListener('keyup', function (e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+    document.getElementById('oemFilter').addEventListener('keyup', function (e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+    document.getElementById('itemnameFilter').addEventListener('keyup', function (e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+    document.getElementById('companyproductFilter').addEventListener('keyup', function (e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+    document.getElementById('availabilityFilter').addEventListener('keyup', function (e) {
+        if (e.key === 'Enter') applyFilters();
     });
     document.querySelectorAll('.itemmain-icon').forEach(icon => {
-        icon.addEventListener('click', function() {
+        icon.addEventListener('click', function () {
             changeItemMain(this.dataset.value);
         });
     });
 
+    // Add click event for apply filters button
+    document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
 
-// Add click event for apply filters button
-document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+    // Add click event for reset filters button
+    document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
-// Add click event for reset filters button
-document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+    // Pagination controls
+    document.getElementById('prevPageBtn').addEventListener('click', prevPage);
+    document.getElementById('nextPageBtn').addEventListener('click', nextPage);
+    document.getElementById('pageInput').addEventListener('change', changePage);
+    document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
 
-// Pagination controls
-document.getElementById('prevPageBtn').addEventListener('click', prevPage);
-document.getElementById('nextPageBtn').addEventListener('click', nextPage);
-document.getElementById('pageInput').addEventListener('change', changePage);
-document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
-
-// Initial load
-applyFilters();
+    // Initial load
+    applyFilters();
 });
 
-window.onload = function() {
-// Call applyFilters on page load to load items with or without filters
-applyFilters();
+window.onload = function () {
+    // Call applyFilters on page load to load items with or without filters
+    applyFilters();
 };
 
-
-
-// Add click event for apply filters button
+// Additional event bindings (duplicate entries kept as in original)
 document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
-
-// Add click event for reset filters button
 document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
-
-// Pagination controls
 document.getElementById('prevPageBtn').addEventListener('click', prevPage);
 document.getElementById('nextPageBtn').addEventListener('click', nextPage);
 document.getElementById('pageInput').addEventListener('change', changePage);
 document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
-
-// Initial load
 applyFilters();
 
-
-
-
 // Cleanup any existing modals when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Remove any existing backdrops
     document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-    
+
     // Remove modal-open class from body
     document.body.classList.remove('modal-open');
-    
+
     // Reset overflow
     document.body.style.overflow = '';
 });
