@@ -137,6 +137,8 @@ def preorders_buy_page(request):
 
 def Admin_Dashboard(request):
     return render(request, 'CarPartsTemplates/e-commerce admin panel.html')
+def Item_Dashboard(request):
+    return render(request, 'CarPartsTemplates/Hozma_Item_Mangment.html')
 
 class MainitemViewSet(viewsets.ModelViewSet):
     queryset = almogOil_models.Mainitem.objects.all()

@@ -129,7 +129,7 @@
   <div class="filters-section mb-4">
     <!-- Brand Selection -->
     <div class="brand-selector mb-4">
-      
+      <input type="hidden" id="category" value="">
       
       <div class="d-flex justify-content-center flex-wrap gap-3">
         <div class="brand-logo active" data-value="" onclick="changeItemMain('')">
@@ -140,123 +140,116 @@
         </div>
         <div class="brand-logo" data-value="VW" onclick="changeItemMain('VW')">
           <div class="logo-container">
-            <img src="path/to/home-logo.png" alt="الكوري" class="brand-image">
+            <img src="{% static 'images/Korean-flag.png' %}" alt="الكوري" class="brand-image">
           </div>
           <span class="brand-name">الكوري</span>
         </div>
         <div class="brand-logo" data-value="phone" onclick="changeItemMain('phone')">
           <div class="logo-container">
-            <img src="path/to/phone-logo.png" alt="الالماني" class="brand-image">
+            <img src="{% static 'images/Germany-flag.png' %}" alt="الالماني" class="brand-image">
           </div>
           <span class="brand-name">الالماني</span>
         </div>
         <div class="brand-logo" data-value="car" onclick="changeItemMain('car')">
           <div class="logo-container">
-            <img src="path/to/car-logo.png" alt="الامريكي" class="brand-image">
+            <img src="{% static 'images/USA-flag.png' %}" alt="الامريكي" class="brand-image">
           </div>
           <span class="brand-name">الامريكي</span>
         </div>
       </div>
     </div>
   
-    <div class="search-filters">
-      <div class="section-header mb-4">
-        <h5 class="fw-bold text-primary"><i class="fas fa-sliders-h me-2"></i>تصفية البحث</h5>
-      </div>
-      <div class="row g-3">
-        <!-- Part Number Filter -->
-        <div class="col-lg-2 col-md-4 col-sm-6">
-          <div class="filter-card shadow-sm rounded-3">
-            <label for="pnoFilter" class="form-label small fw-bold text-muted mb-1">رقم القطعة</label>
-            <div class="input-group border rounded-3">
-              <span class="input-group-text bg-white border-0"><i class="fas fa-barcode text-primary"></i></span>
-              <input id="pnoFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم القطعة..." type="text" oninput="applyFilters()">
-              <button class="btn btn-outline-primary border-0" onclick="applyFilters()">
-                <i class="fas fa-search"></i>
-              </button>
-            </div>
-          </div>
+    <div class="container mt-4">
+      <div class="search-filters">
+        <!-- Clickable Header -->
+        <div class="section-header mb-4" onclick="toggleFilters()">
+          <h5 class="fw-bold text-primary">
+            <i class="fas fa-sliders-h me-2"></i>تصفية البحث
+          </h5>
         </div>
     
-        <!-- Company Number Filter -->
-        <div class="col-lg-2 col-md-4 col-sm-6">
-          <div class="filter-card shadow-sm rounded-3">
-            <label for="companynoFilter" class="form-label small fw-bold text-muted mb-1">رقم الشركة</label>
-            <div class="input-group border rounded-3">
-              <span class="input-group-text bg-white border-0"><i class="fas fa-building text-primary"></i></span>
-              <input id="companynoFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم الشركة..." type="text" oninput="applyFilters()">
-              <button class="btn btn-outline-primary border-0" onclick="applyFilters()">
-                <i class="fas fa-search"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+        <!-- Filters Content -->
+        <div id="filtersContent">
+          <div class="row g-3">
     
-        <!-- OEM Filter -->
-        <div class="col-lg-2 col-md-4 col-sm-6">
-          <div class="filter-card shadow-sm rounded-3">
-            <label for="oemFilter" class="form-label small fw-bold text-muted mb-1">رقم OEM</label>
-            <div class="input-group border rounded-3">
-              <span class="input-group-text bg-white border-0"><i class="fas fa-cog text-primary"></i></span>
-              <input id="oemFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم OEM..." type="text" oninput="applyFilters()">
-              <button class="btn btn-outline-primary border-0" onclick="applyFilters()">
-                <i class="fas fa-search"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-    
-        <!-- Part Name Filter -->
-        <div class="col-lg-2 col-md-4 col-sm-6">
-          <div class="filter-card shadow-sm rounded-3">
-            <label for="itemnameFilter" class="form-label small fw-bold text-muted mb-1">اسم القطعة</label>
-            <div class="input-group border rounded-3">
-              <span class="input-group-text bg-white border-0"><i class="fas fa-tag text-primary"></i></span>
-              <input id="itemnameFilter" class="form-control border-0 shadow-none" placeholder="ابحث باسم القطعة..." type="text" oninput="applyFilters()">
-              <button class="btn btn-outline-primary border-0" onclick="applyFilters()">
-                <i class="fas fa-search"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-    
-        <!-- Company Product Filter -->
-        <div class="col-lg-2 col-md-4 col-sm-6">
-          <div class="filter-card shadow-sm rounded-3">
-            <label for="companyproductFilter" class="form-label small fw-bold text-muted mb-1">منتج الشركة</label>
-            <div class="input-group border rounded-3">
-              <span class="input-group-text bg-white border-0"><i class="fas fa-box-open text-primary"></i></span>
-              <input id="companyproductFilter" class="form-control border-0 shadow-none" placeholder="ابحث بمنتج الشركة..." type="text" oninput="applyFilters()">
-              <button class="btn btn-outline-primary border-0" onclick="applyFilters()">
-                <i class="fas fa-search"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-                <!-- Availability Filter -->
-                <div class="col-lg-2 col-md-4 col-sm-6">
-                  <div class="filter-card">
-                    <label for="availabilityFilter" class="form-label small text-muted">حالة التوفر</label>
-                    <select class="form-select" id="availabilityFilter" onchange="applyFilters()">
-                      <option value="">الكل</option>
-                      <option value="available" class="text-success">
-                        <i class="fas fa-check-circle me-2"></i> متوفر (10+)
-                      </option>
-                      <option value="limited" class="text-warning">
-                        <i class="fas fa-exclamation-circle me-2"></i> كمية محدودة (1-10)
-                      </option>
-                      <option value="unavailable" class="text-danger">
-                        <i class="fas fa-times-circle me-2"></i> غير متوفر (0)
-                      </option>
-                    </select>
-                  </div>
+            <!-- Part Number Filter -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="filter-card shadow-sm rounded-3">
+                <label for="pnoFilter" class="form-label small fw-bold text-muted mb-1">رقم القطعة</label>
+                <div class="input-group border rounded-3">
+                  <span class="input-group-text bg-white border-0"><i class="fas fa-barcode text-primary"></i></span>
+                  <input id="pnoFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم القطعة..." type="text" oninput="applyFilters()">
+                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
                 </div>
               </div>
             </div>
+    
+            <!-- Company Number Filter -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="filter-card shadow-sm rounded-3">
+                <label for="companynoFilter" class="form-label small fw-bold text-muted mb-1">رقم الشركة</label>
+                <div class="input-group border rounded-3">
+                  <span class="input-group-text bg-white border-0"><i class="fas fa-building text-primary"></i></span>
+                  <input id="companynoFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم الشركة..." type="text" oninput="applyFilters()">
+                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
+                </div>
+              </div>
+            </div>
+    
+            <!-- OEM Filter -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="filter-card shadow-sm rounded-3">
+                <label for="oemFilter" class="form-label small fw-bold text-muted mb-1">رقم OEM</label>
+                <div class="input-group border rounded-3">
+                  <span class="input-group-text bg-white border-0"><i class="fas fa-cog text-primary"></i></span>
+                  <input id="oemFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم OEM..." type="text" oninput="applyFilters()">
+                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
+                </div>
+              </div>
+            </div>
+    
+            <!-- Part Name Filter -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="filter-card shadow-sm rounded-3">
+                <label for="itemnameFilter" class="form-label small fw-bold text-muted mb-1">اسم القطعة</label>
+                <div class="input-group border rounded-3">
+                  <span class="input-group-text bg-white border-0"><i class="fas fa-tag text-primary"></i></span>
+                  <input id="itemnameFilter" class="form-control border-0 shadow-none" placeholder="ابحث باسم القطعة..." type="text" oninput="applyFilters()">
+                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
+                </div>
+              </div>
+            </div>
+    
+            <!-- Company Product Filter -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="filter-card shadow-sm rounded-3">
+                <label for="companyproductFilter" class="form-label small fw-bold text-muted mb-1">منتج الشركة</label>
+                <div class="input-group border rounded-3">
+                  <span class="input-group-text bg-white border-0"><i class="fas fa-box-open text-primary"></i></span>
+                  <input id="companyproductFilter" class="form-control border-0 shadow-none" placeholder="ابحث بمنتج الشركة..." type="text" oninput="applyFilters()">
+                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
+                </div>
+              </div>
+            </div>
+    
+            <!-- Availability Filter -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="filter-card shadow-sm rounded-3">
+                <label for="availabilityFilter" class="form-label small text-muted">حالة التوفر</label>
+                <select class="form-select" id="availabilityFilter" onchange="applyFilters()">
+                  <option value="">الكل</option>
+                  <option value="availability:available">متوفر (10+)</option>
+                  <option value="availability:limited">كمية محدودة (1-10)</option>
+                  <option value="availability:unavailable">غير متوفر (0)</option>
+                  <option value="discount:available">تخفيض</option>
+                </select>
+              </div>
+            </div>
+    
           </div>
+        </div>
       </div>
     </div>
-  </div>
 
 
 
@@ -302,15 +295,13 @@
       <!-- Filter Controls -->
       <div class="row mt-3 g-2">
         <div class="col-12 d-flex justify-content-center">
-          <button onclick="applyCarPartsFilters()" class="btn btn-danger mx-2">
+          <button onclick="applyFilters()" class="btn btn-danger mx-2">
             <i class="bi bi-funnel-fill"></i> تصفية القطع
           </button>
-          <button onclick="resetCarPartsFilters()" class="btn btn-outline-dark mx-2">
+          <button onclick="resetFilters()" class="btn btn-outline-dark mx-2">
             <i class="bi bi-x-circle-fill"></i> إعادة الضبط
           </button>
-          <button onclick="sortCarParts()" class="btn btn-outline-primary mx-2">
-            <i class="bi bi-sort-down"></i> ترتيب حسب
-          </button>
+         
         </div>
       </div>
     </div>
@@ -343,17 +334,7 @@
 
 
     <!-- Page Navigation -->
-    <div class="pagination-controls d-flex justify-content-center align-items-center gap-3 mb-3">
-      <button class="btn btn-outline-primary px-3" onclick="prevPage()" id="prevPageBtn">
-        <i class="bi bi-chevron-right"></i> السابق
-      </button>
-      
- 
-      <button class="btn btn-outline-primary px-3" onclick="nextPage()" id="nextPageBtn">
-        التالي <i class="bi bi-chevron-left"></i>
-      </button>
-    </div>
-    
+
        <!-- Loading Spinner -->
        <div id="loading-spinner" class="text-center py-4" style="display:none;">
         <div class="spinner-border" role="status"></div>
@@ -368,7 +349,18 @@
       </div>
     </div>
   
-
+    <div>
+      <div class="pagination-controls d-flex justify-content-center align-items-center gap-3 mb-3">
+        <button class="btn btn-outline-primary px-3" onclick="prevPage()" id="prevPageBtn">
+          <i class="bi bi-chevron-right"></i> السابق
+        </button>
+        
+   
+        <button class="btn btn-outline-primary px-3" onclick="nextPage()" id="nextPageBtn">
+          التالي <i class="bi bi-chevron-left"></i>
+        </button>
+      </div>
+    </div>
   
     <!-- Order Success Modal -->
     <div class="modal fade" id="orderSuccessModal" tabindex="-1">

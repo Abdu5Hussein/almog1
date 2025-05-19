@@ -309,6 +309,8 @@ class Mainitem(models.Model):
     showed = models.IntegerField(default=0)
      # Adding the foreign key to AllSourcesTable is for HOZMA ATTENTIN IS FOR HOZMA
     source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
+    category = models.CharField(db_column='category', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    discount = models.DecimalField(db_column='discount', max_digits=19, decimal_places=4, blank=True, null=True)  
     class Meta:
         managed = True
         db_table = 'MainItem'

@@ -4,7 +4,9 @@ let isLoading = false;
 let currentFilters = {};
 let itemsPerPage = 10;
 let datl = {};
-let pageCache = {}; // *** simple in-memory cache ***
+let pageCache = {}; 
+let maxPrefetchedPage = 0;   // highest page we’ve ever prefetched
+// *** simple in-memory cache ***
 
 // Main function to fetch filtered data
 async function fetchFilteredData(page = 1) {
@@ -22,7 +24,9 @@ async function fetchFilteredData(page = 1) {
         itemname: currentFilters.itemname || '',
         companyproduct: currentFilters.companyproduct || '',
         availability: currentFilters.availability || '',
-        itemmain: currentFilters.itemmain || '',
+        category: currentFilters.category || '',
+        discount: currentFilters.discount || '',
+        
         page: page,
         size: itemsPerPage,
     };
@@ -45,7 +49,7 @@ async function fetchFilteredData(page = 1) {
         const formatted = {
             data: data?.data || [],
             last_page: data?.last_page || 1,
-            total: data?.total || 0
+            total_rows: data?.total_rows || 0
         };
 
         // Cache the result
@@ -57,87 +61,128 @@ async function fetchFilteredData(page = 1) {
         return {
             data: [],
             last_page: 1,
-            total: 0
+            total_rows: 0
         };
     }
 }
 
 // Prefetch next pages (up to four pages ahead)
-function prefetchPages(start, distance = 5) {
-    const end = Math.min(start + distance - 1, lastPage);   // e.g. 6-10
-    for (let p = start; p <= end; p++) {
-      if (!pageCache[p]) {
-        fetchFilteredData(p).catch(err => console.error("Prefetch error:", err));
-      }
-    }
-  }
+function prefetchNextPages(distance = 5) {
+    // Don’t compute until we know the true last page
+    if (!lastPage) return;
 
+    const start = maxPrefetchedPage + 1;
+    const end   = Math.min(start + distance - 1, lastPage);
+
+    for (let p = start; p <= end; p++) {
+        if (!pageCache[p]) {
+            fetchFilteredData(p).catch(err => console.error('Prefetch error:', err));
+        }
+    }
+
+    // Remember how far ahead we’ve gone
+    maxPrefetchedPage = Math.max(maxPrefetchedPage, end);
+}
 // Display items in the table
 async function displayItems(items) {
     const productList = document.getElementById('productList');
     productList.innerHTML = '';
-
+  
     if (items.length === 0) {
-        document.getElementById('noResults').style.display = 'block';
-        document.getElementById('loading-spinner').style.display = 'none';
-        return;
+      document.getElementById('noResults').style.display = 'block';
+      document.getElementById('loading-spinner').style.display = 'none';
+      return;
     }
-
+  
     document.getElementById('noResults').style.display = 'none';
-
+  
     for (const item of items) {
-        const row = document.createElement('tr');
-        const stock = parseInt(item.showed) || 0;
-        const cartItem = cart.find(ci => ci.pno === item.pno);
-        const cartQuantity = cartItem ? cartItem.quantity : 0;
-
-        row.innerHTML = `
-<td class="clickable-cell" data-pno="${item.pno}">${item.pno ?? '-'}</td>
-<td class="clickable-cell" data-pno="${item.pno}">${item.itemname ?? '-'}</td>
-
-<td>${item.companyproduct ?? '-'}</td>
-<td>
-${stock > 10 ? `<span class="badge bg-success">متوفر</span>` :
-stock > 0 && stock <= 9 ? `<span class="badge bg-warning text-dark">كمية محدودة</span>` :
-`<span class="badge bg-danger">غير متوفر</span>`}
-</td>
-<td>${parseFloat(item.buyprice || 0).toFixed(2)} د.ل</td>
-<td>
-
-<a href="/hozma/products/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
-</td>
-<td>
-<div class="quantity-control">
-<button class="btn btn-sm btn-outline-secondary quantity-btn" onclick="decrementQuantity('${item.pno}')">-</button>
-<input type="number" class="form-control form-control-sm quantity-input"
-id="qty-${item.pno}" value="${cartQuantity}" min="0"
-onchange="updateQuantity('${item.pno}', this.value)">
-<button class="btn btn-sm btn-outline-secondary quantity-btn" onclick="incrementQuantity('${item.pno}')">+</button>
-</div>
-</td>
-<td>
-<button class="btn btn-sm btn-success mb-1" onclick="addToCartWithQuantity('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${parseFloat(item.buyprice || 0).toFixed(2)}, '', document.getElementById('qty-${item.pno}').value, ${item.showed})">
-  شراء
-</button>
-
-</td>
-
-`;
-
-        row.querySelectorAll('.clickable-cell').forEach(cell => {
-            cell.style.cursor = 'pointer';
-            cell.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('quantity-btn') &&
-                    !e.target.classList.contains('quantity-input')) {
-                    showProductImages(item.pno);
-                }
-            });
+      const row = document.createElement('tr');
+  
+      const stock         = parseInt(item.showed) || 0;
+      const cartItem      = cart.find(ci => ci.pno === item.pno);
+      const cartQuantity  = cartItem ? cartItem.quantity : 0;
+  
+      /* ──────── ▸ price / discount logic ◂ ──────── */
+      const discount  = item.discount ? parseFloat(item.discount) : 0;   // e.g. 0.10
+      const finalPrice = parseFloat(item.buyprice || 0);                 // already discounted
+      const originalPrice = discount ? finalPrice / (1 - discount) : finalPrice;
+  
+      const priceCellContent = discount
+        ? `
+          <span class="text-decoration-line-through text-muted me-1">
+            ${originalPrice.toFixed(2)} د.ل
+          </span>
+          <span class="fw-bold text-danger">
+            ${finalPrice.toFixed(2)} د.ل
+          </span>
+          <span class="badge bg-danger ms-1">
+            خصم ${(discount * 100).toFixed(0)}%
+          </span>`
+        : `${finalPrice.toFixed(2)} د.ل`;
+      /* ──────────────────────────────────────────── */
+  
+      row.innerHTML = `
+  <td class="clickable-cell" data-pno="${item.pno}">${item.pno ?? '-'}</td>
+  <td class="clickable-cell" data-pno="${item.pno}">${item.itemname ?? '-'}</td>
+  
+  <td>${item.companyproduct ?? '-'}</td>
+  <td>
+    ${stock > 10
+        ? `<span class="badge bg-success">متوفر</span>`
+        : stock > 0
+          ? `<span class="badge bg-warning text-dark">كمية محدودة</span>`
+          : `<span class="badge bg-danger">غير متوفر</span>`}
+  </td>
+  <td>${priceCellContent}</td>
+  <td>
+    <a href="/hozma/products/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
+  </td>
+  <td>
+    <div class="quantity-control">
+      <button class="btn btn-sm btn-outline-secondary quantity-btn"
+              onclick="decrementQuantity('${item.pno}')">-</button>
+  
+      <input type="number" class="form-control form-control-sm quantity-input"
+             id="qty-${item.pno}" value="${cartQuantity}" min="0"
+             onchange="updateQuantity('${item.pno}', this.value)">
+  
+      <button class="btn btn-sm btn-outline-secondary quantity-btn"
+              onclick="incrementQuantity('${item.pno}')">+</button>
+    </div>
+  </td>
+  <td>
+    <button class="btn btn-sm btn-success mb-1"
+            onclick="addToCartWithQuantity(
+              '${item.pno}',
+              '${item.fileid}',
+              '${item.itemno}',
+              '${item.itemname}',
+              ${finalPrice.toFixed(2)},
+              '',
+              document.getElementById('qty-${item.pno}').value,
+              ${item.showed}
+            )">
+      شراء
+    </button>
+  </td>
+  `;
+  
+      /* Allow pno & name cells to open the image dialog */
+      row.querySelectorAll('.clickable-cell').forEach(cell => {
+        cell.style.cursor = 'pointer';
+        cell.addEventListener('click', e => {
+          if (!e.target.classList.contains('quantity-btn') &&
+              !e.target.classList.contains('quantity-input')) {
+            showProductImages(item.pno);
+          }
         });
-
-        productList.appendChild(row);
+      });
+  
+      productList.appendChild(row);
     }
-}
-
+  }
+  
 let currentImageModal = null;
 
 async function showProductImages(pno) {
@@ -220,19 +265,19 @@ async function showProductImages(pno) {
 }
 function changeItemMain(value) {
     // Update the hidden input
-    document.getElementById('itemmain').value = value;
+    document.getElementById('category').value = value;
     
     // Remove active class from all icons
-    document.querySelectorAll('.itemmain-icon').forEach(icon => {
+    document.querySelectorAll('.category-icon').forEach(icon => {
         icon.classList.toggle('active', icon.dataset.value === value);
     });
     
     // Move the highlight to the selected icon
-    const selectedIcon = document.querySelector(`.itemmain-icon[data-value="${value}"]`);
+    const selectedIcon = document.querySelector(`.category-icon[data-value="${value}"]`);
     if (selectedIcon) {
         moveHighlight(selectedIcon);
     }
-    
+
     applyFilters();
 }
 
@@ -260,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Position highlight on initially active icon
-    const activeIcon = document.querySelector('.itemmain-icon.active');
+    const activeIcon = document.querySelector('.category-icon.active');
     if (activeIcon) {
         moveHighlight(activeIcon);
     }
@@ -270,14 +315,28 @@ document.addEventListener('DOMContentLoaded', function() {
 function applyFilters() {
     console.debug("Applying filters...");
 
+    const availabilityRaw = document.getElementById('availabilityFilter').value;
+    let availability = '';
+    let discount = '';
+
+    if (availabilityRaw.includes(':')) {
+        const [key, value] = availabilityRaw.split(':');
+        if (key === 'availability') {
+            availability = value;
+        } else if (key === 'discount') {
+            discount = value;
+        }
+    }
+
     currentFilters = {
         pno: document.getElementById('pnoFilter').value.trim(),
         companyno: document.getElementById('companynoFilter').value.trim(),
         oem: document.getElementById('oemFilter').value.trim(),
         itemname: document.getElementById('itemnameFilter').value.trim(),
         companyproduct: document.getElementById('companyproductFilter').value.trim(),
-        availability: document.getElementById('availabilityFilter').value,
-        itemmain: document.getElementById('itemmain') ? document.getElementById('itemmain').value : '',
+        availability: availability,
+        discount: discount,
+        category: document.getElementById('category') ? document.getElementById('category').value : '',
     };
 
     console.debug("Current filters:", currentFilters);
@@ -287,11 +346,10 @@ function applyFilters() {
     document.getElementById('productList').innerHTML = "";
     document.getElementById('loading-spinner').style.display = 'block';
 
-    // Clear cache on new filter set
-    pageCache = {};
-
+    pageCache = {}; // Clear cache
     loadMoreItems();
 }
+
 
 // Reset all filters
 function resetFilters() {
@@ -304,9 +362,9 @@ function resetFilters() {
     document.getElementById('companyproductFilter').value = '';
     document.getElementById('availabilityFilter').value = '';
 
-    // Reset itemmain
-    document.getElementById('itemmain').value = '';
-    document.querySelectorAll('.itemmain-icon').forEach(icon => {
+    // Reset category
+    document.getElementById('category').value = '';
+    document.querySelectorAll('.category-icon').forEach(icon => {
         icon.classList.remove('active');
     });
 
@@ -320,15 +378,15 @@ async function loadMoreItems() {
   
     console.debug("Loading items for page:", currentPage);
   
-    const { data, last_page, total } = await fetchFilteredData(currentPage);
+    const { data, last_page, total_rows } = await fetchFilteredData(currentPage);
     lastPage = last_page || 1;
   
     await displayItems(data);
     
-    updatePaginationInfo(total);
+    updatePaginationInfo(total_rows);
   
     /* ----- NEW: always prefetch the next 5 pages ----- */
-    prefetchPages(currentPage + 1, 5);
+    prefetchNextPages(5);
   
     document.getElementById('loading-spinner').style.display = 'none';
     isLoading = false;
@@ -341,10 +399,10 @@ async function loadMoreItems() {
 }
 
 // Update pagination information
-function updatePaginationInfo(totalItems) {
-    console.debug("Total items:", totalItems, "Current page:", currentPage, "Last page:", lastPage);
+function updatePaginationInfo(total_rows) {
+    console.debug("Total items:", total_rows, "Current page:", currentPage, "Last page:", lastPage);
     document.getElementById('pageInfo').textContent =
-        `الصفحة ${currentPage} من ${lastPage} | إجمالي العناصر: ${totalItems}`;
+        `الصفحة ${currentPage} من ${lastPage} | إجمالي العناصر: ${total_rows}`;
 }
 
 // Change page based on input
@@ -422,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('availabilityFilter').addEventListener('keyup', function (e) {
         if (e.key === 'Enter') applyFilters();
     });
-    document.querySelectorAll('.itemmain-icon').forEach(icon => {
+    document.querySelectorAll('.category-icon').forEach(icon => {
         icon.addEventListener('click', function () {
             changeItemMain(this.dataset.value);
         });
@@ -469,3 +527,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Reset overflow
     document.body.style.overflow = '';
 });
+pageCache = {};
+maxPrefetchedPage = 0;   // <-- add this line anywhere you clear pageCache
+function toggleFilters() {
+    const filtersContent = document.getElementById('filtersContent');
+    filtersContent.style.display = filtersContent.style.display === 'none' ? 'block' : 'none';
+  }

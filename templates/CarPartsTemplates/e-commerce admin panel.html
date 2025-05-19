@@ -609,10 +609,11 @@
                 <div class="card sidebar hover-scale">
                     <div class="profile-section">
                         <img src="https://via.placeholder.com/150" class="profile-img rounded-circle" alt="صورة المدير">
-                        <h5 class="card-title mb-1">مدير النظام</h5>
-                        <p class="text-muted small mb-3">admin@example.com</p>
+                        <h5 class="card-title mb-1" id="userNamePlaceholder">مدير النظام</h5>
+                        <p class="text-muted small mb-3" id="userEmailPlaceholder">admin@example.com</p>
                         <p class="text-muted small"><i class="fas fa-clock me-1"></i>آخر دخول: اليوم 10:30 ص</p>
                     </div>
+                    
                     
                     <div class="list-group list-group-flush">
                         <a href="http://45.13.59.226/hozma/Handle-source/" class="list-group-item list-group-item-action">
@@ -1597,6 +1598,30 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error fetching purchase analysis:', error);
         });
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    try {
+        const username = localStorage.getItem("session_data@username");
+        const email = localStorage.getItem("session_data@email"); // optional if you store it
+
+        const nameElement = document.getElementById('userNamePlaceholder');
+        const emailElement = document.getElementById('userEmailPlaceholder');
+
+        if (username) {
+            nameElement.textContent = username;
+            if (email) {
+                emailElement.textContent = email;
+            }
+        } else {
+            nameElement.textContent = "حسابي";
+            emailElement.textContent = "غير معروف";
+            alert("No user data found. Please log in.");
+        }
+    } catch (e) {
+        console.error('Error accessing localStorage:', e);
+    }
+});
+
 
     
     </script>

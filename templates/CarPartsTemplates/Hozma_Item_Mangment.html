@@ -1,0 +1,644 @@
+{% load static %} {% load custom_filters %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بيانات الاصناف - نظام إدارة المخزون</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'hozma/js/pro.js' %}" defer></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'dselect/choices.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'tabulator/custom-tabulator.css' %}"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --header-bg: #2c3e50;
+        --table-header-bg: #34495e;
+        --row-hover: #f8f9fa;
+        --border-color: #dee2e6;
+        --primary-btn: #3498db;
+        --danger-btn: #e74c3c;
+        --success-btn: #2ecc71;
+        --warning-btn: #f39c12;
+      }
+      
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #ecf0f1;
+        color: #333;
+        line-height: 1.5;
+      }
+      
+      .dashboard-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 15px;
+        margin: 15px auto;
+        max-width: 98%;
+      }
+      
+      .dashboard-header {
+        background-color: var(--header-bg);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px 5px 0 0;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .dashboard-title {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+      }
+      
+      /* Table styling */
+      .data-table-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      
+      .table {
+        width: 100%;
+        margin-bottom: 0;
+        font-size: 0.9rem;
+      }
+      
+      .table thead th {
+        background-color: var(--table-header-bg);
+        color: white;
+        padding: 10px 8px;
+        border-bottom: none;
+        font-weight: 500;
+        vertical-align: middle;
+      }
+      
+      .table tbody td {
+        padding: 8px;
+        vertical-align: middle;
+        border-top: 1px solid var(--border-color);
+      }
+      
+      .table tbody tr:hover {
+        background-color: var(--row-hover);
+      }
+      
+      /* Form styling */
+      .form-section {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 15px;
+        margin-top: 20px;
+      }
+      
+      .form-section-title {
+        background-color: #f8f9fa;
+        padding: 8px 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-weight: 600;
+        border-left: 4px solid var(--header-bg);
+      }
+      
+      .form-group {
+        margin-bottom: 12px;
+      }
+      
+      .form-label {
+        font-weight: 500;
+        margin-bottom: 4px;
+        font-size: 0.85rem;
+      }
+      
+      .form-control, .form-select {
+        border-radius: 3px;
+        border: 1px solid var(--border-color);
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        height: 34px;
+      }
+      
+      /* Button styling */
+      .btn {
+        border-radius: 3px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+      
+      .btn-primary {
+        background-color: var(--primary-btn);
+        border-color: var(--primary-btn);
+      }
+      
+      .btn-danger {
+        background-color: var(--danger-btn);
+        border-color: var(--danger-btn);
+      }
+      
+      .btn-success {
+        background-color: var(--success-btn);
+        border-color: var(--success-btn);
+      }
+      
+      .btn-warning {
+        background-color: var(--warning-btn);
+        border-color: var(--warning-btn);
+        color: white;
+      }
+      
+      .btn-secondary {
+        background-color: #95a5a6;
+        border-color: #95a5a6;
+      }
+      
+      /* Toolbar styling */
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      
+      .toolbar-left, .toolbar-right {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      
+      /* Pagination */
+      .pagination {
+        margin: 0;
+      }
+      
+      .page-item.active .page-link {
+        background-color: var(--primary-btn);
+        border-color: var(--primary-btn);
+      }
+      
+      /* Responsive adjustments */
+      @media (max-width: 992px) {
+        .form-column {
+          margin-bottom: 15px;
+        }
+        
+        .toolbar-left, .toolbar-right {
+          width: 100%;
+          justify-content: space-between;
+        }
+      }
+      
+      /* Custom widths */
+      .width-95 { width: 95px; }
+      .width-55 { width: 55px; }
+      .width-73 { width: 73px; }
+      .width-80 { width: 80px; }
+      
+      /* Choices.js adjustments */
+      .choices__inner {
+        min-height: 34px;
+        padding: 4px 8px;
+      }
+      
+      /* Status indicators */
+      .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+      
+      .status-active {
+        background-color: var(--success-btn);
+      }
+      
+      .status-inactive {
+        background-color: var(--danger-btn);
+      }
+      
+      /* Compact layout for form sections */
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -8px;
+      }
+      
+      .form-col {
+        padding: 0 8px;
+        margin-bottom: 10px;
+      }
+      
+      /* Larger textarea */
+      .large-textarea {
+        height: 100px;
+        resize: vertical;
+      }
+      
+      /* Disabled elements */
+      .item-disabled {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="dashboard-container">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">نظام إدارة المخزون - بيانات الاصناف</h1>
+        <div class="actions">
+          <button class="btn btn-sm btn-light" onclick="window.close()">
+            <i class="bi bi-x-lg"></i> إغلاق
+          </button>
+        </div>
+      </div>
+
+      <!-- Dropdown menu for column visibility -->
+      <div id="column-menu" class="dropdown" style="display: none; position: absolute; background: white; padding: 10px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000;">
+        {% for column in columns %}
+        <label style="display: block; padding: 5px; cursor: pointer;">
+          <input
+            type="checkbox"
+            value="{{ column }}"
+            {% if column_visibility|get:column %}
+            checked
+            {% endif %}
+            style="margin-left: 5px;"
+          />
+          {{ column_titles|get:column }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <!-- Right-click context menu -->
+      <div id="contextMenu" style="display: none; position: absolute; background: white; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000;">
+        <div style="padding: 8px 15px; cursor: pointer;" onclick="performAction('Edit')">
+          <i class="bi bi-pencil-square"></i> تعديل
+        </div>
+        <div style="padding: 8px 15px; cursor: pointer;" onclick="performAction('Delete')">
+          <i class="bi bi-trash"></i> حذف
+        </div>
+        <div style="padding: 8px 15px; cursor: pointer;" onclick="performAction('View Details')">
+          <i class="bi bi-eye"></i> عرض التفاصيل
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button class="btn btn-sm btn-outline-secondary" id="toggle-column-menu">
+            <i class="bi bi-columns-gap"></i> إظهار/إخفاء الأعمدة
+          </button>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-outline-secondary" id="fullTable">
+              <i class="bi bi-grid-3x3-gap"></i> عرض الكل
+            </button>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item page-first">
+                <a class="page-link" href="#" title="First"><i class="bi bi-chevron-double-left"></i></a>
+              </li>
+              <li class="page-item page-prev">
+                <a class="page-link" href="#" title="Previous"><i class="bi bi-chevron-left"></i></a>
+              </li>
+              <li class="page-item disabled">
+                <span class="page-link" id="page-total">الصفحة 1 من 10</span>
+              </li>
+              <li class="page-item page-next">
+                <a class="page-link" href="#" title="Next"><i class="bi bi-chevron-right"></i></a>
+              </li>
+              <li class="page-item page-last">
+                <a class="page-link" href="#" title="Last"><i class="bi bi-chevron-double-right"></i></a>
+              </li>
+              <select class="form-select form-select-sm" id="page-size" style="width: 80px;">
+                <option value="50">50 صف</option>
+                <option value="100" selected>100 صف</option>
+                <option value="200">200 صف</option>
+              </select>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="data-table-container">
+        <div
+          dir="rtl"
+          id="users-table"
+          data-url="{% url 'get_data' %}"
+          class="table-responsive"
+        >
+          <!-- Tabulator will render here -->
+        </div>
+      </div>
+
+      <!-- Loader -->
+      <div id="loader-element" class="text-center py-3" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 mb-0">جاري تحميل البيانات...</p>
+      </div>
+
+      <!-- Item Details Form -->
+      <div class="form-section">
+        <h3 class="form-section-title">تفاصيل الصنف</h3>
+        
+        <form>
+          {% csrf_token %}
+          <div class="form-row">
+            <!-- Basic Information Column -->
+            <div class="form-col col-md-4">
+              <div class="form-group">
+                <label for="pname-arabic" class="form-label">*اسم الصنف بالعربي</label>
+                <input type="text" class="form-control" id="pname-arabic" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="pname-english" class="form-label">اسم الصنف بالانجليزي</label>
+                <input type="text" class="form-control" id="pname-english">
+              </div>
+              
+              <div class="form-group">
+                <label for="original-no" class="form-label">الرقم الاصلي</label>
+                <input type="text" class="form-control" id="original-no">
+              </div>
+              
+              <div class="form-group">
+                <label for="barcode-no" class="form-label">رقم الباركود</label>
+                <input type="text" class="form-control" id="barcode-no">
+              </div>
+              
+              <div class="form-group">
+                <label for="company-no" class="form-label">*رقم الشركة</label>
+                <input type="text" class="form-control" id="company-no" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="description" class="form-label">المواصفات</label>
+                <textarea class="form-control large-textarea" id="description"></textarea>
+              </div>
+            </div>
+
+            <!-- Classification Column -->
+            <div class="form-col col-md-2">
+              <div class="form-group">
+                <label for="item-main" class="form-label">*البيان الرئيسي</label>
+                <select id="item-main" class="form-select" required>
+                  <option value="" selected>اختر بيان رئيسي</option>
+                  {% for x in mainType %}
+                  <option value="{{ x.typename }}">{{ x.typename }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="item-sub-main" class="form-label">البيان الفرعي</label>
+                <select id="item-sub-main" class="form-select">
+                  <option value="" selected>اختر بيان فرعي</option>
+                  {% for x in subType %}
+                  <option value="{{ x.subtypename }}" data-main-type="{{ x.maintype_fk.typename }}">{{ x.subtypename }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="company" class="form-label">*الشركة المنتجة</label>
+                <select id="company" class="form-select">
+                  <option value="" selected>اختر شركة</option>
+                  {% for x in company %}
+                  <option value="{{ x.fileid }}">{{ x.companyname }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="countries" class="form-label">بلد الصنع</label>
+                <select id="countries" class="form-select">
+                  <option value="" selected>اختر بلد الصنع</option>
+                  {% for x in countries %}
+                  <option value="{{ x.fileid }}">{{ x.countryname }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="pieces-per-box" class="form-label">عدد القطع بالصندوق</label>
+                <input type="number" class="form-control" id="pieces-per-box" min="0" value="0">
+              </div>
+              
+              <div class="form-group">
+                <label for="engine" class="form-label">المحرك</label>
+                <select id="engine" class="form-select">
+                  <option value="" selected>اختر محرك</option>
+                  {% for x in engines %}
+                  <option value="{{ x.fileid }}">{{ x.engine_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- Inventory Column -->
+            <div class="form-col col-md-2">
+              <div class="form-group">
+                <label for="model" class="form-label">الموديل</label>
+                <select id="model" class="form-select">
+                  <option value="" selected>اختر موديل</option>
+                  {% for x in models %}
+                  <option value="{{ x.model_name }}" data-sub-type="{{ x.subtype_fk.subtypename }}">
+                    {{ x.model_name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="storage-balance" class="form-label">الرصيد بالمخزن</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="storage-balance" value="0" disabled>
+                  <select class="form-select" style="max-width: 80px;">
+                    {% for measurement in measurements %}
+                    <option value="{{ measurement.id }}">{{ measurement.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="backup-balance" class="form-label">الرصيد الاحتياطي</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="backup-balance" value="0" disabled>
+                  <select class="form-select" style="max-width: 80px;">
+                    {% for measurement in measurements %}
+                    <option value="{{ measurement.id }}">{{ measurement.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="temp-balance" class="form-label">الرصيد المؤقت</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="temp-balance" value="0" disabled>
+                  <select class="form-select" style="max-width: 80px;">
+                    {% for measurement in measurements %}
+                    <option value="{{ measurement.id }}">{{ measurement.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="reserved-balance" class="form-label">الرصيد المحجوز</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="reserved-balance" value="0" disabled>
+                  <select class="form-select" style="max-width: 80px;">
+                    {% for measurement in measurements %}
+                    <option value="{{ measurement.id }}">{{ measurement.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status/Location Column -->
+            <div class="form-col col-md-2">
+              <div class="form-group">
+                <label for="status" class="form-label">حالة الصنف</label>
+                <select id="status" class="form-select">
+                  <option value="storage">المصنع</option>
+                  <option value="marine" selected>شركة مارين</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="location" class="form-label">الموقع</label>
+                <input type="text" class="form-control" id="location">
+              </div>
+              
+              <div class="form-group">
+                <label for="short-name" class="form-label">الاسم المختصر</label>
+                <input type="text" class="form-control" id="short-name">
+              </div>
+            </div>
+
+            <!-- Pricing Column -->
+            <div class="form-col col-md-2">
+              <div class="form-group">
+                <label for="origin-price" class="form-label">*سعر التوريد</label>
+                <input type="number" class="form-control" id="origin-price" min="0" value="0" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="buy-price" class="form-label">سعر الشراء</label>
+                <input type="number" class="form-control" id="buy-price" min="0" value="0">
+              </div>
+              
+              <div class="form-group">
+                <label for="expenses-price" class="form-label">سعر التكلفة</label>
+                <input type="number" class="form-control" id="expenses-price" min="0" value="0">
+              </div>
+              
+              <div class="form-group">
+                <label for="sell-price" class="form-label">سعر البيع</label>
+                <input type="number" class="form-control" id="sell-price" min="0" value="0">
+              </div>
+              
+              <div class="form-group">
+                <label for="less-price" class="form-label">أقل سعر للبيع</label>
+                <input type="number" class="form-control" id="less-price" min="0" value="0">
+              </div>
+              
+              <div class="form-group">
+                <label for="pno" class="form-label">رقم خاص</label>
+                <input type="text" class="form-control" id="pno" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="d-flex justify-content-between mt-3">
+            <div>
+              <button type="button" class="btn btn-outline-secondary me-2" id="reset-button">
+                <i class="bi bi-arrow-counterclockwise"></i> مسح
+              </button>
+              <button type="button" class="btn btn-outline-secondary me-2" id="more-details-btn">
+                <i class="bi bi-card-text"></i> تفاصيل أخرى
+              </button>
+              <button type="button" class="btn btn-outline-secondary me-2" onclick="openWindow('import-excel')" {% if not perms.almogOil.export_mainitems %}disabled{% endif %}>
+                <i class="bi bi-file-earmark-excel"></i> استيراد
+              </button>
+              <button type="button" class="btn btn-outline-secondary me-2" id="oem-btn">
+                <i class="bi bi-tags"></i> ارقام OEM
+              </button>
+              <button type="button" class="btn btn-outline-secondary me-2" id="images-btn">
+                <i class="bi bi-image"></i> صورة الصنف
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="add-main-btn">
+                <i class="bi bi-journal-plus"></i> اضافة بيان
+              </button>
+            </div>
+            <div>
+              <button type="button" class="btn btn-success me-2" id="new-record-button" {% if not perms.almogOil.add_mainitem %}disabled{% endif %}>
+                <i class="bi bi-plus-circle"></i> جديد
+              </button>
+              <button type="submit" class="btn btn-warning me-2" id="editButton" {% if not perms.almogOil.change_mainitem %}disabled{% endif %}>
+                <i class="bi bi-pencil-square"></i> تعديل
+              </button>
+              <button type="button" class="btn btn-danger me-2" id="deleteButton" {% if not perms.almogOil.delete_mainitem %}disabled{% endif %}>
+                <i class="bi bi-trash"></i> حذف
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="window.close()">
+                <i class="bi bi-x-circle"></i> إغلاق
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script src="{% static 'dselect/choices.min.js' %}"></script>
+    <script>
+    </script>
+  </body>
+</html>

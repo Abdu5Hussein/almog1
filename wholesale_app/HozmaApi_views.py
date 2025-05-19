@@ -1189,16 +1189,26 @@ def create_mainitem_by_source(request):
         pno = data['pno'].strip()
         oem_in = data['oem_number'].strip()
         company = data['companyproduct'].strip()
-        new_price = Decimal(str(data['buyprice'])).quantize(Decimal('0.0000'))
+        original_buyprice = Decimal(str(data['buyprice'])).quantize(Decimal('0.0000'))
         showed = data['showed']
         source = data['source'].strip()
+        discount = Decimal(str(data.get('discount', 0))) if data.get('discount') else Decimal('0')
+
+        # Apply discount if exists
+        if discount > 0:
+            discounted_buyprice = (original_buyprice - (original_buyprice * discount)).quantize(Decimal('0.0000'))
+        else:
+            discounted_buyprice = original_buyprice
+
+        # Update the buyprice in data with discounted value
+        data['buyprice'] = str(discounted_buyprice)
 
         # Get commission from AllSourcesTable
         try:
             source_obj = almogOil_models.AllSourcesTable.objects.get(clientid__iexact=source)
             commission = Decimal(str(source_obj.commission)).quantize(Decimal('0.0000'))
             # Calculate costprice with proper decimal handling
-            costprice = (new_price - (new_price * commission)).quantize(Decimal('0.0000'))
+            costprice = (discounted_buyprice - (discounted_buyprice * commission)).quantize(Decimal('0.0000'))
             data['costprice'] = str(costprice)  # Convert to string for serialization
         except almogOil_models.AllSourcesTable.DoesNotExist:
             return Response({'error': f'Source "{source}" not found in AllSourcesTable'}, status=400)
@@ -1209,7 +1219,8 @@ def create_mainitem_by_source(request):
             # Just update the showed field of existing product
             update_data = {
                 'showed': showed,
-                'costprice': str(costprice)  # Update costprice even if only updating showed
+                'costprice': str(costprice),  # Update costprice even if only updating showed
+                'buyprice': str(discounted_buyprice)  # Update with discounted price
             }
             serializer = products_serializers.MainitemSerializer(
                 existing_product, 
@@ -1218,7 +1229,7 @@ def create_mainitem_by_source(request):
             )
             if serializer.is_valid():
                 serializer.save()
-                return Response({'message': 'Updated showed and costprice fields for existing product'}, status=200)
+                return Response({'message': 'Updated showed, costprice and buyprice fields for existing product'}, status=200)
             return Response(serializer.errors, status=400)
 
         # If pno is new, proceed with the OEM matching logic
@@ -1250,8 +1261,9 @@ def create_mainitem_by_source(request):
                     
                     if item_to_update:
                         # Only update if price is lower
-                        if Decimal(str(item_to_update.buyprice)) > new_price:
+                        if Decimal(str(item_to_update.buyprice)) > discounted_buyprice:
                             data['oem_numbers'] = company_oem.oemno
+                            data.pop('pno', None) 
                             serializer = products_serializers.MainitemSerializer(
                                 item_to_update, 
                                 data=data, 
@@ -1369,6 +1381,10 @@ def web_filter_items(request):
                  filters_q &= Q(itemsize__icontains=filters['country'])
              if filters.get('oem'):
                  filters_q &= Q(oem_numbers__icontains=filters['oem'])
+             if filters.get('category'):
+                 filters_q &= Q(category__icontains=filters['category'])
+             if filters.get('discount') == "available":
+                 filters_q &= Q(discount__isnull=False) & ~Q(discount=0)
 
            # Original filters (replacing itemvalue with showed)
              if filters.get('showed') == "0":
