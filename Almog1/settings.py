@@ -123,6 +123,7 @@ CORS_ALLOWED_ORIGINS = [
     #"http://localhost:8000",  # Adjust based on your frontend domain
     #"http://your-frontend-domain.com",
     "http://45.13.59.226",
+    'http://127.0.0.1:8000',
     "https://45.13.59.226",
     "http://localhost:8000",
 ]

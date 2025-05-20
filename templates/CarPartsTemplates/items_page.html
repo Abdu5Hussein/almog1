@@ -14,60 +14,60 @@
 </head>
 <body>
 <!-- templates/partials/_navbar.html -->
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0F1B2E; border-bottom: 3px solid #FF6B00;">
-  <div class="container">
-      <a class="navbar-brand fw-bold" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية" style="font-size: 2rem; color: #FFD700; letter-spacing: 1px;">
-          <i class="bi bi-gear-fill me-2"></i>حزمة
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0A1523; border-bottom: 2px solid #FF6B00;">  <div class="container  px-0 ">
+      <a class="navbar-brand fw-bold" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية" style="font-size: 1.5rem; color: #FFD700; letter-spacing: 0.5px;">
+          <i class="bi bi-gear-fill me-1"></i>حزمة
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
+      <button class="navbar-toggler py-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
           <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
           <ul class="navbar-nav ms-auto align-items-lg-center">
               <li class="nav-item mx-1">
-                  <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozma/products/" aria-current="page">
+                  <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/products/" aria-current="page">
                       <i class="bi bi-speedometer2 me-1"></i> الرئيسية
                   </a>
               </li>
               <li class="nav-item dropdown mx-1">
-                  <a class="nav-link nav-link-auto dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <a class="nav-link nav-link-auto py-1 px-2 dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                       <i class="bi bi-layers me-1"></i> الأقسام
                   </a>
                   <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
-                      <li><a class="dropdown-item" href="/hozma/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
-                      <li><a class="dropdown-item" href="/hozma/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
-                      <li><a class="dropdown-item" href="/hozma/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
-                      <li><a class="dropdown-item" href="/hozma/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
-                      <li><hr class="dropdown-divider" style="border-color: #FF6B00;"></li>
-                      <li><a class="dropdown-item" href="/hozma/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
+                      <li><a class="dropdown-item py-2" href="/hozma/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
+                      <li><a class="dropdown-item py-2" href="/hozma/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
+                      <li><a class="dropdown-item py-2" href="/hozma/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
+                      <li><a class="dropdown-item py-2" href="/hozma/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
+                      <li><hr class="dropdown-divider my-1" style="border-color: #FF6B00;"></li>
+                      <li><a class="dropdown-item py-2" href="/hozma/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
                   </ul>
               </li>
               <li class="nav-item mx-1">
-                  <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozma/hozmabrands/">
+                  <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/hozmabrands/">
                       <i class="bi bi-tags me-1"></i> الماركات
                   </a>
               </li>
               <li class="nav-item mx-1">
-                  <a class="nav-link nav-link-auto" href="/hozma/offers">
-                      <i class="bi bi-percent me-1"></i> العروض
-                      <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">جديد</span>
-                  </a>
+                <a class="nav-link nav-link-auto py-1 px-2" href="javascript:void(0);" onclick="filterByDiscount()">
+                  <i class="bi bi-percent me-1"></i> العروض
+                  <span class="badge bg-danger ms-1" style="font-size: 0.5rem;">جديد</span>
+                </a>
               </li>
+              
               <li class="nav-item mx-1">
-                  <a class="nav-link nav-link-auto" href="/hozma/contact">
+                  <a class="nav-link nav-link-auto py-1 px-2" href="/hozma/contact">
                       <i class="bi bi-headset me-1"></i> الدعم الفني
                   </a>
               </li>
               <li class="nav-item position-relative mx-1">
-                <a id="navbarCartIcon" class="nav-link nav-link-auto" href="/hozma/hozmaCart/" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة">
+                <a id="navbarCartIcon" class="nav-link nav-link-auto py-1 px-2" href="/hozma/hozmaCart/" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة">
                     <i class="bi bi-cart3" aria-hidden="true"></i>
-                    <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
+                    <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.6rem;" aria-live="polite" aria-atomic="true">0</span>
                 </a>
-            </li>
+              </li>
             
               <!-- Account Button -->
-              <li class="nav-item ms-3">
-                <a id="accountButton" class="btn btn-warning fw-bold" href="/hozma/hozmaDashbord/" style="border-radius: 30px; min-width: 120px;">
+              <li class="nav-item ms-2">
+                <a id="accountButton" class="btn btn-warning fw-bold py-1 px-3" href="/hozma/hozmaDashbord/" style="border-radius: 20px; min-width: 100px; font-size: 0.85rem;">
                     <i class="bi bi-person-circle me-1"></i> <span id="userNamePlaceholder">حسابي</span>
                 </a>
               </li>
@@ -85,40 +85,57 @@
   <div class="cart-overlay" id="cartOverlay"></div>
 
   <!-- Cart Sidebar -->
-<div class="cart-sidebar" id="cartSidebar">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4>سلة الطلبات</h4>
-    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">
-      <i class="bi bi-trash"></i> إفراغ السلة
-    </button>
-  </div>
-
-  <div id="cartItemsContainer">
-    <p class="text-muted text-center py-4">السلة فارغة</p>
-  </div>
-
-  <div class="mt-3 border-top pt-3">
-    <div class="d-flex justify-content-between mb-2">
-      <span>عدد الأصناف:</span>
-      <strong id="cartItemsCount">0</strong>
+  <div class="cart-sidebar" id="cartSidebar">
+    <!-- Header section with title and clear button -->
+    <div class="cart-header d-flex justify-content-between align-items-center mb-4">
+      <h4 class="cart-title m-0">سلة الطلبات</h4>
+      <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">
+        <i class="bi bi-trash"></i> إفراغ السلة
+      </button>
     </div>
-    <div class="d-flex justify-content-between mb-3">
-      <span>المجموع:</span>
-      <strong id="cartTotalAmount">0.00 د.أ</strong>
+    
+    <!-- Summary section -->
+    <div class="cart-summary mt-3 border-top pt-3">
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">عدد الأصناف:</span>
+        <strong id="cartItemsCount">0</strong>
+      </div>
+      <div class="d-flex justify-content-between mb-3">
+        <span class="text-muted">المجموع:</span>
+        <strong id="cartTotalAmount">0.00 د.ل</strong>
+      </div>
+     
+      <button class="btn btn-primary w-100 mt-2" onclick="openCartPage()">
+        <i class="bi bi-cart"></i> الانتقال إلى سلة الطلبات
+      </button>
+      
     </div>
-   
-    <button class="btn btn-outline-primary w-100 mt-2" onclick="openCartPage()">
-      <i class="bi bi-cart"></i> الانتقال إلى سلة الطلبات
-    </button>
+  
+    <!-- Items section -->
+    <div class="cart-items-section mt-4">
+      <h3 class="cart-items-title position-relative pb-2 mb-3">
+        <span class="title-text">الأصناف</span>
+        <span class="title-line position-absolute bottom-0 start-0 bg-primary" style="height: 2px; width: 60px;"></span>
+      </h3>
+      
+      <div id="cartItemsContainer" class="cart-items-list">
+        <p class="text-muted text-center py-4">السلة فارغة</p>
+      </div>
+    </div>
   </div>
-</div>
 
 <body>
 
   <div id="floatingCartIcon" onclick="toggleCart()" title="فتح السلة" style="position: absolute; cursor: move;">
     <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" alt="Cart">
+    
+    <!-- Item count badge -->
     <span id="cartBadge1" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
+    
+    <!-- Custom label -->
+    <div class="cart-label">شراء</div>
   </div>
+  
 
    
 
@@ -134,174 +151,252 @@
       <div class="d-flex justify-content-center flex-wrap gap-3">
         <div class="brand-logo active" data-value="" onclick="changeItemMain('')">
           <div class="logo-container">
-            <img src="path/to/all-logo.png" alt="الكل" class="brand-image">
+            <img src="{% static 'images/ALL-icon.png' %}" alt="الكل" class="brand-image">
           </div>
           <span class="brand-name">الكل</span>
         </div>
-        <div class="brand-logo" data-value="VW" onclick="changeItemMain('VW')">
+        <div class="brand-logo" data-value="VW" onclick="changeItemMain('الكوري')">
           <div class="logo-container">
             <img src="{% static 'images/Korean-flag.png' %}" alt="الكوري" class="brand-image">
           </div>
-          <span class="brand-name">الكوري</span>
+          <span class="brand-name">كوري</span>
         </div>
-        <div class="brand-logo" data-value="phone" onclick="changeItemMain('phone')">
+        <div class="brand-logo" data-value="phone" onclick="changeItemMain('الالماني')">
           <div class="logo-container">
             <img src="{% static 'images/Germany-flag.png' %}" alt="الالماني" class="brand-image">
           </div>
-          <span class="brand-name">الالماني</span>
+          <span class="brand-name">الماني</span>
         </div>
-        <div class="brand-logo" data-value="car" onclick="changeItemMain('car')">
+        <div class="brand-logo" data-value="car" onclick="changeItemMain('الامريكي')">
           <div class="logo-container">
             <img src="{% static 'images/USA-flag.png' %}" alt="الامريكي" class="brand-image">
           </div>
-          <span class="brand-name">الامريكي</span>
+          <span class="brand-name">امريكي</span>
+        </div>
+        <div class="brand-logo" data-value="ياباني" onclick="changeItemMain('ياباني')">
+          <div class="logo-container">
+            <img src="{% static 'images/japan-flag.png' %}" alt="ياباني" class="brand-image">
+          </div>
+          <span class="brand-name">ياباني</span>
+        </div>
+        <div class="brand-logo" data-value="الزيوت" onclick="changeItemMain('الزيوت')">
+          <div class="logo-container">
+            <img src="{% static 'images/oil-icon.png' %}" alt="الزيوت" class="brand-image">
+          </div>
+          <span class="brand-name">الزيوت</span>
+        </div>
+        <div class="brand-logo" data-value="الكماليات" onclick="changeItemMain('الكماليات')">
+          <div class="logo-container">
+            <img src="{% static 'images/accsosries-icon.png' %}" alt="الكماليات" class="brand-image">
+          </div>
+          <span class="brand-name">الكماليات</span>
         </div>
       </div>
     </div>
   
-    <div class="container mt-4">
-      <div class="search-filters">
-        <!-- Clickable Header -->
-        <div class="section-header mb-4" onclick="toggleFilters()">
-          <h5 class="fw-bold text-primary">
-            <i class="fas fa-sliders-h me-2"></i>تصفية البحث
-          </h5>
-        </div>
-    
-        <!-- Filters Content -->
-        <div id="filtersContent">
-          <div class="row g-3">
-    
-            <!-- Part Number Filter -->
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <div class="filter-card shadow-sm rounded-3">
-                <label for="pnoFilter" class="form-label small fw-bold text-muted mb-1">رقم القطعة</label>
-                <div class="input-group border rounded-3">
-                  <span class="input-group-text bg-white border-0"><i class="fas fa-barcode text-primary"></i></span>
-                  <input id="pnoFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم القطعة..." type="text" oninput="applyFilters()">
-                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
-                </div>
-              </div>
-            </div>
-    
-            <!-- Company Number Filter -->
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <div class="filter-card shadow-sm rounded-3">
-                <label for="companynoFilter" class="form-label small fw-bold text-muted mb-1">رقم الشركة</label>
-                <div class="input-group border rounded-3">
-                  <span class="input-group-text bg-white border-0"><i class="fas fa-building text-primary"></i></span>
-                  <input id="companynoFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم الشركة..." type="text" oninput="applyFilters()">
-                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
-                </div>
-              </div>
-            </div>
-    
-            <!-- OEM Filter -->
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <div class="filter-card shadow-sm rounded-3">
-                <label for="oemFilter" class="form-label small fw-bold text-muted mb-1">رقم OEM</label>
-                <div class="input-group border rounded-3">
-                  <span class="input-group-text bg-white border-0"><i class="fas fa-cog text-primary"></i></span>
-                  <input id="oemFilter" class="form-control border-0 shadow-none" placeholder="ابحث برقم OEM..." type="text" oninput="applyFilters()">
-                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
-                </div>
-              </div>
-            </div>
-    
-            <!-- Part Name Filter -->
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <div class="filter-card shadow-sm rounded-3">
-                <label for="itemnameFilter" class="form-label small fw-bold text-muted mb-1">اسم القطعة</label>
-                <div class="input-group border rounded-3">
-                  <span class="input-group-text bg-white border-0"><i class="fas fa-tag text-primary"></i></span>
-                  <input id="itemnameFilter" class="form-control border-0 shadow-none" placeholder="ابحث باسم القطعة..." type="text" oninput="applyFilters()">
-                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
-                </div>
-              </div>
-            </div>
-    
-            <!-- Company Product Filter -->
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <div class="filter-card shadow-sm rounded-3">
-                <label for="companyproductFilter" class="form-label small fw-bold text-muted mb-1">منتج الشركة</label>
-                <div class="input-group border rounded-3">
-                  <span class="input-group-text bg-white border-0"><i class="fas fa-box-open text-primary"></i></span>
-                  <input id="companyproductFilter" class="form-control border-0 shadow-none" placeholder="ابحث بمنتج الشركة..." type="text" oninput="applyFilters()">
-                  <button class="btn btn-outline-primary border-0" onclick="applyFilters()"><i class="fas fa-search"></i></button>
-                </div>
-              </div>
-            </div>
-    
-            <!-- Availability Filter -->
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <div class="filter-card shadow-sm rounded-3">
-                <label for="availabilityFilter" class="form-label small text-muted">حالة التوفر</label>
-                <select class="form-select" id="availabilityFilter" onchange="applyFilters()">
-                  <option value="">الكل</option>
-                  <option value="availability:available">متوفر (10+)</option>
-                  <option value="availability:limited">كمية محدودة (1-10)</option>
-                  <option value="availability:unavailable">غير متوفر (0)</option>
-                  <option value="discount:available">تخفيض</option>
-                </select>
-              </div>
-            </div>
-    
+
+   <!-- =========  FILTERS SECTION  ========= -->
+
+  <div id="filtersContent">
+    <div class="row g-3">
+
+      <!-- Part Name Filter — Wider ---------------------------------------------->
+      <div class="col-lg-3 col-md-6 col-sm-12">
+        <div class="filter-card shadow-sm rounded-3 py-2 px-2">
+          <label for="itemnameFilter" class="form-label small fw-bold text-muted mb-1">
+            اسم القطعة
+          </label>
+          <div class="input-group border rounded-3">
+            <span class="input-group-text bg-white border-0">
+              <i class="fas fa-tag text-primary"></i>
+            </span>
+            <input id="itemnameFilter"
+                   class="form-control border-0 shadow-none"
+                   placeholder="ابحث باسم القطعة..."
+                   type="text"
+                   oninput="applyFilters()">
           </div>
         </div>
       </div>
-    </div>
 
-
-
-
-
-    <!-- Page Navigation -->
-    <div class="page-navigation-container bg-light p-3 rounded-3 shadow-sm mb-4">
-      <div class="row g-3 align-items-center">
-        <!-- Page Controls (Right side for RTL) -->
-        <div class="col-md-4 order-md-3">
-          <div class="input-group">
-            <span class="input-group-text bg-white"><i class="bi bi-list-ol"></i> الصفحة</span>
-            <button class="btn btn-outline-primary" onclick="prevPage()"><i class="bi bi-chevron-right"></i></button>
-            <input id="pageInput" type="number" class="form-control text-center" min="1" value="1" onchange="changePage()">
-            <button class="btn btn-outline-primary" onclick="nextPage()"><i class="bi bi-chevron-left"></i></button>
-          </div>
-        </div>
-        
-        <!-- Page Info (Center) -->
-        <div class="col-md-4 order-md-2 text-center">
-          <div class="d-inline-block bg-white p-2 rounded">
-            <span id="pageInfo" class="text-muted">
-              <i class="bi bi-file-earmark-text"></i> الصفحة 1 من 10 | 
-              <i class="bi bi-box-seam"></i> 100 قطعة
+      <!-- OEM Filter ------------------------------------------------------------>
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="filter-card shadow-sm rounded-3">
+          <label for="oemFilter" class="form-label small fw-bold text-muted mb-1">
+            رقم OEM
+          </label>
+          <div class="input-group border rounded-3">
+            <span class="input-group-text bg-white border-0">
+              <i class="fas fa-cog text-primary"></i>
             </span>
+            <input id="oemFilter"
+                   class="form-control border-0 shadow-none"
+                   placeholder="ابحث برقم OEM..."
+                   type="text"
+                   oninput="applyFilters()">
           </div>
         </div>
-        
-        <!-- Items Per Page (Left side) -->
-        <div class="col-md-4 order-md-1">
-          <div class="input-group">
-            <span class="input-group-text bg-white"><i class="bi bi-sliders"></i> عرض</span>
-            <select id="itemsPerPage" class="form-select" onchange="changeItemsPerPage()">
-              <option value="12">12 قطع</option>
-              <option value="24">24 قطع</option>
-              <option value="36">36 قطع</option>
-              <option value="48">48 قطع</option>
+      </div>
+
+      <!-- Company Number Filter ------------------------------------------------->
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="filter-card shadow-sm rounded-3">
+          <label for="companynoFilter" class="form-label small fw-bold text-muted mb-1">
+            رقم الشركة
+          </label>
+          <div class="input-group border rounded-3">
+            <span class="input-group-text bg-white border-0">
+              <i class="fas fa-building text-primary"></i>
+            </span>
+            <input id="companynoFilter"
+                   class="form-control border-0 shadow-none"
+                   placeholder="ابحث برقم الشركة..."
+                   type="text"
+                   oninput="applyFilters()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Part Number Filter — Narrow ------------------------------------------->
+      <div class="col-lg-1-5 col-md-4 col-sm-6">
+        <div class="filter-card shadow-sm rounded-3 ">
+          <label for="pnoFilter" class="form-label small fw-bold text-muted mb-1">
+            رقم القطعة
+          </label>
+          <div class="input-group border rounded-3">
+            <span class="input-group-text bg-white border-0">
+              <i class="fas fa-barcode text-primary"></i>
+            </span>
+            <input id="pnoFilter"
+                   class="form-control border-0 shadow-none"
+                   placeholder="ابحث برقم القطعة..."
+                   type="text"
+                   oninput="applyFilters()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Company Product Filter — Select --------------------------------------->
+      <div class="col-lg-1-5 col-md-4 col-sm-6">
+        <div class="filter-card shadow-sm rounded-3">
+          <label for="companyproductFilter" class="form-label small fw-bold text-muted mb-1">
+            اسم الشركة
+          </label>
+          <div class="input-group border rounded-3">
+            <span class="input-group-text bg-white border-0">
+              <i class="fas fa-box-open text-primary"></i>
+            </span>
+            <select id="companyproductFilter"
+                    class="form-select border-0 shadow-none"
+                    onchange="applyFilters()">
+              <option value="">اختر اسم الشركة...</option>
+              <!-- Options will be added here dynamically -->
             </select>
           </div>
         </div>
       </div>
       
-      <!-- Filter Controls -->
+
+      <!-- Availability Filter --------------------------------------------------->
+      <div class="col-lg-1-5 col-md-4 col-sm-6">
+        <div class="filter-card shadow-sm rounded-3">
+          <label for="availabilityFilter" class="form-label small text-muted">
+            حالة التوفر
+          </label>
+          <select id="availabilityFilter"
+                  class="form-select"
+                  onchange="applyFilters()">
+            <option value="">الكل</option>
+            <option value="availability:available">متوفر (10+)</option>
+            <option value="availability:limited">كمية محدودة (1-10)</option>
+            <option value="availability:unavailable">غير متوفر (0)</option>
+            <option value="discount:available">تخفيض</option>
+          </select>
+        </div>
+      </div>
+      <script>
+    
+  document.addEventListener('DOMContentLoaded', () => {
+    customFetch('http://45.13.59.226/hozma/api/company-products/')
+      .then(response => response.json())
+      .then(data => {
+        const select = document.getElementById('companyproductFilter');
+        data.forEach(product => {
+          const option = document.createElement('option');
+          option.value = product;
+          option.textContent = product;  // You can replace this with Arabic translation if needed
+          select.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching company products:', error);
+      });
+  });
+      </script>
+      
+      <!-- Action Buttons -------------------------------------------------------->
       <div class="row mt-3 g-2">
         <div class="col-12 d-flex justify-content-center">
-          <button onclick="applyFilters()" class="btn btn-danger mx-2">
-            <i class="bi bi-funnel-fill"></i> تصفية القطع
-          </button>
-          <button onclick="resetFilters()" class="btn btn-outline-dark mx-2">
-            <i class="bi bi-x-circle-fill"></i> إعادة الضبط
-          </button>
          
+          <button onclick="resetFilters()" class="btn btn-danger mx-2">
+            <i class="bi bi-x-circle-fill"></i> مسح الفلاتر
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+    <!-- Page Navigation -->
+    <div class="page-navigation-wrapper">
+      <div class="page-navigation-container">
+        <div class="row g-1 align-items-center justify-content-between">
+          <!-- Items Per Page -->
+          <div class="col-auto">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white"><i class="bi bi-sliders"></i></span>
+              <select id="itemsPerPage" class="form-select" onchange="changeItemsPerPage()">
+                <option value="12">12</option>
+                <option value="24">24</option>
+                <option value="36">36</option>
+                <option value="48">48</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Page Controls -->
+          <div class="col-auto">
+            <div class="d-flex align-items-center gap-2">
+              <!-- Previous Button -->
+              <button class="btn btn-prev" onclick="prevPage()">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+              
+              <!-- Page Info -->
+              <div class="px-2">
+                <span id="pageInfo" class="text-muted">
+                  الصفحة <span class="fw-bold">1</span> من 10
+                </span>
+              </div>
+              
+              <!-- Next Button -->
+              <button class="btn btn-next" onclick="nextPage()">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Page Jump -->
+          <div class="col-auto">
+            <div class="input-group input-group-sm">
+              <input id="pageInput" type="number" class="form-control text-center" 
+                     style="width: 50px;" min="1" value="1" onchange="changePage()">
+              
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -319,7 +414,7 @@
           <th>السعر</th>
           <th>تفاصيل</th>
           <th>الكمية</th>
-          <th>شراء</th>
+         
           
         </tr>
       </thead>
@@ -349,16 +444,28 @@
       </div>
     </div>
   
-    <div>
-      <div class="pagination-controls d-flex justify-content-center align-items-center gap-3 mb-3">
-        <button class="btn btn-outline-primary px-3" onclick="prevPage()" id="prevPageBtn">
-          <i class="bi bi-chevron-right"></i> السابق
-        </button>
-        
-   
-        <button class="btn btn-outline-primary px-3" onclick="nextPage()" id="nextPageBtn">
-          التالي <i class="bi bi-chevron-left"></i>
-        </button>
+    <div class="page-navigation-wrapper1">
+      <div class="page-navigation-container1">
+        <div class="pagination-container w-100 d-flex justify-content-center">
+          <div class="d-flex align-items-center gap-2" style="margin-left: -65px;">
+            <!-- Previous Button -->
+            <button class="btn btn-prev" onclick="prevPage()">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+            
+            <!-- Page Info -->
+            <div class="px-2">
+              <span id="pageInfo1" class="text-muted">
+                الصفحة <span class="fw-bold">1</span> من 10
+              </span>
+            </div>
+            
+            <!-- Next Button -->
+            <button class="btn btn-next" onclick="nextPage()">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   
@@ -455,7 +562,7 @@
         <p class="mb-0">&copy; 2025 حزمة. جميع الحقوق محفوظة.</p>
       </div>
       <div class="col-md-6 text-center text-md-end">
-        <img src="https://via.placeholder.com/200x50" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
+        <img src="{% static 'images/USA-flag.png' %}" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
       </div>
     </div>
   </div>

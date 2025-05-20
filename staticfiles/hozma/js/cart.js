@@ -666,3 +666,25 @@ animationStyles.textContent = `
 document.head.appendChild(animationStyles);
 
 // TEST - Simulate a cart update
+function incrementAndAddToCart(pno, fileid, itemno, itemname, price, stock) {
+  // First increment the quantity
+  incrementQuantity(pno);
+
+  // Then get the new value after increment
+  const qtyInput = document.getElementById(`qty-${pno}`);
+  const newQty = parseInt(qtyInput.value, 10) || 1;
+
+  // Add to cart with the updated quantity
+  addToCartWithQuantity(pno, fileid, itemno, itemname, price, '', newQty, stock);
+}
+function decrementAndAddToCart(pno, fileid, itemno, itemname, price, stock) {
+  // First increment the quantity
+  decrementQuantity(pno);
+
+  // Then get the new value after increment
+  const qtyInput = document.getElementById(`qty-${pno}`);
+  const newQty = parseInt(qtyInput.value, 10) || 1;
+
+  // Add to cart with the updated quantity
+  addToCartWithQuantity(pno, fileid, itemno, itemname, price, '', newQty, stock);
+}

@@ -2199,3 +2199,14 @@ def purchase_analysis(request):
         "monthly_purchases": list(monthly_purchases),
     })
        
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])  # Allow anonymous access
+def unique_company_products(request):
+    company_products = almogOil_models.Mainitem.objects \
+        .exclude(companyproduct__isnull=True) \
+        .exclude(companyproduct__exact='') \
+        .values_list('companyproduct', flat=True) \
+        .distinct()
+
+    return Response(list(company_products))       

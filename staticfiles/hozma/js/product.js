@@ -141,31 +141,17 @@ async function displayItems(items) {
   <td>
     <div class="quantity-control">
       <button class="btn btn-sm btn-outline-secondary quantity-btn"
-              onclick="decrementQuantity('${item.pno}')">-</button>
+              onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
   
       <input type="number" class="form-control form-control-sm quantity-input"
              id="qty-${item.pno}" value="${cartQuantity}" min="0"
              onchange="updateQuantity('${item.pno}', this.value)">
   
       <button class="btn btn-sm btn-outline-secondary quantity-btn"
-              onclick="incrementQuantity('${item.pno}')">+</button>
+              onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">+</button>
     </div>
   </td>
-  <td>
-    <button class="btn btn-sm btn-success mb-1"
-            onclick="addToCartWithQuantity(
-              '${item.pno}',
-              '${item.fileid}',
-              '${item.itemno}',
-              '${item.itemname}',
-              ${finalPrice.toFixed(2)},
-              '',
-              document.getElementById('qty-${item.pno}').value,
-              ${item.showed}
-            )">
-      شراء
-    </button>
-  </td>
+  
   `;
   
       /* Allow pno & name cells to open the image dialog */
@@ -403,6 +389,8 @@ function updatePaginationInfo(total_rows) {
     console.debug("Total items:", total_rows, "Current page:", currentPage, "Last page:", lastPage);
     document.getElementById('pageInfo').textContent =
         `الصفحة ${currentPage} من ${lastPage} | إجمالي العناصر: ${total_rows}`;
+    document.getElementById('pageInfo1').textContent =
+        `الصفحة ${currentPage} من ${lastPage} | إجمالي العناصر: ${total_rows}`;
 }
 
 // Change page based on input
@@ -533,3 +521,13 @@ function toggleFilters() {
     const filtersContent = document.getElementById('filtersContent');
     filtersContent.style.display = filtersContent.style.display === 'none' ? 'block' : 'none';
   }
+
+
+  function filterByDiscount() {
+    const availabilityFilter = document.getElementById('availabilityFilter');
+    if (availabilityFilter) {
+      availabilityFilter.value = 'discount:available'; // Simulate "تخفيض" option
+      applyFilters(); // Trigger the actual filter logic
+    }
+  }
+

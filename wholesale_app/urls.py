@@ -65,8 +65,9 @@ urlpatterns = [
     path('api/analytics/items/sources/', HozmaApi_views.item_source_analysis, name='item-source-analysis'),
     path('api/sales-analysis/', HozmaApi_views.SalesAnalysisView, name='sales-analysis'),
     path('api/purchase-analysis/', HozmaApi_views.purchase_analysis, name='purchase-analysis'),
-     path('api/oems/', HozmaApi_views.create_oem_entry, name='create-oem-entry'),
-      path('Item_Dashboard/', views.Item_Dashboard, name='Item_Dashboard'),
+   path('api/oems/', HozmaApi_views.create_oem_entry, name='create-oem-entry'),
+    path('Item_Dashboard/', views.Item_Dashboard, name='Item_Dashboard'),
+    path('api/company-products/', HozmaApi_views.unique_company_products, name='unique-company-products'),
     path('check-preorder-related/<int:buy_invoice_id>/', HozmaApi_views.get_related_preorders, name='check-preorder-related')
 ]
 
