@@ -58,7 +58,7 @@ function updateCartUI() {
   if (cart.length === 0) {
     cartContainer.innerHTML = '<p class="text-muted text-center py-4">السلة فارغة</p>';
     document.getElementById('cartItemsCount').textContent = '0';
-    document.getElementById('cartTotalAmount').textContent = '0.00 د.أ';
+    document.getElementById('cartTotalAmount').textContent = '0.00 د٫ل';
     return;
   }
   
@@ -79,7 +79,7 @@ function updateCartUI() {
           </div>
           <div>
             <h6 class="mb-0">${item.name}</h6>
-            <small class="text-muted">${item.itemno} | ${item.price.toFixed(2)} د.أ</small>
+            <small class="text-muted">| ${item.price.toFixed(2)} د.ل</small>
           </div>
         </div>
         <div class="d-flex align-items-center">
@@ -574,96 +574,72 @@ document.addEventListener('DOMContentLoaded', function () {
   console.log("Page loaded. Initializing cart UI...");
   updateCartPageUI();
 });
-// Get elements
-const cartIcon = document.getElementById('floatingCartIcon');
-const cartBadge = document.getElementById('cartBadge1');
 
-// Draggable functionality
-let offsetX, offsetY, isDragging = false;
+(() => {
+  const cart = document.getElementById('floatingCartIcon');
+  let isDragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
 
-cartIcon.addEventListener('mousedown', (e) => {
-  isDragging = true;
-  const rect = cartIcon.getBoundingClientRect();
-  offsetX = e.clientX - rect.left;
-  offsetY = e.clientY - rect.top;
-  cartIcon.style.cursor = 'grabbing';
-});
-
-document.addEventListener('mousemove', (e) => {
-  if (!isDragging) return;
-  cartIcon.style.left = `${e.clientX - offsetX}px`;
-  cartIcon.style.top = `${e.clientY - offsetY}px`;
-});
-
-document.addEventListener('mouseup', () => {
-  isDragging = false;
-  cartIcon.style.cursor = 'move';
-});
-
-// Animation function with FIXES
-function updateCartCount(count) {
-  if (!cartBadge) {
-    console.error('Cart badge element not found!');
-    return;
+  // Set starting position (right side)
+  function setInitialPosition() {
+    const x = window.innerWidth - cart.offsetWidth - 20;
+    const y = window.innerHeight / 2 - cart.offsetHeight / 2;
+    cart.style.left = `${x}px`;
+    cart.style.top = `${y}px`;
+    cart.style.right = 'unset'; // Remove 'right' so left/right movement works
   }
 
-  const oldCount = parseInt(cartBadge.textContent) || 0;
-  cartBadge.textContent = count;
+  setInitialPosition();
 
-  // Only animate if count increased
-  if (count > oldCount) {
-    // 1. First remove any existing animation
-    cartBadge.classList.remove('jump-animation');
-    
-    // 2. Force reflow (required to restart animation)
-    void cartBadge.offsetWidth;
-    
-    // 3. Add animation class
-    cartBadge.classList.add('jump-animation');
-    
-    // 4. Play sound and speech
-    playNotificationEffects(count);
-  }
-}
+  function setPosition(x, y) {
+    const maxX = window.innerWidth - cart.offsetWidth;
+    const maxY = window.innerHeight - cart.offsetHeight;
 
-function playNotificationEffects(count) {
-  // Play sound
-  const dingSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
-  dingSound.volume = 0.3;
-  dingSound.play().catch(e => console.log('Sound playback prevented:', e));
+    cart.style.left = `${Math.min(Math.max(0, x), maxX)}px`;
+    cart.style.top = `${Math.min(Math.max(0, y), maxY)}px`;
+  }
 
-  // Speak update
-  if (window.speechSynthesis) {
-    const speech = new SpeechSynthesisUtterance();
-    speech.text = `Cart updated. ${count} ${count === 1 ? 'item' : 'items'} in cart.`;
-    speech.rate = 0.9;
-    window.speechSynthesis.speak(speech);
-  }
-}
+  // Mouse events
+  cart.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.clientX - cart.getBoundingClientRect().left;
+    offsetY = e.clientY - cart.getBoundingClientRect().top;
+    cart.classList.add('dragging');
+  });
 
-// Add animation styles DIRECTLY to the head
-const animationStyles = document.createElement('style');
-animationStyles.textContent = `
-  /* Make sure badge is visible and transformable */
-  #cartBadge1 {
-    display: inline-block;
-    transform-origin: center;
-  }
-  
-  /* Jump animation */
-  .jump-animation {
-    animation: jump 0.5s ease-out;
-  }
-  
-  @keyframes jump {
-    0% { transform: translateY(0) scale(1); }
-    30% { transform: translateY(-15px) scale(1.2); }
-    50% { transform: translateY(0) scale(1); }
-    70% { transform: translateY(-7px) scale(1.1); }
-    100% { transform: translateY(0) scale(1); }
-  }
-`;
-document.head.appendChild(animationStyles);
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    setPosition(e.clientX - offsetX, e.clientY - offsetY);
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    cart.classList.remove('dragging');
+  });
+
+  // Touch events
+  cart.addEventListener('touchstart', (e) => {
+    isDragging = true;
+    const touch = e.touches[0];
+    offsetX = touch.clientX - cart.getBoundingClientRect().left;
+    offsetY = touch.clientY - cart.getBoundingClientRect().top;
+  });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    setPosition(touch.clientX - offsetX, touch.clientY - offsetY);
+  });
+
+  document.addEventListener('touchend', () => {
+    isDragging = false;
+  });
+
+  // Optional: re-center on window resize
+  window.addEventListener('resize', setInitialPosition);
+})();
+
 
 // TEST - Simulate a cart update
 function incrementAndAddToCart(pno, fileid, itemno, itemname, price, stock) {

@@ -1,59 +1,60 @@
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0F1B2E; border-bottom: 3px solid #FF6B00; font-family: 'Tajawal', sans-serif;">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="/item-for-inqury-page" aria-label="الرئيسية" style="font-size: 2rem; color: #FFD700; letter-spacing: 1px;">
-        <i class="bi bi-gear-fill me-2"></i>حزمة
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
-        <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNavDropdown">
-        <ul class="navbar-nav ms-auto align-items-lg-center">
-          <li class="nav-item mx-1">
-            <a class="nav-link nav-link-auto" href="/home" aria-current="page">
-              <i class="bi bi-speedometer2 me-1"></i> الرئيسية
-            </a>
-          </li>
-          <li class="nav-item dropdown mx-1">
-            <a class="nav-link nav-link-auto dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-layers me-1"></i> الأقسام
-            </a>
-            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
-              <li><a class="dropdown-item" href="/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
-              <li><a class="dropdown-item" href="/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
-              <li><a class="dropdown-item" href="/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
-              <li><a class="dropdown-item" href="/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
-              <li><hr class="dropdown-divider" style="border-color: #FF6B00;"></li>
-              <li><a class="dropdown-item" href="/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
-            </ul>
-          </li>
-          <li class="nav-item mx-1">
-            <a class="nav-link nav-link-auto" href="/brands">
-              <i class="bi bi-tags me-1"></i> الماركات
-            </a>
-          </li>
-          <li class="nav-item mx-1">
-            <a class="nav-link nav-link-auto" href="/offers">
-              <i class="bi bi-percent me-1"></i> العروض
-              <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">جديد</span>
-            </a>
-          </li>
-          <li class="nav-item mx-1">
-            <a class="nav-link nav-link-auto" href="/contact">
-              <i class="bi bi-headset me-1"></i> الدعم الفني
-            </a>
-          </li>
-          <li class="nav-item position-relative mx-1">
-            <a id="navbarCartIcon" class="nav-link nav-link-auto" href="javascript:void(0);" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة" onclick="toggleCart()">
-              <i class="bi bi-cart3" aria-hidden="true"></i>
-              <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
-            </a>
-          </li>
-          <li class="nav-item ms-3">
-            <a class="btn btn-warning fw-bold" href="/my-account" style="border-radius: 30px; min-width: 120px;">
-              <i class="bi bi-person-circle me-1"></i> حسابي
-            </a>
-          </li>
-        </ul>
-      </div>
+<nav class="hozma-navbar hozma-navbar-expand-lg hozma-navbar-dark" style="background-color: #0A1523; border-bottom: 1px solid rgba(255, 107, 0, 0.3); height: 50px;">
+  <div class="hozma-nav-container">
+    <a class="hozma-navbar-brand" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية">
+      <img src="{% static 'images/accsosries-icon.png' %}" alt="حزمة" style="height: 40px; background: none;" class="hozma-navbar-logo" />
+    </a>
+    
+    <button class="hozma-navbar-toggler hozma-py-0" type="button" data-bs-toggle="collapse" data-bs-target="#hozmaNavbarDropdown" aria-controls="hozmaNavbarDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border: none;">
+      <span class="hozma-navbar-toggler-icon" style="filter: invert(1);"></span>
+    </button>
+    <div class="hozma-collapse hozma-navbar-collapse" id="hozmaNavbarDropdown">
+      <ul class="hozma-navbar-nav hozma-ms-auto hozma-align-items-center" style="gap: 0.3rem;">
+        <li class="hozma-nav-item">
+          <a class="hozma-nav-link hozma-py-1 hozma-px-2" href="http://45.13.59.226/hozma/products/" aria-current="page">
+            <i class="bi bi-speedometer2 hozma-me-1"></i> الرئيسية
+          </a>
+        </li>
+        <li class="hozma-nav-item hozma-dropdown">
+          <a class="hozma-nav-link hozma-py-1 hozma-px-2 hozma-dropdown-toggle" href="#" id="hozmaCategoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-layers hozma-me-1"></i> الأقسام
+          </a>
+          <ul class="hozma-dropdown-menu hozma-dropdown-menu-dark" aria-labelledby="hozmaCategoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
+            <li><a class="hozma-dropdown-item hozma-py-1" href="/hozma/engine-parts"><i class="bi bi-gear-wide hozma-me-2"></i>قطع المحرك</a></li>
+            <li><a class="hozma-dropdown-item hozma-py-1" href="/hozma/brake-system"><i class="bi bi-disc hozma-me-2"></i>نظام الفرامل</a></li>
+            <li><a class="hozma-dropdown-item hozma-py-1" href="/hozma/electrical"><i class="bi bi-lightning-charge hozma-me-2"></i>الأنظمة الكهربائية</a></li>
+            <li><a class="hozma-dropdown-item hozma-py-1" href="/hozma/suspension"><i class="bi bi-sliders hozma-me-2"></i>نظام التعليق</a></li>
+            <li><hr class="hozma-dropdown-divider hozma-my-1" style="border-color: #FF6B00;"></li>
+            <li><a class="hozma-dropdown-item hozma-py-1" href="/hozma/all-categories"><i class="bi bi-grid hozma-me-2"></i>جميع الأقسام</a></li>
+          </ul>
+        </li>
+        <li class="hozma-nav-item">
+          <a class="hozma-nav-link hozma-py-1 hozma-px-2" href="http://45.13.59.226/hozma/hozmabrands/">
+            <i class="bi bi-tags hozma-me-1"></i> الماركات
+          </a>
+        </li>
+        <li class="hozma-nav-item">
+          <a class="hozma-nav-link hozma-py-1 hozma-px-2" href="javascript:void(0);" onclick="filterByDiscount()">
+            <i class="bi bi-percent hozma-me-1"></i> العروض
+            <span class="hozma-badge hozma-bg-danger hozma-ms-1" style="font-size: 0.5rem; position: relative; top: -1px;">جديد</span>
+          </a>
+        </li>
+        <li class="hozma-nav-item">
+          <a class="hozma-nav-link hozma-py-1 hozma-px-2" href="/hozma/contact">
+            <i class="bi bi-headset hozma-me-1"></i> الدعم
+          </a>
+        </li>
+        <li class="hozma-nav-item hozma-position-relative" style="margin-left: 0.5rem;">
+          <a id="hozmaNavbarCartIcon" class="hozma-nav-link hozma-py-1 hozma-px-2" href="/hozma/hozmaCart/" title="السلة" style="padding-right: 0.5rem !important;">
+            <i class="bi bi-cart3"></i>
+            <span id="hozmaCartBadge" class="hozma-position-absolute hozma-top-0 hozma-start-100 hozma-translate-middle hozma-badge hozma-rounded-pill hozma-bg-warning hozma-text-dark" style="font-size: 0.55rem; padding: 2px 4px;">0</span>
+          </a>
+        </li>
+        <li class="hozma-nav-item" style="margin-left: 0.5rem;">
+          <a id="hozmaAccountButton" class="hozma-btn hozma-btn-warning hozma-fw-bold hozma-py-1 hozma-px-3" href="/hozma/hozmaDashbord/" style="border-radius: 16px; font-size: 0.8rem; min-width: auto;">
+            <i class="bi bi-person-circle hozma-me-1"></i> <span id="hozmaUserNamePlaceholder">حسابي</span>
+          </a>
+        </li>
+      </ul>
     </div>
-  </nav>
+  </div>
+</nav>

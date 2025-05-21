@@ -1,6 +1,6 @@
 // Change navbar style on scroll
 window.addEventListener('scroll', function() {
-    const navbar = document.querySelector('.hozma-navbar');
+    const navbar = document.querySelector('.navbar');
     if (window.scrollY > 50) {
       navbar.classList.add('scrolled');
     } else {
@@ -10,34 +10,35 @@ window.addEventListener('scroll', function() {
   
   // Highlight current page in navbar
   // Highlight current page in navbar
-// Highlight current page in navbar
 document.addEventListener('DOMContentLoaded', function() {
-  const navLinks = document.querySelectorAll('.hozma-nav-link');
-  const currentPage = window.location.pathname.split('/').filter(Boolean).pop() || 'index.html';
-
+  const navLinks = document.querySelectorAll('.nav-link-auto');
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  
   navLinks.forEach(link => {
-    const href = link.getAttribute('href');
-    if (!href) return;
-
-    const linkPage = href.split('/').filter(Boolean).pop();
-
-    if (link.classList.contains('hozma-dropdown-toggle')) {
-      const dropdownMenu = link.nextElementSibling;
-      if (dropdownMenu) {
-        const dropdownItems = dropdownMenu.querySelectorAll('.hozma-dropdown-item');
-        dropdownItems.forEach(item => {
-          const itemHref = item.getAttribute('href').split('/').filter(Boolean).pop();
-          if (itemHref === currentPage) {
-            link.classList.add('active');
-          }
-        });
+    const linkPage = link.getAttribute('href').split('/').pop();
+    
+    // Special handling for dropdown parent items
+    if (link.classList.contains('dropdown-toggle')) {
+      const dropdownItems = link.nextElementSibling.querySelectorAll('.dropdown-item');
+      let shouldActivateParent = false;
+      
+      dropdownItems.forEach(item => {
+        const itemHref = item.getAttribute('href').split('/').pop();
+        if (itemHref === currentPage) {
+          shouldActivateParent = true;
+        }
+      });
+      
+      if (shouldActivateParent) {
+        link.classList.add('active');
       }
-    } else if (linkPage === currentPage) {
+    }
+    // Regular links
+    else if (linkPage === currentPage) {
       link.classList.add('active');
     }
   });
 });
-
   
   // Navbar search form submit handler
   // In navbar.js
@@ -66,23 +67,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.addEventListener('DOMContentLoaded', function () {
     try {
-      const username = localStorage.getItem("session_data@username");
-      const userNamePlaceholder = document.getElementById('hozmaUserNamePlaceholder');
-      const accountBtn = document.getElementById('hozmaAccountButton');
-  
-      if (username) {
-        userNamePlaceholder.textContent = `مرحبًا, ${username}`;
-        accountBtn.href = "/hozma/hozmaDashbord/";
-      } else {
-        userNamePlaceholder.textContent = "حسابي";
-        accountBtn.href = "/hozma/login";
-        alert("No user data found. Please log in.");
-      }
+        const username = localStorage.getItem("session_data@username");
+        const userNamePlaceholder = document.getElementById('userNamePlaceholder');
+
+        if (username) {
+            userNamePlaceholder.textContent = `مرحبًا, ${username}`;
+            document.getElementById('accountButton').href = "/hozma/hozmaDashbord/";
+        } else {
+            userNamePlaceholder.textContent = "حسابي";
+            document.getElementById('accountButton').href = "/hozma/login";
+            alert("No user data found. Please log in.");
+        }
     } catch (e) {
-      console.error('Error accessing localStorage:', e);
+        console.error('Error accessing localStorage:', e);
     }
-  });
-  
+});
 
 
 
@@ -103,18 +102,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   window.addEventListener('scroll', function() {
     if (window.scrollY > 10) {
-      document.querySelector('.hozma-navbar').classList.add('scrolled');
+      document.querySelector('.navbar').classList.add('scrolled');
     } else {
-      document.querySelector('.hozma-navbar').classList.remove('scrolled');
+      document.querySelector('.navbar').classList.remove('scrolled');
     }
   });
   
   // Cart badge animation
-// Cart badge animation
-function animateCart() {
-  const badge = document.getElementById('hozmaCartBadge');
-  if (badge) {
+  function animateCart() {
+    const badge = document.getElementById('cartBadge');
     badge.classList.add('pulse');
     setTimeout(() => badge.classList.remove('pulse'), 500);
   }
-}

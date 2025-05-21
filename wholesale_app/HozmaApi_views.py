@@ -1174,139 +1174,151 @@ def edit_source_info(request, source_id):
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
 
+def safe_csv(value):
+    return [v.strip() for v in (value or '').split(',') if v.strip()]
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
 def create_mainitem_by_source(request):
     data = request.data.copy()
-
-    # 1) Validate required fields
-    required = ['oem_number', 'companyproduct', 'buyprice', 'pno', 'showed', 'source']
+    required = ['oem_number', 'companyproduct', 'buyprice', 'showed', 'source']
     if missing := [f for f in required if not data.get(f)]:
-        return Response({'error': f'Missing fields: {", ".join(missing)}'}, status=400)
+        return Response({'error': f'الحقول المفقودة: {", ".join(missing)}'}, status=400)
 
     try:
-        pno = data['pno'].strip()
-        oem_in = data['oem_number'].strip()
-        company = data['companyproduct'].strip()
-        original_buyprice = Decimal(str(data['buyprice'])).quantize(Decimal('0.0000'))
-        showed = data['showed']
-        source = data['source'].strip()
-        discount = Decimal(str(data.get('discount', 0))) if data.get('discount') else Decimal('0')
+        oem_in = str(data.get('oem_number', '')).strip()
+        company = str(data.get('companyproduct', '')).strip()
+        original_buyprice = Decimal(str(data.get('buyprice', '0'))).quantize(Decimal('0.0000'))
+        showed = data.get('showed')
+        source = str(data.get('source', '')).strip()
+        discount = Decimal(str(data.get('discount') or '0'))
+        discount_type = str(data.get('discount-type', 'source')).strip().lower()
 
-        # Apply discount if exists
+        pno = str(data.get('pno') or '').strip()
+        source_pno = str(data.get('source_pno') or pno).strip()
+
         if discount > 0:
             discounted_buyprice = (original_buyprice - (original_buyprice * discount)).quantize(Decimal('0.0000'))
         else:
             discounted_buyprice = original_buyprice
 
-        # Update the buyprice in data with discounted value
         data['buyprice'] = str(discounted_buyprice)
 
-        # Get commission from AllSourcesTable
         try:
             source_obj = almogOil_models.AllSourcesTable.objects.get(clientid__iexact=source)
             commission = Decimal(str(source_obj.commission)).quantize(Decimal('0.0000'))
-            # Calculate costprice with proper decimal handling
-            costprice = (discounted_buyprice - (discounted_buyprice * commission)).quantize(Decimal('0.0000'))
-            data['costprice'] = str(costprice)  # Convert to string for serialization
+
+            if discount_type == 'market':
+                # Cost price remains based on original buyprice
+                costprice = (original_buyprice - (original_buyprice * commission)).quantize(Decimal('0.0000'))
+            else:
+                # Default: cost price from discounted buyprice
+                costprice = (discounted_buyprice - (discounted_buyprice * commission)).quantize(Decimal('0.0000'))
+
+            data['costprice'] = str(costprice)
         except almogOil_models.AllSourcesTable.DoesNotExist:
-            return Response({'error': f'Source "{source}" not found in AllSourcesTable'}, status=400)
+            return Response({'error': f'المصدر "{source}" غير موجود في جدول AllSourcesTable'}, status=400)
 
-        # First check if product with this pno already exists
-        existing_product = almogOil_models.Mainitem.objects.filter(pno=pno).first()
-        if existing_product:
-            # Just update the showed field of existing product
-            update_data = {
-                'showed': showed,
-                'costprice': str(costprice),  # Update costprice even if only updating showed
-                'buyprice': str(discounted_buyprice)  # Update with discounted price
-            }
-            serializer = products_serializers.MainitemSerializer(
-                existing_product, 
-                data=update_data,
-                partial=True
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'message': 'Updated showed, costprice and buyprice fields for existing product'}, status=200)
-            return Response(serializer.errors, status=400)
+        if pno:
+            existing_product = almogOil_models.Mainitem.objects.filter(pno=pno).first()
+            if existing_product:
+                update_data = {
+                    'showed': showed,
+                    'costprice': str(costprice),
+                    'buyprice': str(discounted_buyprice),
+                    'source_pno': source_pno
+                }
+                serializer = products_serializers.MainitemSerializer(
+                    existing_product,
+                    data=update_data,
+                    partial=True
+                )
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({
+                        'message': 'تم تحديث الحقول showed و costprice و buyprice للمنتج الموجود مسبقاً',
+                        'data': data
+                    }, status=200)
+                return Response(serializer.errors, status=400)
 
-        # If pno is new, proceed with the OEM matching logic
         with transaction.atomic():
-            # 2) Check OEM table for any matching OEM number
+            if not pno:
+                last_product = almogOil_models.Mainitem.objects.order_by('-pno').first()
+                if last_product:
+                    try:
+                        last_pno = int(last_product.pno)
+                        pno = str(last_pno + 1)
+                    except (ValueError, TypeError):
+                        pno = '1000'
+                else:
+                    pno = '1000'
+                data['pno'] = pno
+
+            data['source_pno'] = source_pno
+
             oem_matches = almogOil_models.Oemtable.objects.filter(oemno__icontains=oem_in)
-            
-            # Case 1: OEM exists in system
+
             if oem_matches.exists():
-                # Find if this company already has this OEM group
                 company_oem = oem_matches.filter(cname__iexact=company).first()
-                
+
                 if company_oem:
-                    # Case 1A: Same company + OEM → Check for existing products
-                    all_oems = [o.strip() for o in company_oem.oemno.split(',') if o.strip()]
-                    
-                    # Find ALL existing items with matching OEMs and company
-                    existing_items = almogOil_models.Mainitem.objects.filter(
-                        companyproduct__iexact=company
-                    )
-                    
-                    # Check each item for OEM matches
+                    all_oems = safe_csv(company_oem.oemno)
+                    existing_items = almogOil_models.Mainitem.objects.filter(companyproduct__iexact=company)
                     item_to_update = None
                     for item in existing_items:
-                        item_oems = [o.strip() for o in item.oem_numbers.split(',') if o.strip()]
-                        if set(item_oems) & set(all_oems):  # Any OEM match
+                        item_oems = safe_csv(item.oem_numbers)
+                        if set(item_oems) & set(all_oems):
                             item_to_update = item
                             break
-                    
+
                     if item_to_update:
-                        # Only update if price is lower
                         if Decimal(str(item_to_update.buyprice)) > discounted_buyprice:
-                            data['oem_numbers'] = company_oem.oemno
-                            data.pop('pno', None) 
+                            update_payload = data.copy()
+                            update_payload['oem_numbers'] = company_oem.oemno
+                            update_payload.pop('pno', None)
                             serializer = products_serializers.MainitemSerializer(
-                                item_to_update, 
-                                data=data, 
-                                partial=True
+                                item_to_update, data=update_payload, partial=True
                             )
                             if serializer.is_valid():
                                 instance = serializer.save()
                                 instance.oem_numbers = company_oem.oemno
                                 instance.save()
-                                return Response({'message': 'Updated existing product with lower price'}, status=200)
+                                return Response({
+                                    'message': 'تم تحديث المنتج الحالي بسعر أقل',
+                                    'data': data
+                                }, status=200)
                             return Response(serializer.errors, status=400)
-                        return Response({'message': 'Existing product has same or better price'}, status=200)
-                    
-                    # No existing product found → Create new
+                        return Response({
+                            'message': 'المنتج الموجود لديه نفس السعر أو سعر أفضل',
+                            'data': data
+                        }, status=200)
+
                     data['oem_numbers'] = company_oem.oemno
                     serializer = products_serializers.MainitemSerializer(data=data)
                     if serializer.is_valid():
                         serializer.save()
                         return Response(serializer.data, status=201)
                     return Response(serializer.errors, status=400)
-                
+
                 else:
-                    # Case 1B: Different company → Create new OEM entry
                     new_oem_row = almogOil_models.Oemtable.objects.create(
                         cname=company,
                         oemno=oem_in
                     )
                     data['oem_numbers'] = new_oem_row.oemno
-                    
                     serializer = products_serializers.MainitemSerializer(data=data)
                     if serializer.is_valid():
                         serializer.save()
                         return Response(serializer.data, status=201)
                     return Response(serializer.errors, status=400)
-            
+
             else:
-                # Case 2: New OEM → Create new OEM entry and product
                 new_oem_row = almogOil_models.Oemtable.objects.create(
                     cname=company,
                     oemno=oem_in
                 )
                 data['oem_numbers'] = new_oem_row.oemno
-                
                 serializer = products_serializers.MainitemSerializer(data=data)
                 if serializer.is_valid():
                     serializer.save()
@@ -1314,8 +1326,7 @@ def create_mainitem_by_source(request):
                 return Response(serializer.errors, status=400)
 
     except Exception as e:
-        return Response({'error': str(e)}, status=500)
-    
+        return Response({'error': f'حدث خطأ غير متوقع: {str(e)}'}, status=500)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])  # anonymous OK
@@ -2209,4 +2220,11 @@ def unique_company_products(request):
         .values_list('companyproduct', flat=True) \
         .distinct()
 
-    return Response(list(company_products))       
+    return Response(list(company_products))    
+   
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def item_detail_api(request, pno):
+    item = get_object_or_404(almogOil_models.Mainitem, pno=pno)
+    return Response(products_serializers.MainitemSerializer(item).data)

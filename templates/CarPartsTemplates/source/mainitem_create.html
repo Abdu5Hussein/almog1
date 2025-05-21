@@ -747,36 +747,35 @@
     uploadBtn.disabled = false;
     
   }
-
   async function uploadFile(file) {
   try {
     progressBar.style.display = 'block';
     const progressBarInner = progressBar.querySelector('.progress-bar');
 
+    // 1) قراءة ملف إكسل
     const data = await readExcelFile(file, progressBarInner);
-    
     if (!data || data.length === 0) {
-      console.warn("[ERROR] No valid data in Excel file.");
+      console.warn('[ERROR] No valid data in Excel file.');
       showResponse('الملف لا يحتوي على بيانات صالحة', 'error');
       return;
     }
 
-    const pathParts = window.location.pathname.split("/").filter(Boolean);
-    const sourceId = pathParts[pathParts.length - 1]; // Now as string
-    
+    // 2) استخراج sourceId من رابط الصفحة
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const sourceId = pathParts[pathParts.length - 1];     // آخر جزء هو المعرّف
     if (!sourceId) {
       showResponse('لا يمكن تحديد معرف المصدر', 'error');
       return;
     }
 
+    // 3) تجهيز البيانات قبل الإرسال
     data.forEach(item => {
-      item.source = sourceId; // Sending as string
-
+      item.source = sourceId; // مصدر كـ string
       if (item.json_description && typeof item.json_description === 'string') {
         try {
           item.json_description = JSON.parse(item.json_description);
         } catch (e) {
-          console.warn("[WARN] JSON parsing failed for description:", e);
+          console.warn('[WARN] JSON parsing failed for description:', e);
           item.json_description = null;
         }
       }
@@ -784,8 +783,11 @@
 
     const results = [];
 
+    // 4) رفع كل صفّ على حدة
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
+
+      // تحديث مؤشر التقدم
       const progress = Math.min(100, Math.round((i / data.length) * 100));
       progressBarInner.style.width = `${progress}%`;
       progressBarInner.textContent = `${progress}%`;
@@ -793,40 +795,59 @@
       console.log(`[DEBUG] Sending item ${i + 1}/${data.length}:`, JSON.stringify(item, null, 2));
 
       try {
-        const response = await customFetch("http://45.13.59.226/hozma/api/mainitem/create/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await customFetch('http://45.13.59.226/hozma/api/mainitem/create/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(item),
         });
 
         const result = await response.json();
-        
         console.log(`[DEBUG] Response for item ${i + 1}/${data.length} (PNO: ${item.pno || 'N/A'}):`, result);
 
+        /* -- تحديث pno إذا لم يكن موجوداً وأرجعه الخادم -- */
+        if (!item.pno && result?.data?.pno) {
+          item.pno = result.data.pno;
+        }
+
         if (response.ok && result.success !== false) {
-          results.push({ ...item, success: true, message: result.message || 'تمت الإضافة بنجاح' });
-        } else {
+          // حالة النجاح
           results.push({
-            pno: item.pno,
+            ...item,
+            success: true,
+            message: result.message || 'تمت الإضافة بنجاح'
+          });
+        } else {
+          // حالة الفشل (يشمل 400 أو 500)
+          const errorMessage =
+            result.message ||
+            result.error ||          // يلتقط رسائل مثل: "حدث خطأ غير متوقع: 'NoneType' object has no attribute 'split'"
+            'فشل في الإضافة';
+
+          results.push({
+            pno: item.pno || (result.data && result.data.pno) || 'N/A',
             success: false,
-            message: result.message || 'فشل في الإضافة'
+            message: errorMessage
           });
         }
       } catch (error) {
+        // فشل الاتصال بالخادم
         console.error(`[ERROR] Upload failed for item ${i + 1}/${data.length} (PNO: ${item.pno || 'N/A'}):`, error);
         results.push({
-          pno: item.pno,
+          pno: item.pno || 'N/A',
           success: false,
           message: 'خطأ في الاتصال بالخادم'
         });
       }
     }
 
+    // 5) تحديث شريط التقدم للنهاية
     progressBarInner.style.width = '100%';
     progressBarInner.textContent = '100%';
-    
+
+    // 6) عرض النتائج
     displayResults(results);
 
+    // 7) إخفاء شريط التقدم بعد ثانيتين
     setTimeout(() => {
       progressBar.style.display = 'none';
       progressBarInner.style.width = '0%';
@@ -834,126 +855,182 @@
     }, 2000);
 
   } catch (error) {
+    // خطأ غير متوقع في المعالجة الأولية
     console.error('[FATAL] Error during upload process:', error);
     showResponse('حدث خطأ أثناء معالجة الملف', 'error');
     progressBar.style.display = 'none';
   }
 }
-  function readExcelFile(file, progressBar) {
-    return new Promise((resolve, reject) => {
-      
-      const reader = new FileReader();
 
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-          
-          progressBar.style.width = '50%';
-          progressBar.textContent = '50%';
-          resolve(jsonData);
-        } catch (error) {
-          console.error("[ERROR] Error reading Excel file:", error);
-          reject(error);
-        }
-      };
 
-      reader.onerror = function(err) {
-        console.error("[ERROR] FileReader failed:", err);
+
+
+/**
+ * Read an .xlsx file in the browser, convert the first sheet to JSON,
+ * and map Arabic column names to English keys.
+ *
+ * @param {File} file         – the Excel file selected by the user
+ * @param {HTMLElement} bar   – the <div> acting as a progress bar
+ * @returns {Promise<Array>}  – array of mapped row objects
+ */
+ function readExcelFile(file, bar) {
+  // header → field map
+  const HEADER_MAP = {
+    'رقم الخاص'        : 'pno',
+    'رقم الخاص المورد'  : 'source_pno',
+    'اسم الصنف'        : 'itemname',
+    'رقم الشركه'       : 'companyproduct',
+    'الرقم الاصلي'     : 'oem_number',
+    'الكمية'           : 'showed',          // quantity
+    'سعر البيع'        : 'buyprice',
+    'التخفيض'          : 'discount',
+    'ملاحظات'          : 'json_description',
+    'الفئة'            : 'category',
+    'نوع التخفيض'      : 'discount_type'    // remove extra leading spaces
+  };
+
+  // Arabic → English discount-type map
+  const DISCOUNT_TYPE_MAP = {
+    'المحل'  : 'market',
+    'المورد' : 'source'
+  };
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = e => {
+      try {
+        const data      = new Uint8Array(e.target.result);
+        const workbook  = XLSX.read(data, { type: 'array' });
+        const sheet     = workbook.Sheets[workbook.SheetNames[0]];
+        const rawRows   = XLSX.utils.sheet_to_json(sheet);   // [{رقم الخاص: "...", …}, …]
+
+        // ---------- map headers & normalise discount_type ----------
+        const mappedRows = rawRows.map(row => {
+          const mapped = {};
+
+          for (const [arabicKey, value] of Object.entries(row)) {
+            const englishKey = HEADER_MAP[arabicKey.trim()] || arabicKey.trim(); // normalise header
+            mapped[englishKey] = value;
+          }
+
+          // convert “discount_type” Arabic values → API values
+          if (mapped.discount_type !== undefined && mapped.discount_type !== null) {
+            const arabicType = String(mapped.discount_type).trim();
+            mapped.discount_type = DISCOUNT_TYPE_MAP[arabicType] || arabicType;  // leave untouched if unknown
+          }
+
+          return mapped;
+        });
+
+        // update progress bar (half-way mark)
+        bar.style.width = '50%';
+        bar.textContent = '50 %';
+
+        resolve(mappedRows);
+      } catch (err) {
+        console.error('[ERROR] Error reading Excel file:', err);
         reject(err);
-      };
+      }
+    };
 
-      reader.readAsArrayBuffer(file);
-    });
-  }
+    reader.onerror = err => {
+      console.error('[ERROR] FileReader failed:', err);
+      reject(err);
+    };
 
-  function displayResults(results) {
-    const resultsBody = document.getElementById('results-body');
-    const bulkResults = document.getElementById('bulk-results');
+    reader.readAsArrayBuffer(file);
+  });
+}
 
-    resultsBody.innerHTML = '';
-    results.forEach((result, index) => {
-      const row = document.createElement('tr');
 
-      row.classList.add(result.success ? 'table-success' : 'table-danger');
+function displayResults(results) {
+  const resultsBody = document.getElementById('results-body');
+  const bulkResults = document.getElementById('bulk-results');
 
-      row.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${result.pno || 'غير معروف'}</td>
-        <td>${result.success ? 'نجاح' : 'فشل'}</td>
-        <td>${result.message || ''}</td>
-      `;
+  resultsBody.innerHTML = '';
 
-      resultsBody.appendChild(row);
-    });
+  results.forEach((result, index) => {
+    const row = document.createElement('tr');
 
-    const successCount = results.filter(r => r.success).length;
-    const totalCount = results.length;
+    // تحديد اللون حسب نوع النتيجة
+    let rowClass = 'table-danger'; // افتراضي للأخطاء
+    if (result.success) {
+      if (result.message && result.message.includes('المنتج الموجود لديه نفس السعر أو سعر أفضل')) {
+        rowClass = 'table-warning'; // برتقالي
+      } else if (result.message && result.message.includes('تم تحديث المنتج الحالي بسعر أقل')) {
+        rowClass = 'table-warning'; // أصفر
+      } else {
+        rowClass = 'table-success'; // أخضر
+      }
+    }
 
-    const summaryRow = document.createElement('tr');
-    summaryRow.classList.add('table-info');
-    summaryRow.innerHTML = `
-      <td colspan="2"><strong>النتيجة النهائية</strong></td>
-      <td>${successCount}/${totalCount}</td>
-      <td>${Math.round((successCount / totalCount) * 100)}% نجاح</td>
+    row.classList.add(rowClass);
+
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${result.pno || 'غير معروف'}</td>
+      <td>${result.success ? 'نجاح' : 'فشل'}</td>
+      <td>${result.message || ''}</td>
     `;
-    resultsBody.appendChild(summaryRow);
 
-    bulkResults.style.display = 'block';
-    bulkResults.scrollIntoView({ behavior: 'smooth' });
+    resultsBody.appendChild(row);
+  });
 
-   
-  }
+  const successCount = results.filter(r => r.success).length;
+  const totalCount = results.length;
+
+  const summaryRow = document.createElement('tr');
+  summaryRow.classList.add('table-info');
+  summaryRow.innerHTML = `
+    <td colspan="2"><strong>النتيجة النهائية</strong></td>
+    <td>${successCount}/${totalCount}</td>
+    <td>${Math.round((successCount / totalCount) * 100)}% نجاح</td>
+  `;
+  resultsBody.appendChild(summaryRow);
+
+  bulkResults.style.display = 'block';
+  bulkResults.scrollIntoView({ behavior: 'smooth' });
+}
+
 }
 
 function downloadTemplate() {
   const templateData = [];
 
-  const itemMainList = ['زيوت', 'فلاتر', 'قطع كهربائية', 'إطارات', 'بطاريات'];
-  const itemSubMainList = ['زيت محرك', 'فلتر هواء', 'بطارية جافة', 'كشاف أمامي', 'إطار خلفي'];
-  const itemNameList = ['زيت شل 10W-40', 'فلتر تويوتا أصلي', 'بطارية النسر 70 أمبير', 'كشاف LED عالي', 'إطار ميشلان 16 إنش'];
-  const shortNameList = ['زيت شل', 'فلتر تويوتا', 'بطارية النسر', 'كشاف LED', 'إطار ميشلان'];
-  const companylist = ['Stelx', 'febi', 'hipton', 'mobis', 'tiabo'];
-  const itemThirdList = ['استهلاكي', 'كهربائي', 'محرك', 'هيكل', 'نظام تعليق'];
-  const notesList = ['مناسب لجميع السيارات', 'ذو جودة عالية', 'ضمان لمدة سنة', 'صناعة يابانية', 'سعر منافس'];
-  const categoryList = ['ألماني', 'كوري',  'أمريكي'];
+  const itemNameList = ['فلتر زيت', 'زيت محرك', 'بطارية جافة', 'كشاف أمامي', 'إطار خلفي'];
+  const companyList = ['Stelx', 'febi', 'hipton', 'mobis', 'tiabo'];
+  const categoryList = ['ألماني', 'كوري', 'أمريكي'];
+  const notesList = ['جودة ممتازة', 'صناعة أصلية', 'مناسب لجميع السيارات'];
+  const disctyp = ['المورد', 'المحل', ];
+
 
   for (let i = 1; i <= 100; i++) {
-    const randomIndex = () => Math.floor(Math.random() * 5);
-
     templateData.push({
-      pno: `60${1000 + i}`,
-      oem_number: `24${2000 + i}`,
-      itemmain: itemMainList[randomIndex()],
-      itemsubmain: itemSubMainList[randomIndex()],
-      itemname: itemNameList[randomIndex()],
-      short_name: shortNameList[randomIndex()],
-      itemthird: itemThirdList[randomIndex()],
-      itemsize: `${(Math.floor(Math.random() * 10) + 1) * 100} مل`,
-      companyproduct: companylist[randomIndex()],
-      category: categoryList[randomIndex()],
-      discount: `${Math.floor(Math.random() * 21)}%`,  // Random discount from 0% to 20%
-      showed: Math.floor(Math.random() * 100),
-      json_description: JSON.stringify({ ملاحظة: notesList[randomIndex()] }),
-      costprice: "",
-      buyprice: (1 + i).toFixed(2)
+      'رقم الخاص': ``,
+      'رقم الخاص المورد': `77-${i}`,
+      'اسم الصنف': itemNameList[Math.floor(Math.random() * itemNameList.length)],
+      'رقم الشركه': companyList[Math.floor(Math.random() * companyList.length)],
+      'الرقم الاصلي': `OEM-${2000 + i}`,
+      'الكمية': Math.floor(Math.random() * 100),
+      'سعر البيع': (10 + Math.random() * 40).toFixed(2),
+      'التخفيض': (Math.random() * 0.2).toFixed(2),
+      'ملاحظات': notesList[Math.floor(Math.random() * notesList.length)],
+      'نوع التخفيض': disctyp[Math.floor(Math.random() * disctyp.length)],
+      'الفئة': categoryList[Math.floor(Math.random() * categoryList.length)]
+      
     });
   }
 
-  // Create worksheet
   const ws = XLSX.utils.json_to_sheet(templateData);
-
-  // Create workbook
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "العناصر");
 
-  // Generate file and download
-  XLSX.writeFile(wb, "نموذج_العناصر_الرئيسية.xlsx");
+  XLSX.writeFile(wb, "نموذج_العناصر.xlsx");
 
   showResponse('تم تحميل النموذج بنجاح', 'success');
 }
+
 
 
 

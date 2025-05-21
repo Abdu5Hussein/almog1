@@ -307,6 +307,7 @@ class Mainitem(models.Model):
     engine_no = models.CharField(max_length=300, blank=True, null=True)
     json_description = models.JSONField(null=True,blank=True)
     showed = models.IntegerField(default=0)
+    source_pno = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
      # Adding the foreign key to AllSourcesTable is for HOZMA ATTENTIN IS FOR HOZMA
     source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     category = models.CharField(db_column='category', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.

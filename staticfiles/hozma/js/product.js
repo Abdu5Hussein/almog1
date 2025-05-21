@@ -99,60 +99,53 @@ async function displayItems(items) {
     for (const item of items) {
       const row = document.createElement('tr');
   
-      const stock         = parseInt(item.showed) || 0;
-      const cartItem      = cart.find(ci => ci.pno === item.pno);
-      const cartQuantity  = cartItem ? cartItem.quantity : 0;
+      const stock = parseInt(item.showed) || 0;
+      const cartItem = cart.find(ci => ci.pno === item.pno);
+      const cartQuantity = cartItem ? cartItem.quantity : 0;
   
-      /* ──────── ▸ price / discount logic ◂ ──────── */
-      const discount  = item.discount ? parseFloat(item.discount) : 0;   // e.g. 0.10
-      const finalPrice = parseFloat(item.buyprice || 0);                 // already discounted
+      /* Price/discount logic */
+      const discount = item.discount ? parseFloat(item.discount) : 0;
+      const finalPrice = parseFloat(item.buyprice || 0);
       const originalPrice = discount ? finalPrice / (1 - discount) : finalPrice;
   
       const priceCellContent = discount
         ? `
-          <span class="text-decoration-line-through text-muted me-1">
+          <span class="text-decoration-line-through text-muted me-1 d-none d-md-inline">
             ${originalPrice.toFixed(2)} د.ل
           </span>
           <span class="fw-bold text-danger">
             ${finalPrice.toFixed(2)} د.ل
           </span>
-          <span class="badge bg-danger ms-1">
+          <span class="badge bg-danger ms-1 d-none d-md-inline-block">
             خصم ${(discount * 100).toFixed(0)}%
           </span>`
         : `${finalPrice.toFixed(2)} د.ل`;
-      /* ──────────────────────────────────────────── */
   
       row.innerHTML = `
-  <td class="clickable-cell" data-pno="${item.pno}">${item.pno ?? '-'}</td>
-  <td class="clickable-cell" data-pno="${item.pno}">${item.itemname ?? '-'}</td>
-  
-  <td>${item.companyproduct ?? '-'}</td>
-  <td>
-    ${stock > 10
-        ? `<span class="badge bg-success">متوفر</span>`
-        : stock > 0
-          ? `<span class="badge bg-warning text-dark">كمية محدودة</span>`
-          : `<span class="badge bg-danger">غير متوفر</span>`}
-  </td>
-  <td>${priceCellContent}</td>
-  <td>
-    <a href="/hozma/products/${item.pno}" class="btn btn-sm btn-primary mt-1">تفاصيل</a>
-  </td>
-  <td>
-    <div class="quantity-control">
-      <button class="btn btn-sm btn-outline-secondary quantity-btn"
-              onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
-  
-      <input type="number" class="form-control form-control-sm quantity-input"
-             id="qty-${item.pno}" value="${cartQuantity}" min="0"
-             onchange="updateQuantity('${item.pno}', this.value)">
-  
-      <button class="btn btn-sm btn-outline-secondary quantity-btn"
-              onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">+</button>
-    </div>
-  </td>
-  
-  `;
+        <td class="clickable-cell d-none d-md-table-cell" data-pno="${item.pno}" data-label="رقم القطعة">${item.pno ?? '-'}</td>
+        <td class="clickable-cell" data-pno="${item.pno}" data-label="اسم القطعة">${item.itemname ?? '-'}</td>
+        <td data-label="الشركة">${item.companyproduct ?? '-'}</td>
+        <td class="d-none d-md-table-cell" data-label="المخزون">
+          ${stock > 10
+            ? `<span class="badge bg-success">متوفر</span>`
+            : stock > 0
+              ? `<span class="badge bg-warning text-dark">كمية محدودة</span>`
+              : `<span class="badge bg-danger">غير متوفر</span>`}
+        </td>
+        <td data-label="السعر">${priceCellContent}</td>
+      
+        <td data-label="الكمية">
+          <div class="quantity-control">
+            <button class="btn btn-sm btn-outline-secondary quantity-btn"
+                    onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
+            <input type="number" class="form-control form-control-sm quantity-input"
+                   id="qty-${item.pno}" value="${cartQuantity}" min="0"
+                   onchange="updateQuantity('${item.pno}', this.value)">
+            <button class="btn btn-sm btn-outline-secondary quantity-btn"
+                    onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">+</button>
+          </div>
+        </td>
+      `;
   
       /* Allow pno & name cells to open the image dialog */
       row.querySelectorAll('.clickable-cell').forEach(cell => {
@@ -160,7 +153,7 @@ async function displayItems(items) {
         cell.addEventListener('click', e => {
           if (!e.target.classList.contains('quantity-btn') &&
               !e.target.classList.contains('quantity-input')) {
-            showProductImages(item.pno);
+                showItemDetail(item.pno);
           }
         });
       });
@@ -170,85 +163,174 @@ async function displayItems(items) {
   }
   
 let currentImageModal = null;
-
-async function showProductImages(pno) {
-    console.debug("Fetching images for product with PNO:", pno);
-
-    try {
-        // Get modal elements
-        const modalElement = document.getElementById('imageModal');
-        const modalBody = modalElement.querySelector('.modal-body');
-
-        // Remove any existing modal instances
-        const existingModal = bootstrap.Modal.getInstance(modalElement);
-        if (existingModal) {
-            existingModal.hide();
-            modalElement.addEventListener('hidden.bs.modal', () => {
-                existingModal.dispose();
-            }, { once: true });
-        }
-
-        // Show loading state
-        modalBody.innerHTML = `
-            <div class="text-center py-4">
-                <div class="spinner-border" role="status"></div>
-                <p class="mt-2">جارٍ تحميل الصور...</p>
-            </div>
-        `;
-
-        // Initialize new modal properly
-        const modal = new bootstrap.Modal(modalElement, {
-            backdrop: 'static', // Prevent multiple backdrops
-            keyboard: true,
-            focus: true
-        });
-
-        // Show modal before fetching images
-        modal.show();
-
-        // Fetch images
-        const response = await customFetch(`${baseUrl}/api/products/${pno}/get-images`);
-        const data = await response.json();
-
-        // Process images response
-        if (data && Array.isArray(data) && data.length > 0) {
-            let imagesHTML = '';
-            data.forEach((imgObj) => {
-                const imgUrl = `${baseUrl}${imgObj.image_obj}`;
-                imagesHTML += `
-                    <div class="mb-3">
-                        <img src="${imgUrl}" class="img-fluid rounded mb-2" style="max-height: 60vh;">
-                        <div class="text-center">
-                            <a href="${imgUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-arrows-angle-expand"></i> فتح الصورة في نافذة جديدة
-                            </a>
-                        </div>
-                    </div>
-                `;
-            });
-            modalBody.innerHTML = imagesHTML;
-        } else {
-            modalBody.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
-                    <p class="mt-3">لا توجد صور متاحة لهذا المنتج</p>
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error('Error fetching product images:', error);
-        const modalBody = document.querySelector('#imageModal .modal-body');
-        modalBody.innerHTML = `
-            <div class="text-center py-4">
-                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
-                <p class="mt-3">حدث خطأ أثناء تحميل الصور</p>
-            </div>
-        `;
+/**
+ * عرض تفاصيل قطعة + صورها داخل الـ Modal
+ * @param {string|number} pno  رقم القطعة
+ */
+async function showItemDetail(pno) {
+    console.debug("Fetching item detail for PNO:", pno);
+  
+    /* عناصر الـ Modal */
+    const modalEl   = document.getElementById("imageModal");
+    const modalBody = modalEl.querySelector(".modal-body");
+  
+    /* تخلّص من نسخة Modal قديمة إن وُجِدت */
+    const oldModal = bootstrap.Modal.getInstance(modalEl);
+    if (oldModal) {
+      oldModal.hide();
+      modalEl.addEventListener(
+        "hidden.bs.modal",
+        () => oldModal.dispose(),
+        { once: true }
+      );
     }
-    // Debug info
-    console.log('Existing backdrops:', document.querySelectorAll('.modal-backdrop').length);
-    console.log('Existing modals:', document.querySelectorAll('.modal.show').length);
-}
+  
+    /* Spinner أثناء التحميل */
+    modalBody.innerHTML = `
+      <div class="text-center py-5">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-3">جارٍ تحميل بيانات المنتج…</p>
+      </div>
+    `;
+  
+    /* أنشئ Modal جديدًا وأظهره */
+    const modal = new bootstrap.Modal(modalEl, {
+      backdrop: "static",
+      keyboard: true,
+      focus: true,
+    });
+    modal.show();
+  
+    try {
+      /* اجلب التفاصيل والصور في وقتٍ واحد */
+      const [detailRes, imgRes] = await Promise.all([
+        customFetch(`${baseUrl}/hozma/api/item/${pno}/details/`),              // تفاصيل
+        customFetch(`${baseUrl}/api/products/${pno}/get-images`),   // صور
+      ]);
+  
+      const item   = await detailRes.json();  // يُتوقَّع أن يُعيد JSON بالمفاتيح الموجودة في دالة Django
+      const images = await imgRes.json();     // مصفوفة صور
+  
+      /* HTML مكتمل */
+      modalBody.innerHTML = buildItemHtml(item, images);
+    } catch (err) {
+      console.error("Error fetching item detail:", err);
+      modalBody.innerHTML = `
+        <div class="text-center py-5">
+          <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+          <p class="mt-3">حدث خطأ أثناء تحميل بيانات المنتج</p>
+        </div>
+      `;
+    }
+  }
+  
+  /* توليد الـ HTML من البيانات */
+  function buildItemHtml(item, images) {
+    const firstImgTag =
+      images?.length
+        ? `<img src="${baseUrl}${images[0].image_obj}" class="img-fluid rounded" style="max-height: 60vh;">`
+        : `<div class="product-image-placeholder py-5 text-center bg-light rounded">
+             <i class="fas fa-car-parts fa-4x opacity-50"></i>
+           </div>`;
+  
+    const otherImgs =
+      images?.slice(1).map(imgObj => `
+        <div class="mb-3">
+          <img src="${baseUrl}${imgObj.image_obj}" class="img-fluid rounded mb-2" style="max-height: 60vh;">
+          <div class="text-center">
+            <a href="${baseUrl}${imgObj.image_obj}" target="_blank" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-arrows-angle-expand"></i> فتح الصورة في نافذة جديدة
+            </a>
+          </div>
+        </div>
+      `).join("") || "";
+  
+    return `
+  <div class="container">
+    <div class="row">
+      <!-- الصور + التفاصيل -->
+      <div class="col-lg-8">
+        <div class="product-container">
+          <div class="row">
+            <div class="col-md-6">
+              ${firstImgTag}
+            </div>
+            <div class="col-md-6">
+              <div class="detail-card">
+                <h3><i class="fas fa-info-circle technical-icon"></i> معلومات أساسية</h3>
+                <div class="detail-item"><span class="detail-label">رقم القطعة:</span><span class="detail-value">${item.pno}</span></div>
+                <div class="detail-item"><span class="detail-label">الشركة المصنعة:</span><span class="detail-value">${item.companyproduct}</span></div>
+                <div class="detail-item">
+                  <span class="detail-label">تصنيف السيارة:</span>
+                  <ul class="detail-value list-unstyled mb-0">
+                    <li><strong>النوع:</strong> ${item.itemmain}</li>
+                    <li><strong>الموديل:</strong> ${item.itemsubmain}</li>
+                    <li><strong>سنة الصنع:</strong> ${item.itemthird}</li>
+                  </ul>
+                </div>
+                <div class="detail-item"><span class="detail-label">البلد المنتج:</span><span class="detail-value">${item.itemsize}</span></div>
+                <div class="detail-item"><span class="detail-label">رقم المحرك:</span><span class="detail-value">${item.engine_no}</span></div>
+              </div>
+            </div>
+          </div>
+  
+          <div class="specs-card mt-4">
+            <h3><i class="fas fa-file-alt technical-icon"></i> وصف المنتج</h3>
+            <p>${item.memo ? item.memo : '<span class="text-muted">لا يوجد وصف إضافي متاح.</span>'}</p>
+          </div>
+  
+          <div class="specs-card mt-4">
+            <h3><i class="fas fa-cogs technical-icon"></i> المواصفات الفنية</h3>
+            ${buildSpecsTable(item.json_description)}
+          </div>
+  
+          <!-- صور إضافية (إن وُجِدت) -->
+          ${otherImgs}
+        </div>
+      </div>
+  
+      <!-- السعر والطلب -->
+      <div class="col-lg-4">
+        
+  
+        <div class="specs-card mt-4">
+          <h3><i class="fas fa-headset technical-icon"></i> هل تحتاج مساعدة؟</h3>
+          <p>متخصصو قطع الغيار لدينا مستعدون لمساعدتك في أي استفسار حول هذا المنتج.</p>
+          <button class="btn btn-outline-primary w-100" onclick="contactSupport()">
+            <i class="fas fa-phone-alt me-2"></i> اتصل بالدعم
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  }
+  
+  /* جدول المواصفات الفنية */
+  function buildSpecsTable(jsonDesc) {
+    if (!jsonDesc || Object.keys(jsonDesc).length === 0) {
+      return '<p class="text-muted mb-0">لا توجد مواصفات فنية متاحة.</p>';
+    }
+    return `
+      <table class="table table-bordered table-striped mt-3">
+        <thead><tr><th>العنصر</th><th>الوصف</th></tr></thead>
+        <tbody>
+          ${Object.entries(jsonDesc)
+            .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
+            .join("")}
+        </tbody>
+      </table>`;
+  }
+  function contactSupport() {
+    window.location.href = "tel:+218914262604";
+  }
+  /* مساعد لتعديل كمية الطلب */
+  function changeQty(delta) {
+    const qtyInput = document.getElementById("quantity");
+    const newVal = Math.max(1, parseInt(qtyInput.value || 1, 10) + delta);
+    qtyInput.value = newVal;
+  }
+  
+  
 function changeItemMain(value) {
     // Update the hidden input
     document.getElementById('category').value = value;
