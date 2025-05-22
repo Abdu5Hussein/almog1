@@ -3504,3 +3504,9 @@ def create_user(request):
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@authentication_classes([])
+@permission_classes([AllowAny])
+class mainitem_copy_ViewSet(viewsets.ModelViewSet):
+    queryset = models.Mainitem_copy.objects.order_by('-fileid')[:300]  # Show last 300
+    serializer_class = product_serializers.MainitemSerializer

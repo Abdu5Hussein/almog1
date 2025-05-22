@@ -311,7 +311,7 @@ class Mainitem(models.Model):
      # Adding the foreign key to AllSourcesTable is for HOZMA ATTENTIN IS FOR HOZMA
     source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     category = models.CharField(db_column='category', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    discount = models.DecimalField(db_column='discount', max_digits=19, decimal_places=4, blank=True, null=True)  
+    discount = models.DecimalField(db_column='discount', max_digits=19, decimal_places=4, blank=True, null=True)
     class Meta:
         managed = True
         db_table = 'MainItem'
@@ -600,6 +600,7 @@ class AuthUser(models.Model):
 
             ('category_users', 'قسم المستخدمين'),
             ('template_users_management', 'ادارة المستخدمين'),
+            ('show_statistics', 'عرض الاحصائيات'),
         ]
 
 class AuthUserGroups(models.Model):
@@ -1357,6 +1358,7 @@ class OrderBuyinvoicetable(models.Model):
 class OrderBuyInvoiceItemsTable(models.Model):
     autoid = models.BigAutoField(primary_key=True)
     item_no = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
+    sourrce_pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     company = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -1394,3 +1396,58 @@ class OrderBuyInvoiceItemsTable(models.Model):
     class Meta:
         managed = True
         db_table = 'Orderbuy_invoice_items_table'
+
+
+class Mainitem_copy(models.Model):
+    fileid = models.BigAutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
+    itemno = models.CharField(db_column='ItemNo', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemmain = models.CharField(db_column='ItemMain', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemsubmain = models.CharField(db_column='ItemSubMain', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemname = models.CharField(db_column='ItemName', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    short_name = models.CharField(db_column='ShortName', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemthird = models.CharField(db_column='ItemThird', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemsize = models.CharField(db_column='ItemSize', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    companyproduct = models.CharField(db_column='CompanyProduct', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    dateproduct = models.CharField(db_column='DateProduct', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    levelproduct = models.CharField(db_column='LevelProduct', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemvalue = models.IntegerField(db_column='ItemValue', default=0)  # Field name made lowercase.
+    itemtemp = models.IntegerField(db_column='ItemTemp', default=0)  # Field name made lowercase.
+    itemplace = models.CharField(db_column='ItemPlace', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    orderlastdate = models.DateTimeField(db_column='OrderLastDate', blank=True, null=True)  # Field name made lowercase.
+    ordersource = models.CharField(db_column='OrderSource', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    orderbillno = models.CharField(db_column='OrderBillNo', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    buylastdate = models.DateTimeField(db_column='buyLastdate', blank=True, null=True)  # Field name made lowercase.
+    buysource = models.CharField(db_column='BuySource', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    buybillno = models.CharField(db_column='BuyBillNo', max_length=110, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    orgprice = models.DecimalField(db_column='OrgPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    orderprice = models.DecimalField(db_column='OrderPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    costprice = models.DecimalField(db_column='CostPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    buyprice = models.DecimalField(db_column='BuyPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    memo = models.CharField(db_column='Memo', max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    orderstop = models.BooleanField(db_column='OrderStop', blank=True, null=True)  # Field name made lowercase.
+    buystop = models.BooleanField(db_column='BuyStop', blank=True, null=True)  # Field name made lowercase.
+    itemtrans = models.BooleanField(db_column='ItemTrans', blank=True, null=True)  # Field name made lowercase.
+    itemvalueb = models.IntegerField(db_column='ItemValueB', blank=True, null=True)  # Field name made lowercase.
+    replaceno = models.CharField(db_column='ReplaceNo', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    itemtype = models.CharField(db_column='ItemType', max_length=115, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    barcodeno = models.CharField(db_column='BarcodeNo', max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    eitemname = models.CharField(db_column='EItemName', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    currtype = models.CharField(db_column='CurrType', max_length=115, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    lessprice = models.DecimalField(db_column='LessPrice', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    pno = models.IntegerField(db_column='PNo', blank=False, null=False, unique=True)  # Field name made lowercase.
+    currvalue = models.DecimalField(db_column='CurrValue', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    resvalue = models.IntegerField(db_column='resValue', blank=True, null=True)  # Field name made lowercase.
+    itemperbox = models.IntegerField(db_column='ItemPerbox', blank=True, null=True)  # Field name made lowercase.
+    cstate = models.IntegerField(db_column='CSTate', blank=True, null=True)  # Field name made lowercase.
+    oem_numbers = models.CharField(max_length=1000, blank=True, null=True)
+    engine_no = models.CharField(max_length=300, blank=True, null=True)
+    json_description = models.JSONField(null=True,blank=True)
+    showed = models.IntegerField(default=0)
+    source_pno = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+     # Adding the foreign key to AllSourcesTable is for HOZMA ATTENTIN IS FOR HOZMA
+    source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
+    category = models.CharField(db_column='category', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    discount = models.DecimalField(db_column='discount', max_digits=19, decimal_places=4, blank=True, null=True)
+    class Meta:
+        managed = True
+        db_table = 'MainItem_copy'

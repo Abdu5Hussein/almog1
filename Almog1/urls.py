@@ -42,6 +42,7 @@ router.register(r'engines', api_views.EnginesTableViewSet)
 router.register(r'api/employees-api', api_views.EmployeesTableViewSet)
 router.register(r'api/balance-editions-api', api_views.BalanceEditionsTableViewSet)
 router.register(r'api/attendance-api', api_views.AttendanceTableViewSet)
+router.register(r'api/mainitem_copy-api', api_views.mainitem_copy_ViewSet)
 
 urlpatterns = [
     path('hozma/', include('wholesale_app.urls')),
@@ -55,6 +56,7 @@ urlpatterns = [
     path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     path('', lambda request: redirect(reverse('home'))),
     path('login', views.LogInView, name='login'),
+    path('users/me/profile', views.user_profile_template, name='user_profile_template'),
     path('process-login', api_views.sign_in, name='login-process'),
     path('mobile/login', api_views.mobile_sign_in, name='mobile-login'),
     path('api/user/logout', api_views.logout_view, name='logout'),

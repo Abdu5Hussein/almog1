@@ -210,27 +210,6 @@
         </tbody>
       </table>
     </div>
-
-    <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-3">
-      <nav aria-label="Page navigation">
-        <ul class="pagination">
-          <li class="page-item">
-            <button class="page-link" id="prev-page" aria-label="Previous">
-              <span aria-hidden="true">&laquo;</span>
-            </button>
-          </li>
-          <li class="page-item">
-            <span class="page-link" id="page-label">1 / 1</span>
-          </li>
-          <li class="page-item">
-            <button class="page-link" id="next-page" aria-label="Next">
-              <span aria-hidden="true">&raquo;</span>
-            </button>
-          </li>
-        </ul>
-      </nav>
-    </div>
   </div>
 
   <!-- نافذة تفاصيل الطلب -->
@@ -296,141 +275,59 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    /* ────────────────────────────────────────────────────────────────
-       GLOBAL STATE
-    ───────────────────────────────────────────────────────────────── */
-    let currentPage   = 1;
-    let totalPages    = 1;
-    let currentOrderDetails = null;
+    let currentOrder = null;
     
-    let statusFilter  = 'all';      // pending | confirmed | all
-    let sentFilter    = 'all';      // sent | not_sent | all
-    let dateFilter    = 'all';      // all | today | week | month
-    let searchTerm    = '';
-    
-    /* ────────────────────────────────────────────────────────────────
-       DOM READY
-    ───────────────────────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', () => {
-      const searchInput   = document.getElementById('searchInput');
-      const btnPrev       = document.getElementById('prev-page');
-      const btnNext       = document.getElementById('next-page');
-      const pageLabel     = document.getElementById('page-label');
-    
-      /* -------- first load ---------- */
-      fetchOrders();
-    
-      /* -------- search -------------- */
-      let debounce;
-      searchInput.addEventListener('input', e => {
-          clearTimeout(debounce);
-          debounce = setTimeout(() => {
-              searchTerm = e.target.value.trim();
-              fetchOrders(1);
-          }, 400);
-      });
-    
-      /* -------- filter buttons ------ */
-      window.filterOrders = function(type) {
-          // Which filter changed?
-          if (['pending','confirmed','all'].includes(type)) {
-              statusFilter = type;
-          } else if (['sent','not-sent','all'].includes(type)) {
-              sentFilter = (type === 'not-sent') ? 'not_sent' : type;   // map to backend key
+    document.addEventListener('DOMContentLoaded', function() {
+      loadPreorders();
+      
+      // وظيفة البحث
+      document.getElementById('searchInput').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#preordersTable tr');
+        
+        rows.forEach(row => {
+          const invoiceNo = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+          const source = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+          if (invoiceNo.includes(searchTerm) || source.includes(searchTerm)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
           }
-          document.querySelectorAll('.filter-buttons .btn').forEach(b => b.classList.remove('active'));
-          event.target.classList.add('active');
-          fetchOrders(1);
-      };
-    
-      /* -------- pagination ---------- */
-      btnPrev.addEventListener('click', () => { if (currentPage > 1) fetchOrders(currentPage - 1); });
-      btnNext.addEventListener('click', () => { if (currentPage < totalPages) fetchOrders(currentPage + 1); });
+        });
+      });
     });
-    
-    /* ──────────────────────────────────────────────────────────────
-       MAIN FETCH
-    ───────────────────────────────────────────────────────────── */
-    async function fetchOrders(page = 1) {
-        currentPage = page;
-  
-        /* show spinner in table */
-        const tbody = document.querySelector('#preordersTable');
-        tbody.innerHTML = `
-          <tr><td colspan="7" class="text-center py-4">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">جار التحميل...</span>
-              </div>
-              <p class="mt-3 mb-0">جارٍ تحميل الطلبات...</p>
-          </td></tr>`;
-  
-        try {
-            const res = await fetch('http://45.13.59.226/hozma/api/preorders-buy_v2/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    page: currentPage,
-                    page_size: 10,
-                    status_filter: statusFilter,
-                    sent_filter: sentFilter,
-                    date_filter: dateFilter,
-                    search_term: searchTerm,
-                    sort_by: 'date_desc'
-                })
-            });
-            const data = await res.json();
-  
-            paintTable(data.preorders_buy || []);
-            updatePagination(data.pagination || {});
-  
-        } catch (err) {
-            console.error(err);
-            tbody.innerHTML = `
-              <tr><td colspan="7" class="text-center text-danger py-4">
-                <i class="bi bi-exclamation-triangle"></i>
-                فشل تحميل الطلبات. حاول لاحقًا.
-              </td></tr>`;
-        }
-    }
-  
-    /* ──────────────────────────────────────────────────────────────
-       RENDER FUNCTIONS
-    ───────────────────────────────────────────────────────────── */
-    function paintTable(orders) {
-        const tbody = document.querySelector('#preordersTable');
-        tbody.innerHTML = '';
-  
-        if (!orders.length) {
-            tbody.innerHTML = `
-              <tr><td colspan="7" class="text-center text-muted py-4">
-                <i class="bi bi-inbox" style="font-size:2rem"></i>
-                <p class="mt-2">لا توجد طلبات مبدئية لعرضها</p>
-              </td></tr>`;
-            return;
-        }
-  
-        orders.forEach(order => {
-            const tr = document.createElement('tr');
-            tr.className = 'clickable-row';
-            tr.dataset.status = order.confirmed ? 'confirmed' : 'pending';
-            tr.dataset.sent = order.send ? 'sent' : 'not-sent';
-  
-            tr.innerHTML = `
+
+    async function loadPreorders() {
+      try {
+        const response = await customFetch('http://45.13.59.226/hozma/api/preorders-buy/');
+        const data = await response.json();
+        
+        const preordersBody = document.querySelector('#preordersTable');
+        preordersBody.innerHTML = '';
+
+        if (data.preorders_buy && data.preorders_buy.length > 0) {
+          data.preorders_buy.forEach(order => {
+            const row = document.createElement('tr');
+            row.className = 'clickable-row';
+            row.setAttribute('data-status', order.confirmed ? 'confirmed' : 'pending');
+            row.setAttribute('data-sent', order.send ? 'sent' : 'not-sent');
+            
+            row.innerHTML = `
               <td>${order.invoice_no}</td>
-              <td>${formatDate(order.invoice_date)}</td>
+              <td>${order.invoice_date ? new Date(order.invoice_date).toLocaleDateString() : 'غير معروف'}</td>
               <td>${order.source || 'غير متوفر'}</td>
-              <td>${parseFloat(order.net_amount).toFixed(2)} دينار</td>
+              <td>${order.net_amount ? parseFloat(order.net_amount).toFixed(2) : '0.00'} دينار</td>
               <td>
-                <span class="badge ${order.confirmed ? 'bg-success' : 'bg-warning'}">
+                <span class="status-badge ${order.confirmed ? 'status-confirmed' : 'status-pending'}">
                   ${order.confirmed ? 'تم التأكيد' : 'قيد الانتظار'}
                 </span>
               </td>
               <td>
-                <span class="badge ${order.send ? 'bg-info' : 'bg-danger'}">
+                <span class="status-badge ${order.send ? 'status-sent' : 'status-not-sent'}">
                   ${order.send ? 'تم الإرسال' : 'لم يتم الإرسال'}
                 </span>
               </td>
-                        <td class="action-buttons">
+             <td class="action-buttons">
   <!-- View in Modal -->
   <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewOrderDetails('${order.invoice_no}')">
     <i class="bi bi-eye"></i> عرض
@@ -443,33 +340,28 @@
 </td>
 
             `;
-            tr.addEventListener('click', () => viewOrderDetails(order.invoice_no));
-            tbody.appendChild(tr);
-        });
+            
+            // Add click event to open modal
+            row.addEventListener('click', () => viewOrderDetails(order.invoice_no));
+            
+            preordersBody.appendChild(row);
+          });
+        } else {
+          preordersBody.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2">لا توجد طلبات مبدئية لعرضها</p>
+              </td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading preorders:', error);
+        showAlert('فشل تحميل الطلبات. يرجى المحاولة مرة أخرى.', 'danger');
+      }
     }
-  
-    function updatePagination(pagination) {
-        const btnPrev = document.getElementById('prev-page');
-        const btnNext = document.getElementById('next-page');
-        const pageLabel = document.getElementById('page-label');
-        
-        totalPages = pagination.total_pages || 1;
-        currentPage = pagination.current_page || 1;
-        
-        pageLabel.textContent = `${currentPage} / ${totalPages}`;
-        btnPrev.disabled = !pagination.has_previous;
-        btnNext.disabled = !pagination.has_next;
-    }
-  
-    function formatDate(dateString) {
-        if (!dateString) return 'غير معروف';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-UK') + ' ' + date.toLocaleTimeString('en-UK');
-    }
-  
-    /* ──────────────────────────────────────────────────────────────
-       ORDER DETAILS FUNCTIONS
-    ───────────────────────────────────────────────────────────── */
+
     async function viewOrderDetails(invoiceNo) {
       try {
         const response = await customFetch(`http://45.13.59.226/hozma/api/preorders-buy/?invoice_no=${invoiceNo}`);
@@ -548,7 +440,6 @@
       }
     }
 
-  
     async function confirmOrder() {
       if (!currentOrder) return;
       
@@ -577,7 +468,7 @@
           modal.hide();
           
           // Refresh the preorders list
-          fetchOrders(currentPage || 1);
+          loadPreorders();
         } else {
           throw new Error(result.message || "فشل في تأكيد الطلب");
         }
@@ -586,6 +477,7 @@
         showAlert('فشل في تأكيد الطلب: ' + error.message, 'danger');
       }
     }
+    
     async function markAsSent() {
       if (!currentOrder) return;
       
@@ -614,7 +506,7 @@
           modal.hide();
           
           // Refresh the preorders list
-          fetchOrders(currentPage || 1);
+          loadPreorders();
         } else {
           throw new Error(result.message || "فشل في تحديث حالة الإرسال");
         }
@@ -623,7 +515,31 @@
         showAlert('فشل في تحديث حالة الإرسال: ' + error.message, 'danger');
       }
     }
-
+    
+    function filterOrders(filterType) {
+      const rows = document.querySelectorAll('#preordersTable tr');
+      
+      rows.forEach(row => {
+        if (filterType === 'all') {
+          row.style.display = '';
+        } else if (filterType === 'pending') {
+          row.style.display = row.getAttribute('data-status') === 'pending' ? '' : 'none';
+        } else if (filterType === 'confirmed') {
+          row.style.display = row.getAttribute('data-status') === 'confirmed' ? '' : 'none';
+        } else if (filterType === 'sent') {
+          row.style.display = row.getAttribute('data-sent') === 'sent' ? '' : 'none';
+        } else if (filterType === 'not-sent') {
+          row.style.display = row.getAttribute('data-sent') === 'not-sent' ? '' : 'none';
+        }
+      });
+      
+      // Update active filter button
+      document.querySelectorAll('.filter-buttons .btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+    }
+    
     function showAlert(message, type) {
       const alertDiv = document.createElement('div');
       alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
@@ -645,10 +561,8 @@
         bsAlert.close();
       }, 5000);
     }
+
   </script>
-</body>
-</html>
-    
   <script src="{% static 'js/helper_functions.js' %}"></script>
 </body>
 </html>

@@ -498,7 +498,7 @@ def full_Sell_invoice_create_item(request):
                 'sub_cat': product.itemsubmain,
                 'name': product.itemname,
                 'company': product.companyproduct,
-                'company_no': product.replaceno,
+                'company_no': product.eitemname,
                 'quantity': item_value,
                 'date': timezone.now(),
                 'place': product.itemplace,
@@ -575,17 +575,19 @@ def full_Sell_invoice_create_item(request):
                     almogOil_models.OrderBuyInvoiceItemsTable.objects.create(
                         item_no=product.itemno,
                         pno=product.pno,
+                        sourrce_pno=product.source_pno,
                         name=product.itemname,
                         company=product.companyproduct,
-                        company_no=product.replaceno,
+                        company_no=product.eitemname,
                         Asked_quantity=buyitem_value,
                         date=str(timezone.now().date()),
                         quantity_unit="",
-                        dinar_unit_price=product.buyprice,
-                        dinar_total_price=dinar_total_price,
+                        dinar_unit_price=product.costprice,
+                        dinar_total_price=buyitem_value * buy_dinar_unit_price,
                         cost_unit_price=buy_dinar_unit_price,
                         cost_total_price=buyitem_value * buy_dinar_unit_price,
                         prev_quantity=product.itemvalue,
+                        current_buy_price=product.buyprice,
                         invoice_no2=buy_invoice.invoice_no,
                         invoice_no=buy_invoice,
                         main_cat=product.itemmain,
@@ -680,6 +682,113 @@ def show_preordersBuy(request):
         'preorder_items_buy': preorder_items_serializer.data
     })
 
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def show_preorders_buy_v2(request):
+    """
+    - GET  with ?invoice_no=…    → single invoice + items (unchanged, used by the modal).
+    - POST {page, status_filter, sent_filter, search_term, …} → list view.
+    """
+    # ----------------------------------------------------------------
+    # 1️⃣  STILL allow the old GET-by-invoice for the modal
+    # ----------------------------------------------------------------
+    if request.method == "GET" and request.query_params.get('invoice_no'):
+        inv_no = request.query_params['invoice_no']
+        orders = almogOil_models.OrderBuyinvoicetable.objects.filter(invoice_no=inv_no)
+        items  = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no__invoice_no=inv_no)
+        return Response({
+            "preorders_buy":       wholesale_serializers.OrderBuyinvoiceSerializer(orders, many=True).data,
+            "preorder_items_buy":  wholesale_serializers.OrderBuyInvoiceItemsSerializer(items, many=True).data
+        })
+
+    # ----------------------------------------------------------------
+    # 2️⃣  List endpoint – POST
+    # ----------------------------------------------------------------
+    data          = request.data
+    page          = int(data.get('page', 1))
+    page_size     = int(data.get('page_size', 10))
+    status_flt    = data.get('status_filter', 'all')      # pending | confirmed | all
+    sent_flt      = data.get('sent_filter', 'all')        # sent | not_sent | all
+    date_flt      = data.get('date_filter', 'all')        # today | week | month | all
+    search_term   = (data.get('search_term') or '').strip()
+    sort_by       = data.get('sort_by', 'date_desc')      # date_desc | date_asc | amount_desc | amount_asc …
+
+    # ---------------- base queryset ---------------
+    qs = almogOil_models.OrderBuyinvoicetable.objects.all()
+
+    # ---------------- status filter ---------------
+    if status_flt == 'pending':
+        qs = qs.filter(confirmed=False)
+    elif status_flt == 'confirmed':
+        qs = qs.filter(confirmed=True)
+
+    # ---------------- sent filter -----------------
+    if sent_flt == 'sent':
+        qs = qs.filter(send=True)
+    elif sent_flt == 'not_sent':
+        qs = qs.filter(send=False)
+
+    # ---------------- date filter -----------------
+    if date_flt != 'all':
+        today = now().replace(hour=0, minute=0, second=0, microsecond=0)
+        if date_flt == 'today':
+            qs = qs.filter(invoice_date__gte=today)
+        elif date_flt == 'week':
+            week_start = today - timedelta(days=today.weekday())
+            qs = qs.filter(invoice_date__gte=week_start)
+        elif date_flt == 'month':
+            month_start = today.replace(day=1)
+            qs = qs.filter(invoice_date__gte=month_start)
+
+    # ---------------- search ----------------------
+    if search_term:
+        qs = qs.filter(
+            Q(invoice_no__icontains=search_term) |
+            Q(source__icontains=search_term)
+        )
+
+    # ---------------- sorting ---------------------
+    sort_map = {
+        'date_desc':     '-invoice_date',
+        'date_asc':      'invoice_date',
+        'amount_desc':   '-net_amount',
+        'amount_asc':    'net_amount',
+        'confirm_first': '-confirmed',
+        'pending_first': 'confirmed',
+        'sent_first':    '-send',
+        'not_sent_first':'send',
+    }
+    qs = qs.order_by(sort_map.get(sort_by, '-invoice_date'))
+
+    # ---------------- summary (before paging) -----
+    total_orders     = qs.count()
+    confirmed_orders = qs.filter(confirmed=True).count()
+    pending_orders   = total_orders - confirmed_orders
+    sent_orders      = qs.filter(send=True).count()
+    not_sent_orders  = total_orders - sent_orders
+
+    # ---------------- pagination ------------------
+    paginator  = Paginator(qs, page_size)
+    page_obj   = paginator.get_page(page)
+
+    return Response({
+        "preorders_buy": wholesale_serializers.OrderBuyinvoiceSerializer(page_obj, many=True).data,
+        "summary": {
+            "total_orders":     total_orders,
+            "confirmed_orders": confirmed_orders,
+            "pending_orders":   pending_orders,
+            "sent_orders":      sent_orders,
+            "not_sent_orders":  not_sent_orders,
+        },
+        "pagination": {
+            "current_page": page_obj.number,
+            "total_pages":  paginator.num_pages,
+            "has_next":     page_obj.has_next(),
+            "has_previous": page_obj.has_previous(),
+        }
+    })
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @authentication_classes([])
@@ -740,10 +849,11 @@ def Buyhandle_update_action(preorder, item_quantities):
         # Update the quantity in PreOrderItemsTable
         preorder_item.Confirmed_quantity = new_quantity
         preorder_item.dinar_total_price = preorder_item.dinar_unit_price * new_quantity  # Recalculate the total price
+        preorder_item.cost_total_price = preorder_item.cost_unit_price * new_quantity  # Recalculate the cost total price
         preorder_item.save()
 
     # After updating the quantities for all items, recalculate the total amount for the PreOrder
-    total_amount = sum([item.dinar_total_price for item in preorder_items])  # Sum the dinar_total_price of all items
+    total_amount = sum([item.cost_total_price for item in preorder_items])  # Sum the dinar_total_price of all items
 
     # Update the total amount in PreOrderTable
     preorder.amount = total_amount
@@ -802,6 +912,7 @@ def Buyhandle_confirm_action(preorder):
             currency="",
             dinar_unit_price=item.dinar_unit_price or 0,
             dinar_total_price=item.dinar_total_price or 0,
+            current_buy_price =item.current_buy_price or 0,
             cost_unit_price=item.cost_unit_price or 0,
             cost_total_price=item.cost_total_price or 0,
             exchange_rate=Decimal('1.0000'),
@@ -828,6 +939,7 @@ def Buyhandle_confirm_action(preorder):
             pre_item.confirm_quantity = assign_quantity
             pre_item.quantity_proccessed = True
             pre_item.dinar_total_price = pre_item.dinar_unit_price * assign_quantity
+            
             pre_item.current_quantity = pre_item.prev_quantity - assign_quantity
             pre_item.save()
 
@@ -925,7 +1037,7 @@ def prepare_invoice_data(record, items):
 
     for item in items:
         invoice_data['items'].append({
-            'pno': item.pno,
+            'pno': item.sourrce_pno,
             'name': item.name,
             'company': item.company,
             'Asked_quantity': item.Asked_quantity,

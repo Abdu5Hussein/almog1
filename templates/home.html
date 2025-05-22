@@ -17,10 +17,16 @@
     />
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <style>
+      .stats-container{
+        padding: 20px;
+        padding-top: 25px;
+        max-width: calc(100% - 30px);
+        font-family: 'Font Awesome 5 Free';
+      }
       body {
         font-family: Arial, sans-serif;
         height: 100vh;
-        width: 100vw;
+        width: 100%;
         margin-right: 250px;
         background-color: #1c3766;
       }
@@ -689,6 +695,245 @@
       .navbar-brand {
         margin-right: 4rem;
       }
+        /* Cards */
+         :root {
+            --primary-color: #0d6efd;
+            --primary-light: #e8f1ff;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --danger-light: #fde8e6;
+            --success-color: #1cc88a;
+            --success-light: #e6f8f2;
+            --warning-color: #f6c23e;
+            --warning-light: #fff6e1;
+            --info-color: #36b9cc;
+            --info-light: #e6f7fa;
+            --light-color: #f8f9fc;
+            --dark-color: #5a5c69;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(58, 59, 69, 0.15);
+        }
+
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.25rem 1.5rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Stats Cards */
+        .stats-card {
+            border-left: 0.35rem solid;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 1;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-card .card-body {
+            padding: 1.25rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stats-card .card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-card .card-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-card .card-icon {
+            font-size: 2.5rem;
+            opacity: 0.2;
+            position: absolute;
+            left: 1.25rem;
+            top: 1.25rem;
+            z-index: 0;
+        }
+
+        .stats-card.primary {
+            border-left-color: var(--primary-color);
+            background-color: var(--primary-light);
+        }
+
+        .stats-card.success {
+            border-left-color: var(--success-color);
+            background-color: var(--success-light);
+        }
+
+        .stats-card.info {
+            border-left-color: var(--info-color);
+            background-color: var(--info-light);
+        }
+
+        .stats-card.warning {
+            border-left-color: var(--warning-color);
+            background-color: var(--warning-light);
+        }
+
+        /* Tables */
+        .table-responsive {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .table {
+            margin-bottom: 0;
+            color: var(--dark-color);
+        }
+
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 1rem 1.25rem;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody tr {
+            transition: var(--transition);
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(78, 115, 223, 0.05);
+        }
+
+        .table td {
+            padding: 1rem 1.25rem;
+            vertical-align: middle;
+            border-top: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            border: none;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #3a5bc7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: #000;
+        }
+
+        /* Badges */
+        .badge {
+            font-weight: 600;
+            padding: 0.4em 0.75em;
+            border-radius: 10rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Status Badges */
+        .badge-pending {
+            background-color: var(--warning-color);
+            color: #000;
+        }
+
+        .badge-processing {
+            background-color: var(--info-color);
+            color: #fff;
+        }
+
+        .badge-completed {
+            background-color: var(--success-color);
+            color: #fff;
+        }
+
+        .badge-cancelled {
+            background-color: var(--danger-color);
+            color: #fff;
+        }
+        Footer{
+          background-color: #141f33;
+          height: 40px;
+          position: relative;
+          bottom: 0;
+        }
+        .landing-welcome{
+          border-right: 4px solid blue;
+          width: fit-content;
+          border-radius: 0 3px 11px 0;
+          padding: 0 20px;
+        }
+
     </style>
   </head>
   <body>
@@ -741,7 +986,7 @@
                   الحساب
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                  <li><a class="dropdown-item" href="#">معلومات الحساب</a></li>
+                  <li><a class="dropdown-item" onClick="openWindow('/users/me/profile')">معلومات الحساب</a></li>
                   <li><a class="dropdown-item" href="#">الامان</a></li>
                   <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item" id="logout-btn">تسجيل الخروج</a></li>
@@ -771,270 +1016,655 @@
       </nav>
 
       <!-- Sidebar -->
-          <div id="sidebar" class="sidebar">
-            <ul class="nav flex-column">
-              {% if perms.almogOil.category_products %}
-                <li class="nav-item">
-                  <a class="nav-link toggle-submenu" href="#">
-                    <i class="fas fa-chevron-down"></i>الاصناف</a>
-                  <div class="sub-menu">
-                      {% if perms.almogOil.template_productdetails %}
-                          <a class="nav-link" id="item-1-1">بيانات الاصناف</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_local_item_reports %}
-                          <a class="nav-link" id="item-1-2">تقارير الاصناف المحلية</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_external_item_reports %}
-                          <a class="nav-link" id="item-1-3">تقارير الاصناف الخارجية</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_price_modifications %}
-                          <a class="nav-link" id="item-1-4">تعديل الاسعار</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_item_movement_reports %}
-                          <a class="nav-link" id="item-1-5">تقرير حركة الاصناف</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_item_revaluation %}
-                          <a class="nav-link" id="item-1-6">اعادة ترصيد الاصناف</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_inventory %}
-                          <a class="nav-link" id="item-1-7">الجرد</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_damage_loss %}
-                          <a class="nav-link" id="item-1-8">التلف والفقد</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_storage_locations %}
-                          <a class="nav-link" id="item-1-9">اماكن التخزين</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_english_labeling %}
-                          <a class="nav-link" id="item-1-10">التسمية الانجليزية</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_item_reservation %}
-                          <a class="nav-link" id="item-1-11">حجز اصناف</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_revaluation %}
-                          <a class="nav-link" id="item-1-12">اعادة الترصيد</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_missing_items %}
-                          <a class="nav-link" id="item-1-13">النواقص</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_issue_permits %}
-                          <a class="nav-link" id="item-1-14">اذونات الصرف</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_items_with_notes %}
-                          <a class="nav-link" id="item-1-15">اصناف بالملاحظات</a>
-                      {% endif %}
-                      {% if perms.almogOil.template_add_item_specifications %}
-                          <a class="nav-link" id="item-1-16">اضافة مواصفات الصنف</a>
-                      {% endif %}
-                  </div>
-                </li>
-              {% endif %}
+        <div id="sidebar" class="sidebar">
+          <ul class="nav flex-column">
+            {% if perms.almogOil.category_products %}
               <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>فواتير شراء محلية</a
-                >
+                <a class="nav-link toggle-submenu" href="#">
+                  <i class="fas fa-chevron-down"></i>الاصناف</a>
                 <div class="sub-menu">
-                  <a class="nav-link" id="item-2-1">Subitem</a>
-                  <a class="nav-link" id="item-2-2">Subitem</a>
-                </div>
-              </li>
-              {% if perms.almogOil.category_buy_invoice %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>فواتير شراء خارجية</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_buy_invoice_entry %}
-                        <a class="nav-link" id="item-3-1">ادخال فاتورة شراء</a>
+                    {% if perms.almogOil.template_productdetails %}
+                        <a class="nav-link" id="item-1-1">بيانات الاصناف</a>
                     {% endif %}
-                    {% if perms.almogOil.template_buy_invoices %}
-                        <a class="nav-link" id="item-3-2">فواتير الشراء</a>
+                    {% if perms.almogOil.template_local_item_reports %}
+                        <a class="nav-link" id="item-1-2">تقارير الاصناف المحلية</a>
                     {% endif %}
-                    {% if perms.almogOil.template_buy_price_modifications %}
-                        <a class="nav-link" id="item-3-3">تعديل اسعار البيع</a>
+                    {% if perms.almogOil.template_external_item_reports %}
+                        <a class="nav-link" id="item-1-3">تقارير الاصناف الخارجية</a>
                     {% endif %}
-                    {% if perms.almogOil.template_buy_invoice_settlement %}
-                        <a class="nav-link" id="item-3-4">تسوية حساب الفواتير</a>
+                    {% if perms.almogOil.template_price_modifications %}
+                        <a class="nav-link" id="item-1-4">تعديل الاسعار</a>
                     {% endif %}
-                    {% if perms.almogOil.template_buy_temp_item_posting %}
-                        <a class="nav-link" id="item-3-5">ترحيل الاصناف المؤقتة</a>
+                    {% if perms.almogOil.template_item_movement_reports %}
+                        <a class="nav-link" id="item-1-5">تقرير حركة الاصناف</a>
                     {% endif %}
-                    {% if perms.almogOil.template_buy_invoice_inventory %}
-                        <a class="nav-link" id="item-3-6">جرد فواتير الشراء</a>
+                    {% if perms.almogOil.template_item_revaluation %}
+                        <a class="nav-link" id="item-1-6">اعادة ترصيد الاصناف</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_inventory %}
+                        <a class="nav-link" id="item-1-7">الجرد</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_damage_loss %}
+                        <a class="nav-link" id="item-1-8">التلف والفقد</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_storage_locations %}
+                        <a class="nav-link" id="item-1-9">اماكن التخزين</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_english_labeling %}
+                        <a class="nav-link" id="item-1-10">التسمية الانجليزية</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_item_reservation %}
+                        <a class="nav-link" id="item-1-11">حجز اصناف</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_revaluation %}
+                        <a class="nav-link" id="item-1-12">اعادة الترصيد</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_missing_items %}
+                        <a class="nav-link" id="item-1-13">النواقص</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_issue_permits %}
+                        <a class="nav-link" id="item-1-14">اذونات الصرف</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_items_with_notes %}
+                        <a class="nav-link" id="item-1-15">اصناف بالملاحظات</a>
+                    {% endif %}
+                    {% if perms.almogOil.template_add_item_specifications %}
+                        <a class="nav-link" id="item-1-16">اضافة مواصفات الصنف</a>
                     {% endif %}
                 </div>
               </li>
-              {% endif %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>ف. البيع المبدئية</a
-                >
-                <div class="sub-menu">
-                  <a class="nav-link" href="#subitem4-1">Subitem 4-1</a>
-                  <a class="nav-link" href="#subitem4-2">Subitem 4-2</a>
-                </div>
-              </li>
-              {% if perms.almogOil.category_sell_invoice %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>فواتير البيع</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_sell_invoice_entry %}
-                        <a class="nav-link" id="item-5-1">ادخال فاتورة بيع</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_sell_invoices %}
-                        <a class="nav-link" id="item-5-2">فواتير البيع</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_sell_invoice_settlement %}
-                        <a class="nav-link" id="item-5-3">تسوية حساب الفواتير</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_sell_inventory_item_search %}
-                        <a class="nav-link" id="item-5-4">بحث باصناف المخزن</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_sell_invoice_preparation_reports %}
-                        <a class="nav-link" id="item-5-5">تقارير التحضير</a>
-                    {% endif %}
-                </div>
-              </li>
-              {% endif %}
-              {% if perms.almogOil.category_return_permission %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>الترجيعات</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_return_permission_entry %}
-                        <a class="nav-link" id="item-6-1">ادخال اذن ترجيع</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_return_reports %}
-                        <a class="nav-link" id="item-6-2">تقارير الترجيع</a>
-                    {% endif %}
-                </div>
-              </li>
-              {% endif %}
-              {% if perms.almogOil.category_clients %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>العملاء</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_customer_guide %}
-                        <a class="nav-link" id="item-7-1">دليل العملاء</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_customer_reports %}
-                        <a class="nav-link" id="item-7-2">تقارير العملاء</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_account_settlement %}
-                        <a class="nav-link" id="item-7-3">تسوية حساب</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_account_settlement_reports %}
-                        <a class="nav-link" id="item-7-4">تقارير تسوية حساب</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_audit_reports %}
-                        <a class="nav-link" id="item-7-5">تقارير المراجعة</a>
-                    {% endif %}
-                </div>
-              </li>
-              {% endif %}
-              {% if perms.almogOil.category_suppliers %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>الموردين</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_add_supplier %}
-                        <a class="nav-link" id="item-13-1">اضافة مورد</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_supplier_reports %}
-                        <a class="nav-link" id="item-13-2">تقارير الموردين</a>
-                    {% endif %}
-                </div>
-              </li>
-              {% endif %}
-              {% if perms.almogOil.category_employees %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>الموظفين</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_employee_directory %}
-                        <a class="nav-link" id="item-8-1">دليل الموظفين</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_drivers %}
-                        <a class="nav-link" id="item-8-2">الموصلين</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_salary_accounts %}
-                        <a class="nav-link" id="item-8-3">حساب المرتبات</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_settlement_entries %}
-                        <a class="nav-link" id="item-8-4">قيود التسوية</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_emp_reports %}
-                        <a class="nav-link" id="item-8-5">تقارير</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_settlement_reports %}
-                        <a class="nav-link" id="item-8-6">تقارير التسوية</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_attendance_absence %}
-                        <a class="nav-link" id="item-8-7">حضور وغياب</a>
-                    {% endif %}
-                </div>
-              </li>
-              {% endif %}
-              {% if perms.almogOil.category_storage %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>الخزينة</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_treasury_entries %}
-                        <a class="nav-link" id="item-9-1">قيود الخزينة</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_treasury_reports %}
-                        <a class="nav-link" id="item-9-2">تقارير الخزينة</a>
-                    {% endif %}
-                    {% if perms.almogOil.template_request_value %}
-                        <a class="nav-link" id="item-9-3">طلب قيمة</a>
-                    {% endif %}
-                </div>
-              </li>
-              {% endif %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>الحسابات</a
-                >
-                <div class="sub-menu">
-                  <a class="nav-link" href="#subitem10-1">Subitem 10-1</a>
-                  <a class="nav-link" href="#subitem10-2">Subitem 10-2</a>
-                </div>
-              </li>
-              {% if perms.almogOil.category_users %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>المستخدمين</a
-                >
-                <div class="sub-menu">
-                    {% if perms.almogOil.template_users_management %}
-                        <a class="nav-link" id="item-11-1">ادارة المستخدمين</a>
-                    {% endif %}
-                </div>
-              </li>
-              {% endif %}
-              <li class="nav-item">
-                <a class="nav-link toggle-submenu" href="#"
-                  ><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a
-                >
-                <div class="sub-menu">
-                  <a class="nav-link" href="#subitem12-1">Subitem 12-1</a>
-                  <a class="nav-link" href="#subitem12-2">Subitem 12-2</a>
-                </div>
-              </li>
-            </ul>
-          </div>
+            {% endif %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>فواتير شراء محلية</a
+              >
+              <div class="sub-menu">
+                <a class="nav-link" id="item-2-1">Subitem</a>
+                <a class="nav-link" id="item-2-2">Subitem</a>
+              </div>
+            </li>
+            {% if perms.almogOil.category_buy_invoice %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>فواتير شراء خارجية</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_buy_invoice_entry %}
+                      <a class="nav-link" id="item-3-1">ادخال فاتورة شراء</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_invoices %}
+                      <a class="nav-link" id="item-3-2">فواتير الشراء</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_price_modifications %}
+                      <a class="nav-link" id="item-3-3">تعديل اسعار البيع</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_invoice_settlement %}
+                      <a class="nav-link" id="item-3-4">تسوية حساب الفواتير</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_temp_item_posting %}
+                      <a class="nav-link" id="item-3-5">ترحيل الاصناف المؤقتة</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_invoice_inventory %}
+                      <a class="nav-link" id="item-3-6">جرد فواتير الشراء</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>ف. البيع المبدئية</a
+              >
+              <div class="sub-menu">
+                <a class="nav-link" href="#subitem4-1">Subitem 4-1</a>
+                <a class="nav-link" href="#subitem4-2">Subitem 4-2</a>
+              </div>
+            </li>
+            {% if perms.almogOil.category_sell_invoice %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>فواتير البيع</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_sell_invoice_entry %}
+                      <a class="nav-link" id="item-5-1">ادخال فاتورة بيع</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_sell_invoices %}
+                      <a class="nav-link" id="item-5-2">فواتير البيع</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_sell_invoice_settlement %}
+                      <a class="nav-link" id="item-5-3">تسوية حساب الفواتير</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_sell_inventory_item_search %}
+                      <a class="nav-link" id="item-5-4">بحث باصناف المخزن</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_sell_invoice_preparation_reports %}
+                      <a class="nav-link" id="item-5-5">تقارير التحضير</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            {% if perms.almogOil.category_return_permission %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>الترجيعات</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_return_permission_entry %}
+                      <a class="nav-link" id="item-6-1">ادخال اذن ترجيع</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_return_reports %}
+                      <a class="nav-link" id="item-6-2">تقارير الترجيع</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            {% if perms.almogOil.category_clients %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>العملاء</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_customer_guide %}
+                      <a class="nav-link" id="item-7-1">دليل العملاء</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_customer_reports %}
+                      <a class="nav-link" id="item-7-2">تقارير العملاء</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_account_settlement %}
+                      <a class="nav-link" id="item-7-3">تسوية حساب</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_account_settlement_reports %}
+                      <a class="nav-link" id="item-7-4">تقارير تسوية حساب</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_audit_reports %}
+                      <a class="nav-link" id="item-7-5">تقارير المراجعة</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            {% if perms.almogOil.category_suppliers %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>الموردين</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_add_supplier %}
+                      <a class="nav-link" id="item-13-1">اضافة مورد</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_supplier_reports %}
+                      <a class="nav-link" id="item-13-2">تقارير الموردين</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            {% if perms.almogOil.category_employees %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>الموظفين</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_employee_directory %}
+                      <a class="nav-link" id="item-8-1">دليل الموظفين</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_drivers %}
+                      <a class="nav-link" id="item-8-2">الموصلين</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_salary_accounts %}
+                      <a class="nav-link" id="item-8-3">حساب المرتبات</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_settlement_entries %}
+                      <a class="nav-link" id="item-8-4">قيود التسوية</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_emp_reports %}
+                      <a class="nav-link" id="item-8-5">تقارير</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_settlement_reports %}
+                      <a class="nav-link" id="item-8-6">تقارير التسوية</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_attendance_absence %}
+                      <a class="nav-link" id="item-8-7">حضور وغياب</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            {% if perms.almogOil.category_storage %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>الخزينة</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_treasury_entries %}
+                      <a class="nav-link" id="item-9-1">قيود الخزينة</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_treasury_reports %}
+                      <a class="nav-link" id="item-9-2">تقارير الخزينة</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_request_value %}
+                      <a class="nav-link" id="item-9-3">طلب قيمة</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>الحسابات</a
+              >
+              <div class="sub-menu">
+                <a class="nav-link" href="#subitem10-1">Subitem 10-1</a>
+                <a class="nav-link" href="#subitem10-2">Subitem 10-2</a>
+              </div>
+            </li>
+            {% if perms.almogOil.category_users %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>المستخدمين</a
+              >
+              <div class="sub-menu">
+                  {% if perms.almogOil.template_users_management %}
+                      <a class="nav-link" id="item-11-1">ادارة المستخدمين</a>
+                  {% endif %}
+              </div>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a
+              >
+              <div class="sub-menu">
+                <a class="nav-link" href="#subitem12-1">Subitem 12-1</a>
+                <a class="nav-link" href="#subitem12-2">Subitem 12-2</a>
+              </div>
+            </li>
+          </ul>
+        </div>
 
       <!-- Main Content -->
       <div class="main-content flex-grow-1 mt-5">
+
+        <div class="stats-container" dir="rtl" {% if perms.almogOil.show_statistics %} style="display: block;"  {% else %} style="display: none;" {% endif %}>
+          <div class="row justify-content-center my-5">
+            <div class="col-md-8 col-lg-6 w-auto">
+              <div class=" p-4 rounded text-center text-white w-auto">
+                <h1 class="landing-welcome">مارين ترحب بكم</h1>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+
+
+              <div class="col">
+                  <div class="alert alert-success alert-dismissible fade show" id="successAlert" style="display: none;">
+                      <i class="fas fa-check-circle me-1"></i>
+                      <span id="alertMessage">تم حفظ التغييرات بنجاح!</span>
+                      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                  </div>
+
+                  <div class="row mb-4">
+                      <div class="col-xl-3 col-md-6 mb-4">
+                          <div class="card stats-card primary h-100 hover-scale">
+                              <div class="card-body">
+                                  <div class="row no-gutters align-items-center">
+                                      <div class="col me-2">
+                                          <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                              إجمالي المبيعات</div>
+                                          <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-amount">$24,000</div>
+                                          <div class="mt-2 text-xs">
+                                              <span class="text-success me-1" id="change-rate">
+                                                  <i class="fas fa-arrow-up me-1"></i>12%
+                                              </span>
+                                              <span class="text-nowrap">منذ الشهر الماضي</span>
+                                          </div>
+                                      </div>
+                                      <div class="col-auto">
+                                          <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-xl-3 col-md-6 mb-4">
+                          <div class="card stats-card success h-100 hover-scale">
+                              <div class="card-body">
+                                  <div class="row no-gutters align-items-center">
+                                      <div class="col me-2">
+                                          <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                              الطلبات الجديدة</div>
+                                          <div class="h5 mb-0 font-weight-bold text-gray-800" id="new-orders-count">24</div>
+                                          <div class="mt-2 text-xs">
+                                              <span class="text-success me-1" id="percentage-increase">
+                                                  <i class="fas fa-arrow-up me-1"></i>16%
+                                              </span>
+                                              <span class="text-nowrap">منذ الشهر الماضي</span>
+                                          </div>
+                                      </div>
+                                      <div class="col-auto">
+                                          <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-xl-3 col-md-6 mb-4">
+                          <div class="card stats-card info h-100 hover-scale">
+                              <div class="card-body">
+                                  <div class="row no-gutters align-items-center">
+                                      <div class="col me-2">
+                                          <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                              الطلبات المؤكدة</div>
+                                          <div class="h5 mb-0 font-weight-bold text-gray-800" id="shop-confirmed-count">18</div>
+                                          <div class="mt-2 text-xs">
+                                              <span class="text-nowrap">إجمالي الفواتير الشهر: </span>
+                                              <span class="font-weight-bold" id="current-month-invoice-count">24</span>
+                                          </div>
+                                      </div>
+                                      <div class="col-auto">
+                                          <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-xl-3 col-md-6 mb-4">
+                          <div class="card stats-card warning h-100 hover-scale">
+                              <div class="card-body">
+                                  <div class="row no-gutters align-items-center">
+                                      <div class="col me-2">
+                                          <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                              إجمالي المنتجات</div>
+                                          <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalItems">156</div>
+                                          <div class="mt-2 text-xs">
+                                              <span class="text-success me-1">
+                                                  <i class="fas fa-arrow-up me-1"></i>8%
+                                              </span>
+                                              <span class="text-nowrap">منذ الشهر الماضي</span>
+                                          </div>
+                                      </div>
+                                      <div class="col-auto">
+                                          <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="card mb-4 hover-scale">
+                      <div class="card-header d-flex justify-content-between align-items-center py-3">
+                          <h6 class="m-0 font-weight-bold text-primary">أحدث الطلبات</h6>
+                          <a href="/hozma/preorder-dashboard/" class="btn btn-sm btn-primary">
+                              <i class="fas fa-plus me-1"></i>عرض الكل
+                          </a>
+                      </div>
+                      <div class="card-body">
+                          <div class="table-responsive">
+                              <table class="table table-hover" id="preordersTable">
+                                  <thead>
+                                      <tr>
+                                          <th>رقم الطلب</th>
+                                          <th>العميل</th>
+                                          <th>التاريخ</th>
+                                          <th>المبلغ</th>
+                                          <th>الحالة</th>
+                                          <th>تآكيد</th>
+                                          <th>إجراءات</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody id="preordersBody">
+                                      <!-- Sample row - will be filled by JavaScript -->
+
+                                  </tbody>
+                              </table>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="row mb-4">
+                      <!-- Monthly Sales Chart -->
+                      <div class="col-lg-8 mb-4">
+                          <div class="card h-100 hover-scale">
+                              <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                  <h6 class="m-0 font-weight-bold text-primary">حجم المبيعات الشهري</h6>
+                                  <div class="dropdown no-arrow">
+                                      <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                                          data-bs-toggle="dropdown" aria-expanded="false">
+                                          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                      </a>
+                                      <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink">
+                                          <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                          <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                                          <li><a class="dropdown-item" href="#">طباعة التقرير</a></li>
+                                      </ul>
+                                  </div>
+                              </div>
+                              <div class="card-body">
+                                  <div class="chart-container">
+                                      <canvas id="salesChart1"></canvas>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <!-- Top Clients Chart -->
+                      <div class="col-lg-4 mb-4">
+                          <div class="card h-100 hover-scale">
+                              <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                  <h6 class="m-0 font-weight-bold text-primary">أفضل العملاء</h6>
+                                  <div class="dropdown no-arrow">
+                                      <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink2"
+                                          data-bs-toggle="dropdown" aria-expanded="false">
+                                          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                      </a>
+                                      <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink2">
+                                          <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                          <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                                      </ul>
+                                  </div>
+                              </div>
+                              <div class="card-body">
+                                  <div class="chart-container">
+                                      <canvas id="clientsChart"></canvas>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="row">
+                      <!-- Top Items Table -->
+                      <div class="col-lg-12 mb-4">
+                          <div class="card h-100 hover-scale">
+                              <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                  <h6 class="m-0 font-weight-bold text-primary">أفضل العناصر مبيعاً</h6>
+                                  <div class="dropdown no-arrow">
+                                      <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink3"
+                                          data-bs-toggle="dropdown" aria-expanded="false">
+                                          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                      </a>
+                                      <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink3">
+                                          <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                          <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                                      </ul>
+                                  </div>
+                              </div>
+                              <div class="card-body">
+                                  <div class="table-responsive">
+                                      <table class="table table-hover">
+                                          <thead class="table-light">
+                                              <tr>
+                                                  <th>#</th>
+                                                  <th>اسم المنتج</th>
+                                                  <th>الشركة</th>
+                                                  <th>الكمية</th>
+                                                  <th>إجمالي المبيعات</th>
+                                              </tr>
+                                          </thead>
+                                          <tbody id="topItemsTable">
+                                              <!-- Sample data - will be filled by JavaScript -->
+
+                                          </tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="row">
+                      <div class="col-md-6 mb-4">
+                          <div class="card h-100 hover-scale">
+                              <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                  <h6 class="m-0 font-weight-bold text-primary">أعلى المنتجات مبيعاً</h6>
+                              </div>
+                              <div class="card-body">
+                                  <div class="list-group list-group-flush" id="topProductsList">
+                                      <!-- Sample product items -->
+
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6 mb-4">
+                          <div class="card h-100 hover-scale">
+                              <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                  <h6 class="m-0 font-weight-bold text-primary">حالة المخزون</h6>
+                              </div>
+                              <div class="card-body">
+                                  <div class="row text-center">
+                                      <div class="col-4 mb-3">
+                                          <div class="inventory-status text-success">
+                                              <i class="fas fa-check-circle"></i>
+                                              <h5 class="font-weight-bold" id="availableItems">124</h5>
+                                              <p class="small">متاح</p>
+                                          </div>
+                                      </div>
+                                      <div class="col-4 mb-3">
+                                          <div class="inventory-status text-warning">
+                                              <i class="fas fa-exclamation-triangle"></i>
+                                              <h5 class="font-weight-bold" id="lowStock">18</h5>
+                                              <p class="small">مخزون منخفض</p>
+                                          </div>
+                                      </div>
+                                      <div class="col-4 mb-3">
+                                          <div class="inventory-status text-danger">
+                                              <i class="fas fa-times-circle"></i>
+                                              <h5 class="font-weight-bold" id="outOfStock">14</h5>
+                                              <p class="small">منتهية</p>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <div class="mt-3">
+                                      <h6 class="font-weight-bold mb-2">المنتجات التي تحتاج إعادة تخزين</h6>
+                                      <div class="progress mb-2" style="height: 20px;">
+                                          <div class="progress-bar bg-danger" role="progressbar" style="width: 25%">5 منتجات</div>
+                                          <div class="progress-bar bg-warning" role="progressbar" style="width: 35%">7 منتجات</div>
+                                          <div class="progress-bar bg-info" role="progressbar" style="width: 40%">8 منتجات</div>
+                                      </div>
+                                      <small class="text-muted">20 منتج يحتاج إلى إعادة تخزين خلال الأسبوع الحالي</small>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          <div class="row">
+              <!-- Monthly Purchases Chart -->
+              <div class="col-lg-8">
+                  <div class="card h-100">
+                      <div class="card-header d-flex justify-content-between align-items-center py-3">
+                          <h6 class="m-0 font-weight-bold text-primary">المشتريات الشهرية</h6>
+                          <div class="dropdown no-arrow">
+                              <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink1"
+                                  data-bs-toggle="dropdown" aria-expanded="false">
+                                  <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                              </a>
+                              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink1">
+                                  <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                  <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                              </ul>
+                          </div>
+                      </div>
+                      <div class="card-body">
+                          <div class="chart-container">
+                              <canvas id="monthlyPurchasesChart"></canvas>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Top Vendors Chart -->
+              <div class="col-lg-4">
+                  <div class="card h-100">
+                      <div class="card-header d-flex justify-content-between align-items-center py-3">
+                          <h6 class="m-0 font-weight-bold text-primary">أفضل الموردين</h6>
+                          <div class="dropdown no-arrow">
+                              <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink2"
+                                  data-bs-toggle="dropdown" aria-expanded="false">
+                                  <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                              </a>
+                              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink2">
+                                  <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                              </ul>
+                          </div>
+                      </div>
+                      <div class="card-body">
+                          <div class="chart-container">
+                              <canvas id="vendorsChart"></canvas>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          <div class="row mt-4">
+              <!-- Purchased Items with Profit -->
+              <div class="col-lg-12">
+                  <div class="card h-100">
+                      <div class="card-header d-flex justify-content-between align-items-center py-3">
+                          <h6 class="m-0 font-weight-bold text-primary">أفضل العناصر المشتراة مع هامش الربح</h6>
+                          <div class="dropdown no-arrow">
+                              <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink3"
+                                  data-bs-toggle="dropdown" aria-expanded="false">
+                                  <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                              </a>
+                              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuLink3">
+                                  <li><a class="dropdown-item" href="#">عرض التفاصيل</a></li>
+                                  <li><a class="dropdown-item" href="#">تصدير البيانات</a></li>
+                              </ul>
+                          </div>
+                      </div>
+                      <div class="card-body">
+                          <div class="table-responsive">
+                              <table class="table table-hover">
+                                  <thead class="table-light">
+                                      <tr>
+                                          <th>#</th>
+                                          <th>اسم المنتج</th>
+                                          <th>الشركة</th>
+                                          <th>الكمية</th>
+                                          <th>إجمالي السعر</th>
+                                          <th>إجمالي التكلفة</th>
+                                          <th>الربح</th>
+                                          <th>هامش الربح %</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody id="purchasedItemsTable">
+                                      <!-- Will be filled by JavaScript -->
+                                  </tbody>
+                              </table>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+
+
         <div class="container-fluid custom-height d-flex justify-content-center align-items-center">
           <div class="container rounded-circle image-container">
             <img
@@ -1044,11 +1674,23 @@
             />
           </div>
         </div>
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-black text-white d-flex align-items-center justify-content-center" >
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto">
+                    <span>حقوق النشر &copy; مارين 2025</span>
+                </div>
+            </div>
+
+        </footer>
       </div>
     </div>
 
     <!-- Bootstrap Bundle (includes Popper.js) -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>  -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
     //const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
@@ -1380,6 +2022,574 @@
             console.error("Error logging out:", error);
           });
       }
+
+      //////analtytic and statistics
+
+async function loadAnalytics() {
+    const response = await fetch("http://45.13.59.226/hozma/api/analytics/items/?period=300");
+    const data = await response.json();
+
+    // Inventory stats
+    document.getElementById('totalItems').textContent = data.inventory_stats.total_items;
+    document.getElementById('availableItems').textContent = data.inventory_stats.available_items;
+    document.getElementById('outOfStock').textContent = data.inventory_stats.out_of_stock;
+    document.getElementById('lowStock').textContent = data.inventory_stats.low_stock;
+
+    /*// Sales Chart
+    new Chart(document.getElementById('salesChart'), {
+        type: 'line',
+        data: {
+            labels: data.sales_trends.map(s => new Date(s.day).toLocaleDateString('ar-EG')),
+            datasets: [{
+                label: 'إجمالي المبيعات',
+                data: data.sales_trends.map(s => s.total_sales),
+                borderColor: '#0d6efd',
+                fill: false,
+                tension: 0.3
+            }]
+        },
+        options: {
+            plugins: { legend: { display: true } },
+            responsive: true
+        }
+    });*/
+
+    // Payment Methods (source_analysis)
+    /*
+    new Chart(document.getElementById('paymentMethodsChart'), {
+        type: 'doughnut',
+        data: {
+            labels: data.source_analysis.map(s => s.buysource),
+            datasets: [{
+                data: data.source_analysis.map(s => s.total_sales),
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#28a745', '#6f42c1']
+            }]
+        }
+    });
+
+    // Categories chart
+    new Chart(document.getElementById('categoriesChart'), {
+        type: 'bar',
+        data: {
+            labels: data.categories.map(c => c.itemmain || 'غير معروف'),
+            datasets: [{
+                label: 'عدد العناصر',
+                data: data.categories.map(c => c.count),
+                backgroundColor: '#198754'
+            }]
+        }
+    });
+
+    // Price Ranges
+    new Chart(document.getElementById('priceRangeChart'), {
+        type: 'pie',
+        data: {
+            labels: data.price_ranges.map(p => p.price_range),
+            datasets: [{
+                data: data.price_ranges.map(p => p.count),
+                backgroundColor: ['#ffc107', '#dc3545', '#17a2b8', '#6610f2', '#20c997']
+            }]
+        }
+    });*/
+
+    // Top Products
+    const topList = document.getElementById("topProductsList");
+      topList.innerHTML = ""; // Clear existing list
+      data.top_items.forEach(item => {
+        const li = document.createElement("div");
+        li.className = "list-group-item d-flex align-items-center";
+        li.innerHTML = `
+            <div class="flex-grow-1">
+                <h6 class="mb-1">${item.itemname}</h6>
+                <small class="text-muted">تم بيع ${item.total_sales} قطعة</small>
+            </div>
+            <span class="badge bg-primary rounded-pill">${item.total_sales}</span>
+        `;
+        topList.appendChild(li);
+    });
+
+    // Recent Orders Chart (bar chart horizontal)
+    const recentOrders = data.recent_orders;
+    const itemLabels = recentOrders.map(item => item.itemname);
+    const buyPrices = recentOrders.map(item => item.buyprice);
+    const buySources = recentOrders.map(item => item.buysource);
+
+    /*const ctx = document.getElementById("recentOrdersChart").getContext("2d");
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: itemLabels,
+            datasets: [{
+                label: "سعر الشراء",
+                data: buyPrices,
+                backgroundColor: "rgba(54, 162, 235, 0.7)",
+                borderColor: "rgba(54, 162, 235, 1)",
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            return "المصدر: " + buySources[context.dataIndex];
+                        }
+                    }
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "السعر"
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "المنتج"
+                    }
+                }
+            }
+        }
+    });*/
+}
+
+loadAnalytics();
+
+
+// Fetch top products
+    /*customFetch('http://45.13.59.226/hozma/api/top-products/')
+      .then(response => response.json())
+      .then(data => {
+        const topProductsList = document.getElementById('topProductsList');
+        data.products.forEach(product => {
+            const item = document.createElement('li');
+            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+            item.innerHTML = `
+                ${product.name}
+                <span class="badge bg-primary rounded-pill">${product.sales} مبيعاً</span>
+            `;
+            topProductsList.appendChild(item);
+        });
+    });*/
+
+        // Example JavaScript for form submission
+       /* document.getElementById('productForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('successAlert').style.display = 'block';
+            setTimeout(function() {
+                document.getElementById('successAlert').style.display = 'none';
+            }, 3000);
+        });*/
+
+        customFetch("http://45.13.59.226/hozma/api/preorders/")
+  .then(response => response.json())
+  .then(data => {
+    const tbody = document.getElementById("preordersBody");
+
+    // Get the last 4 preorders
+    const preorders = data.preorders.slice(-4).reverse(); // To show newest at top
+
+    preorders.forEach(order => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+  <td>${order.invoice_no.toString()}</td>
+
+  <td>${order.client_name}</td>
+  <td>${new Date(order.date_time).toLocaleDateString('en-UK')}</td>
+  <td>${parseFloat(order.amount).toLocaleString('en-US')} د٫ل</td>
+  <td>
+    <span class="badge bg-warning text-dark">${order.invoice_status}</span></td>
+     <td>
+        <span class="badge ${order.shop_confrim ? 'bg-success' : 'bg-danger'}">
+      ${order.shop_confrim ? 'تم التأكيد' : 'غير مؤكد'}
+    </span>
+  </td>
+  <td><a href="/hozma/preorder-detail/${order.invoice_no}/" class="btn btn-sm btn-edit">التفاصيل</a></td>
+`;
+
+      tbody.appendChild(row);
+    });
+  })
+  .catch(error => {
+    console.error("Failed to load preorders:", error);
+  });
+
+  customFetch('http://45.13.59.226/hozma/api/invoice-summary/')
+        .then(response => response.json())
+        .then(data => {
+            const totalAmount = data.total_amount.toLocaleString('EN-UK', { style: 'currency', currency: 'LYD' });
+            const changeRate = data.change_rate;
+
+            // Update the amount
+            document.getElementById('total-amount').textContent = totalAmount;
+
+            // Update the change rate
+            const rateElement = document.getElementById('change-rate');
+            rateElement.innerHTML = `
+                <i class="fas ${changeRate >= 0 ? 'fa-caret-up text-success' : 'fa-caret-down text-danger'}"></i>
+                ${Math.abs(changeRate)}%
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching invoice summary:', error);
+            document.getElementById('total-amount').textContent = 'خطأ في التحميل';
+            document.getElementById('change-rate').textContent = '';
+        });
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+    customFetch('http://45.13.59.226/hozma/api/invoice-stats/')  // Replace with your actual API endpoint
+        .then(res => res.json())
+        .then(data => {
+            // Update the number of new orders
+            document.getElementById('new-orders-count').textContent = data.new_unconfirmed_orders_today;
+            // Update the shop confirmed count and set active color
+            document.getElementById('shop-confirmed-count').textContent = 'تم تأكيدها من قبل المتجر: ' + data.shop_confirmed_this_month;
+            let confirmedStatusElement = document.getElementById('shop-confirmed-count');
+            if (data.shop_confirmed_this_month > 0) {
+                confirmedStatusElement.classList.remove('text-danger');
+                confirmedStatusElement.classList.add('text-success'); // Green color for confirmed
+            } else {
+                confirmedStatusElement.classList.remove('text-success');
+                confirmedStatusElement.classList.add('text-danger'); // Red color for unconfirmed
+            }
+
+            // Update the total invoice count
+            document.getElementById('current-month-invoice-count').textContent = 'إجمالي الفواتير: ' + data.current_month_invoice_count;
+
+            // Update the percentage increase from last week
+            document.getElementById('percentage-increase').textContent = data.percentage_increase + '%';
+        })
+        .catch(err => console.error("Error loading stats:", err));
+});
+// Fetch inventory data
+    /*customFetch('http://45.13.59.226/hozma/api/inventory/')
+      .then(response => response.json())
+      .then(data => {
+        const inventoryTable = document.getElementById('inventoryTable');
+
+        data.products.forEach(product => {
+            const row = document.createElement('tr');
+
+            // Determine stock status
+            let statusBadge = '';
+            if(product.quantity > 10) {
+                statusBadge = '<span class="badge bg-success">متوفر</span>';
+            } else if(product.quantity > 0) {
+                statusBadge = '<span class="badge bg-warning text-dark">كمية محدودة</span>';
+            } else {
+                statusBadge = '<span class="badge bg-danger">نفذ من المخزون</span>';
+            }
+
+            row.innerHTML = `
+                <td><img src="${product.image || 'https://via.placeholder.com/50'}" width="50"></td>
+                <td>${product.name}</td>
+                <td>${product.price.toLocaleString()} د.ل</td>
+                <td>${product.quantity}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+
+            inventoryTable.appendChild(row);
+        });
+    });*/
+// Fetch sales trends and top items
+
+
+document.addEventListener('DOMContentLoaded', function() {
+        // Fetch data from API
+        fetch('http://45.13.59.226/hozma/api/sales-analysis/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(apiData => {
+                // Process monthly sales data
+                const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                const monthlySales = apiData.monthly_sales
+                    .filter(item => item.month !== null)
+                    .map(item => {
+                        const date = new Date(item.month);
+                        return {
+                            month: arabicMonths[date.getMonth()] + ' ' + date.getFullYear(),
+                            sales: item.total_sales
+                        };
+                    });
+
+                // Create Monthly Sales Chart
+                const salesCtx = document.getElementById('salesChart1').getContext('2d');
+                const salesChart = new Chart(salesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: monthlySales.map(item => item.month),
+                        datasets: [{
+                            label: 'إجمالي المبيعات',
+                            data: monthlySales.map(item => item.sales),
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                rtl: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'المبلغ: ' + context.raw.toLocaleString('en-UK') + 'د٫ل';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString('en-UK') + 'د٫ل';
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Process top clients data (take top 5)
+                const topClients = apiData.top_clients.slice(0, 5);
+
+                // Create Top Clients Chart
+                const clientsCtx = document.getElementById('clientsChart').getContext('2d');
+                const clientsChart = new Chart(clientsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: topClients.map(client => client.client_name),
+                        datasets: [{
+                            data: topClients.map(client => client.total_purchase),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 206, 86, 0.7)',
+                                'rgba(75, 192, 192, 0.7)',
+                                'rgba(153, 102, 255, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'left',
+                                rtl: true
+                            },
+                            tooltip: {
+                                rtl: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.raw.toLocaleString('en-UK') + 'د٫ل';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+
+                // Populate Top Items Table
+                const topItemsTable = document.getElementById('topItemsTable');
+                // Clear any existing rows first
+                topItemsTable.innerHTML = '';
+                apiData.top_items.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${item.name}</td>
+                        <td>${item.company || 'غير محدد'}</td>
+                        <td>${item.total_quantity}</td>
+                        <td>${item.total_price.toLocaleString('en-UK')} د.ل</td>
+                    `;
+                    topItemsTable.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                // You might want to display an error message to the user here
+                alert('حدث خطأ أثناء جلب البيانات. يرجى المحاولة مرة أخرى لاحقاً.');
+            });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+    fetch('http://45.13.59.226/hozma/api/purchase-analysis/')
+        .then(response => response.json())
+        .then(apiData => {
+            // Arabic months
+            const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+            // Monthly purchases
+            const monthlyPurchases = apiData.monthly_purchases
+                .filter(item => item.month !== null)
+                .map(item => {
+                    const date = new Date(item.month);
+                    return {
+                        month: arabicMonths[date.getMonth()] + ' ' + date.getFullYear(),
+                        amount: item.total_purchased
+                    };
+                });
+
+            // Draw Monthly Purchases Chart
+            const monthlyPurchasesCtx = document.getElementById('monthlyPurchasesChart').getContext('2d');
+            new Chart(monthlyPurchasesCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyPurchases.map(item => item.month),
+                    datasets: [{
+                        label: 'إجمالي المشتريات',
+                        data: monthlyPurchases.map(item => item.amount),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            rtl: true,
+                            callbacks: {
+                                label: context => 'المبلغ: ' + context.raw.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: value => value.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Top Vendors
+            const topVendors = apiData.top_vendors
+                .filter(vendor => vendor.source !== null && vendor.total_purchase > 0)
+                .slice(0, 5);
+
+            const vendorsCtx = document.getElementById('vendorsChart').getContext('2d');
+            new Chart(vendorsCtx, {
+                type: 'bar',
+                data: {
+                    labels: topVendors.map(v => v.source_obj__name || v.source),
+                    datasets: [{
+                        label: 'إجمالي المشتريات',
+                        data: topVendors.map(v => v.total_purchase),
+                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            rtl: true,
+                            callbacks: {
+                                label: context => 'المبلغ: ' + context.raw.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => value.toLocaleString('en-UK') + 'د٫ل'
+                            }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Purchased Items Table
+            const purchasedItemsTable = document.getElementById('purchasedItemsTable');
+            apiData.top_purchased_items.forEach((item, index) => {
+                const row = document.createElement('tr');
+                const totalPrice = item.total_price || 0;
+                const totalCost = item.total_cost || 0;
+                const profit = totalPrice - totalCost;
+
+                let profitMargin = 0;
+                if (totalCost > 0) profitMargin = ((profit) / totalCost) * 100;
+                else if (totalPrice > 0) profitMargin = 100;
+
+                let profitClass = 'profit-neutral';
+                if (profit > 0) profitClass = 'profit-positive';
+                else if (profit < 0) profitClass = 'profit-negative';
+
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.company || 'غير محدد'}</td>
+                    <td>${item.total_quantity}</td>
+                    <td>${totalPrice.toLocaleString('en-UK')} د.ل</td>
+                    <td>${totalCost.toLocaleString('en-UK')} د.ل</td>
+                    <td class="${profitClass}">${profit.toLocaleString('en-UK')} د.ل</td>
+                    <td class="${profitClass}">${profitMargin.toFixed(2)}%</td>
+                `;
+                purchasedItemsTable.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching purchase analysis:', error);
+        });
+});
+
+
+
     </script>
   </body>
 </html>

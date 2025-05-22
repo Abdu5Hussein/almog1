@@ -2360,8 +2360,10 @@ def users_management(request):
     for perm in permissions_list:
         permissions[perm] = request.user.has_perm(f"almogOil.{perm}")
 
+    employees = models.EmployeesTable.objects.all().values("name", "employee_id","phone")
     context = {
-        "Permissions": permissions
+        "Permissions": permissions,
+        "employees": employees,
     }
     return render(request, "users-management.html", context)
 
@@ -2498,3 +2500,19 @@ def hozmalogin(request):
         return redirect('item-for-inqury-page')
     else:
         return render(request, 'CarPartsTemplates/hozmalogin.html')
+
+
+@login_required
+def user_profile_template(request):
+    user = request.user
+    if not user.is_authenticated:
+        return redirect('login')
+
+    employee_id = request.session.get('emp_id')
+    if not employee_id:
+        return redirect('login')
+    employee = models.EmployeesTable.objects.get(employee_id=employee_id)
+    context = {
+        'employee': employee,
+    }
+    return render(request, 'user_profile_template.html', context)

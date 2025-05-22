@@ -18,6 +18,9 @@ from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParame
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny
+from django.core.paginator import Paginator
+from datetime import datetime, timedelta
+from django.utils.timezone import now
 
 
 @api_view(["GET"])
@@ -205,4 +208,76 @@ def show_preorders(request):
     return Response({
         'preorders': preorder_serializer.data,
         'preorder_items': preorder_items_serializer.data
+    })
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def show_preorders_v2(request):
+    # Get filters from request data
+    data = request.data
+    page = int(data.get('page', 1))
+    page_size = int(data.get('page_size', 10))
+    sort_by = data.get('sort_by', 'date_desc')  # Options: date_desc, date_asc, amount_desc, amount_asc, confirm_first, pending_first
+    status_filter = data.get('status_filter', 'all')  # confirmed, pending, all
+    date_filter = data.get('date_filter', 'all')  # today, week, month, all
+
+    queryset = almogOil_models.PreOrderTable.objects.all()
+
+    # Apply status filter
+    if status_filter == 'confirmed':
+        queryset = queryset.filter(shop_confrim=True)
+    elif status_filter == 'pending':
+        queryset = queryset.filter(shop_confrim=False)
+
+    # Apply date filter
+    if date_filter == 'today':
+        today = now().replace(hour=0, minute=0, second=0, microsecond=0)
+        queryset = queryset.filter(date_time__gte=today)
+    elif date_filter == 'week':
+        start_of_week = now() - timedelta(days=now().weekday())
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+        queryset = queryset.filter(date_time__gte=start_of_week)
+    elif date_filter == 'month':
+        start_of_month = now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        queryset = queryset.filter(date_time__gte=start_of_month)
+
+    # Apply sorting
+    if sort_by == 'date_desc':
+        queryset = queryset.order_by('-date_time')
+    elif sort_by == 'date_asc':
+        queryset = queryset.order_by('date_time')
+    elif sort_by == 'amount_desc':
+        queryset = queryset.order_by('-amount')
+    elif sort_by == 'amount_asc':
+        queryset = queryset.order_by('amount')
+    elif sort_by == 'confirm_first':
+        queryset = queryset.order_by('-shop_confrim')
+    elif sort_by == 'pending_first':
+        queryset = queryset.order_by('shop_confrim')
+
+    # Summary stats (before pagination)
+    total_count = queryset.count()
+    confirmed_count = queryset.filter(shop_confrim=True).count()
+    pending_count = total_count - confirmed_count
+
+    # Pagination
+    paginator = Paginator(queryset, page_size)
+    page_obj = paginator.get_page(page)
+
+    serializer = wholesale_serializers.PreOrderTableSerializer(page_obj, many=True)
+
+    return Response({
+        'preorders': serializer.data,
+        'summary': {
+            'total_orders': total_count,
+            'confirmed_orders': confirmed_count,
+            'pending_orders': pending_count
+        },
+        'pagination': {
+            'current_page': page,
+            'total_pages': paginator.num_pages,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous()
+        }
     })
