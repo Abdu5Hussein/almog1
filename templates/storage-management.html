@@ -547,6 +547,7 @@
                       type="radio"
                       id="client"
                       name="category"
+                      class="value-fixed"
                       value="عميل"
                     />
                   </div>
@@ -557,6 +558,18 @@
                       id="employee"
                       name="category"
                       value="موظف"
+                      class="value-fixed"
+                      checked
+                    />
+                  </div>
+                  <div class="d-inline p-2">
+                    <label for="other">مصاريف اخرى</label>
+                    <input
+                      type="radio"
+                      id="other"
+                      name="category"
+                      value="مصاريف اخرى"
+                      class="value-fixed"
                     />
                   </div>
                 </div>
@@ -574,9 +587,11 @@
                     <label for="deposit">ايداع</label>
                     <input
                       type="radio"
+                      class="value-fixed"
                       id="deposit"
                       name="transaction-type"
                       value="ايداع"
+                      checked
                     />
                   </div>
                   <div class="d-inline p-2">
@@ -585,6 +600,7 @@
                       type="radio"
                       id="withdraw"
                       name="transaction-type"
+                      class="value-fixed"
                       value="صرف"
                     />
                   </div>
@@ -632,7 +648,7 @@
                 </div>
                 <input
                   type="date"
-                  class="form-control"
+                  class="form-control value-fixed"
                   id="transaction-date"
                   placeholder="Enter value"
                   required
@@ -742,11 +758,11 @@
               >
                 <div class="d-inline p-2">
                   <label for="client">نقدا</label>
-                  <input type="radio" id="cash" name="payment" value="نقدا" />
+                  <input type="radio" id="cash" name="payment" value="نقدا" checked class="value-fixed" />
                 </div>
                 <div class="d-inline p-2">
                   <label for="employee">صك</label>
-                  <input type="radio" id="check" name="payment" value="صك" />
+                  <input type="radio" id="check" name="payment" value="صك" class="value-fixed"/>
                 </div>
               </div>
               <div
@@ -794,6 +810,8 @@
                     id="daily-add"
                     name="daily"
                     value="true"
+                    checked
+                    class="value-fixed"
                   />
                 </div>
                 <div class="d-inline p-2">
@@ -803,6 +821,7 @@
                     id="daily-remove"
                     name="daily"
                     value="false"
+                    class="value-fixed"
                   />
                 </div>
               </div>
@@ -850,11 +869,38 @@
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
       $(document).ready(function () {
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-        sessionStorage.clear();
-
         let today = new Date().toISOString().split("T")[0];
         document.getElementById("filter-date").value = today;
+        document.getElementById("transaction-date").value = today;
+
+        document.getElementById("other").addEventListener("change", function () {
+          if (this.checked) {
+            const select = document.getElementById("for-who");
+            let found = false;
+
+            for (let i = 0; i < select.options.length; i++) {
+              if (select.options[i].text.trim() === "مصاريف اخرى") {
+                select.selectedIndex = i;
+                choices.selectedIndex = i;
+                found = true;
+                console.log("Option 'مصاريف اخرى' selected");
+                console.log("Option found at index:", choices.selectedIndex);
+                console.log("Option found at index:", choices.getSelectedText);
+                break;
+              }
+            }
+
+            // Optional: Add the option if it doesn't exist
+            if (!found) {
+              const newOption = new Option("مصاريف اخرى", "other-expense");
+              select.add(newOption);
+              select.selectedIndex = select.options.length - 1;
+            }
+
+            // Optional: trigger a change event if needed
+            select.dispatchEvent(new Event("change"));
+          }
+        });
 
         //const form = document.getElementById("myForm");
         const withdrawRadios = document.getElementsByName("transaction-type");
@@ -891,7 +937,6 @@
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           })
             .then((response) => {
@@ -965,7 +1010,6 @@
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           })
           .then((response) => response.json())
@@ -1272,7 +1316,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1317,7 +1360,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1388,7 +1430,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(activeFilters),
           })
@@ -1433,7 +1474,6 @@
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           })
                 .then((response) => response.json())

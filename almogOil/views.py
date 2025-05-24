@@ -2508,11 +2508,17 @@ def user_profile_template(request):
     if not user.is_authenticated:
         return redirect('login')
 
-    employee_id = request.session.get('emp_id')
+    employee_id = request.session.get('user_id').replace("e-", "").strip()
     if not employee_id:
-        return redirect('login')
+        return JsonResponse({'error': f'Employee ID {employee_id} not found in session'}, status=400)
+
     employee = models.EmployeesTable.objects.get(employee_id=employee_id)
+    try:
+        client = models.AllClientsTable.objects.get(clientid=employee.user_id)
+    except models.AllClientsTable.DoesNotExist:
+        client = None
     context = {
         'employee': employee,
+        'client': client or None,
     }
     return render(request, 'user_profile_template.html', context)

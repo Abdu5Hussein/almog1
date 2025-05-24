@@ -21,7 +21,7 @@ urlpatterns = [
     path('hozmatrack-order/', views.track_order, name='track_order'),
     path('hozmareturn-policy/', views.return_policy, name='return_policy'),
     path('hozmafaq/', views.faq, name='faq'),
-    path('invoice/', views.Invoice, name='invoice'),
+   path('invoice/<str:invoice_no>/', views.invoice, name='invoice_view'),
     path('hozmalogin/', views.hozmalogin, name='hozmalogin'),
     path('hozmaterms-conditions/', views.terms_conditions, name='terms_conditions'),
     path('products/<int:pno>/', api_views.item_detail_view, name='item_detail'),
@@ -70,9 +70,11 @@ urlpatterns = [
     path('api/purchase-analysis/', HozmaApi_views.purchase_analysis, name='purchase-analysis'),
     path('api/oems/', HozmaApi_views.create_oem_entry, name='create-oem-entry'),
     path('Item_Dashboard/', views.Item_Dashboard, name='Item_Dashboard'),
+     path('api/preorder/<int:invoice_no>/', HozmaApi_views.get_preorder_with_items_and_client, name='preorder-detail'),
     path('api/item/<str:pno>/details/', HozmaApi_views.item_detail_api, name='item_detail_api'),
     path('api/company-products/', HozmaApi_views.unique_company_products, name='unique-company-products'),
     path('check-preorder-related/<int:buy_invoice_id>/', HozmaApi_views.get_related_preorders, name='check-preorder-related')
+   
     
 ]
 

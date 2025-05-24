@@ -9,11 +9,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>فاتورة الطلب - متجر قطع غيار السيارات</title>
   
-  <!-- Bootstrap RTL -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap RTL & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css"
+        rel="stylesheet"
+        integrity="sha384-9ndCyUa0R0hYJDrK+F5JOJBL30+NU6HBfe/djh+Yz2jLObOpxqCz4iZfvf5yDz70"
+        crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        rel="stylesheet" />
   
   <style>
     /* Invoice Styles */
@@ -199,39 +201,38 @@
   </style>
 </head>
 
-<body>
-  <!-- Invoice Header -->
-  <header class="invoice-header">
-    <div class="container text-center">
-      <h1 class="invoice-title">
-        <i class="bi bi-receipt"></i> فاتورة الطلب
-      </h1>
+<section dir="rtl">
+  <!-- ===== Header ===== -->
+  <header class="invoice-header text-center">
+    <div class="container">
+      <h1 class="invoice-title"><i class="bi bi-receipt"></i> فاتورة الطلب</h1>
       <p class="mt-3 mb-0">شكراً لثقتكم بنا - تم استلام طلبكم بنجاح</p>
     </div>
   </header>
 
   <div class="container mb-5">
-    <!-- Order Success Alert -->
-    <div class="alert alert-success order-success-alert d-flex align-items-center no-print" role="alert">
+    <!-- —— success alert —— -->
+    <div class="alert alert-success d-flex align-items-center no-print" role="alert">
       <i class="bi bi-check-circle-fill fs-4 me-3"></i>
       <div>
         <h5 class="alert-heading mb-1">تم استلام طلبك بنجاح!</h5>
         <p class="mb-0">سيتم إرسال تفاصيل الشحن إلى بريدك الإلكتروني عند تجهيز الطلب.</p>
       </div>
     </div>
-    
-    <div class="row">
+
+    <div class="row gy-4">
+      <!-- ========= main column ========= -->
       <div class="col-lg-8">
-        <!-- Order Details Card -->
+        <!-- —— order details —— -->
         <div class="invoice-card">
-          <div class="invoice-card-header">
+          <div class="invoice-card-header d-flex justify-content-between">
             <span><i class="bi bi-box-seam me-2"></i>تفاصيل الطلب</span>
-            <span class="badge bg-success badge-order-status">قيد المعالجة</span>
+            <span id="order-status-badge" class="badge bg-secondary badge-order-status">—</span>
           </div>
           <div class="invoice-card-body">
             <div class="table-responsive">
-              <table class="invoice-table">
-                <thead>
+              <table class="invoice-table table align-middle">
+                <thead class="table-light">
                   <tr>
                     <th>القطعة</th>
                     <th>السعر</th>
@@ -239,164 +240,56 @@
                     <th>المجموع</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <!-- Sample Order Item 1 -->
-                  <tr>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <img src="{% static 'images/parts/part1.jpg' %}" class="part-img-invoice me-3" alt="Part Image">
-                        <div>
-                          <div class="fw-bold">شمعة احتراق</div>
-                          <div class="text-muted small">رقم القطعة: NGK-1234</div>
-                          <div class="text-muted small">منشأ: اليابان</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>120 د.ل</td>
-                    <td>2</td>
-                    <td>240 د.ل</td>
-                  </tr>
-                  
-                  <!-- Sample Order Item 2 -->
-                  <tr>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <img src="{% static 'images/parts/part2.jpg' %}" class="part-img-invoice me-3" alt="Part Image">
-                        <div>
-                          <div class="fw-bold">فلتر هواء</div>
-                          <div class="text-muted small">رقم القطعة: BOSCH-5678</div>
-                          <div class="text-muted small">منشأ: ألمانيا</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>85 د.ل</td>
-                    <td>1</td>
-                    <td>85 د.ل</td>
-                  </tr>
-                  
-                  <!-- Summary Rows -->
-                  <tr class="summary-row">
-                    <td colspan="3" class="text-end">المجموع الجزئي:</td>
-                    <td>325 د.ل</td>
-                  </tr>
-                  <tr class="summary-row">
-                    <td colspan="3" class="text-end">رسوم الشحن:</td>
-                    <td>15 د.ل</td>
-                  </tr>
-                  <tr class="summary-row">
-                    <td colspan="3" class="text-end">الخصم:</td>
-                    <td>0 د.ل</td>
-                  </tr>
-                  <tr class="summary-row summary-row-total">
-                    <td colspan="3" class="text-end">المجموع الكلي:</td>
-                    <td>340 د.ل</td>
-                  </tr>
+                <tbody id="invoice-items-tbody">
+                  <!-- Dynamic content will be injected here -->
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-        
-        <!-- Shipping Details Card -->
+
+        <!-- —— shipping details —— -->
         <div class="invoice-card">
-          <div class="invoice-card-header">
-            <span><i class="bi bi-truck me-2"></i>تفاصيل الشحن</span>
-          </div>
+          <div class="invoice-card-header"><i class="bi bi-truck me-2"></i>تفاصيل الشحن</div>
           <div class="invoice-card-body">
-            <ul class="customer-details-list">
-              <li>
-                <span class="customer-details-label">طريقة الشحن:</span>
-                <span>الشحن السريع (2-3 أيام عمل)</span>
-              </li>
-              <li>
-                <span class="customer-details-label">عنوان التسليم:</span>
-                <span>طرابلس، حي الأندلس، شارع القدس، مبنى 12، شقة 3</span>
-              </li>
-              <li>
-                <span class="customer-details-label">تاريخ التوصيل المتوقع:</span>
-                <span>15 مايو 2023</span>
-              </li>
-              <li>
-                <span class="customer-details-label">ملاحظات:</span>
-                <span class="text-muted">لا توجد ملاحظات</span>
-              </li>
+            <ul id="shipping-details-list" class="list-unstyled mb-0">
+              <!-- Dynamic content will be injected here -->
             </ul>
           </div>
         </div>
       </div>
-      
+
+      <!-- ========= side column ========= -->
       <div class="col-lg-4">
-        <!-- Order Summary Card -->
+        <!-- —— order summary —— -->
         <div class="invoice-card">
-          <div class="invoice-card-header">
-            <span><i class="bi bi-info-circle me-2"></i>ملخص الطلب</span>
-          </div>
+          <div class="invoice-card-header"><i class="bi bi-info-circle me-2"></i>ملخص الطلب</div>
           <div class="invoice-card-body">
-            <ul class="customer-details-list">
-              <li>
-                <span class="customer-details-label">رقم الطلب:</span>
-                <span>#ORD-2023-45678</span>
-              </li>
-              <li>
-                <span class="customer-details-label">تاريخ الطلب:</span>
-                <span>10 مايو 2023 - 03:45 مساءً</span>
-              </li>
-              <li>
-                <span class="customer-details-label">طريقة الدفع:</span>
-                <span>
-                  <i class="bi bi-credit-card payment-method-icon"></i>
-                  بطاقة ائتمان (**** 4567)
-                </span>
-              </li>
-              <li>
-                <span class="customer-details-label">حالة الدفع:</span>
-                <span class="text-success">تم الدفع</span>
-              </li>
-              <li>
-                <span class="customer-details-label">حالة الطلب:</span>
-                <span class="text-warning">قيد المعالجة</span>
-              </li>
+            <ul id="order-summary-list" class="list-unstyled mb-0">
+              <!-- Dynamic content will be injected here -->
             </ul>
           </div>
         </div>
-        
-        <!-- Customer Details Card -->
+
+        <!-- —— customer details —— -->
         <div class="invoice-card">
-          <div class="invoice-card-header">
-            <span><i class="bi bi-person me-2"></i>معلومات العميل</span>
-          </div>
+          <div class="invoice-card-header"><i class="bi bi-person me-2"></i>معلومات العميل</div>
           <div class="invoice-card-body">
-            <ul class="customer-details-list">
-              <li>
-                <span class="customer-details-label">الاسم:</span>
-                <span>أحمد محمد</span>
-              </li>
-              <li>
-                <span class="customer-details-label">البريد الإلكتروني:</span>
-                <span>ahmed@example.com</span>
-              </li>
-              <li>
-                <span class="customer-details-label">رقم الهاتف:</span>
-                <span>+218 91 234 5678</span>
-              </li>
-              <li>
-                <span class="customer-details-label">العنوان:</span>
-                <span>طرابلس، حي الأندلس، شارع القدس، مبنى 12، شقة 3</span>
-              </li>
+            <ul id="customer-details-list" class="list-unstyled mb-0">
+              <!-- Dynamic content will be injected here -->
             </ul>
           </div>
         </div>
-        
-        <!-- Actions Card -->
-        <div class="invoice-card no-print">
-          <div class="invoice-card-body text-center">
+
+        <!-- —— actions —— -->
+        <div class="invoice-card no-print text-center">
+          <div class="invoice-card-body">
             <button class="btn print-invoice-btn text-white me-2" onclick="window.print()">
               <i class="bi bi-printer me-2"></i>طباعة الفاتورة
             </button>
             <a href="/hozma/tracking/" class="btn track-order-btn text-white">
               <i class="bi bi-geo-alt me-2"></i>تتبع الطلب
             </a>
-            
             <div class="mt-3">
               <a href="/hozma/products/" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-2"></i>العودة للمتجر
@@ -405,23 +298,170 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</section>
 
-  {% endblock %}
-    
-  {% block extra_js %}
-  <!-- JavaScript -->
+{% endblock %}
+
+{% block extra_js %}
+  <!-- jQuery + Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
-    // Function to handle the print button
-    function printInvoice() {
-      window.print();
+    /* =============== helpers =============== */
+    const PLACEHOLDER_IMG = "{% static 'images/parts/default-part.jpg' %}";
+
+    /** extract the first numeric segment from the current URL */
+    const getInvoiceNoFromUrl = () => {
+      return window.location.pathname.split('/').find(seg => /^\d+$/.test(seg)) || null;
+    };
+
+  
+
+    /* =============== main =============== */
+    document.addEventListener('DOMContentLoaded', async () => {
+      const invoiceNo = getInvoiceNoFromUrl();
+      if (!invoiceNo) return console.error('Invoice number not found in URL.');
+
+      try {
+        const res = await fetch(`http://45.13.59.226/hozma/api/preorder/${invoiceNo}/`);
+        if (!res.ok) throw new Error(`API responded ${res.status}`);
+
+        const data = await res.json();
+        fillInvoice(data);
+      } catch (err) {
+        console.error('Error fetching invoice:', err);
+      }
+    });
+
+    function fillInvoice(data) {
+      /* —— 1. status badge —— */
+      const badge = document.getElementById('order-status-badge');
+
+const statusMap = {
+  false: { label: 'قيد المعالجة', class: 'bg-warning' },
+  true: { label: 'مكتمل', class: 'bg-success' }
+};
+
+// Get the correct mapping based on shop_confirm
+const mapping = statusMap[data.shop_confrim] || { label: 'غير معروف', class: 'bg-secondary' };
+
+// Update the badge
+badge.textContent = mapping.label;
+badge.className = `badge badge-order-status ${mapping.class}`;
+
+      /* —— 2. items table —— */
+      const tbody = document.getElementById('invoice-items-tbody');
+      tbody.innerHTML = ''; // clear
+      let subtotal = 0;
+
+      data.preorderitems.forEach(item => {
+        const unit = parseFloat(item.dinar_unit_price || 0);
+        const qty = parseFloat(item.quantity || 0);
+        const total = unit * qty;
+        subtotal += total;
+
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <img src="${item.image || PLACEHOLDER_IMG}" class="part-img-invoice me-3" alt="part">
+                <div>
+                  <div class="fw-bold">${item.name}</div>
+                  <div class="text-muted small">رقم القطعة: ${item.pno}</div>
+                  <div class="text-muted small">منشأ: ${item.company}</div>
+                </div>
+              </div>
+            </td>
+            <td>${unit.toFixed(2)} د.ل</td>
+            <td>${qty}</td>
+            <td>${total.toFixed(2)} د.ل</td>
+          </tr>
+        `);
+      });
+
+      /* —— summary rows —— */
+const shipping = data.client.delivery_price || 0;
+const discount = data.client.discount || 0;
+const total = data.net_amount || 0;
+const subtotals = data.amount || 0;
+
+tbody.insertAdjacentHTML('beforeend', `
+  <tr class="summary-row">
+    <td colspan="3" class="text-end">المجموع الجزئي:</td>
+    <td>${parseFloat(subtotals).toFixed(2)} د.ل</td>
+  </tr>
+  <tr class="summary-row">
+    <td colspan="3" class="text-end">رسوم الشحن:</td>
+    <td>${parseFloat(shipping).toFixed(2)} د.ل</td>
+  </tr>
+  <tr class="summary-row">
+    <td colspan="3" class="text-end">الخصم:</td>
+    <td>${parseFloat(discount).toFixed(2)} د.ل</td>
+  </tr>
+  <tr class="summary-row summary-row-total">
+    <td colspan="3" class="text-end">المجموع الكلي:</td>
+    <td>${parseFloat(total).toFixed(2)} د.ل</td>
+  </tr>
+`);
+
+
+      /* —— 3. order summary list —— */
+      document.getElementById('order-summary-list').innerHTML = `
+        <li class="mb-2"><span class="fw-semibold">رقم الطلب:</span> #ORD-${data.invoice_no}</li>
+        <li class="mb-2"><span class="fw-semibold">تاريخ الطلب:</span> ${formatDate(data.date_time)}</li>
+        <li class="mb-2"><span class="fw-semibold">طريقة الدفع:</span> ${data.payment_status === 'اجل' ? 'الدفع عند الاستلام' : 'بطاقة ائتمان'}</li>
+        <li class="mb-2"><span class="fw-semibold">حالة الدفع:</span> 
+          <span class="${data.payment_status === 'اجل' ? 'text-warning' : 'text-success'}">
+            ${data.payment_status === 'اجل' ? 'غير مدفوع' : 'تم الدفع'}
+          </span>
+        </li>
+        <li><span class="fw-semibold">حالة الطلب:</span> ${data.shop_confrim ? 'تمت معالجة الطلب' : 'قيد المعالجة'}</li>
+
+      `;
+
+      /* —— 4. customer details —— */
+      document.getElementById('customer-details-list').innerHTML = `
+        <li class="mb-2"><span class="fw-semibold">الاسم:</span> ${data.client_name}</li>
+        <li class="mb-2"><span class="fw-semibold">البريد الإلكتروني:</span> ${data.client.email || 'غير متوفر'}</li>
+        <li class="mb-2"><span class="fw-semibold">رقم الهاتف:</span> ${data.client.phone || data.client.mobile || 'غير متوفر'}</li>
+        <li><span class="fw-semibold">العنوان:</span> ${data.client.address || 'غير متوفر'}</li>
+      `;
+
+      /* —— 5. shipping details —— */
+      document.getElementById('shipping-details-list').innerHTML = `
+  <li class="mb-2"><span class="fw-semibold">طريقة الشحن:</span> ${data.shipping_method || 'الشحن السريع'}</li>
+  <li class="mb-2"><span class="fw-semibold">عنوان التسليم:</span> ${data.client.address || '—'}</li>  ${data.client.geo_location ? `
+    <li class="mb-2">
+      <span class="fw-semibold">الموقع الجغرافي:</span>
+      <div class="mt-2">
+        <div id="map-container" style="height: 200px; width: 100%; border-radius: 8px; overflow: hidden;">
+          <iframe 
+            width="100%" 
+            height="100%" 
+            frameborder="0" 
+            scrolling="no" 
+            marginheight="0" 
+            marginwidth="0" 
+            src="https://maps.google.com/maps?q=${data.client.geo_location}&z=15&output=embed">
+          </iframe>
+        </div>
+        <small class="text-muted d-block mt-1">يمكنك النقر على الخريطة للتكبير</small>
+      </div>
+    </li>
+  ` : ''}
+  
+`;
     }
-    
-    // You can add more JavaScript here to dynamically populate the invoice
-    // with data from the cart/order when integrated with backend
+
+    /* helper: format ISO date to Arabic locale */
+    function formatDate(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('ar-LY', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+      } catch { return iso; }
+    }
   </script>
-  {% endblock %}
-</body>
-</html>
+{% endblock %}

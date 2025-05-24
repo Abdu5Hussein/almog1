@@ -189,6 +189,8 @@ function addToCartWithQuantity(pno, fileid, itemno, name, price, image = '', qua
   // Update the quantity if item already exists in the cart
   if (existingItem) {
     existingItem.quantity = quantity;
+    existingItem.stock = stock;
+
   } else {
     // Add new item to the cart if it doesn't exist
     cart.push({
@@ -198,7 +200,8 @@ function addToCartWithQuantity(pno, fileid, itemno, name, price, image = '', qua
       name,
       price: parseFloat(price),
       quantity: quantity,
-      image
+      image,
+      stock
     });
   }
 
@@ -288,20 +291,26 @@ function decrementQuantity(pno) {
   input.value = newValue;
   updateQuantity(pno, newValue);
 }
-
 function incrementCartQuantity(pno) {
   const item = cart.find(item => item.pno === pno);
   if (item) {
+    if (item.quantity >= item.stock) {
+      alert(`الحد الأقصى المتاح هو ${item.stock}.`);
+      return;
+    }
+
     item.quantity += 1;
     updateCart();
-    updateCartPageUI(); 
-    
+    updateCartPageUI();
+
     const qtyInput = document.getElementById(`qty-${pno}`);
     if (qtyInput) {
       qtyInput.value = item.quantity;
     }
   }
 }
+
+
 
 function decrementCartQuantity(pno) {
   const item = cart.find(item => item.pno === pno);
@@ -476,21 +485,18 @@ async function checkout() {
   let invoiceNo;
 
   try {
-    // Use customFetch to send the POST request
     const response = await customFetch('http://45.13.59.226/hozma/preorder/create/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-      credentials: 'include' // Ensure cookies are included in the request
+      credentials: 'include'
     });
   
-    // If response exists, parse the result
     if (response) {
       const result = await response.json();
   
-      // Check if the invoice was created successfully
       if (response.ok && result.invoice_no) {
         console.log("Invoice record created successfully:", result);
         invoiceNo = result.invoice_no;
@@ -507,65 +513,62 @@ async function checkout() {
     console.error("Error while creating invoice record:", error);
     alert("حدث خطأ أثناء إنشاء سجل الفاتورة. الرجاء المحاولة لاحقًا.");
   }
-  
 
   console.log("Invoice number:", invoiceNo);
   window.invoiceAutoId = invoiceNo;
 
   // Send each item one by one
-for (let item of cart) {
-  const itemData = {
-    pno: item.pno,
-    fileid: item.fileid,
-    invoice_id: invoiceNo,
-    itemvalue: item.quantity,
-    sellprice: parseFloat(item.price).toFixed(2)
-  };
+  for (let item of cart) {
+    const itemData = {
+      pno: item.pno,
+      fileid: item.fileid,
+      invoice_id: invoiceNo,
+      itemvalue: item.quantity,
+      sellprice: parseFloat(item.price).toFixed(2)
+    };
 
-  // Log the item data before sending
-  console.log("Sending item data:", itemData);
+    console.log("Sending item data:", itemData);
 
-  try {
-    // Use customFetch to send the POST request
-    const itemResponse = await customFetch('http://45.13.59.226/hozma/api/full_Sell_invoice_create_item/', {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(itemData),
-      credentials: 'include' // Ensure cookies are included in the request
-    });
-  
-    // Check if the response was successful and parse the result
-    // Check if the response was successful and parse the result
-    if (itemResponse) {
-      const itemResult = await itemResponse.json();
-      console.log("Server response for item:", itemResult);
-  
-      // Check if the response is not ok
-      if (!itemResponse.ok) {
-        console.error("Failed to add item:", itemResult); // Log the error
-        alert(`فشل في إضافة عنصر ${itemData.pno} إلى الفاتورة.`); // Show an error message to the user
-        return;
+    try {
+      const itemResponse = await customFetch('http://45.13.59.226/hozma/api/full_Sell_invoice_create_item/', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(itemData),
+        credentials: 'include'
+      });
+    
+      if (itemResponse) {
+        const itemResult = await itemResponse.json();
+        console.log("Server response for item:", itemResult);
+    
+        if (!itemResponse.ok) {
+          console.error("Failed to add item:", itemResult);
+          alert(`فشل في إضافة عنصر ${itemData.pno} إلى الفاتورة.`);
+          return;
+        }
       } else {
-        console.log("Item added:", itemResult); // Log the success
+        console.error("No response from server.");
+        alert("حدث خطأ في الاتصال بالخادم. الرجاء المحاولة لاحقًا.");
       }
-    } else {
-      console.error("No response from server.");
-      alert("حدث خطأ في الاتصال بالخادم. الرجاء المحاولة لاحقًا.");
+    } catch (error) {
+      console.error("Error while adding item:", error);
+      alert(`حدث خطأ أثناء إضافة عنصر ${itemData.pno}. الرجاء المحاولة لاحقًا.`);
     }
-  } catch (error) {
-    console.error("Error while adding item:", error);
-    alert(`حدث خطأ أثناء إضافة عنصر ${itemData.pno}. الرجاء المحاولة لاحقًا.`);
-  }
-  
-}  
-
-
+  }  
 
   // Clear cart
-  localStorage.removeItem('product_cart');
-  alert("تم إنشاء الفاتورة بنجاح!");
+  // Clear cart
+localStorage.removeItem('product_cart');
+
+// Store the invoice number for the invoice page to fetch
+localStorage.setItem('current_invoice_no', invoiceNo);
+
+// Redirect to the invoice page with the invoice number in the URL
+window.location.href = `/hozma/invoice/${invoiceNo}`;
+
+
 }
 
 

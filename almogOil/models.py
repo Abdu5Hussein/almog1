@@ -40,6 +40,8 @@ class AllClientsTable(models.Model):
     last_transaction_details = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
     last_transaction_amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     geo_location = models.CharField(max_length=200, blank=True, null=True)
+    delivery_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    discount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     # New fields
     username = models.CharField(max_length=150, unique=True,null=True)  # Ensure username is unique
     password = models.CharField(max_length=255,null=True)  # This will store the hashed password
@@ -896,6 +898,7 @@ class EmployeesTable(models.Model):
     is_available = models.BooleanField(default=True)
     has_active_order = models.BooleanField(default=False)
     fcm_token = models.TextField(null=True, blank=True)
+    user_id = models.IntegerField(unique=True, null=True)  # Unique user ID for the employee
 
 
     # New fields
@@ -1212,6 +1215,7 @@ class PreOrderTable(models.Model):
     client_balance = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     payment_status = models.CharField(max_length=60, blank=True, null=True)
     amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)
+    net_amount = models.DecimalField(max_digits=19, decimal_places=4, default=0)  # New field for net amount
     mobile = models.BooleanField(default=False)
     invoice_status = models.CharField(max_length=60, default="قيد المراجعة")
     reviewed_by = models.CharField(max_length=100, blank=True, null=True)

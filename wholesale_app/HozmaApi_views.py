@@ -470,9 +470,22 @@ def full_Sell_invoice_create_item(request):
 
 
             try:
-                invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
-                invoice.amount += Decimal(product.buyprice or 0) * Decimal(data.get("itemvalue") or 0)
-                invoice.save()
+             invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
+
+             item_value = Decimal(data.get("itemvalue") or 0)
+             buy_price = Decimal(product.buyprice or 0)
+             line_total = buy_price * item_value
+
+ 
+             invoice.amount += line_total
+
+  
+             discount = Decimal(invoice.client.discount or 0)
+             delivery_price = Decimal(invoice.client.delivery_price or 0)
+             amount = invoice.amount
+             invoice.net_amount = amount - (discount * amount) + delivery_price
+
+             invoice.save()
             except almogOil_models.PreOrderTable.DoesNotExist:
                 return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -2340,3 +2353,19 @@ def unique_company_products(request):
 def item_detail_api(request, pno):
     item = get_object_or_404(almogOil_models.Mainitem, pno=pno)
     return Response(products_serializers.MainitemSerializer(item).data)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def get_preorder_with_items_and_client(request, invoice_no):
+    try:
+        preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
+    except almogOil_models.PreOrderTable.DoesNotExist:
+        return Response({"error": "PreOrder not found"}, status=404)
+
+    serializer = wholesale_serializers.PreOrderTableSerializerCart(preorder)
+    return Response(serializer.data)
+
+
+    

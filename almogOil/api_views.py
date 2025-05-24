@@ -341,39 +341,31 @@ class EmployeesTableViewSet(viewsets.ModelViewSet):
                 if not request.user.has_perm('almogOil.add_employeestable'):
                     return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
 
-                # First, serialize and validate the employee data
-                employee_serializer = self.get_serializer(data=request.data)
-                if employee_serializer.is_valid():
-                    # Save employee data
-                    employee = employee_serializer.save()
+                # Step 1: Prepare and validate client data
+                client_data = request.data.copy()
+                client_data.pop('last_transaction', None)  # Optional cleanup
 
-                    # # Create the client instance linked to the employee
-                    # client_data = {
-                    #     'name': request.data.get('client_name'),
-                    #     'employee': employee,  # assuming you have a ForeignKey to Employee in the client model
-                    #     'username': request.data.get('username'),  # Using the username from the request
-                    #     'password': request.data.get('password'),  # Using the password from the request
-                    #     # Add other fields for client as needed
-                    # }
+                client_serializer = serializers.AllClientsTableSerializer(data=client_data)
+                if client_serializer.is_valid():
+                    client = client_serializer.save()  # Save the client first
 
-                    # Serialize the client data
-                    client_data = request.data.copy()  # Make a mutable copy of the request data
-                    client_data.pop('last_transaction', None)  # Remove 'last_transaction' if it exists
+                    # Step 2: Inject client.id as user_id into employee data
+                    employee_data = request.data.copy()
+                    employee_data['user_id'] = client.clientid  # Assuming clientid is the user_id
 
-                    client_serializer = serializers.AllClientsTableSerializer(data=client_data)
-                    if client_serializer.is_valid():
-                        # Save the client
-                        client_serializer.save()
+                    # Step 3: Validate and save employee data
+                    employee_serializer = self.get_serializer(data=employee_data)
+                    if employee_serializer.is_valid():
+                        employee = employee_serializer.save()
 
-                        # Respond with success and both employee and client data
                         return Response({
-                            "employee": employee_serializer.data,
                             "client": client_serializer.data,
+                            "employee": employee_serializer.data,
                         }, status=status.HTTP_201_CREATED)
                     else:
-                        return Response(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                        return Response(employee_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    return Response(employee_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

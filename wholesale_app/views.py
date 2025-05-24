@@ -113,8 +113,11 @@ def dashboard(request):
 def preorder_detail(request, invoice_no):
     return render(request, 'CarPartsTemplates/preorder-detail.html', {'invoice_no': invoice_no})  # This will render the PreOrder details page
 
-def Invoice(request):
-    return render(request, 'CarPartsTemplates/invoice.html')
+def invoice(request, invoice_no):
+    context = {
+        'invoice_no': invoice_no
+    }
+    return render(request, 'CarPartsTemplates/invoice.html', context)
 
 def Buyinvoice_management(request):
     #records = models.Buyinvoicetable.objects.all().values()

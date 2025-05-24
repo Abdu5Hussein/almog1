@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from almogOil import models as almogOil_models
 import logging
+from decimal import Decimal
 
 @receiver(post_save, sender=PreOrderItemsTable)
 def check_and_confirm_preorder(sender, instance, **kwargs):
@@ -39,7 +40,8 @@ def check_and_confirm_preorder(sender, instance, **kwargs):
             for_who="حزمة",
             date_time=timezone.now(),
             price_status="",
-            amount=preorder.amount,  # will be updated later
+            amount=preorder.amount,
+            net_amount=preorder.net_amount,  # will be updated later
         )
 
         total_amount = 0
@@ -68,7 +70,14 @@ def check_and_confirm_preorder(sender, instance, **kwargs):
                 current_quantity=item.current_quantity,
             )
 
-            total_amount += item.dinar_total_price or 0  # Handle None safely
+            total_amount += Decimal(item.dinar_total_price or 0)
+
+# Safely handle discount and delivery_price
+            discount = Decimal(preorder.client.discount or 0)
+            delivery_price = Decimal(preorder.client.delivery_price or 0)
+
+# Calculate net total
+            net_Total = total_amount - (total_amount * discount) + delivery_price 
 
             try:
                 mainitem = almogOil_models.Mainitem.objects.get(pno=item.pno)
@@ -80,4 +89,5 @@ def check_and_confirm_preorder(sender, instance, **kwargs):
         preorder.shop_confrim = True
         preorder.invoice_status = "تم شراءهن المورد"
         preorder.amount = total_amount
+        preorder.net_amount = net_Total
         preorder.save()

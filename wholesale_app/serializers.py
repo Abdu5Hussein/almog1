@@ -33,3 +33,24 @@ class OemTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.Oemtable
         fields = ['fileid', 'cname', 'cno', 'oemno']       
+
+
+
+class AllClientsTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.AllClientsTable
+        fields = '__all__'
+
+
+
+class PreOrderTableSerializerCart(serializers.ModelSerializer):
+    client = AllClientsTableSerializer()
+    preorderitems = serializers.SerializerMethodField()
+
+    class Meta:
+        model = almogOil_models.PreOrderTable
+        fields = '__all__'
+
+    def get_preorderitems(self, obj):
+        items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=obj)
+        return PreOrderItemsTableSerializer(items, many=True).data        
