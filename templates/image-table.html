@@ -1,11 +1,11 @@
 {% load static %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Product List</title>
+    <title>بيانات الاصناف - اضافة صورة</title>
     <!-- Link Bootstrap CSS -->
     <link
       rel="stylesheet"
@@ -20,36 +20,47 @@
   <div id="success-message" class="alert alert-success d-none" role="alert">
     <!-- Success message will be dynamically inserted here -->
   </div>
-      <h2 class="mb-4">Product List</h2>
+      <h2 class="mb-4">بيانات الاصناف - اضافة صورة</h2>
 
       <!-- Add Image Form outside of the table -->
       <div class="mb-4">
-        <h4>Add Product Image</h4>
+        <h4>اضافة صورة لصنف</h4>
         <form id="add-image-form" method="POST" enctype="multipart/form-data">
           {% csrf_token %}
           <div class="mb-3">
-            <label for="product-id" class="form-label">Product ID</label>
+            <label for="product-id" class="form-label">رقم الصنف (الرقم الخاص - pno)</label>
             <input
-              type="text"
+              type="hidden"
               id="product-id"
               class="form-control"
               name="product-id"
               required
               readonly
             />
+            <input
+              type="text"
+              id="pno"
+              class="form-control"
+              name="pno"
+              value="{{ pno }}"
+              required
+              readonly
+            />
           </div>
           <div class="mb-3">
-            <label for="product-image" class="form-label">Choose Image</label>
+            <label for="product-image" class="form-label">اختر صورة</label>
             <input
               type="file"
               class="form-control"
               id="product-image"
               name="image"
               accept="image/*"
+              dir="rtl"
+              lang="ar"
               required
             />
           </div>
-          <button type="submit" class="btn btn-primary">Add Image</button>
+          <button type="submit" class="btn btn-primary">اضافة الصورة</button>
         </form>
       </div>
       <!-- Modal for Viewing Image -->
@@ -63,7 +74,7 @@ aria-hidden="true"
 <div class="modal-dialog modal-dialog-centered">
   <div class="modal-content">
     <div class="modal-header">
-      <h5 class="modal-title" id="viewImageModalLabel">View Image</h5>
+      <h5 class="modal-title" id="viewImageModalLabel">عرض الصورة</h5>
       <button
         type="button"
         class="btn-close"
@@ -88,8 +99,8 @@ aria-hidden="true"
       <table class="table table-bordered table-striped">
         <thead class="table-dark">
           <tr>
-            <th>Images</th>
-            <th>Actions</th>
+            <th>الصور المرفقة</th>
+            <th>عمليات</th>
             <!-- New column for buttons -->
           </tr>
         </thead>
@@ -108,7 +119,7 @@ aria-hidden="true"
                       style="cursor: pointer;"
                     />
                     {% else %}
-                    <span class="text-muted">No image</span>
+                    <span class="text-muted">لا يوجد صورة</span>
                     {% endif %}
                   </td>
                   <td>
@@ -116,7 +127,7 @@ aria-hidden="true"
                     <form method="POST" class="d-inline delete-form">
                       {% csrf_token %}
                       <input type="hidden" name="delete-id" value="{{ image.fileid }}" />
-                      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                      <button type="submit" class="btn btn-danger btn-sm">مسح</button>
                     </form>
                   </td>
                 </tr>
@@ -140,7 +151,7 @@ aria-hidden="true"
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="editImageModalLabel">
-              Edit Product Image
+              تعديل صورة الصنف
             </h5>
             <button
               type="button"
@@ -159,7 +170,7 @@ aria-hidden="true"
               <input type="hidden" id="product-id-hidden" name="product-id" />
               <div class="mb-3">
                 <label for="product-image" class="form-label"
-                  >Choose New Image</label
+                  >اختر صورة جديدة</label
                 >
                 <input
                   type="file"
@@ -170,7 +181,7 @@ aria-hidden="true"
                 />
               </div>
               <button type="submit" class="btn btn-primary">
-                Save Changes
+                حفظ التغييرات
               </button>
             </form>
           </div>

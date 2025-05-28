@@ -383,7 +383,6 @@
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
       $(document).ready(function () {
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 
         // Initialize Tabulator
         table = new Tabulator("#users-table", {
@@ -521,7 +520,6 @@
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
               }
             })
       .then((response) => response.json())

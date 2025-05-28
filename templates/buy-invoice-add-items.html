@@ -881,7 +881,6 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-    const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
     get_invoice_items();
       function updateExchangeRate() {
         const currencyDropdown = document.getElementById("currency");
@@ -980,7 +979,6 @@
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
-            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(data),
         })
@@ -1124,7 +1122,6 @@
               headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken(),
-                'Authorization': `Bearer ${jwtToken_access}`,
               },
               body: JSON.stringify(data),
             })
@@ -1178,7 +1175,6 @@
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           });
 
@@ -1268,7 +1264,6 @@
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(), // Ensure CSRF token is included
-            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(data),
         })
@@ -1313,7 +1308,6 @@
               headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken(),
-                'Authorization': `Bearer ${jwtToken_access}`,
               },
               body: JSON.stringify(data),
             })
@@ -1361,7 +1355,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1426,7 +1419,6 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify({
               data: tableData,

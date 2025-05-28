@@ -852,13 +852,10 @@
       function fetchData(clientid) {
         const url = `get-account-statement?id=${clientid}`;
 
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-        console.log("jwt access token: " + jwtToken_access);
         customFetch(url, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
           }
         }).then((response) => response.json())
           .then((data) => {

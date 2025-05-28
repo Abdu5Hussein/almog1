@@ -404,7 +404,6 @@
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <script>
       $(document).ready(function () {
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 
         // Initialize Tabulator
         const table = new Tabulator("#users-table", {
@@ -521,7 +520,6 @@
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           })
               .then((response) => response.json())
@@ -602,7 +600,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -820,7 +817,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify({
               fileid: fileid,
@@ -894,7 +890,6 @@
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           })
       .then((response) => response.json())

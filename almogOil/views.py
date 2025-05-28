@@ -204,9 +204,15 @@ def ImageView(request):
             models.Imagetable.objects.create(productid=product_id, image=image, image_obj=image)
             # Redirect to the same view with the product_id in the query string
             return HttpResponseRedirect(f"{reverse('images')}?product_id={product_id}")
+    try:
+        product = models.Mainitem.objects.get(fileid=product_id)
+        pno_no = product.pno
+    except models.Mainitem.DoesNotExist:
+        messages.error(request, "Product not found.")
+        return redirect('images')
 
     # Render the image table template
-    return render(request, 'image-table.html', {'images': images})
+    return render(request, 'image-table.html', {'images': images,"pno": pno_no})
 
 @login_required
 @permission_required('almogOil.template_productdetails', raise_exception=True)
@@ -1013,10 +1019,12 @@ def safe_float(value, default=0.0):
 def ProductsReports(req):
     if req.method == 'POST':
         return JsonResponse({'message': 'Invalid request method.'}, status=405)
+
     company = models.Companytable.objects.all()
     mainType = models.Maintypetable.objects.all()
     subType = models.Subtypetable.objects.all()
     countries = models.Manufaccountrytable.objects.all()
+    sources = models.AllSourcesTable.objects.all().values('clientid', 'name')
     models_ = models.Modeltable.objects.all()
     columns = [field.name for field in models.Mainitem._meta.fields]
     column_visibility = {
@@ -1028,7 +1036,6 @@ def ProductsReports(req):
     'itemvalue':True,
     'buyprice':True,
     'itemplace':True,
-
     }
 
 
@@ -1041,15 +1048,45 @@ def ProductsReports(req):
         'countries':countries,
         'column_titles': COLUMN_TITLES,
         'column_visibility': column_visibility,
-        'models':models_
+        'models':models_,
+        'sources':sources
     }
     return render(req, 'products-reports.html', context)
 
 @login_required
 @permission_required('almogOil.template_local_item_reports', raise_exception=True)
 def PartialProductsReports(req):
-    users = []  # Fetch users or relevant data from your new model if needed
-    context = {'users': users}
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
+    countries = models.Manufaccountrytable.objects.all()
+    sources = models.AllSourcesTable.objects.all().values('clientid', 'name')
+    models_ = models.Modeltable.objects.all()
+    columns = [field.name for field in models.Mainitem._meta.fields]
+    column_visibility = {
+    'pno':True,
+    'companyproduct':True,
+    'replaceno':True,
+    'itemno':True,
+    'itemname':True,
+    'itemvalue':True,
+    'buyprice':True,
+    'itemplace':True,
+    }
+
+
+    #print(columns)  # Debugging to check the contents of columns
+    context = {
+        'company': company,
+        'columns': columns,
+        'mainType': mainType,
+        'subType':subType,
+        'countries':countries,
+        'column_titles': COLUMN_TITLES,
+        'column_visibility': column_visibility,
+        'models':models_,
+        'sources':sources
+    }
     return render(req, 'products-reports.html', context)
 
 @login_required
@@ -1159,8 +1196,7 @@ def account_statement(request):
             raise Http404("Client not found")
 
     records = models.TransactionsHistoryTable.objects.filter(
-        content_type=content_type,
-        object_id=client_id
+        client_object_id=client_id
     )
 
     context = {
@@ -1684,8 +1720,16 @@ def sell_invoice_add_items(request):
         except Exception as e:
             return JsonResponse({"success": False, "message": str(e)}, status=500)
     invoice = request.session.get('add_items_invoice')
+    company = models.Companytable.objects.values('fileid', 'companyname')
+    mainType = models.Maintypetable.objects.all()
+    subType = models.Subtypetable.objects.all()
+    countries = models.Manufaccountrytable.objects.all()
     context = {
         "invoice":invoice,
+        "company":company,
+        "mainType":mainType,
+        "subType":subType,
+        "countries":countries,
     }
     return render(request,'sell_invoice_add_items.html',context)
 
@@ -1732,7 +1776,7 @@ def sell_invoice_storage_management(request):
         "reviewer_name": invoice.reviewer_name  or "",
         "place": invoice.place  or "",
         "biller_name": invoice.biller_name  or "",
-        "delivered_date": invoice.delivered_date.strftime("%Y-%m-%d") if invoice.delivered_date else "",
+        "delivered_date": localtime(invoice.delivered_date).strftime("%Y-%m-%d") if invoice.delivered_date else "",
         "delivered_quantity": invoice.delivered_quantity  or 0,
         "deliverer_name": invoice.deliverer_name  or "",
         "office": invoice.office  or "",
@@ -1741,6 +1785,7 @@ def sell_invoice_storage_management(request):
         "final_note": invoice.notes  or "",
     }
     return render(request,'sell_invoice_storage_management.html',context)
+from django.utils.timezone import localtime
 
 @login_required
 @permission_required('almogOil.category_sell_invoice', raise_exception=True)
@@ -2165,7 +2210,7 @@ def request_payment_view(request):
 
     for req in requests:
         # Calculate balance from TransactionsHistoryTable
-        balance_data = models.TransactionsHistoryTable.objects.filter(object_id=req.client_id).aggregate(
+        balance_data = models.TransactionsHistoryTable.objects.filter(client_object=req.client).aggregate(
             total_debt=Sum('debt'),
             total_credit=Sum('credit')
         )
@@ -2522,3 +2567,68 @@ def user_profile_template(request):
         'client': client or None,
     }
     return render(request, 'user_profile_template.html', context)
+
+ARABIC_DAY_NAMES = {
+    'Saturday': 'السبت',
+    'Sunday': 'الأحد',
+    'Monday': 'الاثنين',
+    'Tuesday': 'الثلاثاء',
+    'Wednesday': 'الأربعاء',
+    'Thursday': 'الخميس',
+    'Friday': 'الجمعة',
+}
+
+@login_required
+def statement_paper_template(request):
+    today = timezone.now().date()
+
+    # Get today's deposits and withdrawals from the DB
+    deposits_qs = models.StorageTransactionsTable.objects.filter(transaction='ايداع', transaction_date=today)
+    withdrawals_qs = models.StorageTransactionsTable.objects.filter(transaction='صرف', transaction_date=today)
+
+    # Convert to list of dictionaries for template rendering
+    deposits = [
+        {
+            'code': f"{i + 1}-",
+            'date': deposit.transaction_date.strftime('%d/%m/%Y'),
+            'entry_type': deposit.transaction,
+            'payment_method': deposit.payment,
+            'beneficiary': deposit.person,
+            'amount': float(deposit.amount),  # ensure it's numeric
+            'notes': deposit.note
+        }
+        for i, deposit in enumerate(deposits_qs)
+    ]
+
+    withdrawals = [
+        {
+            'code': f"{i + 1}-",
+            'date': withdrawal.transaction_date.strftime('%d/%m/%Y'),
+            'entry_type': withdrawal.transaction,
+            'payment_method': withdrawal.payment,
+            'beneficiary': withdrawal.person,
+            'amount': float(withdrawal.amount),
+            'notes': withdrawal.note
+        }
+        for i, withdrawal in enumerate(withdrawals_qs)
+    ]
+
+    # Calculate totals
+    total_deposits = deposits_qs.aggregate(total=Sum('amount'))['total'] or 0
+    total_withdrawals = withdrawals_qs.aggregate(total=Sum('amount'))['total'] or 0
+    net_balance = total_deposits - total_withdrawals
+    english_day = today.strftime('%A')
+    arabic_day = ARABIC_DAY_NAMES.get(english_day, english_day)
+
+    context = {
+        'company_name': 'شركة مارين لاستيراد قطع غيار السيارات و زيوتها',
+        'report_title': 'تقرير بحركة الخزينة اليوم',
+        'report_date': today.strftime('%d/%m/%Y'),
+        'day_name': arabic_day,  # will return in English, you can convert it if needed
+        'deposits': deposits,
+        'withdrawals': withdrawals,
+        'total_deposits': f"{total_deposits:.3f}",
+        'total_withdrawals': f"{total_withdrawals:.3f}",
+        'net_balance': f"{net_balance:.3f}",
+    }
+    return render(request, 'statement-paper-template.html', context)

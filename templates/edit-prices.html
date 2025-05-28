@@ -574,7 +574,6 @@
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
       $(document).ready(function () {
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 
         // Initialize Tabulator
         table = new Tabulator("#users-table", {
@@ -611,39 +610,11 @@
         $("#users-table").on("dblclick", ".editable", function () {
           $(this).attr("contenteditable", "true").focus();
         });
-
-        /*$("#users-table").on("blur", ".editable", function () {
-          const cell = $(this);
-          const userId = cell.closest("tr").data("id");
-          const columnIndex = cell.index();
-          const newValue = cell.text().trim();
-
-          $.ajax({
-            url: "/update-user/",
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-              id: userId,
-              column: columnIndex,
-              value: newValue,
-            }),
-            success: function (response) {
-              console.log("Success:", response);
-            },
-            error: function (xhr, status, error) {
-              console.error("Error:", xhr.responseText);
-            },
-          });
-
-          cell.attr("contenteditable", "false");
-        });
-
-        $("#users-table").on("keydown", ".editable", function (event) {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            $(this).blur();
-          }
-        });*/
+        table.on("rowClick", function (e, row) {
+          console.log("Row clicked:", row.getData().pno);
+          const id = row.getData().pno;
+          console.log("sent pno: ", id);
+      });
 
   let currentPage = 1; // Tracks the current page
   let lastPage = false; // Indicates if the last page is reached
@@ -699,7 +670,6 @@
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
               }
             })
       .then((response) => response.json())

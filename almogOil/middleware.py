@@ -13,4 +13,10 @@ class RefreshTokenMiddleware(MiddlewareMixin):
                 max_age=15*60,  # 15 minutes
                 path='/'
             )
+
+        # If logout is required (tokens expired), delete both cookies
+        if getattr(request, 'logout_required', False):
+            response.delete_cookie('access_token', path='/')
+            response.delete_cookie('refresh_token', path='/')
+
         return response

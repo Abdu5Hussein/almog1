@@ -282,7 +282,7 @@ urlpatterns = [
     path('api/employees-api/<int:id>/edit-balance',api_views.Edit_employee_balance,name="employee-edit-balance"),
     path('lib/two_way/',api_views.two_way,name="two_way"),
     path('api/employees/<int:employee_id>/', api_views.get_employee_details, name='get_employee_details'),
-
+    path('api/create-category/', products_api_views.create_item_category, name='create-item-category'),
     path('api/balance-editions/user/<int:id>',api_views.Get_balance_editions_by_employee, name='balance-editions-for-user'),
     path('api/filter/balance-editions-api/',api_views.filterBalanceEditions, name='filter-balance-editions'),
     path('api/filter/employees-api/',api_views.filter_employees, name='filter-employees'),
@@ -293,6 +293,8 @@ urlpatterns = [
     path('api/user/user-status-and-all-permissions/get', api_views.get_user_status, name='get_user_status'),
     path('api/users/<int:id>/permissions', api_views.get_all_auth_user_permissions, name='get_user_permissions'),
     path('api/users/create-auth-user/', api_views.create_user, name='create_auth_user'),
+    path('api/categories/', products_api_views.list_item_categories, name='list-item-categories'),
+    path('print/today-treasury-statement/', views.statement_paper_template, name='statement_paper_template'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode

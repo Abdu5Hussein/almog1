@@ -1,31 +1,22 @@
-{% load static %} {% load custom_filters %}
+
+{% load static %}
+{% load custom_filters %}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>فاتورة بيع - بحث عن صنف</title>
-    <link
-      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
-      rel="stylesheet"
-    />
+    <link href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}" rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
-    <link
-      rel="stylesheet"
-      href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}"
-    />
-    <link
-      rel="stylesheet"
-      href="{% static 'tabulator/custom-tabulator.css' %}"
-    />
+    <link rel="stylesheet" href="{% static 'tabulator/tabulator_bootstrap5.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'tabulator/custom-tabulator.css' %}" />
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="{% static 'pdfmake-master/pdfmake.min.js' %}"></script>
     <script src="{% static 'pdfmake-master/vfs_fonts.js'%}"></script>
-
     <style>
       .dropdown {
         display: none;
-        /* Initially hidden */
         position: absolute;
         background-color: white;
         border: 1px solid #ccc;
@@ -36,84 +27,73 @@
         display: block;
       }
       .row {
-        direction: rtl; /* Set the direction of the row to right-to-left */
-            }
+        direction: rtl;
+      }
       .item-disabled {
-        pointer-events: none; /* Prevent clicks */
-        opacity: 0.6; /* Reduce visibility */
-        cursor: not-allowed; /* Show not-allowed cursor */
+        pointer-events: none;
+        opacity: 0.6;
+        cursor: not-allowed;
       }
-
-            .form-label,
+      .form-label,
       .form-control {
-        direction: ltr; /* Make sure inputs and labels align correctly within the form */
+        direction: ltr;
       }
-
       .button-row {
         display: flex;
-        justify-content: space-between; /* Distributes space evenly between buttons */
-        width: 100%; /* Full width of the parent container */
+        justify-content: space-between;
+        width: 100%;
       }
       .page-link {
-          text-align: center;
-          padding: 0.1rem 0.75rem;
-          height: 25px;
-          font-size: 15px;
-          color: #212529;
+        text-align: center;
+        padding: 0.1rem 0.75rem;
+        height: 25px;
+        font-size: 15px;
+        color: #212529;
       }
-
       .page-link-active {
-          background-color: #0d6efd;
-          color:rgb(255, 255, 255);
+        background-color: #0d6efd;
+        color: rgb(255, 255, 255);
       }
       .button-row .btn {
-        flex: 1; /* Each button takes up equal space */
-        margin: 0 5px; /* Optional: Add space between buttons */
+        flex: 1;
+        margin: 0 5px;
       }
-
       form label {
         margin-bottom: 0px;
       }
-
       th,
       td {
-        padding: 2px; /* Decrease padding */
-        font-size: 13px; /* Decrease font size */
-        border: 1px solid #ddd; /* Add borders for visibility */
+        padding: 2px;
+        font-size: 13px;
+        border: 1px solid #ddd;
       }
-
       .custom-table table {
-        border-collapse: collapse; /* Combine borders of adjacent cells */
+        border-collapse: collapse;
       }
-
       .custom-table th,
       .custom-table td {
-        padding: 0; /* Remove all padding */
+        padding: 0;
         padding-right: 5px;
-        margin: 0; /* Ensure no margins are applied */
-        height: auto; /* Allow cells to have minimal height */
+        margin: 0;
+        height: auto;
       }
-
-      .width-95{
-        min-width:95px !important;
-        max-width:95px !important;
+      .width-95 {
+        min-width: 95px !important;
+        max-width: 95px !important;
       }
-
       input.form-control {
-        padding: 5px; /* Decrease padding */
-        font-size: 12px; /* Decrease font size */
-        height: 30px; /* Set a fixed height (optional) */
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
         text-align: right;
         direction: rtl;
         border-radius: 0;
       }
-
       select.form-select {
-        padding: 5px; /* Decrease padding for select fields */
-        font-size: 12px; /* Decrease font size */
-        height: 30px; /* Set a fixed height for select fields (optional) */
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
       }
-
       h1,
       h2,
       h3,
@@ -123,7 +103,6 @@
         font-size: 15px;
         margin: 0;
       }
-
       html,
       body {
         height: 100%;
@@ -131,12 +110,12 @@
         text-align: right;
         font-size: 15px;
       }
-      .btn-filter{
-        color:black;
+      .btn-filter {
+        color: black;
       }
-      .btn-filter:hover{
-        color:black !important;
-        border:4px solid #0d6efd !important;
+      .btn-filter:hover {
+        color: black !important;
+        border: 4px solid #0d6efd !important;
       }
       body {
         background-color: #f5f5f5;
@@ -149,7 +128,6 @@
         -webkit-appearance: auto;
         -moz-appearance: auto;
         appearance: auto;
-
         -webkit-text-size-adjust: 100%;
         -webkit-tap-highlight-color: transparent;
         --bs-gutter-x: 1.5rem;
@@ -166,9 +144,7 @@
         line-height: 1.5;
         color: var(--bs-body-color);
         border: 1px solid #ced4da;
-        transition:
-          border-color 0.15s ease-in-out,
-          box-shadow 0.15s ease-in-out;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
         background: none;
         padding: 5px;
         font-size: 12px;
@@ -192,40 +168,32 @@
         width: 870px !important;
         max-width: 870px !important;
       }
-
       .btn-primary {
         width: 100%;
       }
-
       .editable {
         cursor: pointer;
         background-color: #f9f9f9;
       }
-
       .editable:focus {
         outline: none;
         background-color: #e6e6e6;
       }
-
       .custom-table {
         max-height: 230px;
         overflow-y: auto;
       }
-
       table {
         width: 100%;
         margin: 0px;
       }
-
       thead {
         background-color: #b3c9df;
         color: rgb(0, 0, 0);
         padding: 2px;
       }
-
       table thead th {
         position: sticky;
-
         z-index: 1;
       }
       .title-container {
@@ -242,169 +210,153 @@
     </style>
   </head>
   <body>
-     <div class="row container p-4">
-        <div class="col-2 d-flex flex-column align-items-center">
-            <button type="button" class="btn btn-primary m-1" onclick="window.close()">اغلاق</button>
-            <button type="button" class="btn btn-primary m-1" id="clear-btn">مسح</button>
-            <button type="button" class="btn btn-primary m-1" id="all-btn">الكل</button>
-            <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-1" style="background-color: #fdffff;">غير محضرة</button>
-            <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-2" style="background-color: #fffd82;">جاري التحضير</button>
-            <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-3" style="background-color: #f9a990;">روجعت</button>
-            <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-4" style="background-color: #00fe81;">سلمت</button>
-            <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-5" style="background-color: #7f8000;">س. جزئيا</button>
-            <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-6" style="background-color: #d5fef0;">ترجيع كلي</button>
-            <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-7" style="background-color: #dee7a0;">ترجيع جزئي</button>
-            <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}>طباعة</button>
-        </div>
-
-        <div class="col custome-width">
-               <!-- Form Section with 5 input columns -->
-            <div class="custom-form">
-                    <form id="firstForm" lang="ar">
-                    {% csrf_token %}
-
-                    <div class="row">
-                        <!-- First column -->
-                        <div class="col">
-                            <div class="input-group mb-1 d-flex align-items-center">
-                                        <div class="width-95 d-flex align-items-center">
-                                            <label for="storage-balance" class="form-label"
-                                                >اسم العميل</label
-                                            >
-                                        </div>
-                                        <select name="client" id="client" class="form-control text-end">
-                                            <option value="" selected>اختر عميل</option>
-                                            {% for x in clients %}
-                                            <option value="{{ x.clientid }}">{{ x.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                            </div>
-                            <div class="input-group  mb-1">
-                                <div class="width-95 d-flex align-items-center">
-                                    <label for="for-who" class="form-label">التاريخ</label>
-                                </div>
-                                <input type="date" class="form-control" id="from-date" value="{{ today }}" {% if perms.almogOil.fixed_date_prepare_sellinvoice %}disabled{% endif %} />
-                                <input type="date" class="form-control" id="to-date" value="{{ today }}" {% if perms.almogOil.fixed_date_prepare_sellinvoice %}disabled{% endif %} />
-                            </div>
-                        </div>
-
-                        <!-- second column -->
-                        <div class="col">
-                            <div class="input-group mb-1 d-flex align-items-center">
-                                <div class="width-95 d-flex align-items-center">
-                                    <label for="invoice-no" class="form-label">رقم الفاتورة</label>
-                                </div>
-                                <input type="text" class="form-control" name="invoice-no" id="invoice-no" >
-                            </div>
-                            <div class="input-group  mb-1 d-flex align-items-center text-center">
-                                <input type="checkbox" id="live-stop" />
-                                <div class="width-95 d-flex align-items-center">
-                                    <label for="live-stop" class="form-label" style="padding: 10px 10px 0px 0px">ايقاف مؤقت</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    </form>
-                    <!-- Modal -->
-                    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" inert>
-                      <div class="modal-dialog">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title" id="exampleModalLabel">تصدير البيانات</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                          </div>
-                          <div class="modal-body">اختر احدى خيارات التصدير</div>
-                          <div class="modal-footer">
-                            <button type="button" data-bs-dismiss="modal" id="export-btn-excel" class="btn btn-primary" style="width: 100px">
-                              excel تصدير
-                            </button>
-                            <button type="button" id="export-btn-pdf" class="btn btn-secondary" style="width: 100px">
-                              pdf تصدير
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
+    <div class="row container p-4">
+      <div class="col-2 d-flex flex-column align-items-center">
+        <button type="button" class="btn btn-primary m-1" onclick="window.close()">اغلاق</button>
+        <button type="button" class="btn btn-primary m-1" id="clear-btn">مسح</button>
+        <button type="button" class="btn btn-primary m-1" id="all-btn">الكل</button>
+        <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-1" style="background-color: #fdffff;">غير محضرة</button>
+        <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-2" style="background-color: #fffd82;">جاري التحضير</button>
+        <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-3" style="background-color: #f9a990;">روجعت</button>
+        <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-4" style="background-color: #00fe81;">سلمت</button>
+        <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-5" style="background-color: #7f8000;">س. جزئيا</button>
+        <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-6" style="background-color: #d5fef0;">ترجيع كلي</button>
+        <button type="button" class="btn btn-primary m-1 btn-filter" id="btn-7" style="background-color: #dee7a0;">ترجيع جزئي</button>
+        <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}>طباعة</button>
+      </div>
+      <div class="col custome-width">
+        <!-- Form Section with 5 input columns -->
+        <div class="custom-form">
+          <form id="firstForm" lang="ar">
+            {% csrf_token %}
+            <div class="row">
+              <!-- First column -->
+              <div class="col">
+                <div class="input-group mb-1 d-flex align-items-center">
+                  <div class="width-95 d-flex align-items-center">
+                    <label for="storage-balance" class="form-label">اسم العميل</label>
+                  </div>
+                  <select name="client" id="client" class="form-control text-end">
+                    <option value="" selected>اختر عميل</option>
+                    {% for x in clients %}
+                      <option value="{{ x.clientid }}">{{ x.name }}</option>
+                    {% endfor %}
+                  </select>
                 </div>
-                <div class="title-container mb-2">
-                    <h3 class="m-0">تقارير الخزينة</h3>
+                <div class="input-group  mb-1">
+                  <div class="width-95 d-flex align-items-center">
+                    <label for="for-who" class="form-label">التاريخ</label>
+                  </div>
+                  <input type="date" class="form-control" id="from-date" value="{{ today }}" {% if perms.almogOil.fixed_date_prepare_sellinvoice %}disabled{% endif %} />
+                  <input type="date" class="form-control" id="to-date" value="{{ today }}" {% if perms.almogOil.fixed_date_prepare_sellinvoice %}disabled{% endif %} />
                 </div>
-                <div class="d-flex justify-content-around">
-                    <nav aria-label="Page navigation example">
-                        <ul class="pagination invoices-pagination h-1">
-                        <p id="invoices-page-total" class="invoices-page-link item-disabled px-2">total of x pages</p>
-                        <li class="invoices-page-first"><a class="invoices-page-link page-link" href="#">First</a></li>
-                        <li class="invoices-page-prev"><a class="invoices-page-link page-link" href="#">Previous</a></li>
-                        <li class="invoices-page-item"><a class="invoices-page-link page-link" href="#">1</a></li>
-                        <li class="invoices-page-item"><a class="invoices-page-link page-link" href="#">2</a></li>
-                        <li class="invoices-page-item"><a class="invoices-page-link page-link" href="#">3</a></li>
-                        <li class="invoices-page-next"><a class="invoices-page-link page-link" href="#">Next</a></li>
-                        <li class="invoices-page-last"><a class="invoices-page-link page-link" href="#">Last</a></li>
-                        <select name="invoices-page-size" id="invoices-page-size" class="invoices-page-link mx-2" disabled>
-                        <option disabled value="">اختر حجم الصفحة</option>
-                        <option value="100">100</option><option value="200">200</option><option value="300">300</option></select>
-                        </ul>
-                    </nav>
+              </div>
+              <!-- second column -->
+              <div class="col">
+                <div class="input-group mb-1 d-flex align-items-center">
+                  <div class="width-95 d-flex align-items-center">
+                    <label for="invoice-no" class="form-label">رقم الفاتورة</label>
+                  </div>
+                  <input type="text" class="form-control" name="invoice-no" id="invoice-no" >
                 </div>
-                <!-- Table Section -->
-                <div class="custom-table mb-1">
-                    <div
-                    dir="rtl"
-                    id="invoices-table"
-                    class="table table-striped table-bordered table-hover"
-                    ></div>
+                <div class="input-group  mb-1 d-flex align-items-center text-center">
+                  <input type="checkbox" id="live-stop" />
+                  <div class="width-95 d-flex align-items-center">
+                    <label for="live-stop" class="form-label" style="padding: 10px 10px 0px 0px">ايقاف مؤقت</label>
+                  </div>
                 </div>
-                <div id="invoices-loader-element" class="d-none align-items-center justify-content-center mb-1" style="font-size: 13px; display: none;">
-                    <strong>Loading...</strong>
-                    <div class="spinner-border ml-auto mx-2" role="status" aria-hidden="true" style="height:1rem; width:1rem; animation-duration: 5s; "></div>
-                </div>
+              </div>
             </div>
+          </form>
+          <!-- Modal -->
+          <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" inert>
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">تصدير البيانات</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">اختر احدى خيارات التصدير</div>
+                <div class="modal-footer">
+                  <button type="button" data-bs-dismiss="modal" id="export-btn-excel" class="btn btn-primary" style="width: 100px">
+                    excel تصدير
+                  </button>
+                  <button type="button" id="export-btn-pdf" class="btn btn-secondary" style="width: 100px">
+                    pdf تصدير
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
+        <div class="title-container mb-2">
+          <h3 class="m-0">تقارير الخزينة</h3>
+        </div>
+        <div class="d-flex justify-content-around">
+          <nav aria-label="Page navigation example">
+            <ul class="pagination invoices-pagination h-1">
+              <p id="invoices-page-total" class="invoices-page-link item-disabled px-2">total of x pages</p>
+              <li class="invoices-page-first"><a class="invoices-page-link page-link" href="#">First</a></li>
+              <li class="invoices-page-prev"><a class="invoices-page-link page-link" href="#">Previous</a></li>
+              <li class="invoices-page-item"><a class="invoices-page-link page-link" href="#">1</a></li>
+              <li class="invoices-page-item"><a class="invoices-page-link page-link" href="#">2</a></li>
+              <li class="invoices-page-item"><a class="invoices-page-link page-link" href="#">3</a></li>
+              <li class="invoices-page-next"><a class="invoices-page-link page-link" href="#">Next</a></li>
+              <li class="invoices-page-last"><a class="invoices-page-link page-link" href="#">Last</a></li>
+              <select name="invoices-page-size" id="invoices-page-size" class="invoices-page-link mx-2" disabled>
+                <option disabled value="">اختر حجم الصفحة</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+              </select>
+            </ul>
+          </nav>
+        </div>
+        <!-- Table Section -->
+        <div class="custom-table mb-1">
+          <div dir="rtl" id="invoices-table" class="table table-striped table-bordered table-hover"></div>
+        </div>
+        <div id="invoices-loader-element" class="d-none align-items-center justify-content-center mb-1" style="font-size: 13px; display: none;">
+          <strong>Loading...</strong>
+          <div class="spinner-border ml-auto mx-2" role="status" aria-hidden="true" style="height:1rem; width:1rem; animation-duration: 5s; "></div>
+        </div>
+      </div>
+    </div>
     <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
-
     <script>
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-
-        const invoices_table = new Tabulator("#invoices-table", {
-        index: "invoice_no", // Use "fileid" as the unique row identifier
-        height: "auto", // Adjust height or set a fixed height
+      const invoices_table = new Tabulator("#invoices-table", {
+        index: "invoice_no",
+        height: "auto",
         layout: "fitColumns",
         selectable: true,
         columnHeaderVertAlign: "bottom",
-        data: [],//contextData.data, // Placeholder, will be loaded dynamically
+        data: [],
         columns: [
-                    {
-                        title: "تاريخ الاعداد",
-                        field: "invoice_date",
-                        width: 160
-                    },
-                    { title: "رقم الفاتورة", field: "invoice_no", headerSort: false ,width: 100},
-                    { title: "اسم العميل", field: "client_name" ,width: 100},
-                    { title: "أمر التسليم", field: "deliver_request",width: 90},
-                    { title: "حالة الفاتورة", field: "invoice_status",width: 90},
-                    { title: "ملاحظات", field: "notes",width: 100 }
-                ],
+          { title: "تاريخ الاعداد", field: "invoice_date", width: 160 },
+          { title: "رقم الفاتورة", field: "invoice_no", headerSort: false, width: 100 },
+          { title: "اسم العميل", field: "client_name", width: 100 },
+          { title: "أمر التسليم", field: "deliver_request", width: 90 },
+          { title: "حالة الفاتورة", field: "invoice_status", width: 90 },
+          { title: "ملاحظات", field: "notes", width: 100 }
+        ],
         placeholder: "No Data Available",
         rowFormatter: function (row) {
-          var rowData = row.getData(); // Get the row data
-          switch (row.getData().invoice_status){
-            case "لم تحضر": row.getElement().style.backgroundColor = "#fdffff" ; break;
-            case "جاري التحضير": row.getElement().style.backgroundColor = "#fffd82" ; break;
+          var rowData = row.getData();
+          switch (rowData.invoice_status) {
+            case "لم تحضر": row.getElement().style.backgroundColor = "#fdffff"; break;
+            case "جاري التحضير": row.getElement().style.backgroundColor = "#fffd82"; break;
             case "روجعت": row.getElement().style.backgroundColor = "#f9a990"; break;
             case "سلمت": row.getElement().style.backgroundColor = "#00fe81"; break;
             case "سلمت جزئيا": row.getElement().style.backgroundColor = "#7f8000"; break;
             case "ترجيع كلي": row.getElement().style.backgroundColor = "#d5fef0"; break;
             case "ترجيع جزئي": row.getElement().style.backgroundColor = "#dee7a0"; break;
           }
-          // You can add more conditions as needed
-        }, // Message when no data is present or after filtering
+        },
         rowClick: function (e, row) {
-          const clickedPno = row.getData().pno; // Get pno of the clicked row
+          const clickedPno = row.getData().pno;
           console.log("Clicked Pno:", clickedPno);
         },
         tableBuilt: function () {
@@ -412,64 +364,35 @@
         },
       });
 
-function getCSRFToken() {
-            const csrfInput = document.querySelector(
-              "[name=csrfmiddlewaretoken]"
-            );
-            return csrfInput ? csrfInput.value : "";
-}
-let childWindows = [];
-function openWindow(url,width = 600,height = 700) {
-        // Get the parent window's dimensions and position
+      function getCSRFToken() {
+        const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]");
+        return csrfInput ? csrfInput.value : "";
+      }
+
+      let childWindows = [];
+      function openWindow(url, width = 600, height = 700) {
         const parentWidth = window.innerWidth;
         const parentHeight = window.innerHeight;
         const parentLeft = window.screenX;
         const parentTop = window.screenY;
-
-        // Calculate the center position for the child window
         const left = parentLeft + (parentWidth - width) / 2;
         const top = parentTop + (parentHeight - height) / 2;
-
-        // Open a new child window
         const childWindow = window.open(
           url,
           "_blank",
           `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
         );
-
         if (!childWindow) {
           alert("Pop-up blocked! Please allow pop-ups for this website.");
           return;
         }
-
-        /* // Set the child window's size and disable resizing by enforcing it every time it's resized
-                      childWindow.addEventListener('resize', () => {
-                        // Enforce fixed size by resetting the size after any resize attempt
-                        childWindow.resizeTo(width, height);
-                      });*/
-
-        // Add the new child window to the array
         childWindows.push(childWindow);
-
-        // Monitor the child window's state
         const monitorChild = setInterval(() => {
           if (childWindow.closed) {
-            // Remove the closed window from the array
             childWindows = childWindows.filter((win) => win !== childWindow);
             clearInterval(monitorChild);
           }
         }, 300);
-
-        /*// Focus all child windows periodically
-                      setInterval(() => {
-                        childWindows.forEach(win => {
-                          if (!win.closed) {
-                            win.focus();
-                          }
-                        });
-                      }, 500);*/
-
-        // Close all child windows when the parent is closed
         window.onbeforeunload = function () {
           childWindows.forEach((win) => {
             if (!win.closed) {
@@ -477,7 +400,8 @@ function openWindow(url,width = 600,height = 700) {
             }
           });
         };
-}
+      }
+
       invoices_table.on("rowClick", function (e, row) {
         const hasInvoicePreparePermission = {{ perms.almogOil.prepare_input_sellinvoice|yesno:"true,false" }};
         if (!hasInvoicePreparePermission) {
@@ -486,488 +410,223 @@ function openWindow(url,width = 600,height = 700) {
         }
         console.log("Row clicked:", row.getData().autoid);
         const id = row.getData().invoice_no;
-        console.log("sent id: ",id);
-        openWindow("sell_invoice_storage_manage?inv="+ id,1000,700);
+        console.log("sent id: ", id);
+        openWindow("sell_invoice_storage_manage?inv=" + id, 1000, 700);
       });
-      ///////////
 
-  let currentInvoicesPage = 1; // Tracks the current page
-  let lastInvoicesPage = false; // Indicates if the last page is reached
-  let isLoading = false; // Prevents multiple fetch calls
-  const pageSize = 100; // Number of rows per page
-  const invoicesTableContainer = document.getElementById("invoices-table");// Table scroll container
-  // Function to fetch and append the next page of data
-  const fetchNextPageForInvoices = () => {
-    if (!lastInvoicesPage) {
-      currentInvoicesPage++;
-      console.log(`Fetching page ${currentInvoicesPage}...`);
-      console.log("fetching active url : ", active_url);
+      let currentInvoicesPage = 1;
+      let lastInvoicesPage = false;
+      let isLoading = false;
+      const pageSize = 100;
+      const invoicesTableContainer = document.getElementById("invoices-table");
 
-      if (active_url == "server_filtered_data") {
-        //console.log("apply filters current page: ",currentInvoicesPage);
-        applyFiltersForInvoices(currentInvoicesPage, pageSize);
-      } else {
-        fetchInvoicesFromServer({ page: currentInvoicesPage, size: pageSize });
-      }
-      //hideInvoicesLoader();
-    }
-  };
+      const fetchNextPageForInvoices = () => {
+        if (!lastInvoicesPage) {
+          currentInvoicesPage++;
+          console.log(`Fetching page ${currentInvoicesPage}...`);
+          console.log("fetching active url : ", active_url);
+          if (active_url == "server_filtered_data") {
+            applyFiltersForInvoices(currentInvoicesPage, pageSize);
+          } else {
+            fetchInvoicesFromServer({ page: currentInvoicesPage, size: pageSize });
+          }
+        }
+      };
 
-  // Scroll event listener
-  const handleScrollForInvoices = () => {
-    //console.log("scroll area");
-    const scrollPosition = invoicesTableContainer.scrollTop + invoicesTableContainer.clientHeight;
-    const scrollThreshold = invoicesTableContainer.scrollHeight - 2000; // Adjust threshold as needed
-    console.log("isLoading: ", isLoading);
-    console.log("lastInvoicesPage: ", lastInvoicesPage);
+      const handleScrollForInvoices = () => {
+        const scrollPosition = invoicesTableContainer.scrollTop + invoicesTableContainer.clientHeight;
+        const scrollThreshold = invoicesTableContainer.scrollHeight - 2000;
+        console.log("isLoading: ", isLoading);
+        console.log("lastInvoicesPage: ", lastInvoicesPage);
+        if (scrollPosition >= scrollThreshold && !lastInvoicesPage && !isLoading) {
+          console.log("scrollPosition: ", scrollPosition);
+          console.log("scrollThreshold: ", scrollThreshold);
+          console.log("scrollHeight: ", invoicesTableContainer.scrollHeight);
+          isLoading = true;
+          showInvoicesLoader();
+          fetchNextPageForInvoices();
+        }
+      };
 
-    if (scrollPosition >= scrollThreshold && !lastInvoicesPage && !isLoading) {
-      console.log("scrollPosition: ", scrollPosition);
-      console.log("scrollThreshold: ", scrollThreshold);
-      console.log("scrollHeight: ", invoicesTableContainer.scrollHeight);
-      //console.log("lastInvoicesPage: ",lastInvoicesPage);
-      //console.log("isLoading: ",isLoading);
-      isLoading = true;
-      showInvoicesLoader();
-      fetchNextPageForInvoices();
-    }
-  };
-  function updateInput(id,value){
+      function updateInput(id, value) {
         document.getElementById(id).value = value;
       }
-  function fetchInvoicesFromServer({ page = 1, size = 100 }) {
-    //if (isLoading) return; // Prevent fetch if already loading
-    //isLoading = true; // Set loading flag before initiating fetch
 
-    // Use the URL in your fetch request
-
-
-    console.time("fetchData"); // Start timer
-
-    customFetch(`fetch-sellinvoices?page=${page}&size=${size}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
-            },
+      function fetchInvoicesFromServer({ page = 1, size = 100 }) {
+        console.time("fetchData");
+        customFetch(`fetch-sellinvoices?page=${page}&size=${size}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Fetched Data:", data);
+            active_url = "server_Data_No_Filter";
+            console.log("active_url for pagination:", active_url);
+            console.time("tableTime");
+            if (page === 1) {
+              invoices_table.setData(data.data);
+              console.log("data set to the table");
+              currentInvoicesPage = 1;
+            } else {
+              let scrollPosition = invoicesTableContainer.scrollTop;
+              invoices_table.addData(data.data);
+              invoicesTableContainer.scrollTop = scrollPosition;
+              console.log("data added to the table");
+            }
+            console.timeEnd("tableTime");
+            lastInvoicesPage = data.page_no == data.last_page ? true : false;
+            console.time("PaginationTime");
+            updateInvoicesPagination(data.last_page, data.page_no);
+            console.timeEnd("PaginationTime");
+            return data;
           })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Fetched Data:", data);
-        active_url = "server_Data_No_Filter";
-        console.log("active_url for pagination:", active_url);
-        //console.log("page:", page);
+          .catch((error) => console.error("Error fetching data:", error))
+          .finally(() => {
+            console.timeEnd("fetchData");
+            isLoading = false;
+            hideInvoicesLoader();
+          });
+      }
 
-        console.time("tableTime");
-        //console.log("sort status: ", invoices_table.getDataCount());
-        if (page === 1) {
-          // For the first page, replace the existing data
-          invoices_table.setData(data.data);
-          console.log("data set to the table");
-          //console.log("getDataCount: ", invoices_table.getDataCount());
-          currentInvoicesPage = 1;
-        } else {
-          let scrollPosition = invoicesTableContainer.scrollTop; // Save scroll position
-          //let currentData = invoices_table.getData();  // Get current table data
-          //let combinedData = currentData.concat(data.data);  // Combine existing data with new data
-          invoices_table.addData(data.data);
-          invoicesTableContainer.scrollTop = scrollPosition;
-          console.log("data added to the table");
-          //console.log("getDataCount: ", invoices_table.getDataCount());
+      invoicesTableContainer.addEventListener("scroll", handleScrollForInvoices);
+
+      function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      }
+
+      applyFiltersForInvoices({ page: 1, size: 100 });
+      setInterval(function () {
+        const liveStopCheckbox = document.getElementById("live-stop");
+        if (!liveStopCheckbox.checked) {
+          applyFiltersForInvoices(1,100);
         }
-        console.timeEnd("tableTime");
-
-        // Update lastInvoicesPage flag
-        lastInvoicesPage = data.page_no == data.last_page ? true : false;
-        console.time("PaginationTime");
-        updateInvoicesPagination(data.last_page, data.page_no);
-        console.timeEnd("PaginationTime");
-
-
-        return data; // Return data for further processing
-      })
-      .catch((error) => console.error("Error fetching data:", error)).finally(() => {
-        console.timeEnd("fetchData"); // End the timer regardless of success or failure
-        isLoading = false; // Reset loading flag after fetch completes
-        hideInvoicesLoader();
-      });
-  }
-  // Attach the scroll event listener
-  invoicesTableContainer.addEventListener("scroll", handleScrollForInvoices);
-
-// Debounce function definition
-  function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
-
-  // Apply debounce to applyFilters with a 300ms delay
-  //const debouncedApplyFiltersForInvoices = debounce(() => applyFiltersForInvoices(1), 390);
-  fetchInvoicesFromServer({ page: 1, size: 100 });
+      }, 3000);
 
       function showInvoicesLoader() {
         const loader = document.getElementById("invoices-loader-element");
-        loader.classList.remove("d-none"); // Show the loader by removing d-none
-        loader.classList.add("d-flex"); // Ensure d-flex is applied for flexbox display
-        //console.log("loader shown");
+        loader.classList.remove("d-none");
+        loader.classList.add("d-flex");
       }
 
       function hideInvoicesLoader() {
         const loader = document.getElementById("invoices-loader-element");
-
-        // Set a delay (e.g., 2000ms = 2 seconds)
-        setTimeout(function() {
-          loader.classList.remove("d-flex"); // Remove d-flex
-          loader.classList.add("d-none"); // Hide the loader by adding d-none
-          //console.log("loader hidden after delay");
-        }, 3000); // 2000ms = 2 seconds delay
+        setTimeout(function () {
+          loader.classList.remove("d-flex");
+          loader.classList.add("d-none");
+        }, 3000);
       }
+
       function updateInvoicesPagination(lastInvoicesPage, currentInvoicesPage) {
-         const pagination = document.querySelector(".invoices-pagination");
-          const existingPageLinks = pagination.querySelectorAll(".invoices-page-item:not(:first-child):not(:last-child):not(#invoices-page-size)");
-          //console.log("existingPageLinks: ",existingPageLinks);
-
-          const startPage = Math.max(1, currentInvoicesPage);
-          const endPage = Math.min(lastInvoicesPage, startPage + 2);
-          //console.log("startPage: ",startPage);
-          //console.log("endPage: ",endPage);
-
-          let index = 0; // Track the current index in existing page items
-          for (let i = startPage; i <= endPage; i++) {
-              let pageItem;
-              if (index < existingPageLinks.length) {
-                   //console.log("if: done");
-                  // Update an existing item
-                  pageItem = existingPageLinks[index];
-                  pageItem.querySelector(".invoices-page-link").innerText = i;
-                  pageItem.querySelector(".invoices-page-link").setAttribute("data-page", i);
-              } else {
-                //console.log("else: done");
-                  // Add a new item if needed
-                  pageItem = document.createElement("li");
-                  pageItem.className = "invoices-page-item";
-                  pageItem.innerHTML = `<a class="invoices-page-link" href="#" data-page="${i}">${i}</a>`;
-                  pagination.insertBefore(pageItem, pagination.querySelector("li:last-child"));
-              }
-              pageItem.querySelector(".invoices-page-link").classList.toggle("page-link-active", i === currentInvoicesPage); // Set active class
-              index++;
-              //console.log("index: ",index);
+        const pagination = document.querySelector(".invoices-pagination");
+        const existingPageLinks = pagination.querySelectorAll(".invoices-page-item:not(:first-child):not(:last-child):not(#invoices-page-size)");
+        const startPage = Math.max(1, currentInvoicesPage);
+        const endPage = Math.min(lastInvoicesPage, startPage + 2);
+        let index = 0;
+        for (let i = startPage; i <= endPage; i++) {
+          let pageItem;
+          if (index < existingPageLinks.length) {
+            pageItem = existingPageLinks[index];
+            pageItem.querySelector(".invoices-page-link").innerText = i;
+            pageItem.querySelector(".invoices-page-link").setAttribute("data-page", i);
+          } else {
+            pageItem = document.createElement("li");
+            pageItem.className = "invoices-page-item";
+            pageItem.innerHTML = `<a class="invoices-page-link" href="#" data-page="${i}">${i}</a>`;
+            pagination.insertBefore(pageItem, pagination.querySelector("li:last-child"));
           }
-
-          // Remove any extra items beyond the new range
-          /*while (index < existingPageLinks.length) {
-              pagination.removeChild(existingPageLinks[index]);
-              index++;
-          }*/
-
-          // Update Previous button
-          const previousBtn = document.querySelector(".invoices-page-prev");
-          previousBtn.classList.toggle("item-disabled", currentInvoicesPage === 1);
-          previousBtn.querySelector(".invoices-page-link").setAttribute("data-page", currentInvoicesPage - 1);
-          //console.log("previousBtn: ",previousBtn);
-          // Update Next button
-          const nextBtn = document.querySelector(".invoices-page-next");
-          nextBtn.classList.toggle("item-disabled", currentInvoicesPage === endPage);
-          nextBtn.querySelector(".invoices-page-link").setAttribute("data-page", currentInvoicesPage + 1);
-          //console.log("nextBtn: ",nextBtn);
-          // Update First button
-          const firstBtn = document.querySelector(".invoices-page-first");
-          firstBtn.querySelector(".invoices-page-link").setAttribute("data-page", 1);
-          //console.log("firstBtn: ",firstBtn);
-          // Update Last button
-          const lastBtn = document.querySelector(".invoices-page-last");
-          lastBtn.querySelector(".invoices-page-link").setAttribute("data-page", lastInvoicesPage);
-          //console.log("lastBtn: ",lastBtn);
-          //update no of pages paragraph
-          document.getElementById("invoices-page-total").innerHTML = "تم تحميل "+ currentInvoicesPage + " من اجمالي " + lastInvoicesPage + " صفحات " ;
+          pageItem.querySelector(".invoices-page-link").classList.toggle("page-link-active", i === currentInvoicesPage);
+          index++;
+        }
+        const previousBtn = document.querySelector(".invoices-page-prev");
+        previousBtn.classList.toggle("item-disabled", currentInvoicesPage === 1);
+        previousBtn.querySelector(".invoices-page-link").setAttribute("data-page", currentInvoicesPage - 1);
+        const nextBtn = document.querySelector(".invoices-page-next");
+        nextBtn.classList.toggle("item-disabled", currentInvoicesPage === endPage);
+        nextBtn.querySelector(".invoices-page-link").setAttribute("data-page", currentInvoicesPage + 1);
+        const firstBtn = document.querySelector(".invoices-page-first");
+        firstBtn.querySelector(".invoices-page-link").setAttribute("data-page", 1);
+        const lastBtn = document.querySelector(".invoices-page-last");
+        lastBtn.querySelector(".invoices-page-link").setAttribute("data-page", lastInvoicesPage);
+        document.getElementById("invoices-page-total").innerHTML = "تم تحميل " + currentInvoicesPage + " من اجمالي " + lastInvoicesPage + " صفحات ";
       }
 
-
-      // Example usage with API response
-      //const response = { last_page: 10, page_no: 3 }; // Example data
-      //updateInvoicesPagination(response.last_page, response.page_no);
-
-      // Event listener for page links
       document.querySelector(".invoices-pagination").addEventListener("click", function (event) {
-    const target = event.target;
-    if (target.classList.contains("invoices-page-link") &&
-        !target.parentNode.classList.contains("disabled") &&
-        !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
-        event.preventDefault();
-        const selectedPage = parseInt(target.getAttribute("data-page"), 10);
-        const selectedPageSize = document.getElementById("page-size").value;
-
-        if(lastInvoicesPage){
-          return
-        }
-
-        // Fetch data for selected page
-        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
-        if(active_url=="server_filtered_data"){
+        const target = event.target;
+        if (
+          target.classList.contains("invoices-page-link") &&
+          !target.parentNode.classList.contains("disabled") &&
+          !target.closest("#page-size")
+        ) {
+          event.preventDefault();
+          const selectedPage = parseInt(target.getAttribute("data-page"), 10);
+          const selectedPageSize = document.getElementById("page-size").value;
+          if (lastInvoicesPage) {
+            return;
+          }
+          console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
+          if (active_url == "server_filtered_data") {
             currentInvoicesPage = selectedPage;
-            applyFiltersForInvoices(selectedPage,selectedPageSize);
-        }else{
+            applyFiltersForInvoices(selectedPage, selectedPageSize);
+          } else {
             currentInvoicesPage = selectedPage;
-            fetchInvoicesFromServer({page: selectedPage,size: selectedPageSize});
+            fetchInvoicesFromServer({ page: selectedPage, size: selectedPageSize });
+          }
         }
-    }
-});
+      });
 
-
-      // Event listener for page size change
       document.querySelector("#invoices-page-size").addEventListener("change", function () {
         const selectedPageSize = this.value;
         const selectedPage = document.querySelector(".invoices-page-link.page-link-active").innerHTML;
-
-        //console.log(`Selected page size: ${selectedPageSize}`);
         console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
-        if(active_url=="server_filtered_data"){
-            applyFiltersForInvoices(selectedPage,selectedPageSize);
-        }else{
-            fetchInvoicesFromServer({page: selectedPage,size: selectedPageSize});
+        if (active_url == "server_filtered_data") {
+          applyFiltersForInvoices(selectedPage, selectedPageSize);
+        } else {
+          fetchInvoicesFromServer({ page: selectedPage, size: selectedPageSize });
         }
       });
 
       function applyFiltersForInvoices(pageno = 1, pagesize = pageSize) {
-          console.time("applyFiltersTime");
-          // Helper function to get selected text from a dropdown
-          function getSelectedText(selectId) {
-            const select = document.getElementById(selectId);
-            return select && select.selectedIndex !== 0
-              ? select.options[select.selectedIndex].text
-              : "";
-          }
-
-          // Helper function to get trimmed and lowercased input value
-          function getInputValue(inputId) {
-            const input = document.getElementById(inputId);
-            return input ? input.value.trim().toLowerCase() : "";
-          }
-          function getSelectedRadioValue(name) {
-              const checkedRadio = document.querySelector(`input[name="${name}"]:checked`);
-              return checkedRadio ? checkedRadio.value : null;
-          }
-
-          // Capture filter values dynamically
-          const filterValues = {
-            client: getSelectedText("client"),
-            fromdate: getInputValue("from-date"),
-            todate: getInputValue("to-date"),
-            invoice_no: getInputValue("invoice-no"),
-            page: parseInt(pageno, 10) || 1,
-            size: pagesize || 20,
-          };
-
-          console.log("Filter values:", filterValues);
-
-          // Function to get CSRF token
-          function getCSRFToken() {
-            const csrfInput = document.querySelector(
-              "[name=csrfmiddlewaretoken]"
-            );
-            return csrfInput ? csrfInput.value : "";
-          }
-
-          console.time("FilterTime");
-
-          customFetch("filter-sellinvoices", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
-            },
-            body: JSON.stringify(filterValues),
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error(`Network error: ${response.status} ${response.statusText}`);
-              }
-              return response.json();
-            })
-            .then((data) => {
-              console.time("tableTime");
-              console.log("response: ",data);
-              console.log("filter data",data.data);
-
-              // Update Tabulator table
-              if (pageno === 1) {
-                invoices_table.replaceData(data.data);
-                currentInvoicesPage = 1;
-              } else {
-                const scrollPosition = invoicesTableContainer.scrollTop;
-                invoices_table.addData(data.data);
-                invoicesTableContainer.scrollTop = scrollPosition;
-              }
-
-              lastInvoicesPage = data.page_no === data.last_page;
-
-              console.timeEnd("tableTime");
-
-              console.time("PaginationTime");
-              updateInvoicesPagination(data.last_page, data.page_no);
-              console.timeEnd("PaginationTime");
-
-
-            })
-            .catch((error) => {
-              console.error("Error fetching filtered data:", error.message);
-            })
-            .finally(() => {
-              console.timeEnd("FilterTime");
-              console.timeEnd("applyFiltersTime");
-              active_url="server_filtered_data";
-              isLoading = false;
-              hideInvoicesLoader();
-            });
+        console.time("applyFiltersTime");
+        function getSelectedText(selectId) {
+          const select = document.getElementById(selectId);
+          return select && select.selectedIndex !== 0
+            ? select.options[select.selectedIndex].text
+            : "";
         }
-
-        // Add event listeners to all filter inputs
-        const filterInputsForInvoices = [
-          "client",
-          "from-date",
-          "to-date",
-          "invoice-no",
-        ];
-
-         function debounce(func, wait) {
-            let timeout;
-            return function(...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
+        function getInputValue(inputId) {
+          const input = document.getElementById(inputId);
+          return input ? input.value.trim().toLowerCase() : "";
         }
-
-        // Apply debounce to applyFilters with a 300ms delay
-        const debouncedApplyFiltersForInvoices = debounce(() => applyFiltersForInvoices(1,pageSize), 390);
-        filterInputsForInvoices.forEach((inputId) => {
-          document
-            .getElementById(inputId)
-            .addEventListener("input", () => {
-            debouncedApplyFiltersForInvoices();
-        });
-        });
-        ///////////////////
-        document.getElementById("all-btn").addEventListener("click", clearForm);
-        document.getElementById("clear-btn").addEventListener("click", clearForm);
-        function clearForm() {
-          window.requestAnimationFrame(function () {
-            const formElements = document.querySelectorAll(
-              "form input, form select, form textarea"
-            );
-
-            formElements.forEach(function (element) {
-              if (!element.classList.contains("value-fixed")) {
-                const tagName = element.tagName.toLowerCase();
-                const type = element.type;
-
-                if (tagName === "input" || tagName === "textarea") {
-                  if (type === "radio" || type === "checkbox") {
-                    element.checked = false; // Reset checkboxes and radio buttons
-                  } else {
-                    element.value = ""; // Reset text inputs and textareas
-                  }
-                } else if (tagName === "select") {
-                  element.selectedIndex = 0; // Reset select dropdowns
-                }
-              }
-            });
-
-            if (invoices_table) {
-              invoices_table.clearFilter(); // Clear all filters applied
-              fetchInvoicesFromServer({ page: 1, size: 100 });
-            }
-          });
+        function getSelectedRadioValue(name) {
+          const checkedRadio = document.querySelector(`input[name="${name}"]:checked`);
+          return checkedRadio ? checkedRadio.value : null;
         }
-
-        function updateCalc(){
-
-        }
-        document.getElementById("export-btn-excel").addEventListener("click", exportToExcel);
-        document.getElementById("export-btn-pdf").addEventListener("click", exportToPDF);
-        function exportToExcel() {
-          invoices_table.download("xlsx", "table_data.xlsx"); // 'xlsx' is the file format
-        }
-
-        // Example of vfs_fonts.js
-
-        function exportToPDF() {
-          // Get visible column field names
-          let visibleColumns = invoices_table
-            .getColumns() // Retrieve column components
-            .filter((col) => col.isVisible()) // Check if the column is visible
-            .map((col) => col.getField()); // Get the field names of visible columns
-
-          // Filter table data based on visible columns
-          let tableData = invoices_table.getData().map((row) => {
-            // Create a new object with only visible fields
-            return visibleColumns.reduce((filteredRow, field) => {
-              filteredRow[field] = row[field]; // Copy value of visible field
-              return filteredRow;
-            }, {});
-          });
-
-          // Now `filteredData` contains only the visible columns from tableData
-          //console.log(tableData);
-
-          // Sending the data to Django backend using fetch
-          customFetch("/generate-pdf/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
-            },
-            body: JSON.stringify({
-              data: tableData,
-            }), // Send table data
-          })
-            .then((response) => response.blob())
-            .then((blob) => {
-              // Check if blob is a valid PDF
-              const file = new Blob([blob], { type: "application/pdf" });
-              const fileURL = URL.createObjectURL(file);
-
-              // Open the PDF in a new window or download it
-              const link = document.createElement("a");
-              link.href = fileURL;
-              link.download = "tabulator_data.pdf";
-              link.click();
-            })
-            .catch((error) => {
-              console.error("Error:", error);
-            });
-        }
-        //////
-    function filterStatus(input,pageno=1,pagesize=100) {
-      let status = "";
-      switch (input) {
-        case "لم تحضر":
-        case "جاري التحضير":
-        case "روجعت":
-        case "سلمت":
-        case "سلمت جزئيا":
-        case "ترجيع كلي":
-        case "ترجيع جزئي":
-          status = input;
-          break;
-
-        default: console.log("error"); return
-      }
-
-      if (status !== "") {
         const filterValues = {
-          invoice_status: status, // Fixed object syntax
+          client: getSelectedText("client"),
+          fromdate: getInputValue("from-date"),
+          todate: getInputValue("to-date"),
+          invoice_no: getInputValue("invoice-no"),
+          page: parseInt(pageno, 10) || 1,
+          size: pagesize || 20,
         };
-
+        console.log("Filter values:", filterValues);
+        function getCSRFToken() {
+          const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]");
+          return csrfInput ? csrfInput.value : "";
+        }
+        console.time("FilterTime");
         customFetch("filter-sellinvoices", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
-            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(filterValues),
         })
@@ -978,57 +637,214 @@ function openWindow(url,width = 600,height = 700) {
             return response.json();
           })
           .then((data) => {
+            console.time("tableTime");
             console.log("response: ", data);
             console.log("filter data", data.data);
-
-            // Update Tabulator table
-            if (typeof invoices_table !== "undefined" && typeof invoicesTableContainer !== "undefined") {
-              if (pageno === 1) {
-                invoices_table.replaceData(data.data);
-                currentInvoicesPage = 1;
-              } else {
-                const scrollPosition = invoicesTableContainer.scrollTop;
-                invoices_table.addData(data.data);
-                invoicesTableContainer.scrollTop = scrollPosition;
-              }
+            if (pageno === 1) {
+              invoices_table.replaceData(data.data);
+              currentInvoicesPage = 1;
+            } else {
+              const scrollPosition = invoicesTableContainer.scrollTop;
+              invoices_table.addData(data.data);
+              invoicesTableContainer.scrollTop = scrollPosition;
             }
-
             lastInvoicesPage = data.page_no === data.last_page;
+            console.timeEnd("tableTime");
+            console.time("PaginationTime");
             updateInvoicesPagination(data.last_page, data.page_no);
+            console.timeEnd("PaginationTime");
           })
           .catch((error) => {
             console.error("Error fetching filtered data:", error.message);
           })
           .finally(() => {
+            console.timeEnd("FilterTime");
+            console.timeEnd("applyFiltersTime");
             active_url = "server_filtered_data";
             isLoading = false;
             hideInvoicesLoader();
           });
       }
-    }
 
-    document.getElementById("btn-1").addEventListener("click",function (){
-      filterStatus("لم تحضر");
-    })
-    document.getElementById("btn-2").addEventListener("click",function (){
-      filterStatus("جاري التحضير");
-    })
-    document.getElementById("btn-3").addEventListener("click",function (){
-      filterStatus("روجعت");
-    })
-    document.getElementById("btn-4").addEventListener("click",function (){
-      filterStatus("سلمت");
-    })
-    document.getElementById("btn-5").addEventListener("click",function (){
-      filterStatus("سلمت جزئيا");
-    })
-    document.getElementById("btn-6").addEventListener("click",function (){
-      filterStatus("ترجيع كلي");
-    })
-    document.getElementById("btn-7").addEventListener("click",function (){
-      filterStatus("ترجيع جزئي");
-    })
+      const filterInputsForInvoices = [
+        "client",
+        "from-date",
+        "to-date",
+        "invoice-no",
+      ];
 
+      function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      }
+
+      const debouncedApplyFiltersForInvoices = debounce(() => applyFiltersForInvoices(1, pageSize), 390);
+      filterInputsForInvoices.forEach((inputId) => {
+        document
+          .getElementById(inputId)
+          .addEventListener("input", () => {
+            debouncedApplyFiltersForInvoices();
+          });
+      });
+
+      document.getElementById("all-btn").addEventListener("click", clearForm);
+      document.getElementById("clear-btn").addEventListener("click", clearForm);
+
+      function clearForm() {
+        window.requestAnimationFrame(function () {
+          const formElements = document.querySelectorAll(
+            "form input, form select, form textarea"
+          );
+          formElements.forEach(function (element) {
+            if (!element.classList.contains("value-fixed")) {
+              const tagName = element.tagName.toLowerCase();
+              const type = element.type;
+              if (tagName === "input" || tagName === "textarea") {
+                if (type === "radio" || type === "checkbox") {
+                  element.checked = false;
+                } else {
+                  element.value = "";
+                }
+              } else if (tagName === "select") {
+                element.selectedIndex = 0;
+              }
+            }
+          });
+          if (invoices_table) {
+            invoices_table.clearFilter();
+            fetchInvoicesFromServer({ page: 1, size: 100 });
+          }
+        });
+      }
+
+      function updateCalc() {}
+
+      document.getElementById("export-btn-excel").addEventListener("click", exportToExcel);
+      document.getElementById("export-btn-pdf").addEventListener("click", exportToPDF);
+
+      function exportToExcel() {
+        invoices_table.download("xlsx", "table_data.xlsx");
+      }
+
+      function exportToPDF() {
+        let visibleColumns = invoices_table
+          .getColumns()
+          .filter((col) => col.isVisible())
+          .map((col) => col.getField());
+        let tableData = invoices_table.getData().map((row) => {
+          return visibleColumns.reduce((filteredRow, field) => {
+            filteredRow[field] = row[field];
+            return filteredRow;
+          }, {});
+        });
+        customFetch("/generate-pdf/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: tableData,
+          }),
+        })
+          .then((response) => response.blob())
+          .then((blob) => {
+            const file = new Blob([blob], { type: "application/pdf" });
+            const fileURL = URL.createObjectURL(file);
+            const link = document.createElement("a");
+            link.href = fileURL;
+            link.download = "tabulator_data.pdf";
+            link.click();
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function filterStatus(input, pageno = 1, pagesize = 100) {
+        let status = "";
+        switch (input) {
+          case "لم تحضر":
+          case "جاري التحضير":
+          case "روجعت":
+          case "سلمت":
+          case "سلمت جزئيا":
+          case "ترجيع كلي":
+          case "ترجيع جزئي":
+            status = input;
+            break;
+          default:
+            console.log("error");
+            return;
+        }
+        if (status !== "") {
+          const filterValues = {
+            invoice_status: status,
+          };
+          customFetch("filter-sellinvoices", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify(filterValues),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`Network error: ${response.status} ${response.statusText}`);
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log("response: ", data);
+              console.log("filter data", data.data);
+              if (typeof invoices_table !== "undefined" && typeof invoicesTableContainer !== "undefined") {
+                if (pageno === 1) {
+                  invoices_table.replaceData(data.data);
+                  currentInvoicesPage = 1;
+                } else {
+                  const scrollPosition = invoicesTableContainer.scrollTop;
+                  invoices_table.addData(data.data);
+                  invoicesTableContainer.scrollTop = scrollPosition;
+                }
+              }
+              lastInvoicesPage = data.page_no === data.last_page;
+              updateInvoicesPagination(data.last_page, data.page_no);
+            })
+            .catch((error) => {
+              console.error("Error fetching filtered data:", error.message);
+            })
+            .finally(() => {
+              active_url = "server_filtered_data";
+              isLoading = false;
+              hideInvoicesLoader();
+            });
+        }
+      }
+
+      document.getElementById("btn-1").addEventListener("click", function () {
+        filterStatus("لم تحضر");
+      });
+      document.getElementById("btn-2").addEventListener("click", function () {
+        filterStatus("جاري التحضير");
+      });
+      document.getElementById("btn-3").addEventListener("click", function () {
+        filterStatus("روجعت");
+      });
+      document.getElementById("btn-4").addEventListener("click", function () {
+        filterStatus("سلمت");
+      });
+      document.getElementById("btn-5").addEventListener("click", function () {
+        filterStatus("سلمت جزئيا");
+      });
+      document.getElementById("btn-6").addEventListener("click", function () {
+        filterStatus("ترجيع كلي");
+      });
+      document.getElementById("btn-7").addEventListener("click", function () {
+        filterStatus("ترجيع جزئي");
+      });
     </script>
   </body>
 </html>

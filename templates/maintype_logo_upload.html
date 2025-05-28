@@ -77,7 +77,6 @@
 <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'js/helper_functions.js' %}"></script>
 <script>
-const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 document.addEventListener('DOMContentLoaded', function () {
     const uploadForm = document.getElementById('add-image-form');
     const successMessageDiv = document.getElementById('success-message');
@@ -95,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
-                'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: formData
         })

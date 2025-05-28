@@ -53,4 +53,22 @@ class PreOrderTableSerializerCart(serializers.ModelSerializer):
 
     def get_preorderitems(self, obj):
         items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=obj)
-        return PreOrderItemsTableSerializer(items, many=True).data        
+        return PreOrderItemsTableSerializer(items, many=True).data  
+          
+class SimplePreOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.PreOrderTable
+        fields = ['invoice_no',   'net_amount', 'date_time', 'invoice_status','shop_confrim', 'autoid'] 
+        
+         # customize this list
+class ItemCategoryWithCountSerializer(serializers.ModelSerializer):
+    item_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = almogOil_models.ItemCategory
+        fields = ("id", "name", "item_count")
+
+class WhatsAppMessageSerializer(serializers.Serializer):
+    clientid = serializers.IntegerField()
+    message = serializers.CharField(max_length=2000)       
+

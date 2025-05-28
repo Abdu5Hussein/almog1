@@ -768,7 +768,6 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
       /*const contextData = {
         data: JSON.parse("{{ data|escapejs }}"),
       };
@@ -782,10 +781,6 @@
         height: "auto", // Adjust height or set a fixed height
         layout: "fitColumns",
         selectable: true,
-        pagination: "local", // Enable local pagination
-        paginationSize: 100, // Show 100 records per page
-        paginationSizeSelector: [50, 100, 200], // Page size options
-        paginationButtonCount: 5, // Number of visible pagination buttons
         movableColumns: true,
         columnHeaderVertAlign: "bottom",
         columnMenu: true, // Enable column menu
@@ -794,7 +789,7 @@
                 { title: "رقم الي", field: "autoid" ,visible:false},
                 { title: "رقم الفاتورة", field: "invoice_no" },
                 { title: "الرقم الاصلي", field: "original_no" },
-                { title: "التاريخ", field: "invoice_date" },
+                { title: "التاريخ", field: "date_time" },
                 { title: "المصدر", field: "source" },
                 { title: "سعر الفاتورة", field: "amount" },
                 { title: "التخفيض", field: "discount" },
@@ -895,7 +890,6 @@ function openWindow(url,width = 600,height = 700) {
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
-            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(data),
         })
@@ -982,7 +976,6 @@ function openWindow(url,width = 600,height = 700) {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
           }
         })
       .then((response) => response.json())
@@ -1027,6 +1020,7 @@ function openWindow(url,width = 600,height = 700) {
         console.timeEnd("fetchData"); // End the timer regardless of success or failure
         isLoading = false; // Reset loading flag after fetch completes
         hideLoader();
+        scrollToLastRow(); // Scroll to the last row after data is fetched
       });
   }
   // Attach the scroll event listener
@@ -1039,6 +1033,23 @@ function openWindow(url,width = 600,height = 700) {
       clearTimeout(timeout);
       timeout = setTimeout(() => func.apply(this, args), wait);
     };
+  }
+  function scrollToLastRow() {
+          table.setPage(table.getPageMax()).then(() => {
+              setTimeout(() => {
+                  // Scroll to last row
+                  var lastRow = table.getRows().pop();
+                  if (lastRow) {
+                      table.scrollToRow(lastRow, "bottom").catch(err => console.warn("Scroll Error:", err));
+                  }
+
+                  // Scroll the table container to the bottom
+                  let tableContainer = document.getElementById("users-table");
+                  if (tableContainer) {
+                      tableContainer.scrollTop = tableContainer.scrollHeight;
+                  }
+              }, 300); // Small delay to ensure content loads before scrolling
+          });
   }
 
   // Apply debounce to applyFilters with a 300ms delay
@@ -1211,7 +1222,6 @@ function openWindow(url,width = 600,height = 700) {
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -1257,6 +1267,7 @@ function openWindow(url,width = 600,height = 700) {
               active_url="server_filtered_data";
               isLoading = false;
               hideLoader();
+              scrollToLastRow(); // Scroll to the last row after data is fetched
             });
         }
 

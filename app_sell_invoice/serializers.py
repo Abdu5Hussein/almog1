@@ -1,4 +1,5 @@
 # serializers.py
+from django.utils.timezone import localtime
 from rest_framework import serializers
 from almogOil import models
 from rest_framework import status
@@ -13,7 +14,12 @@ class SellInvoiceSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_invoice_date(self, obj):
-        return obj.invoice_date.strftime("%Y-%m-%d")  # Ensure "YYYY-MM-DD" format
+        return obj.invoice_date.strftime("%Y-%m-%d") if obj.invoice_date else None   # Ensure "YYYY-MM-DD" format
+
+    def get_delivered_date(self, obj):
+        if obj.delivered_date:
+            return localtime(obj.delivered_date).strftime('%Y-%m-%d %H:%M')
+        return None
 
 class SellInvoiceItemsSerializer(serializers.ModelSerializer):
 

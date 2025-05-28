@@ -1879,6 +1879,8 @@ class ReturnPermissionViewSet(viewsets.ModelViewSet):
         # Convert and validate foreign keys
         client_id = data.get("client")
         invoice_id = data.get("invoice")
+        if not client_id or not invoice_id or not data.get("payment"):
+            return Response({"error": "Client, invoice, payment and employee fields are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         if not AllClientsTable.objects.filter(clientid=client_id).exists():
             return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
@@ -1962,129 +1964,128 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
 
-        # Convert and validate foreign keys
         invoice_id = data.get("invoice_no")
         pno = data.get("pno")
-        autoid = data.get("autoid")
-        permission = data.get("permission")
+        item_autoid = data.get("autoid")
+        permission_id = data.get("permission")
+        return_reason = data.get("return_reason", "")
+        returned_quantity = int(data.get("returned_quantity", 0))
 
-        if not SellinvoiceTable.objects.filter(invoice_no=invoice_id).exists():
+        # Check required relationships
+        try:
+            invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
+        except models.SellinvoiceTable.DoesNotExist:
             return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not models.SellInvoiceItemsTable.objects.filter(autoid=autoid).exists():
-            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Fetch related objects
-        invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_id)
-        invoice_item = models.SellInvoiceItemsTable.objects.get(autoid=autoid)
-        permission_obj = models.return_permission.objects.get(autoid=permission)
-
-        if int(data.get("returned_quantity")) > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
-            return Response({"error": "Returned quantity greater than original quantity"}, status=status.HTTP_400_BAD_REQUEST)
-        # Create the return permission
-        returned_item_instance = models.return_permission_items.objects.create(
-            pno=invoice_item.pno,
-            company_no=invoice_item.company_no,
-            company=invoice_item.company,
-            item_name=invoice_item.name,
-            org_quantity=invoice.quantity,
-            returned_quantity=data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity,
-            price=invoice_item.dinar_unit_price,
-            invoice_obj=invoice,
-            invoice_no=invoice.invoice_no,
-            permission_obj=permission_obj,
-        )
-        permission_obj.amount += returned_item_instance.total
-        permission_obj.quantity+= int(data.get("returned_quantity")) if data.get("returned_quantity") else invoice.quantity
-        permission_obj.save()
-
-        if invoice_item.current_quantity_after_return is not None and invoice_item.current_quantity_after_return > 0:
-            # Decrease the current quantity after return
-            invoice_item.current_quantity_after_return -= int(data.get("returned_quantity"))
-            invoice_item.save()
-        elif invoice_item.current_quantity_after_return in (None, 0):
-            # Set the current quantity after return to the original quantity minus returned quantity
-            invoice_item.current_quantity_after_return = invoice_item.quantity - int(data.get("returned_quantity"))
-            invoice_item.save()
+        try:
+            invoice_item = models.SellInvoiceItemsTable.objects.get(autoid=item_autoid)
+        except models.SellInvoiceItemsTable.DoesNotExist:
+            return Response({"error": "Invoice item not found"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            mainitem = models.Mainitem.objects.get(pno=pno if pno else invoice_item.pno)
-            mainitem.itemvalue += data.get("returned_quantity") if data.get("returned_quantity") else invoice.quantity
-            mainitem.save()
-        except models.Mainitem.DoesNotExist:
-            return Response({"error": "Product not found in products"}, status=status.HTTP_400_BAD_REQUEST)
-        except models.Mainitem.MultipleObjectsReturned:
-            return Response({"error": "Api returned multiple objects for pno"}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            return Response({"error": "Product in products caused an error!"}, status=status.HTTP_400_BAD_REQUEST)
+            permission_obj = models.return_permission.objects.get(autoid=permission_id)
+        except models.return_permission.DoesNotExist:
+            return Response({"error": "Permission not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-
-        last_balance = (
-            models.TransactionsHistoryTable.objects.filter(object_id=invoice.client_id)
-            .order_by("-registration_date")
-            .first()
-        )
-        last_balance_amount = last_balance.current_balance if last_balance else 0
+        if returned_quantity > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
+            return Response({"error": "Returned quantity greater than available"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            models.TransactionsHistoryTable.objects.create(
-                credit=Decimal(returned_item_instance.total),
-                debt=0.0,
-                transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                details=f"ترجيع بضائع - فاتورة رقم {invoice_item.invoice_no}",
-                registration_date=timezone.now(),
-                current_balance=round(last_balance_amount + Decimal(returned_item_instance.total), 2),
-                content_type=ContentType.objects.get_for_model(invoice.client_obj),
-                object_id=invoice.client_obj.pk
-            )
-        except:
-            return Response({"error": "error in transaction saving!"}, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():  # Start transaction
 
-
-        if permission_obj.payment == "نقدي":
-            try:
-                client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
-                models.StorageTransactionsTable.objects.create(
-                    reciept_no=f"ف.ب : {invoice_item.invoice_no}",
-                    transaction_date=timezone.now(),
-                    amount=Decimal(returned_item_instance.total),
-                    issued_for="اذن ترجيع",
-                    note=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                    account_type="عميل",
-                    transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
-                    place="مارين",
-                    section="ترجيع",
-                    subsection="ترجيع",
-                    person=client_object.name or "",
-                    payment= "نقدا" if permission_obj.payment == "نقدي" else "اجل",
-                    daily_status =False,
+                # Create return permission item
+                returned_item_instance = models.return_permission_items.objects.create(
+                    pno=invoice_item.pno,
+                    company_no=invoice_item.company_no,
+                    company=invoice_item.company,
+                    item_name=invoice_item.name,
+                    org_quantity=invoice.quantity,
+                    returned_quantity=returned_quantity or invoice.quantity,
+                    price=invoice_item.dinar_unit_price,
+                    invoice_obj=invoice,
+                    invoice_no=invoice.invoice_no,
+                    permission_obj=permission_obj,
+                    return_reason=return_reason,
                 )
-            except:
-                return Response({"error": "error in storage saving!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            movement_Record = models.Clientstable.objects.create(
-                itemno=mainitem.itemno,
-                itemname=mainitem.itemname,
-                maintype=mainitem.itemmain,
-                currentbalance=mainitem.itemvalue,
-                date=timezone.now(),
-                clientname=client_object.name or "",
-                #billno="",
-                description="ترجيع صنف من فاتورة بيع",
-                clientbalance=int(data.get("returned_quantity")) or 0,
-                pno_instance=mainitem,
-                pno=mainitem.pno,
-            )
+                # Update return permission totals
+                permission_obj.amount += returned_item_instance.total
+                permission_obj.quantity += returned_quantity
+                permission_obj.save()
+
+                # Update invoice item quantities
+                if invoice_item.current_quantity_after_return:
+                    invoice_item.current_quantity_after_return -= returned_quantity
+                else:
+                    invoice_item.current_quantity_after_return = invoice_item.quantity - returned_quantity
+                invoice_item.save()
+
+                # Update Mainitem stock
+                try:
+                    mainitem = models.Mainitem.objects.get(pno=pno or invoice_item.pno)
+                    mainitem.itemvalue += returned_quantity
+                    mainitem.save()
+                except models.Mainitem.DoesNotExist:
+                    raise ValueError("Product not found in products")
+                except models.Mainitem.MultipleObjectsReturned:
+                    raise ValueError("Multiple products found for same PNO")
+
+                # Add to TransactionsHistoryTable
+                last_balance = models.TransactionsHistoryTable.objects.filter(client_object=invoice.client_obj).order_by("-registration_date").first()
+                last_balance_amount = last_balance.current_balance if last_balance else 0
+
+                models.TransactionsHistoryTable.objects.create(
+                    credit=Decimal(returned_item_instance.total),
+                    debt=0.0,
+                    transaction=f"ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                    details=f"ترجيع بضائع - فاتورة رقم {invoice_item.invoice_no}",
+                    registration_date=timezone.now(),
+                    current_balance=round(last_balance_amount + Decimal(returned_item_instance.total), 2),
+                    client_object_id=invoice.client_obj.pk
+                )
+
+                # Storage transaction if payment is cash
+                if permission_obj.payment == "نقدي":
+                    client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
+                    models.StorageTransactionsTable.objects.create(
+                        reciept_no=f"ف.ب : {invoice_item.invoice_no}",
+                        transaction_date=timezone.now(),
+                        amount=Decimal(returned_item_instance.total),
+                        issued_for="اذن ترجيع",
+                        note=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                        account_type="عميل",
+                        transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                        place="مارين",
+                        section="ترجيع",
+                        subsection="ترجيع",
+                        person=client_object.name or "",
+                        payment="نقدا",
+                        daily_status=False,
+                    )
+
+                # Add to product movement history
+                models.Clientstable.objects.create(
+                    itemno=mainitem.itemno,
+                    itemname=mainitem.itemname,
+                    maintype=mainitem.itemmain,
+                    currentbalance=mainitem.itemvalue,
+                    date=timezone.now(),
+                    clientname=client_object.name or "",
+                    description="ترجيع صنف من فاتورة بيع",
+                    clientbalance=returned_quantity,
+                    pno_instance=mainitem,
+                    pno=mainitem.pno,
+                )
+
+        except ValueError as ve:
+            return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except AllClientsTable.DoesNotExist:
+            return Response({"error": "Client not found in client table"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({
-                "message": "Error in product history saving!",
-                "error": str(e)  # Convert the exception to a string for better readability
-            }, status=status.HTTP_400_BAD_REQUEST)
-        # Serialize and return the created object
+            return Response({"error": "Unexpected error", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(returned_item_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 @extend_schema(
 description="""get a sell invoice returned items by invoice no.""",
@@ -2175,7 +2176,7 @@ def available_employees(request):
 description="""accept a payment request.""",
 tags=["Payment Requests"],
 )
-@api_view(["GET"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def accept_payment_req(request, id):
@@ -2203,7 +2204,7 @@ def accept_payment_req(request, id):
 
                 # Fetch last balance
                 last_balance = (
-                    models.TransactionsHistoryTable.objects.filter(object_id=req.client.clientid)
+                    models.TransactionsHistoryTable.objects.filter(client_object=req.client)
                     .order_by("-registration_date")
                     .first()
                 )
@@ -2218,8 +2219,7 @@ def accept_payment_req(request, id):
                         details="طلب قيمة مالية",
                         registration_date=timezone.now(),
                         current_balance=round(last_balance_amount + loan_amount, 2),  # Updated balance
-                        content_type=ContentType.objects.get_for_model(req.client),
-                        object_id=req.client.pk  # Assuming req.client is a model instance (e.g. Employee, AllClientsTable)
+                        client_object=req.client  # Assuming req.client is a model instance (e.g. Employee, AllClientsTable)
                     )
                 except Exception as e:
                     return Response({"error": f"Error in transaction saving: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
@@ -2722,11 +2722,11 @@ def get_all_employees_with_balance(request):
         data = []
 
         for employee in employees:
-            clientid = employee.employee_id
+            clientid = employee.user_id
 
             # Calculate total debt and credit
             balance_data = models.TransactionsHistoryTable.objects.filter(
-                object_id=clientid
+                client_object_id=clientid
             ).aggregate(
                 total_debt=Sum('debt'),
                 total_credit=Sum('credit')
@@ -2738,7 +2738,7 @@ def get_all_employees_with_balance(request):
 
             # Calculate "دفعة على حساب" specific credit
             specific_credit_data = models.TransactionsHistoryTable.objects.filter(
-                object_id=clientid, details="دفعة على حساب"
+                client_object_id=clientid, details="دفعة على حساب"
             ).aggregate(total_specific_credit=Sum('credit'))
 
             total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
@@ -2867,8 +2867,7 @@ def calculate_balance_for_instance(instance):
     content_type = ContentType.objects.get_for_model(instance.__class__)
 
     balance_data = models.TransactionsHistoryTable.objects.filter(
-        content_type=content_type,
-        object_id=instance.pk
+        client_object=instance
     ).aggregate(
         total_debt=Sum('debt'),
         total_credit=Sum('credit')
@@ -2895,15 +2894,13 @@ def update_employee_balance(employee, amount, operation, description=None):
         credit=amount if operation == "credit" else 0,
         debt=amount if operation == "debit" else 0,
         details=description or f"{operation.capitalize()} transaction",
-        content_type=ContentType.objects.get_for_model(employee),
-        object_id=employee.employee_id
+        client_object_id=employee.user_id,  # Assuming employee.user_id is the client_object
     )
 
     # Recalculate balance
     content_type = ContentType.objects.get_for_model(employee)
     balance_data = models.TransactionsHistoryTable.objects.filter(
-        content_type=content_type,
-        object_id=employee.pk
+        client_object_id=employee.user_id  # Assuming employee.user_id is the client_object
     ).aggregate(
         total_debt=Sum('debt') or 0,
         total_credit=Sum('credit') or 0

@@ -18,6 +18,10 @@
 
   {% include 'CarPartsTemplates/partials/_navbar.html' %}
   {% include 'CarPartsTemplates/partials/_cart_overlay.html' %}
+  <div id="floatingCartIcon" style="display: none;">
+  </div>
+  <div id="cartBadge1" style="display: none;">
+</div>
 
   <main class="container my-4">
     {% block content %}
@@ -36,7 +40,7 @@
   <script src="{% static 'hozma/js/navbar.js' %}"></script>
 
   <script src="{% static 'hozma/js/cart.js' %}"></script>
-  <script src="{% static 'hozma/js/itemmain.js' %}"></script>
+
   
   {% block extra_js %}{% endblock %}
 </body>

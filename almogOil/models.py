@@ -208,16 +208,16 @@ class SellinvoiceTable(models.Model):
 class Clientstable(models.Model):
     fileid = models.AutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
     pno_instance = models.ForeignKey('Mainitem', on_delete=models.DO_NOTHING)
-    itemno = models.CharField(db_column='itemno', max_length=50, blank=True, null=True)  # Field name made lowercase.
-    maintype = models.CharField(db_column='maintype', max_length=50, blank=True, null=True)  # Field name made lowercase.
-    itemname = models.CharField(db_column='itemname', max_length=200, blank=True, null=True)  # Field name made lowercase.
+    itemno = models.CharField(db_column='itemno', max_length=150, blank=True, null=True)  # Field name made lowercase.
+    maintype = models.CharField(db_column='maintype', max_length=300, blank=True, null=True)  # Field name made lowercase.
+    itemname = models.CharField(db_column='itemname', max_length=300, blank=True, null=True)  # Field name made lowercase.
     currentbalance = models.IntegerField(db_column='currentbalance',  blank=True, null=True)  # Field name made lowercase.
     date = models.DateTimeField(db_column='date', blank=True, null=True)
-    clientname = models.CharField(db_column='clientname', max_length=25, blank=True, null=True)  # Field name made lowercase.
-    billno = models.CharField(db_column='billno', max_length=25, blank=True, null=True)  # Field name made lowercase.
-    description = models.CharField(db_column='description', max_length=25, blank=True, null=True)  # Field name made lowercase.
+    clientname = models.CharField(db_column='clientname', max_length=225, blank=True, null=True)  # Field name made lowercase.
+    billno = models.CharField(db_column='billno', max_length=225, blank=True, null=True)  # Field name made lowercase.
+    description = models.CharField(db_column='description', max_length=525, blank=True, null=True)  # Field name made lowercase.
     clientbalance = models.IntegerField(db_column='clientbalance', blank=True, null=True)  # Field name made lowercase.
-    pno = models.CharField(db_column='pno', max_length=50, blank=True, null=True)
+    pno = models.CharField(db_column='pno', max_length=250, blank=True, null=True)
 
 
     class Meta:
@@ -237,7 +237,7 @@ class Companytable(models.Model):
 class Imagetable(models.Model):
     fileid = models.AutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
     productid = models.IntegerField(db_column='ProductId', blank=True, null=True)  # Field name made lowercase.
-    image = models.CharField(db_column='Image', max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    image = models.CharField(db_column='Image', max_length=300, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     image_obj = models.ImageField(upload_to='product_images/', blank=True, null=True)
 
     class Meta:
@@ -314,6 +314,14 @@ class Mainitem(models.Model):
     source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     category = models.CharField(db_column='category', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     discount = models.DecimalField(db_column='discount', max_digits=19, decimal_places=4, blank=True, null=True)
+    item_category = models.ForeignKey('ItemCategory', on_delete=models.SET_NULL, null=True, blank=True, db_column='item_category')
+    category_type = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.category_type:
+            self.item_category, _ = ItemCategory.objects.get_or_create(name=self.category_type)
+        super().save(*args, **kwargs)
+        
     class Meta:
         managed = True
         db_table = 'MainItem'
@@ -363,13 +371,18 @@ class Mainitem(models.Model):
             models.Index(fields=['itemmain', 'itemname', 'companyproduct'], name='idx_main_name_company'),
         ]
 
+class ItemCategory(models.Model):
+    name = models.CharField(max_length=150, db_collation='Arabic_CI_AS', unique=True)
+
+    def __str__(self):
+        return self.name
+
 
 class Oemtable(models.Model):
     fileid = models.AutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
     cname = models.CharField(db_column='CName', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     cno = models.CharField(db_column='CNo', max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
-    oemno = models.TextField(db_column='OEMNO', db_collation='Arabic_CI_AS', blank=True, null=True)
-  # Field name made lowercase.
+    oemno = models.CharField(max_length=500, blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = True
@@ -400,6 +413,7 @@ class StorageTransactionsTable(models.Model):
     account_type = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     transaction = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     transaction_date = models.DateField(blank=True, null=True)
+    date_time = models.DateTimeField(auto_now_add=True)
     reciept_no = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     place = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
     section = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -830,10 +844,9 @@ class TransactionsHistoryTable(models.Model):
     delivered_for = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     current_balance = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
 
-    # Generic foreign key fields
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    client_object = GenericForeignKey('content_type', 'object_id')
+    #  foreign key fields
+    client_object = models.ForeignKey(AllClientsTable, on_delete=models.CASCADE)
+
 
     class Meta:
         managed = True
@@ -1043,6 +1056,7 @@ class return_permission_items(models.Model):
     invoice_obj = models.ForeignKey(SellinvoiceTable,on_delete=models.CASCADE)
     invoice_no = models.CharField(max_length=40,null=True,blank=True)
     permission_obj = models.ForeignKey(return_permission,on_delete=models.CASCADE)
+    return_reason = models.CharField(max_length=500, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         # Ensure total is always calculated as returned_quantity * price
@@ -1455,3 +1469,27 @@ class Mainitem_copy(models.Model):
     class Meta:
         managed = True
         db_table = 'MainItem_copy'
+
+
+
+
+class FAQ(models.Model):
+    CATEGORY_CHOICES = [
+        ('orders', 'الطلبات والشحن'),
+        ('returns', 'الإرجاع والاستبدال'),
+        ('products', 'المنتجات والقطع'),
+        ('payments', 'الدفع والأسعار'),
+    ]
+    
+    question = models.CharField(max_length=255)
+    answer = models.TextField()
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'سؤال شائع'
+        verbose_name_plural = 'الأسئلة الشائعة'
+    
+    def __str__(self):
+        return self.question

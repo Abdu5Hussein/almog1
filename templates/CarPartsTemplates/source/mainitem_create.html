@@ -747,30 +747,32 @@
     uploadBtn.disabled = false;
     
   }
+  // ⬇️  النسخة الكاملة المحدَّثة من الدالة uploadFile
   async function uploadFile(file) {
   try {
+    // إظهار شريط التقدم
     progressBar.style.display = 'block';
     const progressBarInner = progressBar.querySelector('.progress-bar');
 
-    // 1) قراءة ملف إكسل
-    const data = await readExcelFile(file, progressBarInner);
-    if (!data || data.length === 0) {
+    /* 1) قراءة ملف إكسل */
+    const { rawRows, mappedRows, headers } = await readExcelFile(file, progressBarInner);
+    if (!mappedRows || mappedRows.length === 0) {
       console.warn('[ERROR] No valid data in Excel file.');
       showResponse('الملف لا يحتوي على بيانات صالحة', 'error');
       return;
     }
 
-    // 2) استخراج sourceId من رابط الصفحة
+    /* 2) استخراج sourceId من رابط الصفحة */
     const pathParts = window.location.pathname.split('/').filter(Boolean);
-    const sourceId = pathParts[pathParts.length - 1];     // آخر جزء هو المعرّف
+    const sourceId  = pathParts[pathParts.length - 1];
     if (!sourceId) {
       showResponse('لا يمكن تحديد معرف المصدر', 'error');
       return;
     }
 
-    // 3) تجهيز البيانات قبل الإرسال
-    data.forEach(item => {
-      item.source = sourceId; // مصدر كـ string
+    /* 3) تجهيز البيانات قبل الإرسال */
+    mappedRows.forEach(item => {
+      item.source = sourceId;
       if (item.json_description && typeof item.json_description === 'string') {
         try {
           item.json_description = JSON.parse(item.json_description);
@@ -783,79 +785,79 @@
 
     const results = [];
 
-    // 4) رفع كل صفّ على حدة
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
+    /* 4) رفع كل صفّ */
+    for (let i = 0; i < mappedRows.length; i++) {
+      const item        = mappedRows[i];
+      const originalRow = rawRows[i];  // مهما كان يحتوي، حتى القيم الفارغة
 
-      // تحديث مؤشر التقدم
-      const progress = Math.min(100, Math.round((i / data.length) * 100));
-      progressBarInner.style.width = `${progress}%`;
+      const progress = Math.min(100, Math.round((i / mappedRows.length) * 100));
+      progressBarInner.style.width  = `${progress}%`;
       progressBarInner.textContent = `${progress}%`;
 
-      console.log(`[DEBUG] Sending item ${i + 1}/${data.length}:`, JSON.stringify(item, null, 2));
+      console.log(`[DEBUG] Sending item ${i + 1}/${mappedRows.length}:`, JSON.stringify(item, null, 2));
 
       try {
         const response = await customFetch('http://45.13.59.226/hozma/api/mainitem/create/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(item),
+          method  : 'POST',
+          headers : { 'Content-Type': 'application/json' },
+          body    : JSON.stringify(item),
         });
 
         const result = await response.json();
-        console.log(`[DEBUG] Response for item ${i + 1}/${data.length} (PNO: ${item.pno || 'N/A'}):`, result);
+        console.log(`[DEBUG] Response for item ${i + 1}/${mappedRows.length} (PNO: ${item.pno || 'N/A'}):`, result);
 
-        /* -- تحديث pno إذا لم يكن موجوداً وأرجعه الخادم -- */
         if (!item.pno && result?.data?.pno) {
           item.pno = result.data.pno;
         }
 
         if (response.ok && result.success !== false) {
-          // حالة النجاح
           results.push({
             ...item,
-            success: true,
-            message: result.message || 'تمت الإضافة بنجاح'
+            success     : true,
+            message     : result.message || 'تمت الإضافة بنجاح',
+            originalRow,
           });
         } else {
-          // حالة الفشل (يشمل 400 أو 500)
           const errorMessage =
             result.message ||
-            result.error ||          // يلتقط رسائل مثل: "حدث خطأ غير متوقع: 'NoneType' object has no attribute 'split'"
+            result.error ||
             'فشل في الإضافة';
 
           results.push({
-            pno: item.pno || (result.data && result.data.pno) || 'N/A',
-            success: false,
-            message: errorMessage
+            ...item,
+            pno         : item.pno || result?.data?.pno || 'N/A',
+            success     : false,
+            message     : errorMessage,
+            originalRow,
           });
         }
       } catch (error) {
-        // فشل الاتصال بالخادم
-        console.error(`[ERROR] Upload failed for item ${i + 1}/${data.length} (PNO: ${item.pno || 'N/A'}):`, error);
+        console.error(`[ERROR] Upload failed for item ${i + 1}/${mappedRows.length} (PNO: ${item.pno || 'N/A'}):`, error);
         results.push({
-          pno: item.pno || 'N/A',
-          success: false,
-          message: 'خطأ في الاتصال بالخادم'
+          ...item,
+          pno         : item.pno || 'N/A',
+          success     : false,
+          message     : 'خطأ في الاتصال بالخادم',
+          originalRow,
         });
       }
     }
 
-    // 5) تحديث شريط التقدم للنهاية
-    progressBarInner.style.width = '100%';
+    /* 5) إنهاء شريط التقدم */
+    progressBarInner.style.width  = '100%';
     progressBarInner.textContent = '100%';
 
-    // 6) عرض النتائج
-    displayResults(results);
+    /* 6) عرض النتائج مع headers */
+    displayResults(results, headers);  // تأكد أن displayResults تستقبل headers وتعرضها في الأعلى
 
-    // 7) إخفاء شريط التقدم بعد ثانيتين
+    /* 7) إخفاء الشريط */
     setTimeout(() => {
-      progressBar.style.display = 'none';
-      progressBarInner.style.width = '0%';
-      progressBarInner.textContent = '';
+      progressBar.style.display     = 'none';
+      progressBarInner.style.width  = '0%';
+      progressBarInner.textContent  = '';
     }, 2000);
 
   } catch (error) {
-    // خطأ غير متوقع في المعالجة الأولية
     console.error('[FATAL] Error during upload process:', error);
     showResponse('حدث خطأ أثناء معالجة الملف', 'error');
     progressBar.style.display = 'none';
@@ -863,6 +865,29 @@
 }
 
 
+
+function downloadFailedItemsReport(failedItems) {
+  if (!failedItems || failedItems.length === 0) {
+    showResponse('لا توجد عناصر فاشلة لتحميلها', 'info');
+    return;
+  }
+
+  // ⬅️  exact rows from the original upload
+  const reportData = failedItems.map(item => item.originalRow);
+
+  // preserve the header order of the first row
+  const headers = Object.keys(reportData[0]);
+
+  // build the worksheet
+  const ws = XLSX.utils.json_to_sheet(reportData, { header: headers });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "العناصر الفاشلة");
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  XLSX.writeFile(wb, `العناصر_الفاشلة_${timestamp}.xlsx`);
+
+  showResponse('تم تحميل العناصر الفاشلة بنجاح', 'success');
+}
 
 
 /**
@@ -882,12 +907,14 @@
     'رقم الشركه'       : 'eitemname',
     'اسم الشركه'       : 'companyproduct',
     'الرقم الاصلي'     : 'oem_number',
+    'الرقم الاصلي المكافي':'extrenal_oem',
     'الكمية'           : 'showed',          // quantity
     'سعر البيع'        : 'buyprice',
     'التخفيض'          : 'discount',
     'ملاحظات'          : 'json_description',
     'الفئة'            : 'category',
-    'نوع التخفيض'      : 'discount_type'    // remove extra leading spaces
+    'نوع التخفيض'      : 'discount_type',
+    'فئة الصنف'      : 'category_type'    // remove extra leading spaces
   };
 
   // Arabic → English discount-type map
@@ -928,7 +955,7 @@
         bar.style.width = '50%';
         bar.textContent = '50 %';
 
-        resolve(mappedRows);
+        resolve({ rawRows, mappedRows });
       } catch (err) {
         console.error('[ERROR] Error reading Excel file:', err);
         reject(err);
@@ -951,48 +978,76 @@ function displayResults(results) {
 
   resultsBody.innerHTML = '';
 
+  const failedItems = results.filter(item => !item.success);
+
   results.forEach((result, index) => {
     const row = document.createElement('tr');
-
-    // تحديد اللون حسب نوع النتيجة
-    let rowClass = 'table-danger'; // افتراضي للأخطاء
+    let rowClass = 'table-danger';
+    
     if (result.success) {
       if (result.message && result.message.includes('المنتج الموجود لديه نفس السعر أو سعر أفضل')) {
-        rowClass = 'table-warning'; // برتقالي
+        rowClass = 'table-warning';
       } else if (result.message && result.message.includes('تم تحديث المنتج الحالي بسعر أقل')) {
-        rowClass = 'table-warning'; // أصفر
+        rowClass = 'table-warning';
       } else {
-        rowClass = 'table-success'; // أخضر
+        rowClass = 'table-success';
       }
     }
 
     row.classList.add(rowClass);
-
     row.innerHTML = `
       <td>${index + 1}</td>
       <td>${result.pno || 'غير معروف'}</td>
       <td>${result.success ? 'نجاح' : 'فشل'}</td>
       <td>${result.message || ''}</td>
     `;
-
     resultsBody.appendChild(row);
   });
 
   const successCount = results.filter(r => r.success).length;
   const totalCount = results.length;
 
-  const summaryRow = document.createElement('tr');
-  summaryRow.classList.add('table-info');
-  summaryRow.innerHTML = `
-    <td colspan="2"><strong>النتيجة النهائية</strong></td>
-    <td>${successCount}/${totalCount}</td>
-    <td>${Math.round((successCount / totalCount) * 100)}% نجاح</td>
-  `;
-  resultsBody.appendChild(summaryRow);
+  // Add download failed items button if there are failures
+  if (failedItems.length > 0) {
+    const downloadFailedBtn = document.createElement('button');
+    downloadFailedBtn.className = 'btn btn-danger btn-sm mt-3';
+    downloadFailedBtn.innerHTML = '<i class="fas fa-download me-2"></i>تحميل العناصر الفاشلة';
+    downloadFailedBtn.onclick = () => downloadFailedItemsReport(failedItems);
+    
+    const summaryRow = document.createElement('tr');
+    summaryRow.classList.add('table-info');
+    summaryRow.innerHTML = `
+      <td colspan="4" class="text-center">
+        <strong>النتيجة النهائية: ${successCount}/${totalCount} (${Math.round((successCount / totalCount) * 100)}% نجاح)</strong>
+        ${failedItems.length > 0 ? '<div class="mt-2"></div>' : ''}
+      </td>
+    `;
+    
+    const buttonCell = summaryRow.querySelector('td');
+    buttonCell.appendChild(downloadFailedBtn);
+    
+    resultsBody.appendChild(summaryRow);
+  } else {
+    const summaryRow = document.createElement('tr');
+    summaryRow.classList.add('table-success');
+    summaryRow.innerHTML = `
+      <td colspan="4" class="text-center">
+        <strong>النتيجة النهائية: ${successCount}/${totalCount} (100% نجاح)</strong>
+      </td>
+    `;
+    resultsBody.appendChild(summaryRow);
+  }
 
   bulkResults.style.display = 'block';
   bulkResults.scrollIntoView({ behavior: 'smooth' });
+
+  if (failedItems.length > 0) {
+    setTimeout(() => {
+      downloadFailedItemsReport(failedItems);
+    }, 1000);
+  }
 }
+
 
 }
 
@@ -1000,26 +1055,37 @@ function downloadTemplate() {
   const templateData = [];
 
   const itemNameList = ['فلتر زيت', 'زيت محرك', 'بطارية جافة', 'كشاف أمامي', 'إطار خلفي'];
-  const companyList = ['Stelx', 'febi', 'hipton', 'mobis', 'tiabo'];
+  const companyList = ['', 'febi'];
   const categoryList = ['ألماني', 'كوري', 'أمريكي'];
   const notesList = ['جودة ممتازة', 'صناعة أصلية', 'مناسب لجميع السيارات'];
-  const disctyp = ['المورد', 'المحل', ];
+  const disctyp = ['المورد', 'المحل'];
 
+  // Map item names to item categories
+  const itemCategoryMap = {
+    'فلتر زيت': 'فلتر',
+    'زيت محرك': 'زيت',
+    'بطارية جافة': 'بطارية',
+    'كشاف أمامي': 'كهرباء',
+    'إطار خلفي': 'إطارات'
+  };
 
-  for (let i = 1; i <= 100; i++) {
+  for (let i = 1; i <= 10; i++) {
+    const itemName = itemNameList[Math.floor(Math.random() * itemNameList.length)];
     templateData.push({
       'رقم الخاص': ``,
-      'رقم الخاص المورد': `77-${i}`,
-      'اسم الصنف': itemNameList[Math.floor(Math.random() * itemNameList.length)],
-      'رقم الشركه': companyList[Math.floor(Math.random() * companyList.length)],
-      'الرقم الاصلي': `OEM-${2000 + i}`,
+      'رقم الخاص المورد': `201-${i}`,
+      'اسم الصنف': itemName,
+      'اسم الشركه': companyList[Math.floor(Math.random() * companyList.length)],
+      'الرقم الاصلي': `OEMtest-${20 + i}`,
+      'الرقم الاصلي المكافي': `OEMtest-${20 + i}`,
+      'رقم الشركه'  : `ABS${20 + i}`,
       'الكمية': Math.floor(Math.random() * 100),
       'سعر البيع': (10 + Math.random() * 40).toFixed(2),
       'التخفيض': (Math.random() * 0.2).toFixed(2),
       'ملاحظات': notesList[Math.floor(Math.random() * notesList.length)],
       'نوع التخفيض': disctyp[Math.floor(Math.random() * disctyp.length)],
-      'الفئة': categoryList[Math.floor(Math.random() * categoryList.length)]
-      
+      'الفئة': categoryList[Math.floor(Math.random() * categoryList.length)],
+      'فئة الصنف': itemCategoryMap[itemName] || 'أخرى'
     });
   }
 
@@ -1031,6 +1097,7 @@ function downloadTemplate() {
 
   showResponse('تم تحميل النموذج بنجاح', 'success');
 }
+
 
 
 

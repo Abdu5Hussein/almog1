@@ -878,7 +878,6 @@
 
     <script>
       $(document).ready(function () {
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
         // Initialize Tabulator
         const table = new Tabulator("#users-table", {
           index: "fileid", // Use "fileid" as the unique row identifier
@@ -932,7 +931,6 @@
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${jwtToken_access}`,  // 👈 Include JWT token
               }
             })
             .then((response) => response.json())
@@ -1279,7 +1277,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1378,7 +1375,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1416,7 +1412,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1502,7 +1497,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })

@@ -1,312 +1,65 @@
+{% extends 'CarPartsTemplates/base.html' %}
 
+{% block title %}الأسئلة الشائعة{% endblock %}
 
+{% block content %}
+<section class="faq-section py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3" style="color: #0F1B2E;">الأسئلة الشائعة</h2>
+            <p class="lead text-muted">إجابات على أكثر الأسئلة شيوعاً لدى عملائنا</p>
+        </div>
 
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Search Box -->
+                <div class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-lg" placeholder="ابحث في الأسئلة الشائعة..." id="faqSearch" style="border-radius: 30px; border-color: #FF6B00;">
+                        <button class="btn btn-warning" type="button" style="border-radius: 0 30px 30px 0; margin-right: -1px;">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
 
-    {% extends 'CarPartsTemplates/base.html' %}
-
-    {% block title %}الأسئلة الشائعة{% endblock %}
-    
-    {% block content %}
-    {% load static %}
-    <!-- Your page-specific content here -->
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
-      <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
-      <link rel="stylesheet" href="{% static 'hozma/css/prodcut.css' %}">
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    </head>
-
-    <section class="faq-section py-5" style="background-color: #f8f9fa;">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="fw-bold mb-3" style="color: #0F1B2E;">الأسئلة الشائعة</h2>
-                <p class="lead text-muted">إجابات على أكثر الأسئلة شيوعاً لدى عملائنا</p>
-            </div>
-    
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <!-- Search Box -->
-                    <div class="mb-4">
-                        <div class="input-group">
-                            <input type="text" class="form-control form-control-lg" placeholder="ابحث في الأسئلة الشائعة..." id="faqSearch" style="border-radius: 30px; border-color: #FF6B00;">
-                            <button class="btn btn-warning" type="button" style="border-radius: 0 30px 30px 0; margin-right: -1px;">
-                                <i class="bi bi-search"></i>
+                <!-- FAQ Accordion -->
+                <div class="accordion" id="faqAccordion">
+                    {% for category in categories %}
+                    <h3 class="mt-4 mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
+                        <i class="bi bi-{{ category.icon }} me-2"></i>{{ category.get_category_display }}
+                    </h3>
+                    
+                    {% for faq in faqs %}
+                    {% if faq.category == category %}
+                    <div class="accordion-item mb-3 border-0 shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq{{ faq.id }}" aria-expanded="false" style="background-color: #f8f9fa;">
+                                {{ faq.question }}
                             </button>
-                        </div>
-                    </div>
-    
-                    <!-- FAQ Accordion -->
-                    <div class="accordion" id="faqAccordion">
-                        <!-- Category 1: Orders -->
-                        <h3 class="mt-4 mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
-                            <i class="bi bi-cart-check me-2"></i>الطلبات والشحن
-                        </h3>
-                        
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    كم تستغرق مدة التوصيل؟
-                                </button>
-                            </h2>
-                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>مدة التوصيل تختلف حسب المنطقة:</p>
-                                    <ul>
-                                        <li>طرابلس: 1-2 أيام عمل</li>
-                                        <li>المدن الكبرى: 2-3 أيام عمل</li>
-                                        <li>المناطق البعيدة: 3-5 أيام عمل</li>
-                                    </ul>
-                                    <p class="text-muted small">ملاحظة: قد تتأخر بعض الطلبات في أوقات الذروة أو العطل الرسمية.</p>
-                                </div>
-                            </div>
-                        </div>
-    
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    كيف يمكنني تتبع طلبي؟
-                                </button>
-                            </h2>
-                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>بعد شحن طلبك، سنرسل لك رسالة تحتوي على:</p>
-                                    <ol>
-                                        <li>رقم تتبع الشحنة</li>
-                                        <li>رابط مباشر لتتبع الشحنة</li>
-                                        <li>رقم هاتف شركة الشحن</li>
-                                    </ol>
-                                    <p>يمكنك أيضاً تتبع طلبك من خلال حسابك في موقعنا.</p>
-                                </div>
-                            </div>
-                        </div>
-    
-                        <!-- Category 2: Returns -->
-                        <h3 class="mt-4 mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
-                            <i class="bi bi-arrow-left-right me-2"></i>الإرجاع والاستبدال
-                        </h3>
-                        
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    ما هي سياسة الإرجاع والاستبدال؟
-                                </button>
-                            </h2>
-                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>نقبل إرجاع أو استبدال القطع خلال 7 أيام من تاريخ الاستلام في الحالات التالية:</p>
-                                    <ul>
-                                        <li>القطعة غير مناسبة لسيارتك</li>
-                                        <li>وجود عيب في التصنيع</li>
-                                        <li>القطعة غير مطابقة للمواصفات المذكورة</li>
-                                    </ul>
-                                    <p class="text-danger">ملاحظة: يجب أن تكون القطعة في حالتها الأصلية مع جميع التغليف والمستندات.</p>
-                                </div>
-                            </div>
-                        </div>
-    
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    كيف يمكنني إرجاع منتج؟
-                                </button>
-                            </h2>
-                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>لإرجاع منتج، يرجى اتباع الخطوات التالية:</p>
-                                    <ol>
-                                        <li>الاتصال بخدمة العملاء على الرقم 0914262604</li>
-                                        <li>تعبئة نموذج الإرجاع المتاح في حسابك</li>
-                                        <li>تغليف المنتج بشكل آمن مع إرفاق الفاتورة</li>
-                                        <li>إرسال المنتج عبر شركة الشحن المحددة</li>
-                                    </ol>
-                                    <p>سيتم معالجة طلبك خلال 3-5 أيام عمل بعد استلام المنتج.</p>
-                                </div>
-                            </div>
-                        </div>
-    
-                        <!-- Category 3: Products -->
-                        <h3 class="mt-4 mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
-                            <i class="bi bi-gear me-2"></i>المنتجات والقطع
-                        </h3>
-                        
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    كيف أعرف أن القطعة مناسبة لسيارتي؟
-                                </button>
-                            </h2>
-                            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>يمكنك التأكد من ملائمة القطعة لسيارتك بعدة طرق:</p>
-                                    <ul>
-                                        <li>استخدام أداة "التوافق مع سيارتك" في صفحة المنتج</li>
-                                        <li>مراجعة قسم "السيارات المتوافقة" في وصف المنتج</li>
-                                        <li>الاتصال بخدمة العملاء مع توفير معلومات سيارتك (الموديل، السنة، المحرك)</li>
-                                    </ul>
-                                    <p>نوصي دائماً بالتحقق من التوافق قبل الشراء.</p>
-                                </div>
-                            </div>
-                        </div>
-    
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    هل تقدمون قطع أصلية فقط أم هناك بدائل؟
-                                </button>
-                            </h2>
-                            <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>نقدم كلا النوعين:</p>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="fw-bold"><i class="bi bi-patch-check text-success me-2"></i>قطع أصلية</h6>
-                                            <p class="small">قطع من المصنع الأصلي بضمان الشركة المصنعة</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h6 class="fw-bold"><i class="bi bi-shield-check text-primary me-2"></i>قطع بديلة</h6>
-                                            <p class="small">قطع عالية الجودة من ماركات موثوقة بضمان المتجر</p>
-                                        </div>
-                                    </div>
-                                    <p class="mt-2">يمكنك تصفية المنتجات حسب النوع من خلال خيارات التصفية.</p>
-                                </div>
-                            </div>
-                        </div>
-    
-                        <!-- Category 4: Payments -->
-                        <h3 class="mt-4 mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
-                            <i class="bi bi-credit-card me-2"></i>الدفع والأسعار
-                        </h3>
-                        
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    ما هي طرق الدفع المتاحة؟
-                                </button>
-                            </h2>
-                            <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>نحن نقدم عدة خيارات دفع لتسهيل عملية الشراء:</p>
-                                    <div class="payment-methods">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="bi bi-cash-coin fs-4 me-3 text-success"></i>
-                                            <span>الدفع نقداً عند الاستلام</span>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="bi bi-credit-card fs-4 me-3 text-primary"></i>
-                                            <span>بطاقات الائتمان والمدينة</span>
-                                        </div>
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-bank fs-4 me-3 text-info"></i>
-                                            <span>التحويل البنكي المباشر</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-    
-                        <div class="accordion-item mb-3 border-0 shadow-sm">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8" aria-expanded="false" style="background-color: #f8f9fa;">
-                                    هل الأسعار تشمل التركيب؟
-                                </button>
-                            </h2>
-                            <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    <p>لا تشمل الأسعار تكلفة التركيب، ولكننا نقدم خدمة توصيل القطع إلى ورشة الصيانة المتعاقد معها:</p>
-                                    <ul>
-                                        <li>الأسعار المعروضة هي لقطع الغيار فقط</li>
-                                        <li>يمكنك طلب خدمة التركيب عند الدفع (سعر إضافي)</li>
-                                        <li>نوصي بتركيب القطع في ورشة متخصصة</li>
-                                    </ul>
-                                    <p>للاستفسار عن أسعار التركيب، يرجى الاتصال بخدمة العملاء.</p>
-                                </div>
+                        </h2>
+                        <div id="faq{{ faq.id }}" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                {{ faq.answer|linebreaks }}
                             </div>
                         </div>
                     </div>
-    
-                    <!-- Still Have Questions -->
-                    <div class="card mt-5 border-0 shadow-sm" style="background-color: #FF6B00; color: white;">
-                        <div class="card-body text-center py-4">
-                            <h4 class="fw-bold mb-3">لا زلت لديك أسئلة؟</h4>
-                            <p class="mb-4">فريق دعم العملاء لدينا مستعد لمساعدتك في أي استفسار</p>
-                            <a href="/contact" class="btn btn-light btn-lg rounded-pill px-4">
-                                <i class="bi bi-headset me-2"></i> اتصل بنا الآن
-                            </a>
-                        </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endfor %}
+                </div>
+
+                <!-- Still Have Questions -->
+                <div class="card mt-5 border-0 shadow-sm" style="background-color: #FF6B00; color: white;">
+                    <div class="card-body text-center py-4">
+                        <h4 class="fw-bold mb-3">لا زلت لديك أسئلة؟</h4>
+                        <p class="mb-4">فريق دعم العملاء لدينا مستعد لمساعدتك في أي استفسار</p>
+                        <a href="/hozma/contact" class="btn btn-light btn-lg rounded-pill px-4">
+                            <i class="bi bi-headset me-2"></i> اتصل بنا الآن
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
-    
-    {% endblock %}
-    
-    {% block extra_js %}
-    <!-- Page-specific JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-  
-    <script src="{% static 'hozma/js/navbar.js' %}"></script>
-    <script src="{% static 'hozma/js/product.js' %}"></script>
-    <script src="{% static 'hozma/js/cart.js' %}"></script>
-    <script src="{% static 'hozma/js/itemmain.js' %}"></script>
+    </div>
 </section>
-
-<script>
-    // FAQ Search Functionality
-    document.getElementById('faqSearch').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const accordionItems = document.querySelectorAll('.accordion-item');
-        
-        if (searchTerm.length < 2) {
-            // Show all items if search term is too short
-            accordionItems.forEach(item => {
-                item.style.display = 'block';
-            });
-            return;
-        }
-        
-        let foundMatches = false;
-        
-        accordionItems.forEach(item => {
-            const question = item.querySelector('.accordion-button').textContent.toLowerCase();
-            const answer = item.querySelector('.accordion-body').textContent.toLowerCase();
-            
-            if (question.includes(searchTerm) || answer.includes(searchTerm)) {
-                item.style.display = 'block';
-                foundMatches = true;
-                
-                // Open the matching accordion item
-                const collapseId = item.querySelector('.accordion-button').getAttribute('data-bs-target');
-                const collapseElement = document.querySelector(collapseId);
-                new bootstrap.Collapse(collapseElement, { toggle: true });
-            } else {
-                item.style.display = 'none';
-            }
-        });
-        
-        // Show message if no matches found
-        const noResultsMessage = document.getElementById('noResultsMessage');
-        if (!foundMatches) {
-            if (!noResultsMessage) {
-                const noResults = document.createElement('p');
-                noResults.id = 'noResultsMessage';
-                noResults.className = 'text-center text-muted py-4';
-                noResults.textContent = 'لا توجد نتائج مطابقة للبحث';
-                document.querySelector('#faqAccordion').appendChild(noResults);
-            }
-        } else if (noResultsMessage) {
-            noResultsMessage.remove();
-        }
-    });
-</script>
-    {% endblock %}
+{% endblock %}

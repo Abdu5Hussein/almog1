@@ -348,6 +348,9 @@
                   required
                 >
                   <option value="" selected>اختر</option>
+                  {% for x in sources %}
+                  <option value="{{ x.clientid }}">{{ x.name }}</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>

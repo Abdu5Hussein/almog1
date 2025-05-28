@@ -117,7 +117,7 @@ class BuyInvoiceSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_invoice_date(self, obj):
-        return obj.invoice_date.strftime("%Y-%m-%d")  # Ensure "YYYY-MM-DD" format
+        return obj.invoice_date.strftime("%Y-%m-%d") if obj.invoice_date else None  # Ensure "YYYY-MM-DD" format
 
 
 
@@ -243,4 +243,3 @@ class PreOrderItemsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-        

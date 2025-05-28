@@ -79,7 +79,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 
     const uploadForm = document.getElementById('add-image-form');
     const successMessageDiv = document.getElementById('success-message');
@@ -97,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
-                'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: formData
         })

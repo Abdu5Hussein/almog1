@@ -99,7 +99,6 @@
 
     <!-- Custom Script -->
     <script>
-      const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 
 
         function addEngine() {
@@ -118,7 +117,6 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${jwtToken_access}`,
                 },
                 body: JSON.stringify(data),  // Stringify the data here
             })
@@ -156,7 +154,6 @@
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${jwtToken_access}`,
                 },
                 body: JSON.stringify(data),  // Stringify the data here
             })
@@ -194,7 +191,6 @@
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${jwtToken_access}`,
                 },
                 body: JSON.stringify(data),  // Stringify the data here
             })
@@ -231,7 +227,6 @@
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${jwtToken_access}`,
                 },
                 //body: JSON.stringify(data),  // Stringify the data here
             })

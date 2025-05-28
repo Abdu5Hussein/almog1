@@ -25,7 +25,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import HTTP_200_OK
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from rest_framework.response import Response
 from almogOil import models as almogOil_models
 from almogOil import serializers as almogOil_serializers
@@ -167,7 +166,7 @@ def create_sell_invoice(request):
                 else:
                     client_obj = almogOil_models.AllClientsTable.objects.get(name=client_identifier)
 
-                balance_data = almogOil_models.TransactionsHistoryTable.objects.filter(object_id=client_obj.clientid).aggregate(
+                balance_data = almogOil_models.TransactionsHistoryTable.objects.filter(client_object=client_obj).aggregate(
                     total_debt=Sum('debt') or Decimal("0.0000"),
                     total_credit=Sum('credit') or Decimal("0.0000")
                 )
@@ -289,9 +288,24 @@ def Sell_invoice_create_item(request):
             if serializer.is_valid():
                 serializer.save()
 
+
+                movement_record = almogOil_models.Clientstable.objects.create(
+                    itemno=product.itemno,
+                    itemname=product.itemname,
+                    maintype=product.itemmain,
+                    currentbalance=product.itemvalue,
+                    date=timezone.now(),
+                    clientname=invoice.client_name,
+                    description="فاتورة بيع - رقم الفاتورة: {}".format(data.get("invoice_id")),
+                    clientbalance=int(data.get('itemvalue', 0)) or 0,
+                    pno_instance=product,
+                    pno=product.pno
+                )
+
                 # Update the product quantity
                 product.itemvalue -= item_value
                 product.save()
+
 
                 return Response({
                     "message": "Item created successfully",
@@ -410,7 +424,7 @@ def filter_sellinvoices(request):
         if fromdate and todate:
             from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
             to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
-            filters_q &= Q(invoice_date__range=[from_date_obj, to_date_obj])
+            filters_q &= Q(date_time__range=[from_date_obj, to_date_obj])
 
         invoices_qs = almogOil_models.SellinvoiceTable.objects.filter(filters_q).order_by("-invoice_date")
         totals = invoices_qs.aggregate(
@@ -566,7 +580,7 @@ def deliver_sell_invoice(request):
         invoice.save()
 
         # Send notification to the user associated with this invoice.
-        user_id = invoice.client  # Make sure this field exists on your model.
+        user_id = invoice.client_obj.clientid  # Make sure this field exists on your model.
         room_group_name = f'user_{user_id}'
         message = f"تم تحديث حالة الفاتورة رقم {invoice_id} إلى {status}."
 
@@ -582,12 +596,12 @@ def deliver_sell_invoice(request):
 
         async_task('almogOil.Tasks.assign_orders')  # Adjust as needed
 
-        return Response({'status': 'success', 'message': 'Invoice updated successfully'}, status=status.HTTP_200_OK)
+        return Response({'status': 'success', 'message': 'Invoice updated successfully'}, status=200)
 
     except almogOil_models.SellinvoiceTable.DoesNotExist:
-        return Response({'status': 'error', 'message': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'status': 'error', 'message': 'Invoice not found'}, status=404)
     except Exception as e:
-        return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'status': 'error', 'message': str(e)}, status=500)
 
 @extend_schema(
 description="""cancel sell invoice preparing""",

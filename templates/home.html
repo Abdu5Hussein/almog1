@@ -1,7 +1,7 @@
 {% load static %}
 
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,14 +20,12 @@
       .stats-container{
         padding: 20px;
         padding-top: 25px;
-        max-width: calc(100% - 30px);
         font-family: 'Font Awesome 5 Free';
       }
       body {
         font-family: Arial, sans-serif;
         height: 100vh;
         width: 100%;
-        margin-right: 250px;
         background-color: #1c3766;
       }
       .navbar-logo {
@@ -58,7 +56,7 @@
         margin-right: 0px !important;
         }
         .main-content{
-        padding-right: 0px !important;
+        margin-right: 0px !important;
         }
       }
       .app-bar .logo h1 {
@@ -690,7 +688,7 @@
         margin-right: 250px;
       }
       .main-content{
-        padding-right: 250px;
+        margin-right: 250px;
       }
       .navbar-brand {
         margin-right: 4rem;
@@ -1016,7 +1014,7 @@
       </nav>
 
       <!-- Sidebar -->
-        <div id="sidebar" class="sidebar">
+        <div id="sidebar" class="sidebar" dir="ltr">
           <ul class="nav flex-column">
             {% if perms.almogOil.category_products %}
               <li class="nav-item">
@@ -1279,7 +1277,7 @@
         </div>
 
       <!-- Main Content -->
-      <div class="main-content flex-grow-1 mt-5">
+      <div class="main-content flex-grow-1 mt-5 p-4">
 
         <div class="stats-container" dir="rtl" {% if perms.almogOil.show_statistics %} style="display: block;"  {% else %} style="display: none;" {% endif %}>
           <div class="row justify-content-center my-5">
@@ -1693,7 +1691,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-    //const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 
       const menuToggle = document.getElementById("sidebar-toggler");
       const sidebar = document.getElementById("sidebar");

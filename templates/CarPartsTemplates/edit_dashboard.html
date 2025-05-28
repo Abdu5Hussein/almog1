@@ -1,0 +1,402 @@
+{% extends 'CarPartsTemplates/base.html' %}
+
+{% block title %}تعديل الملف الشخصي{% endblock %}
+
+{% block content %}
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --light-bg: #f8f9fa;
+            --border-color: #e0e0e0;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        .profile-header {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: none;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .profile-card .card-header {
+            background-color: var(--secondary-color);
+            color: white;
+            border-bottom: none;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+        }
+        
+        .profile-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .map-controls {
+            margin-bottom: 1rem;
+        }
+        
+        .btn-save {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-save:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-cancel {
+            background-color: #e0e0e0;
+            color: var(--secondary-color);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+            margin-left: 1rem;
+        }
+        
+        .btn-cancel:hover {
+            background-color: #bdc3c7;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-header {
+                padding: 1.5rem 0;
+            }
+            
+            .btn-save, .btn-cancel {
+                width: 100%;
+                margin-left: 0;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="profile-header text-center">
+        <div class="container">
+            <h1><i class="fas fa-user-edit me-2"></i>تعديل الملف الشخصي</h1>
+            <p class="text-white-50">قم بتحديث معلوماتك الشخصية هنا</p>
+        </div>
+    </div>
+
+    <div class="container mb-5" dir="rtl">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <form id="profileForm">
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <i class="fas fa-info-circle me-2"></i>المعلومات الشخصية
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">الاسم الكامل*</label>
+                                        <input type="text" class="form-control" id="name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">البريد الإلكتروني*</label>
+                                        <input type="email" class="form-control" id="email" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="phone" class="form-label">رقم الهاتف*</label>
+                                        <input type="tel" class="form-control" id="phone" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="mobile" class="form-label">رقم الجوال</label>
+                                        <input type="tel" class="form-control" id="mobile">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="website" class="form-label">الموقع الإلكتروني</label>
+                                        <input type="url" class="form-control" id="website">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="address" class="form-label">العنوان*</label>
+                                <textarea class="form-control" id="address" rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">موقعك على الخريطة</label>
+                                <div id="map"></div>
+                                <div class="map-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="locateMe()">
+                                        <i class="fas fa-location-arrow me-1"></i> تحديد موقعي الحالي
+                                    </button>
+                                    <small class="text-muted d-block mt-2">اسحب العلامة لتحديد موقعك الدقيق</small>
+                                </div>
+                                <input type="hidden" id="geo_location">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-cancel" onclick="location.href='/dashboard'">
+                            <i class="fas fa-times me-1"></i> إلغاء
+                        </button>
+                        <button type="submit" class="btn btn-save">
+                            <i class="fas fa-save me-1"></i> حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let map;
+        let marker;
+        let defaultPosition = [24.7136, 46.6753]; // Default to Riyadh
+        
+        function initMap() {
+            // Initialize map
+            map = L.map('map').setView(defaultPosition, 12);
+            
+            // Add tile layer (you can use any tile layer you prefer)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Add marker
+            marker = L.marker(defaultPosition, {
+                draggable: true
+            }).addTo(map);
+            
+            // Update geo_location when marker is moved
+            marker.on('dragend', function() {
+                updateGeoLocation(marker.getLatLng());
+            });
+            
+            // Click on map to add marker
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                updateGeoLocation(e.latlng);
+            });
+            
+            // Load existing location if available
+            loadProfileData();
+        }
+        let debounceTimer;
+function updateGeoLocation(position) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        const geoLocation = `${position.lat},${position.lng}`;
+        document.getElementById('geo_location').value = geoLocation;
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('address').value = data.display_name;
+            })
+            .catch(error => console.error('Geocoding error:', error));
+    }, 500); // Delay in milliseconds
+}
+
+
+        
+        function locateMe() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const pos = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        map.setView([pos.lat, pos.lng], 15);
+                        marker.setLatLng([pos.lat, pos.lng]);
+                        updateGeoLocation({lat: pos.lat, lng: pos.lng});
+                    },
+                    () => {
+                        showToast("تعذر الحصول على موقعك الحالي", "error");
+                    }
+                );
+            } else {
+                showToast("المتصفح لا يدعم تحديد الموقع", "error");
+            }
+        }
+        
+        function loadProfileData() {
+            const customerId = JSON.parse(localStorage.getItem("session_data@user_id")).replace(/^c-/, '');
+            
+            customFetch(`http://45.13.59.226/api/clients/${customerId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || !data.clients || data.clients.length === 0) {
+                        throw new Error("No client data found");
+                    }
+
+                    const client = data.clients[0];
+                    populateForm(client);
+                    
+                    // Set map location if available
+                    if (client.geo_location) {
+                        const [lat, lng] = client.geo_location.split(',').map(Number);
+                        
+                        map.setView([lat, lng], 15);
+                        marker.setLatLng([lat, lng]);
+                        document.getElementById('geo_location').value = client.geo_location;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading profile:', error);
+                    showToast('حدث خطأ أثناء تحميل بيانات الملف الشخصي', 'error');
+                });
+        }
+        
+        function populateForm(clientData) {
+            document.getElementById('name').value = clientData.name || '';
+            document.getElementById('email').value = clientData.email || '';
+            document.getElementById('phone').value = clientData.phone || '';
+            document.getElementById('mobile').value = clientData.mobile || '';
+            document.getElementById('website').value = clientData.website || '';
+            document.getElementById('address').value = clientData.address || '';
+        }
+        
+        function updateProfile() {
+            const customerId = JSON.parse(localStorage.getItem("session_data@user_id")).replace(/^c-/, '');
+            
+            // Prepare form data
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                mobile: document.getElementById('mobile').value,
+                website: document.getElementById('website').value,
+                address: document.getElementById('address').value,
+                geo_location: document.getElementById('geo_location').value
+            };
+            
+            // Show loading state
+            const saveBtn = document.querySelector('#profileForm button[type="submit"]');
+            const originalBtnText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> جاري الحفظ...';
+            saveBtn.disabled = true;
+            
+            // Send to API
+            customFetch(`/hozma/api/update-client/${customerId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                showToast('تم تحديث الملف الشخصي بنجاح', 'success');
+                setTimeout(() => {
+                    window.location.href = '/hozma/hozmaDashbord';
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Error updating profile:', error);
+                const errorMsg = error.detail || 'حدث خطأ أثناء تحديث الملف الشخصي';
+                showToast(errorMsg, 'error');
+            })
+            .finally(() => {
+                saveBtn.innerHTML = originalBtnText;
+                saveBtn.disabled = false;
+            });
+        }
+        
+        // Initialize form
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateProfile();
+            });
+            
+            initMap();
+        });
+        
+        function showToast(message, type) {
+            // Implement your toast notification here
+            alert(`${type === 'success' ? '✓' : '✗'} ${message}`);
+        }
+    </script>
+{% endblock %}

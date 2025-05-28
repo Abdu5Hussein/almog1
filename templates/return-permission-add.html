@@ -764,8 +764,6 @@
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-
         var table = new Tabulator("#return-table", {
         data: [], // Assign the data to the table
         layout: "fitColumns", // Adjust column widths to fit data
@@ -774,10 +772,11 @@
                   { title: "رقم الشركة", field: "company_no" },
                   { title: "اسم الشركة", field: "company" },
                   { title: "الصنف", field: "item_name" },
-                  { title: "كمية الفاتورة", field: "org_quantity", hozAlign: "right" },
-                  { title: "الكمية المرجعة", field: "returned_quantity", hozAlign: "right" },
-                  { title: "سعر القطعة", field: "price", hozAlign: "right", formatter: "money" },
-                  { title: "الاجمالي", field: "total", hozAlign: "right", formatter: "money" },
+                  { title: "كمية الفاتورة", field: "org_quantity", hozAlign: "Center" },
+                  { title: "الكمية المرجعة", field: "returned_quantity", hozAlign: "Center" },
+                  { title: "سبب الترجيع", field: "return_reason", hozAlign: "right" },
+                  { title: "سعر القطعة", field: "price", hozAlign: "right", formatter: "Center" },
+                  { title: "الاجمالي", field: "total", hozAlign: "right", formatter: "Center" },
                   { title: "رقم الفاتورة", field: "invoice_no" }
                 ],
         movableColumns: true, // Allow columns to be moved
@@ -810,7 +809,6 @@ async function createPermission() {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(requestData)
         });
@@ -979,7 +977,6 @@ function fetchData(){
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           });
 

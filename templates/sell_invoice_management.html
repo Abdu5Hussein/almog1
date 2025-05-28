@@ -49,7 +49,7 @@
           color:rgb(255, 255, 255);
       }
       .choices {
-        width: calc(100% - 73px); /*edit later*/
+        width: calc(100% - 95px); /*edit later*/
       }
       .dropdown {
         display: none;
@@ -1240,10 +1240,11 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
 
         const toggler = document.getElementById('more-info-toggler');
         const moreInfo = document.getElementById('more-info');
+
+
 
         toggler.addEventListener('click', () => {
             moreInfo.classList.toggle('show');
@@ -1427,6 +1428,7 @@ function openWindow(url,width = 600,height = 700) {
         fetchInvoicesFromServer({ page: currentInvoicesPage, size: pageSize });
       }
       //hideInvoicesLoader();
+      //scrollToLastRow();
     }
   };
 
@@ -1465,7 +1467,6 @@ function openWindow(url,width = 600,height = 700) {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           })
       .then((response) => response.json())
@@ -1513,6 +1514,7 @@ function openWindow(url,width = 600,height = 700) {
         console.timeEnd("fetchData"); // End the timer regardless of success or failure
         isLoading = false; // Reset loading flag after fetch completes
         hideInvoicesLoader();
+        scrollToLastRow();
       });
   }
   // Attach the scroll event listener
@@ -1653,6 +1655,23 @@ function openWindow(url,width = 600,height = 700) {
             fetchInvoicesFromServer({page: selectedPage,size: selectedPageSize});
         }
       });
+        function scrollToLastRow() {
+          invoices_table.setPage(invoices_table.getPageMax()).then(() => {
+              setTimeout(() => {
+                  // Scroll to last row
+                  var lastRow = invoices_table.getRows().pop();
+                  if (lastRow) {
+                      invoices_table.scrollToRow(lastRow, "bottom").catch(err => console.warn("Scroll Error:", err));
+                  }
+
+                  // Scroll the table container to the bottom
+                  let tableContainer = document.getElementById("users-table");
+                  if (tableContainer) {
+                      tableContainer.scrollTop = tableContainer.scrollHeight;
+                  }
+              }, 300); // Small delay to ensure content loads before scrolling
+          });
+        }
 
       function applyFiltersForInvoices(pageno = 1, pagesize = pageSize) {
           console.time("applyFiltersTime");
@@ -1710,7 +1729,6 @@ function openWindow(url,width = 600,height = 700) {
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(filterValues),
           })
@@ -1759,6 +1777,7 @@ function openWindow(url,width = 600,height = 700) {
               active_url="server_filtered_data";
               isLoading = false;
               hideInvoicesLoader();
+              scrollToLastRow();
             });
         }
 
@@ -1794,6 +1813,18 @@ function openWindow(url,width = 600,height = 700) {
             .addEventListener("input", () => {
             debouncedApplyFiltersForInvoices();
         });
+        });
+
+        const element = document.getElementById("client");
+        const choices = new Choices(element, {
+          searchEnabled: true,
+          removeItemButton: true, // Optional: allows removal of selected items
+          //addItems: true, // Allows adding items
+          //addChoices: true,
+          duplicateItemsAllowed: false,
+        });
+        element.addEventListener('choice', function(event) {
+          debouncedApplyFiltersForInvoices();
         });
         ///////////////////
 
@@ -1865,7 +1896,6 @@ function openWindow(url,width = 600,height = 700) {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify({
               data: tableData,

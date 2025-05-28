@@ -893,7 +893,6 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-      const jwtToken_access = null;
       function updateExchangeRate() {
         const currencyDropdown = document.getElementById("currency");
         const org_currency = document.getElementById("org-currency");
@@ -988,18 +987,13 @@
           rate: rate,
         };
 
-        const jwtToken_access = localStorage.getItem("session_data@access_token");
-        console.log("jwt access token: " + jwtToken_access);
-        if (!jwtToken_access) {
-          console.error("JWT Token is missing!");
-        }
+
         // Make a POST request to the server
         customFetch("/process-edit-invoice", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(),
-            "Authorization": "Bearer " + jwtToken_access,
           },
           body: JSON.stringify(data),
         })
@@ -1039,13 +1033,11 @@
 
       // Assuming you have a function to fetch the last reciept_no for the 'ايداع' transaction
       function fetchLastRecieptNo(callback) {
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-        console.log("jwt access token: " + jwtToken_access);
+
         customFetch(`get-last-buyinvoice-id`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${jwtToken_access}`  // 👈 Include JWT token
           }
         }).then((response) => {
             if (!response.ok) {
@@ -1206,7 +1198,6 @@
               headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken(),
-                'Authorization': `Bearer ${jwtToken_access}`,
               },
               body: JSON.stringify(data),
             })
@@ -1272,7 +1263,6 @@
               headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken(),
-                'Authorization': `Bearer ${jwtToken_access}`,
               },
               body: JSON.stringify(data),
             })
@@ -1320,15 +1310,12 @@
       });
       async function fetchInvoiceItems(invoiceId) {
         const url = `/fetch-buy-invoice-items?id=${encodeURIComponent(invoiceId)}`; // Replace `/your-endpoint-url/` with the actual endpoint path
-        const jwtToken_access = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-        console.log("jwt access token: " + jwtToken_access);
 
         try {
           const response = await customFetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
           });
 
@@ -1418,7 +1405,6 @@
           headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCSRFToken(), // Ensure CSRF token is included
-            'Authorization': `Bearer ${jwtToken_access}`,
           },
           body: JSON.stringify(data),
         })
@@ -1463,7 +1449,6 @@
               headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": getCSRFToken(),
-                'Authorization': `Bearer ${jwtToken_access}`,
               },
               body: JSON.stringify(data),
             })
@@ -1511,7 +1496,6 @@
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": getCSRFToken(),
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify(data),
           })
@@ -1576,7 +1560,6 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              'Authorization': `Bearer ${jwtToken_access}`,
             },
             body: JSON.stringify({
               data: tableData,

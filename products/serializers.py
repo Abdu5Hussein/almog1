@@ -61,3 +61,8 @@ class LostAndDamagedTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.LostAndDamagedTable
         fields = '__all__'
+
+class ItemCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.ItemCategory
+        fields = ['id', 'name']        

@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from rest_framework import status
-
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from django.contrib import messages
@@ -96,19 +96,61 @@ def my_account(request):
 
 def track_order(request):
     return render(request, 'CarPartsTemplates/track_order.html')
+def contact(request):
+    return render(request, 'CarPartsTemplates/contact.html')
 
 def return_policy(request):
     return render(request, 'CarPartsTemplates/return_policy.html')
 
 def faq(request):
+        # GET method - Display all FAQs
+    faqs = almogOil_models.FAQ.objects.all().order_by('category', 'question')
+    categories = almogOil_models.FAQ.objects.values_list('category', flat=True).distinct()
+    
+    context = {
+        'faqs': faqs,
+        'categories': categories,
+    }
     return render(request, 'CarPartsTemplates/faq.html')
+@login_required
+def faq_edit(request):
+    if request.method == 'POST':
+        # Handle form submission for editing FAQs
+        question_id = request.POST.get('id')
+        question = request.POST.get('question')
+        answer = request.POST.get('answer')
+        category = request.POST.get('category')
+        
+        try:
+            faq = almogOil_models.FAQ.objects.get(id=question_id)
+            faq.question = question
+            faq.answer = answer
+            faq.category = category
+            faq.save()
+            messages.success(request, 'تم تحديث السؤال بنجاح')
+        except almogOil_models.FAQ.DoesNotExist:
+            messages.error(request, 'السؤال غير موجود')
+        
+        return redirect('faq_edit')
+    
+    # GET method - Display all FAQs for editing
+    faqs = almogOil_models.FAQ.objects.all().order_by('category', 'question')
+    categories = almogOil_models.FAQ.objects.values_list('category', flat=True).distinct()
+    
+    context = {
+        'faqs': faqs,
+        'categories': categories,
+    }
+    return render(request, 'CarPartsTemplates/faq_edit.html', context)
 
 def terms_conditions(request):
     return render(request, 'CarPartsTemplates/terms_conditions.html')
 
 
 def dashboard(request):
-    return render(request, 'CarPartsTemplates/preorder-dashboard.html')  # This will render the dashboard page
+    return render(request, 'CarPartsTemplates/preorder-dashboard.html') 
+def order_view(request):
+    return render(request, 'CarPartsTemplates/order.html') 
 
 def preorder_detail(request, invoice_no):
     return render(request, 'CarPartsTemplates/preorder-detail.html', {'invoice_no': invoice_no})  # This will render the PreOrder details page
@@ -193,3 +235,7 @@ def source_register_view(request):
 
 def source_dashboard(request):
     return render(request, 'CarPartsTemplates/source/edit-source.html')
+
+def edit_dashboard(request):
+    return render(request, 'CarPartsTemplates/edit_dashboard.html')
+

@@ -216,7 +216,7 @@
       <i class="bi bi-check-circle-fill fs-4 me-3"></i>
       <div>
         <h5 class="alert-heading mb-1">تم استلام طلبك بنجاح!</h5>
-        <p class="mb-0">سيتم إرسال تفاصيل الشحن إلى بريدك الإلكتروني عند تجهيز الطلب.</p>
+        <p class="mb-0">سيتم إرسال تفاصيل الشحن إلى رقم whatsapp عند تجهيز الطلب.</p>
       </div>
     </div>
 
@@ -284,7 +284,7 @@
         <!-- —— actions —— -->
         <div class="invoice-card no-print text-center">
           <div class="invoice-card-body">
-            <button class="btn print-invoice-btn text-white me-2" onclick="window.print()">
+            <button class="btn print-invoice-btn text-white me-2" onclick="printInvoice()">
               <i class="bi bi-printer me-2"></i>طباعة الفاتورة
             </button>
             <a href="/hozma/tracking/" class="btn track-order-btn text-white">
@@ -305,11 +305,15 @@
 {% endblock %}
 
 {% block extra_js %}
+
   <!-- jQuery + Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/helper_functions.js' %}"></script>
+
 
   <script>
+      const clientId = JSON.parse(localStorage.getItem("session_data@user_id"));
     /* =============== helpers =============== */
     const PLACEHOLDER_IMG = "{% static 'images/parts/default-part.jpg' %}";
 
@@ -326,7 +330,12 @@
       if (!invoiceNo) return console.error('Invoice number not found in URL.');
 
       try {
-        const res = await fetch(`http://45.13.59.226/hozma/api/preorder/${invoiceNo}/`);
+        const res = await customFetch(`/hozma/api/preorder/${invoiceNo}/?client_id=${clientId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         if (!res.ok) throw new Error(`API responded ${res.status}`);
 
         const data = await res.json();
@@ -456,6 +465,250 @@ tbody.insertAdjacentHTML('beforeend', `
 `;
     }
 
+    function printInvoice() {
+    try {
+        // Get order number from the page (corrected selector)
+        const invoiceNoElem = document.querySelector('#order-summary-list li:nth-child(1)');
+        const invoiceNo = invoiceNoElem ? invoiceNoElem.textContent.split(':')[1].trim() : 'N/A';
+
+        // Get order date from the page (corrected selector)
+        const orderDateElem = document.querySelector('#order-summary-list li:nth-child(2)');
+        const orderDate = orderDateElem ? orderDateElem.textContent.split(':')[1].trim() : new Date().toLocaleDateString('ar-LY');
+
+        // Get client details (corrected selectors)
+        const clientNameElem = document.querySelector('#customer-details-list li:nth-child(1)');
+        const clientName = clientNameElem ? clientNameElem.textContent.split(':')[1].trim() : 'N/A';
+
+        const phoneElem = document.querySelector('#customer-details-list li:nth-child(3)');
+        const phone = phoneElem ? phoneElem.textContent.split(':')[1].trim() : 'N/A';
+
+        const addressElem = document.querySelector('#customer-details-list li:nth-child(4)');
+        const address = addressElem ? addressElem.textContent.split(':')[1].trim() : 'N/A';
+
+        // Get payment method (added this)
+        const paymentMethodElem = document.querySelector('#order-summary-list li:nth-child(3)');
+        const paymentMethod = paymentMethodElem ? paymentMethodElem.textContent.split(':')[1].trim() : 'N/A';
+
+        // Get order status (added this)
+        const orderStatusElem = document.querySelector('#order-summary-list li:nth-child(5)');
+        const orderStatus = orderStatusElem ? orderStatusElem.textContent.split(':')[1].trim() : 'N/A';
+
+        // Get items data
+        const items = [];
+        const itemRows = document.querySelectorAll('#invoice-items-tbody tr:not(.summary-row)');
+        
+        itemRows.forEach(row => {
+            try {
+                const name = row.querySelector('td div div.fw-bold')?.textContent || 'N/A';
+                const pno = row.querySelector('td div div.small:nth-of-type(1)')?.textContent.replace('رقم القطعة:', '').trim() || 'N/A';
+                const company = row.querySelector('td div div.small:nth-of-type(2)')?.textContent.replace('منشأ:', '').trim() || 'N/A';
+                const price = row.querySelector('td:nth-child(2)')?.textContent.trim() || '0.00 د.ل';
+                const qty = row.querySelector('td:nth-child(3)')?.textContent.trim() || '0';
+                const total = row.querySelector('td:nth-child(4)')?.textContent.trim() || '0.00 د.ل';
+                
+                items.push({ name, pno, company, price, qty, total });
+            } catch (e) {
+                console.error('Error processing item row:', e);
+            }
+        });
+
+        // Get summary data (corrected selectors)
+        const summaryRows = document.querySelectorAll('#invoice-items-tbody tr.summary-row');
+        const subtotal = summaryRows[0]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
+        const shipping = summaryRows[1]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
+        const discount = summaryRows[2]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
+        const grandTotal = document.querySelector('#invoice-items-tbody tr.summary-row-total td:last-child')?.textContent.trim() || '0.00 د.ل';
+
+        // Generate items HTML
+        const itemsHtml = items.map(item => `
+            <tr>
+                <td>
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small>رقم القطعة: ${item.pno}</small><br>
+                        <small>المنشأ: ${item.company}</small>
+                    </div>
+                </td>
+                <td>${item.price}</td>
+                <td>${item.qty}</td>
+                <td>${item.total}</td>
+            </tr>
+        `).join('');
+
+        // Create print window
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('يُرجى السماح بالنوافذ المنبثقة لطباعة الفاتورة');
+            return;
+        }
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html dir="rtl" lang="ar">
+            <head>
+                <meta charset="UTF-8">
+                <title>فاتورة #${invoiceNo}</title>
+                <style>
+                    body { 
+                        font-family: 'Arial', sans-serif; 
+                        padding: 20px; 
+                        line-height: 1.6;
+                        color: #333;
+                    }
+                    .invoice-header { 
+                        text-align: center; 
+                        margin-bottom: 30px; 
+                        padding-bottom: 10px; 
+                        border-bottom: 2px solid #000; 
+                    }
+                    .invoice-header h1 { 
+                        margin: 0; 
+                        font-size: 28px;
+                        color: #0F1B2E;
+                    }
+                    .invoice-header p {
+                        margin-top: 5px;
+                        color: #666;
+                    }
+                    .invoice-info { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin-bottom: 30px;
+                        flex-wrap: wrap;
+                    }
+                    .info-block { 
+                        width: 48%; 
+                        margin-bottom: 15px;
+                    }
+                    .info-block p {
+                        margin: 5px 0;
+                    }
+                    table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin: 20px 0; 
+                        font-size: 14px;
+                    }
+                    th, td { 
+                        border: 1px solid #ddd; 
+                        padding: 10px; 
+                        text-align: right; 
+                    }
+                    th { 
+                        background-color: #f5f5f5;
+                        font-weight: bold;
+                    }
+                    .summary-table { 
+                        width: 50%; 
+                        margin-left: auto; 
+                        margin-top: 30px;
+                    }
+                    .total-row { 
+                        font-weight: bold; 
+                        font-size: 1.1em; 
+                        background-color: #f9f9f9;
+                    }
+                    .footer {
+                        margin-top: 50px;
+                        text-align: center;
+                        font-style: italic;
+                        color: #666;
+                        border-top: 1px solid #eee;
+                        padding-top: 15px;
+                    }
+                    @media print {
+                        body { 
+                            padding: 0; 
+                            font-size: 12px;
+                        }
+                        .no-print { 
+                            display: none !important; 
+                        }
+                        .invoice-header {
+                            margin-top: 0;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="invoice-header">
+                    <h1>فاتورة بيع</h1>
+                    <p>متجر حزمة لقطع غيار السيارات</p>
+                </div>
+                
+                <div class="invoice-info">
+                    <div class="info-block">
+                        <p><strong>رقم الفاتورة:</strong> ${invoiceNo}</p>
+                        <p><strong>تاريخ الطلب:</strong> ${orderDate}</p>
+                        <p><strong>طريقة الدفع:</strong> ${paymentMethod}</p>
+                    </div>
+                    <div class="info-block">
+                        <p><strong>اسم العميل:</strong> ${clientName}</p>
+                        <p><strong>رقم الهاتف:</strong> ${phone}</p>
+                        <p><strong>حالة الطلب:</strong> ${orderStatus}</p>
+                    </div>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>القطعة</th>
+                            <th>السعر</th>
+                            <th>الكمية</th>
+                            <th>المجموع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+                
+                <table class="summary-table">
+                    <tr>
+                        <td><strong>المجموع الجزئي:</strong></td>
+                        <td>${subtotal}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>رسوم الشحن:</strong></td>
+                        <td>${shipping}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>الخصم:</strong></td>
+                        <td>${discount}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td><strong>المجموع الكلي:</strong></td>
+                        <td>${grandTotal}</td>
+                    </tr>
+                </table>
+                
+                <div class="footer">
+                    <p>شكراً لثقتكم بنا</p>
+                    <p>للاستفسار: 0914262604 | البريد الإلكتروني: info@marin.com</p>
+                </div>
+                
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.print();
+                            setTimeout(function() {
+                                window.close();
+                            }, 500);
+                        }, 200);
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        
+    } catch (error) {
+        console.error('Error in printInvoice:', error);
+        alert('حدث خطأ أثناء محاولة طباعة الفاتورة. يُرجى المحاولة مرة أخرى.');
+    }
+}
+
+
     /* helper: format ISO date to Arabic locale */
     function formatDate(iso) {
       try {
@@ -463,5 +716,6 @@ tbody.insertAdjacentHTML('beforeend', `
         return d.toLocaleDateString('ar-LY', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'});
       } catch { return iso; }
     }
+
   </script>
 {% endblock %}

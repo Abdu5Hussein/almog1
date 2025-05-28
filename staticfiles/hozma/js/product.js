@@ -2,10 +2,15 @@ let currentPage = 1;
 let lastPage = 1;
 let isLoading = false;
 let currentFilters = {};
-let itemsPerPage = 10;
+let itemsPerPage = 12;
 let datl = {};
 let pageCache = {}; 
-let maxPrefetchedPage = 0;   // highest page we’ve ever prefetched
+let prefetchQueue = []; 
+let isNavigating = false; // Prevents rapid clicks
+let maxPrefetchedPage = 0; // { pageNum: { data, last_page, total_rows } }
+let loadingPages = new Set(); // Pages currently being fetched
+let lastVisiblePage = 1; // Last page the user actually viewed
+   // highest page we’ve ever prefetched
 // *** simple in-memory cache ***
 
 // Main function to fetch filtered data
@@ -19,8 +24,8 @@ async function fetchFilteredData(page = 1) {
 
     const filters = {
         pno: currentFilters.pno || '',
-        companyno: currentFilters.companyno || '',
-        oem: currentFilters.oem || '',
+        item_type: currentFilters.item_type || '',
+        oem_combined: currentFilters.oem_combined || '',
         itemname: currentFilters.itemname || '',
         companyproduct: currentFilters.companyproduct || '',
         availability: currentFilters.availability || '',
@@ -67,21 +72,23 @@ async function fetchFilteredData(page = 1) {
 }
 
 // Prefetch next pages (up to four pages ahead)
-function prefetchNextPages(distance = 5) {
-    // Don’t compute until we know the true last page
-    if (!lastPage) return;
+function prefetchNextPages() {
+  // Don’t prefetch beyond known limits
+  if (!lastPage || lastVisiblePage >= lastPage) return;
 
-    const start = maxPrefetchedPage + 1;
-    const end   = Math.min(start + distance - 1, lastPage);
+  // Prefetch 3 pages ahead (adjust based on your needs)
+  const pagesToPrefetch = [lastVisiblePage + 1, lastVisiblePage + 2, lastVisiblePage + 3];
 
-    for (let p = start; p <= end; p++) {
-        if (!pageCache[p]) {
-            fetchFilteredData(p).catch(err => console.error('Prefetch error:', err));
-        }
-    }
-
-    // Remember how far ahead we’ve gone
-    maxPrefetchedPage = Math.max(maxPrefetchedPage, end);
+  pagesToPrefetch.forEach((page) => {
+      if (page <= lastPage && !pageCache[page] && !loadingPages.has(page)) {
+          loadingPages.add(page);
+          fetchFilteredData(page)
+              .then((data) => {
+                  pageCache[page] = data;
+              })
+              .finally(() => loadingPages.delete(page));
+      }
+  });
 }
 // Display items in the table
 async function displayItems(items) {
@@ -123,7 +130,13 @@ async function displayItems(items) {
   
       row.innerHTML = `
         <td class="clickable-cell d-none d-md-table-cell" data-pno="${item.pno}" data-label="رقم القطعة">${item.pno ?? '-'}</td>
-        <td class="clickable-cell" data-pno="${item.pno}" data-label="اسم القطعة">${item.itemname ?? '-'}</td>
+<td data-label="اسم القطعة">
+  ${item.itemname ?? '-'}
+  <i class="fas fa-circle-question text-primary ms-2 faq-icon"
+     style="cursor: pointer;"
+     title="عرض التفاصيل"
+     onclick="showItemDetail('${item.pno}')"></i>
+</td>
         <td data-label="الشركة">${item.companyproduct ?? '-'}</td>
         <td class="d-none d-md-table-cell" data-label="المخزون">
           ${stock > 10
@@ -135,16 +148,16 @@ async function displayItems(items) {
         <td data-label="السعر">${priceCellContent}</td>
       
         <td data-label="الكمية">
-          <div class="quantity-control">
-            <button class="btn btn-sm btn-outline-secondary quantity-btn"
-                    onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
-            <input type="number" class="form-control form-control-sm quantity-input"
-                   id="qty-${item.pno}" value="${cartQuantity}" min="0"
-                   onchange="updateQuantity('${item.pno}', this.value)">
-            <button class="btn btn-sm btn-outline-secondary quantity-btn"
-                    onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">+</button>
-          </div>
-        </td>
+  <div class="quantity-control">
+    <button class="btn btn-sm btn-outline-secondary quantity-btn"
+            onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
+    <input type="number" class="form-control form-control-sm quantity-input"
+           id="qty-${item.pno}" value="${cartQuantity}" min="0" readonly>
+    <button class="btn btn-sm btn-outline-secondary quantity-btn"
+            onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">+</button>
+  </div>
+</td>
+
       `;
   
       /* Allow pno & name cells to open the image dialog */
@@ -161,6 +174,9 @@ async function displayItems(items) {
       productList.appendChild(row);
     }
   }
+
+  
+  
   
 let currentImageModal = null;
 /**
@@ -398,8 +414,8 @@ function applyFilters() {
 
     currentFilters = {
         pno: document.getElementById('pnoFilter').value.trim(),
-        companyno: document.getElementById('companynoFilter').value.trim(),
-        oem: document.getElementById('oemFilter').value.trim(),
+        item_type: document.getElementById('companynoFilter').value.trim(),
+        oem_combined: document.getElementById('oemFilter').value.trim(),
         itemname: document.getElementById('itemnameFilter').value.trim(),
         companyproduct: document.getElementById('companyproductFilter').value.trim(),
         availability: availability,
@@ -441,29 +457,20 @@ function resetFilters() {
 
 // Load more items with pagination
 async function loadMoreItems() {
-    if (isLoading) return;
-    isLoading = true;
-  
-    console.debug("Loading items for page:", currentPage);
-  
-    const { data, last_page, total_rows } = await fetchFilteredData(currentPage);
-    lastPage = last_page || 1;
-  
-    await displayItems(data);
-    
-    updatePaginationInfo(total_rows);
-  
-    /* ----- NEW: always prefetch the next 5 pages ----- */
-    prefetchNextPages(5);
-  
-    document.getElementById('loading-spinner').style.display = 'none';
-    isLoading = false;
-    
-    // Scroll to top of the table after loading new items
-    const tableContainer = document.querySelector('.scroll-table-container');
-    if (tableContainer) {
-        tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  if (isLoading) return;
+  isLoading = true;
+
+  const { data, last_page, total_rows } = await fetchFilteredData(currentPage);
+  lastPage = last_page || 1;
+
+  // Cache the result
+  pageCache[currentPage] = { data, last_page, total_rows };
+
+  await displayItems(data);
+  updatePaginationInfo(total_rows);
+
+  isLoading = false;
+  document.getElementById('loading-spinner').style.display = 'none';
 }
 
 // Update pagination information
@@ -505,12 +512,36 @@ function prevPage() {
         changePage();
     }
 }
+async function nextPage() {
+  if (currentPage >= lastPage) return;
 
-function nextPage() {
-    if (currentPage < lastPage) {
-        document.getElementById('pageInput').value = currentPage + 1;
-        changePage();
-    }
+  const nextPageNum = currentPage + 1;
+
+  // If cached, render instantly and scroll up
+  if (pageCache[nextPageNum]) {
+      currentPage = nextPageNum;
+      displayItems(pageCache[nextPageNum].data);
+      updatePaginationInfo(pageCache[nextPageNum].total_rows);
+      smoothScrollToTop(); // 👈 Added back (but smooth)
+  } 
+  // If not cached, load with spinner, then scroll
+  else {
+      document.getElementById('loading-spinner').style.display = 'block';
+      await loadMoreItems();
+      smoothScrollToTop(); // 👈 Scroll after loading
+  }
+
+  lastVisiblePage = currentPage;
+  prefetchNextPages();
+}
+function smoothScrollToTop() {
+  const tableContainer = document.querySelector('.scroll-table-container');
+  if (tableContainer) {
+      tableContainer.scrollTo({
+          top: 0,
+          behavior: 'smooth' // Smooth animation
+      });
+  }
 }
 
 // Change items per page

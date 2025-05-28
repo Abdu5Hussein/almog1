@@ -792,7 +792,7 @@ def get_all_clients(request):
             clientid = item['clientid']
 
             # Calculate balance from TransactionsHistoryTable
-            balance_data = TransactionsHistoryTable.objects.filter(object_id=clientid).aggregate(
+            balance_data = TransactionsHistoryTable.objects.filter(client_object=clientid).aggregate(
                 total_debt=Sum('debt'),
                 total_credit=Sum('credit')
             )
@@ -803,7 +803,7 @@ def get_all_clients(request):
 
             # Fetch total credit for specific client_id and where details = "دفعة على حساب"
             specific_credit_data = TransactionsHistoryTable.objects.filter(
-                object_id=clientid, details="دفعة على حساب"
+                client_object=clientid, details="دفعة على حساب"
             ).aggregate(total_specific_credit=Sum('credit'))
 
             total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
@@ -1025,7 +1025,7 @@ def filter_all_clients(request):
         clients_data = []
         for client in queryset:
             client_id = client.clientid
-            balance_data = TransactionsHistoryTable.objects.filter(object_id=client_id).aggregate(
+            balance_data = TransactionsHistoryTable.objects.filter(client_object=client_id).aggregate(
                 total_debt=Sum("debt"),
                 total_credit=Sum("credit"),
             )
@@ -1044,12 +1044,12 @@ def filter_all_clients(request):
             if fromdate and todate:
                 # Fetch total credit for specific client_id and where details = "دفعة على حساب"
                 specific_credit_data = TransactionsHistoryTable.objects.filter(
-                    object_id=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
+                    client_object=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
                 ).aggregate(total_specific_credit=Sum('credit'))
             else:
                 # Fetch total credit for specific client_id and where details = "دفعة على حساب"
                 specific_credit_data = TransactionsHistoryTable.objects.filter(
-                    object_id=client_id, details="دفعة على حساب"
+                    client_object=client_id, details="دفعة على حساب"
                 ).aggregate(total_specific_credit=Sum('credit'))
 
             total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
@@ -1137,7 +1137,7 @@ def create_storage_record(request):
             client_id = client.clientid
 
         last_balance = (
-            TransactionsHistoryTable.objects.filter(object_id=client_id)
+            TransactionsHistoryTable.objects.filter(client_object_id=client_id)
             .order_by("-registration_date")
             .first()
         )
@@ -1151,8 +1151,7 @@ def create_storage_record(request):
             details=f"{data.get('subsection')} / {data.get('reciept_no')}",
             registration_date=transaction_date,
             current_balance=updated_balance,  # Updated balance
-            content_type=ContentType.objects.get_for_model(client),
-            object_id=client_id,  # Client ID
+            client_object_id=client_id,  # Client ID
         )
         account_statement.save()
 
@@ -1333,8 +1332,7 @@ def get_account_statement(request):
     try:
         # Get all transactions related to the client using GenericForeignKey
         items = models.TransactionsHistoryTable.objects.filter(
-            content_type=content_type,
-            object_id=client_id
+            client_object=client_id
         )
 
         # Serialize the results
@@ -1925,7 +1923,7 @@ tags=["Buy Invoice","Buy Invoice Items"],
 @permission_classes([IsAuthenticated])
 def BuyInvoiceItemCreateView(request):
     try:
-        # Parse the JSON data
+        # Parse JSON data
         data = request.data
 
         # Validate required fields
@@ -1941,21 +1939,22 @@ def BuyInvoiceItemCreateView(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Get the related invoice
+        # Retrieve related invoice
         try:
             invoice = Buyinvoicetable.objects.get(invoice_no=data.get("invoice_id"))
-            invoice.amount += (Decimal(data.get("orderprice") or 0) * Decimal(data.get("itemvalue") or 0))
+            invoice.amount += Decimal(safe_float(data.get("orderprice")) * safe_float(data.get("itemvalue")))
             invoice.save()
         except Buyinvoicetable.DoesNotExist:
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Get related product
         try:
             product = Mainitem.objects.get(pno=data.get("pno"))
             submain = product.itemsubmain if product.itemsubmain else None
         except Mainitem.DoesNotExist:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create a new BuyInvoiceItemsTable instance
+        # Create new BuyInvoiceItemsTable entry
         item = BuyInvoiceItemsTable.objects.create(
             invoice_no=invoice,
             invoice_no2=data.get("invoice_id"),
@@ -1966,52 +1965,61 @@ def BuyInvoiceItemCreateView(request):
             name=data.get("itemname"),
             company=data.get("companyproduct"),
             company_no=data.get("replaceno"),
-            quantity=int(data.get("itemvalue") or 0),
+            quantity=safe_int(data.get("itemvalue")),
             currency=data.get("currency"),
-            exchange_rate=float(data.get("rate") or 0) if data.get("rate") not in [None, '', 'null'] else 0,
+            exchange_rate=safe_float(data.get("rate")),
             date=data.get("date"),
             place=data.get("itemplace"),
             buysource=data.get("source"),
-            org_unit_price=float(data.get("orgprice") or 0),
-            org_total_price=float(data.get("orgprice") or 0) * int(data.get("itemvalue") or 0),
-            dinar_unit_price=float(data.get("orderprice") or 0),
-            dinar_total_price=float(data.get("orderprice") or 0) * int(data.get("itemvalue") or 0),
-            prev_quantity=int(data.get("prev_quantity") or 0),
-            prev_cost_price=float(data.get("prev_cost_price") or 0),
-            prev_buy_price=float(data.get("prev_buy_price") or 0),
-            prev_less_price=float(data.get("prev_less_price") or 0),
-            current_quantity=int(data.get("prev_quantity") or 0) + int(data.get("itemvalue") or 0),
-            current_buy_price=float(data.get("buyprice") or 0),
-            current_less_price=float(data.get("lessprice") or 0),
+            org_unit_price=safe_float(data.get("orgprice")),
+            org_total_price=safe_float(data.get("orgprice")) * safe_int(data.get("itemvalue")),
+            dinar_unit_price=safe_float(data.get("orderprice")),
+            dinar_total_price=safe_float(data.get("orderprice")) * safe_int(data.get("itemvalue")),
+            prev_quantity=safe_int(data.get("prev_quantity")),
+            prev_cost_price=safe_float(data.get("prev_cost_price")),
+            prev_buy_price=safe_float(data.get("prev_buy_price")),
+            prev_less_price=safe_float(data.get("prev_less_price")),
+            current_quantity=safe_int(data.get("prev_quantity")) + safe_int(data.get("itemvalue")),
+            current_buy_price=safe_float(data.get("buyprice")),
+            current_less_price=safe_float(data.get("lessprice")),
         )
 
         confirm_message = "not confirmed"
+
+        # If item is confirmed (not temporary), update Mainitem and create movement record
         if data.get("isTemp") == 0:
-            main = Mainitem.objects.get(replaceno=data.get("replaceno"))
-            main.orgprice = float(data.get("orgprice") or 0)
-            main.lessprice = float(data.get("lessprice") or 0)
-            main.itemvalue += int(data.get("itemvalue") or 0)
-            main.itemtemp -= int(data.get("itemvalue") or 0)
-            main.itemplace = data.get("itemplace")
-            main.buyprice = float(data.get("buyprice") or 0)
-            main.save()
-            confirm_message = "confirmed"
+            try:
+                main = Mainitem.objects.get(replaceno=data.get("replaceno"))
+                main.orgprice = safe_float(data.get("orgprice"))
+                main.lessprice = safe_float(data.get("lessprice"))
+                main.itemvalue += safe_int(data.get("itemvalue"))
+                main.itemtemp -= safe_int(data.get("itemvalue"))
+                main.itemplace = data.get("itemplace")
+                main.buyprice = safe_float(data.get("buyprice"))
+                main.save()
 
-            movement_Record = Clientstable.objects.create(
-                itemno=main.itemno,
-                itemname=main.itemname,
-                maintype=main.itemmain,
-                currentbalance=main.itemvalue,
-                date=timezone.now(),
-                clientname="فاتورة شراء",
-                billno=data.get("invoice_id"),
-                description="فاتورة شراء",
-                clientbalance=int(data.get("itemvalue") or 0),
-                pno_instance=main,
-                pno=main.pno
-            )
+                confirm_message = "confirmed"
 
-        return Response({"message": "Item created successfully", "item_id": item.autoid, "confirm_status": confirm_message}, status=status.HTTP_201_CREATED)
+                movement_Record = Clientstable.objects.create(
+                    itemno=main.itemno,
+                    itemname=main.itemname,
+                    maintype=main.itemmain,
+                    currentbalance=main.itemvalue,
+                    date=timezone.now(),
+                    clientname="فاتورة شراء",
+                    billno=data.get("invoice_id"),
+                    description="فاتورة شراء",
+                    clientbalance=safe_int(data.get("itemvalue")),
+                    pno_instance=main,
+                    pno=main.pno
+                )
+            except Mainitem.DoesNotExist:
+                return Response({"error": "Mainitem not found for confirmation"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            {"message": "Item created successfully", "item_id": item.autoid, "confirm_status": confirm_message},
+            status=status.HTTP_201_CREATED
+        )
 
     except json.JSONDecodeError:
         return Response({"error": "Invalid JSON data"}, status=status.HTTP_400_BAD_REQUEST)

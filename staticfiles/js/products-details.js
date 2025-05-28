@@ -852,7 +852,7 @@ document.addEventListener("DOMContentLoaded", function () {
   filterInputs.forEach((inputId) => {
     document
       .getElementById(inputId)
-      .addEventListener("change", () => {
+      .addEventListener("input", () => {
         debouncedApplyFilters();
       });
   });

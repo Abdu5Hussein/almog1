@@ -903,3 +903,27 @@ def get_logo_by_pno(request, id):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def create_item_category(request):
+    serializer = products_serializers.ItemCategorySerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "Category created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def list_item_categories(request):
+# This is an auto-generated Django model module.
+# This is an auto-generated Django model module.
+    categories = almogOil_Models.ItemCategory.objects.all().order_by('-id')  # optional: newest first
+    serializer = products_serializers.ItemCategorySerializer(categories, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

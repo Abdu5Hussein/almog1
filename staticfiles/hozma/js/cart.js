@@ -47,6 +47,15 @@ document.getElementById('navbarCartIcon').addEventListener('keydown', function(e
 
 
 
+function updateQtyFromOutside(pno, newValue) {
+  const input = document.getElementById(`qty-${pno}`);
+  if (input) {
+    input.value = newValue;
+    console.log(`Quantity updated for ${pno} → ${newValue}`);
+  } else {
+    console.warn(`Input not found for pno: ${pno}`);
+  }
+}
 
 function updateCartUI() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -214,14 +223,12 @@ function removeFromCart(pno) {
   const index = cart.findIndex(item => item.pno === pno);
   if (index !== -1) {
     cart.splice(index, 1);
+    updateQtyFromOutside(pno, 0);
     updateCart();
     updateCartPageUI(); 
   }
   
-  const qtyInput = document.getElementById(`qty-${pno}`);
-  if (qtyInput) {
-    qtyInput.value = 0;
-  }
+  
 }
 
 function clearCart() {
@@ -300,13 +307,10 @@ function incrementCartQuantity(pno) {
     }
 
     item.quantity += 1;
+    updateQtyFromOutside(pno, item.quantity);  // This is enough
+
     updateCart();
     updateCartPageUI();
-
-    const qtyInput = document.getElementById(`qty-${pno}`);
-    if (qtyInput) {
-      qtyInput.value = item.quantity;
-    }
   }
 }
 
@@ -316,17 +320,14 @@ function decrementCartQuantity(pno) {
   const item = cart.find(item => item.pno === pno);
   if (item) {
     item.quantity = Math.max(0, item.quantity - 1);
-    
+
     if (item.quantity === 0) {
       removeFromCart(pno);
     } else {
+      updateQtyFromOutside(pno, item.quantity);  // This is enough
+
       updateCart();
-      updateCartPageUI(); 
-      
-      const qtyInput = document.getElementById(`qty-${pno}`);
-      if (qtyInput) {
-        qtyInput.value = item.quantity;
-      }
+      updateCartPageUI();
     }
   }
 }

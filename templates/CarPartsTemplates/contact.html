@@ -1,172 +1,609 @@
-<!DOCTYPE html>
-<html lang="en">
-   <head>
-      <!-- basic -->
-      <meta charset="utf-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <!-- mobile metas -->
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <meta name="viewport" content="initial-scale=1, maximum-scale=1">
-      <!-- site metas -->
-      <title>mical</title>
-      <meta name="keywords" content="">
-      <meta name="description" content="">
-      <meta name="author" content="">
-      <!-- bootstrap css -->
-      <link rel="stylesheet" href="css/bootstrap.min.css">
-      <!-- style css -->
-      <link rel="stylesheet" href="css/style.css">
-      <!-- Responsive-->
-      <link rel="stylesheet" href="css/responsive.css">
-      <!-- fevicon -->
-      <link rel="icon" href="images/fevicon.png" type="image/gif" />
-      <!-- Scrollbar Custom CSS -->
-      <link rel="stylesheet" href="css/jquery.mCustomScrollbar.min.css">
-      <!-- Tweaks for older IEs-->
-      <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" media="screen">
-      <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]-->
-   </head>
-   <!-- body -->
-   <body class="main-layout">
-      <!-- loader  -->
-      <div class="loader_bg">
-         <div class="loader"><img src="images/loading.gif" alt="#" /></div>
-      </div>
-      <!-- end loader -->
-      <!-- header -->
-      <header>
-         <!-- header inner -->
-         <div class="header">
-            <div class="container-fluid">
-               <div class="row">
-                  <div class="col-xl-3 col-lg-3 col-md-3 col-sm-3 col logo_section">
-                     <div class="full">
-                        <div class="center-desk">
-                           <div class="logo">
-                              <a href="index.html"><img src="images/logo.png" alt="#" /></a>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="col-xl-9 col-lg-9 col-md-9 col-sm-9">
-                     <nav class="navigation navbar navbar-expand-md navbar-dark ">
-                        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                        </button>
-                        <div class="collapse navbar-collapse" id="navbarsExample04">
-                           <ul class="navbar-nav mr-auto">
-                              <li class="nav-item">
-                                 <a class="nav-link" href="index.html"> Home  </a>
-                              </li>
-                              <li class="nav-item">
-                                 <a class="nav-link" href="about.html">About</a>
-                              </li>
-                              <li class="nav-item">
-                                 <a class="nav-link" href="furnitures.html">Furnitures</a>
-                              </li>
-                              <li class="nav-item">
-                                 <a class="nav-link" href="testimonial.html">Testimonial</a>
-                              </li>
-                              <li class="nav-item active">
-                                 <a class="nav-link" href="contact.html">Contact Us</a>
-                              </li>
-                              <li class="nav-item d_none">
-                                 <a class="nav-link" href="#"><i class="fa fa-user-circle padd_right" aria-hidden="true"></i>Login/Register</a>
-                              </li>
-                              <li class="nav-item d_none">
-                                 <a class="nav-link" href="#"><i class="fa fa-search" aria-hidden="true"></i></a>
-                              </li>
-                           </ul>
-                        </div>
-                     </nav>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </header>
-      <!-- end header inner -->
-      <!-- end header -->
+{% extends 'CarPartsTemplates/base.html' %}
+
+{% block title %}اتصل بنا - الدعم الفني{% endblock %}
+
+{% block content %}
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اتصل بنا - متجر قطع غيار السيارات</title>
+  
+  <!-- Bootstrap RTL -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
+  <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
+  <link rel="stylesheet" href="{% static 'hozma/css/brandstyle.css' %}">
+  <style>
+    /* Enhanced Contact Page Styles */
+    .contact-page-header {
+      background: linear-gradient(135deg, #0F1B2E 0%, #1A2A40 100%);
+      color: white;
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+      border-bottom: 3px solid #FF6B00;
+    }
+
+    .contact-page-title {
+      font-family: 'Tajawal', sans-serif;
+      font-weight: 700;
+      font-size: 1.75rem;
+      line-height: 1.2;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+    }
+
+    .contact-page-title i {
+      color: #FFD700;
+      font-size: 1.75rem;
+    }
+
+    .contact-page-title:after {
+      content: "";
+      position: absolute;
+      bottom: -8px;
+      right: 0;
+      width: 60px;
+      height: 3px;
+      background: #FF6B00;
+    }
+
+    .contact-page-header p {
+      font-size: 1.05rem;
+      margin-top: 0.5rem;
+    }
+
+    .contact-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+      height: 100%;
+      background-color: #fff;
+    }
+
+    .contact-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .contact-card-header {
+      background: linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .contact-card-body {
+      padding: 20px;
+    }
+
+    .contact-icon {
+      font-size: 2.5rem;
+      color: #FF6B00;
+      margin-bottom: 15px;
+    }
+
+    .contact-info {
+      margin-bottom: 15px;
+    }
+
+    .contact-info strong {
+      color: #0F1B2E;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .contact-info a {
+      color: #1A2A40;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .contact-info a:hover {
+      color: #FF6B00;
+    }
+
+    .contact-form-container {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+      padding: 25px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #0F1B2E;
+    }
+
+    .form-control, .form-select {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 15px;
+      transition: all 0.3s;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: #FF6B00;
+      box-shadow: 0 0 0 0.25rem rgba(255, 107, 0, 0.25);
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%);
+      border: none;
+      padding: 12px 25px;
+      font-weight: bold;
+      transition: all 0.3s;
+      width: 100%;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255,107,0,0.3);
+    }
+
+    .working-hours {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+
+    .working-hours h5 {
+      color: #0F1B2E;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+
+    .hours-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .hours-item:last-child {
+      border-bottom: none;
+    }
+
+    .map-container {
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+      height: 100%;
+    }
+
+    .map-container iframe {
+      width: 100%;
+      height: 100%;
+      min-height: 300px;
+      border: none;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .social-link {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+      transition: all 0.3s;
+    }
+
+    .social-link:hover {
+      transform: translateY(-3px);
+    }
+
+    .whatsapp { background-color: #25D366; }
+    .facebook { background-color: #3b5998; }
+    .instagram { background-color: #E1306C; }
+    .twitter { background-color: #1DA1F2; }
+    .youtube { background-color: #FF0000; }
+
+    .faq-item {
+      margin-bottom: 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .faq-header {
+      background-color: #f8f9fa;
+      padding: 15px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #0F1B2E;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .faq-header:hover {
+      background-color: #e9ecef;
+    }
+
+    .faq-body {
+      padding: 15px;
+      background-color: #fff;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    @media (max-width: 768px) {
+      .contact-page-title {
+        font-size: 1.5rem;
+      }
       
-      <!--  footer -->
-      <footer id="contact">
-         <div class="footer">
-            <div class="container">
-               <div class="row">
-                  <div class="col-md-4">
-                     <div class="titlepage">
-                        <h2>Contact Us</h2>
-                     </div>
-                  </div>
-                  <div class="col-md-8">
-                     <ul class="location_icon">
-                        <li><a href="#"><i class="fa fa-map-marker" aria-hidden="true"></i></a> Locatins</li>
-                        <li><a href="#"><i class="fa fa-volume-control-phone" aria-hidden="true"></i></a> +71 9087654321</li>
-                        <li><a href="#"><i class="fa fa-envelope" aria-hidden="true"></i></a>demo@gmail.com</li>
-                     </ul>
-                  </div>
-                  <div class="col-md-6">
-                     <form id="request" class="main_form">
-                        <div class="row">
-                           <div class="col-md-12 ">
-                              <input class="contactus" placeholder="Full Name" type="type" name="Full Name"> 
-                           </div>
-                           <div class="col-md-12">
-                              <input class="contactus" placeholder="Email" type="type" name="Email"> 
-                           </div>
-                           <div class="col-md-12">
-                              <input class="contactus" placeholder="Phone Number" type="type" name="Phone Number">                          
-                           </div>
-                           <div class="col-md-12">
-                              <textarea class="textarea" placeholder="Message" type="type" Message="Name">Message </textarea>
-                           </div>
-                           <div class="col-sm-col-xl-6 col-lg-6 col-md-6 col-sm-12">
-                              <button class="send_btn">Send</button>
-                           </div>
-                           <div class="col-sm-col-xl-6 col-lg-6 col-md-6 col-sm-12">
-                              <ul class="social_icon">
-                                 <li><a href="#"><i class="fa fa-facebook" aria-hidden="true"></i></a></li>
-                                 <li><a href="#"><i class="fa fa-twitter" aria-hidden="true"></i></a></li>
-                                 <li><a href="#"><i class="fa fa-linkedin-square" aria-hidden="true"></i></a></li>
-                                 <li><a href="#"><i class="fa fa-instagram" aria-hidden="true"></i></a></li>
-                              </ul>
-                           </div>
-                        </div>
-                     </form>
-                  </div>
-                  <div class="col-md-6">
-                     <div class="map">
-                        <figure><img src="images/map.jpg" alt="#"/></figure>
-                     </div>
-                     <form class="bottom_form">
-                        <h3>Newsletter</h3>
-                        <input class="enter" placeholder="Enter your email" type="text" name="Enter your email">
-                        <button class="sub_btn">subscribe</button>
-                     </form>
-                  </div>
-               </div>
+      .contact-card {
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Contact Header -->
+  <div class="contact-page-header text-center py-4 mb-4">
+    <div class="container">
+      <h1 class="contact-page-title">
+        <i class="bi bi-headset"></i>
+        مركز الدعم والاتصال
+      </h1>
+      <p class="mt-2">نحن هنا لمساعدتك في أي استفسار أو دعم فني تحتاجه</p>
+    </div>
+  </div>
+
+  <div class="container mb-5">
+    <div class="row g-4">
+      <!-- Contact Methods -->
+      <div class="col-md-4">
+        <div class="contact-card">
+          <div class="contact-card-header">
+            <i class="bi bi-telephone"></i> الدعم الهاتفي
+          </div>
+          <div class="contact-card-body text-center">
+            <div class="contact-icon">
+              <i class="bi bi-telephone-outbound"></i>
             </div>
-            <div class="copyright">
-               <div class="container">
-                  <div class="row">
-                     <div class="col-md-12">
-                        <p>Copyright 2019 All Right Reserved By <a href="https://html.design/"> Free  html Templates</a></p>
-                     </div>
-                  </div>
-               </div>
+            <div class="contact-info">
+              <strong>خدمة العملاء</strong>
+              <a href="tel:+966123456789"> +218914262604</a>
             </div>
-         </div>
-      </footer>
-      <!-- end footer -->
-      <!-- Javascript files-->
-      <script src="js/jquery.min.js"></script>
-      <script src="js/popper.min.js"></script>
-      <script src="js/bootstrap.bundle.min.js"></script>
-      <script src="js/jquery-3.0.0.min.js"></script>
-      <!-- sidebar -->
-      <script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
-      <script src="js/custom.js"></script>
-   </body>
+            <div class="contact-info">
+              <strong>الدعم الفني</strong>
+              <a href="tel:+966987654321"> +218914262604</a>
+            </div>
+            <div class="working-hours">
+              <h5>أوقات العمل</h5>
+              <div class="hours-item">
+                <span>الأحد - الخميس</span>
+                <span>8 ص - 5 م</span>
+              </div>
+              <div class="hours-item">
+                <span>الجمعة - السبت</span>
+                <span>إجازة</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="contact-card">
+          <div class="contact-card-header">
+            <i class="bi bi-envelope"></i> البريد الإلكتروني
+          </div>
+          <div class="contact-card-body text-center">
+            <div class="contact-icon">
+              <i class="bi bi-envelope-open"></i>
+            </div>
+            <div class="contact-info">
+              <strong>الاستفسارات العامة</strong>
+              <a href="mailto:info@autoparts.com">info@marin.ly</a>
+            </div>
+            <div class="contact-info">
+              <strong>الدعم الفني</strong>
+              <a href="mailto:support@autoparts.com"> tech@marin.ly</a>
+            </div>
+            <div class="contact-info">
+              <strong>المشتريات والشراء</strong>
+              <a href="mailto:sales@autoparts.com">sales@marin.ly</a>
+            </div>
+            <div class="social-links">
+              <a href="#" class="social-link whatsapp"><i class="bi bi-whatsapp"></i></a>
+              <a href="#" class="social-link facebook"><i class="bi bi-facebook"></i></a>
+              <a href="#" class="social-link instagram"><i class="bi bi-instagram"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="contact-card">
+          <div class="contact-card-header">
+            <i class="bi bi-geo-alt"></i> الموقع
+          </div>
+          <div class="contact-card-body text-center">
+            <div class="contact-icon">
+              <i class="bi bi-pin-map"></i>
+            </div>
+            <div class="contact-info">
+              <strong>العنوان</strong>
+              <span>الرياضية</span>
+            </div>
+            <div class="map-container mt-3">
+               <iframe 
+               src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d11086.944321799463!2d13.143011!3d32.856011!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sly!4v1620000000000!5m2!1sen!2sly" 
+              
+           
+               allowfullscreen="" 
+               loading="lazy" 
+               referrerpolicy="no-referrer-when-downgrade">
+             </iframe>
+                         </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Form -->
+      <div class="col-lg-8">
+        <div class="contact-form-container">
+          <h4 class="mb-4"><i class="bi bi-send"></i> أرسل لنا رسالة</h4>
+          <form id="contactForm">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="name" class="form-label">الاسم الكامل</label>
+                <input type="text" class="form-control" id="name" placeholder="أدخل اسمك" required>
+              </div>
+              <div class="col-md-6">
+                <label for="email" class="form-label">البريد الإلكتروني</label>
+                <input type="email" class="form-control" id="email" placeholder="أدخل بريدك الإلكتروني" required>
+              </div>
+             
+              <div class="col-md-6">
+                <label for="subject" class="form-label">الموضوع</label>
+                <select class="form-select" id="subject" required>
+                  <option value="" selected disabled>اختر موضوع الرسالة</option>
+                  <option value="الدعم الفني">الدعم الفني</option>
+                  <option value="الاستفسارات التجارية">الاستفسارات التجارية</option>
+                  <option value="استفسارات عن قطع الغيار">استفسارات عن قطع الغيار</option>
+                  <option value="موضوع آخر">موضوع آخر</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label for="message" class="form-label">الرسالة</label>
+                <textarea class="form-control" id="message" rows="5" placeholder="أدخل رسالتك هنا..." required></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="submit-btn">
+                  <i class="bi bi-send-fill"></i> إرسال الرسالة
+                </button>
+              </div>
+            </div>
+          </form>
+          <div id="responseMessage" class="mt-3" style="display:none;"></div>
+        </div>
+      </div>
+      
+
+      <!-- FAQ Section -->
+      <div class="col-lg-4">
+        <div class="contact-form-container">
+          <h4 class="mb-4"><i class="bi bi-question-circle"></i> الأسئلة الشائعة</h4>
+          
+          
+          
+          <div class="faq-item">
+            <div class="faq-header" data-bs-toggle="collapse" data-bs-target="#faq2">
+              ما هي سياسة الإرجاع والاستبدال؟
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div id="faq2" class="collapse faq-body">
+              يمكنك إرجاع أو استبدال القطع خلال 14 يومًا من استلامها بشرط أن تكون بحالتها الأصلية مع جميع التغليفات والمستندات.
+            </div>
+          </div>
+          
+          <div class="faq-item">
+            <div class="faq-header" data-bs-toggle="collapse" data-bs-target="#faq3">
+              هل تقدمون خدمة التوصيل إلى جميع المدن؟
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div id="faq3" class="collapse faq-body">
+              نقدم خدمة التوصيل إلى جميع مدن ليبيا عبر مندوبين توصيل شركتنا مع إمكانية التوصيل السريع في بعض المناطق.
+            </div>
+          </div>
+          
+  
+          
+          <div class="text-center mt-3">
+            <a href="#" class="btn btn-outline-primary">
+              <i class="bi bi-question-square"></i> المزيد من الأسئلة
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% endblock %}
+    
+  {% block extra_js %}
+  <!-- JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'hozma/js/navbar.js' %}"></script>
+  <script>
+
+const clientId = JSON.parse(localStorage.getItem("session_data@user_id"));
+    // Initialize FAQ collapse items
+    document.addEventListener('DOMContentLoaded', function() {
+      const faqHeaders = document.querySelectorAll('.faq-header');
+      
+      faqHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+          const icon = this.querySelector('i');
+          if (this.getAttribute('aria-expanded') === 'true') {
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+          } else {
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+          }
+        });
+      });
+    });
+
+
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Disable submit button to prevent multiple submissions
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> جاري الإرسال...';
+    
+    // Get form values
+    const formData = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+      
+        subject: document.getElementById('subject').value,
+        message: document.getElementById('message').value
+    };
+    
+    // Construct the WhatsApp message (Arabic format)
+    const whatsappMessage = `
+📌 *تم استقبال رسالتك* 📌
+
+*الاسم:* ${formData.name}
+*البريد الإلكتروني:* ${formData.email}
+
+*الموضوع:* ${formData.subject}
+
+*الرسالة:*
+${formData.message}
+
+📩 *الرجاء الانتظار ليتم الرد* 📩
+
+عزيزنا العميل ${formData.name}،
+
+تم استلام رسالتك بخصوص "${formData.subject}" وسيقوم فريقنا المختص بالرد عليك في أقرب وقت ممكن.
+
+نعتز بثقتك بنا ونسعد دائما بخدمتك.
+
+للاستفسار الفوري، يمكنك التواصل على الرقم:
++218914262604
+
+مع خالص التقدير،
+فريق مارين
+    `;
+    
+    // Prepare data for API
+    const apiData = {
+        clientid: clientId, // Replace with actual client ID from session
+        message: whatsappMessage
+    };
+    
+    // Send to API
+    fetch('/hozma/api/send-whatsapp-contact/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(apiData)
+    })
+    .then(response => {
+        // First check if the response is OK (status 200-299)
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        const responseDiv = document.getElementById('responseMessage');
+        
+        // Check the actual API response structure
+        if (data.status === "sent") {
+            responseDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    شكراً لك! تم إرسال رسالتك إلى واتساب. إذا كنت قد أدخلت رقمك بشكل صحيح في المعلومات، يمكنك التحقق من ذلك في ال،اتساب الخاص بك. شكرًا لتعاملك معنا!
+                </div>
+            `;
+            document.getElementById('contactForm').reset();
+        } else {
+            throw new Error(data.message || 'Unknown error occurred');
+        }
+        
+        responseDiv.style.display = 'block';
+        responseDiv.scrollIntoView({ behavior: 'smooth' });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const responseDiv = document.getElementById('responseMessage');
+        responseDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                حدث خطأ أثناء إرسال الرسالة: ${error.message}
+            </div>
+        `;
+        responseDiv.style.display = 'block';
+        responseDiv.scrollIntoView({ behavior: 'smooth' });
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send-fill"></i> إرسال الرسالة';
+    });
+});
+
+// Function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Add spinner animation
+const style = document.createElement('style');
+style.innerHTML = `
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+  </script>
+</body>
 </html>
+{% endblock %}

@@ -540,6 +540,7 @@
                 </div>
                 <div
                   class="border p-2 form-control d-flex align-items-center justify-content-center"
+                  style="height: 70px;"
                 >
                   <div class="d-inline p-2">
                     <label for="client">حساب عميل</label>
@@ -549,6 +550,7 @@
                       name="category"
                       class="value-fixed"
                       value="عميل"
+                      checked
                     />
                   </div>
                   <div class="d-inline p-2">
@@ -559,7 +561,6 @@
                       name="category"
                       value="موظف"
                       class="value-fixed"
-                      checked
                     />
                   </div>
                   <div class="d-inline p-2">
@@ -809,7 +810,7 @@
                     type="radio"
                     id="daily-add"
                     name="daily"
-                    value="true"
+                    value="True"
                     checked
                     class="value-fixed"
                   />
@@ -820,7 +821,7 @@
                     type="radio"
                     id="daily-remove"
                     name="daily"
-                    value="false"
+                    value="False"
                     class="value-fixed"
                   />
                 </div>
@@ -873,21 +874,23 @@
         document.getElementById("filter-date").value = today;
         document.getElementById("transaction-date").value = today;
 
-        document.getElementById("other").addEventListener("change", function () {
+        /*document.getElementById("other").addEventListener("change", function () {
           if (this.checked) {
             const select = document.getElementById("for-who");
             let found = false;
 
             for (let i = 0; i < select.options.length; i++) {
-              if (select.options[i].text.trim() === "مصاريف اخرى") {
-                select.selectedIndex = i;
-                choices.selectedIndex = i;
-                found = true;
-                console.log("Option 'مصاريف اخرى' selected");
-                console.log("Option found at index:", choices.selectedIndex);
-                console.log("Option found at index:", choices.getSelectedText);
-                break;
-              }
+                if (select.options[i].text.trim() === "مصاريف اخرى") {
+                    const value = select.options[i].value;
+
+                    choices.setChoiceByValue(value); // This is the correct method
+                    found = true;
+                    choices.disable();
+
+                    console.log("Option 'مصاريف اخرى' selected");
+                    console.log("Option with id", choices.getValue().value);
+                    break;
+                }
             }
 
             // Optional: Add the option if it doesn't exist
@@ -900,8 +903,46 @@
             // Optional: trigger a change event if needed
             select.dispatchEvent(new Event("change"));
           }
-        });
+        });*/
+        const categoryRadios = document.getElementsByName("category");
+        categoryRadios.forEach((radio) => {
+          radio.addEventListener("change", () => {
+            const categoryRadioId = radio.id; // Get the value of the selected radio button
+            if (categoryRadioId == "other") {
+              if (radio.checked) {
+                const select = document.getElementById("for-who");
+                let found = false;
 
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].text.trim() === "مصاريف اخرى") {
+                        const value = select.options[i].value;
+
+                        choices.setChoiceByValue(value); // This is the correct method
+                        found = true;
+                        choices.disable();
+
+                        console.log("Option 'مصاريف اخرى' selected");
+                        console.log("Option with id", choices.getValue().value);
+                        break;
+                    }
+                }
+
+                // Optional: Add the option if it doesn't exist
+                if (!found) {
+                  const newOption = new Option("مصاريف اخرى", "other-expense");
+                  select.add(newOption);
+                  select.selectedIndex = select.options.length - 1;
+                }
+
+                // Optional: trigger a change event if needed
+                select.dispatchEvent(new Event("change"));
+              }
+            }
+            else {
+                choices.enable();
+            }
+          });
+        });
         //const form = document.getElementById("myForm");
         const withdrawRadios = document.getElementsByName("transaction-type");
         const reciept_no = document.getElementById("reciept-no");
@@ -1220,102 +1261,36 @@
             clearForm();
           });
         function createNewRecord() {
-          /*if (!form.checkValidity()) {
-                  // Show validation error messages
-                  form.reportValidity();
-                  return;
-                }*/
-          // Get selected country, skip if index is 0 (reset value)
-          const placeSelect = document.getElementById("place");
-          const selectedPlaceName =
-            placeSelect.options[placeSelect.selectedIndex].text;
-
-          // Get selected item-main, skip if index is 0 (reset value)
-          const subSelect = document.getElementById("sub-section");
-          const selectedSubText =
-            subSelect.selectedIndex !== 0
-              ? subSelect.options[subSelect.selectedIndex].text
-              : "";
-
-          // Get selected item-sub-main, skip if index is 0 (reset value)
-          const sectionSelect = document.getElementById("section");
-          const selectedSectionText =
-            sectionSelect.selectedIndex !== 0
-              ? sectionSelect.options[sectionSelect.selectedIndex].text
-              : "";
-
-          const personSelect = document.getElementById("for-who");
-          const selectedPersonText =
-            personSelect.selectedIndex !== 0
-              ? personSelect.options[personSelect.selectedIndex].text
-              : "";
-
-          // Determine account_type based on the selected radio button
-          const clientRadio = document.getElementById("client");
-          const employeeRadio = document.getElementById("employee");
-          const accountType = clientRadio?.checked
-            ? clientRadio.value
-            : employeeRadio?.checked
-              ? employeeRadio.value
-              : "";
-
-          // Determine account_type based on the selected radio button
-          const depositRadio = document.getElementById("deposit");
-          const withdrawRadio = document.getElementById("withdraw");
-          const transactionType = depositRadio?.checked
-            ? depositRadio.value
-            : withdrawRadio?.checked
-              ? withdrawRadio.value
-              : "";
-
-          // Determine account_type based on the selected radio button
-          const cashRadio = document.getElementById("cash");
-          const checkRadio = document.getElementById("check");
-          const paymentType = cashRadio?.checked
-            ? cashRadio.value
-            : checkRadio?.checked
-              ? checkRadio.value
-              : "";
-
-          // Determine account_type based on the selected radio button
-          const addRadio = document.getElementById("daily-add");
-          const removeRadio = document.getElementById("daily-remove");
-          const dailyType = addRadio?.checked
-            ? true
-            : removeRadio?.checked
-              ? false
-              : null;
-
-          // Data object with correct CSRF token retrieval
-
           const data = {
             csrfmiddlewaretoken: getCSRFToken(),
-            reciept_no: document.getElementById("reciept-no")?.value || "",
-            transaction_date:
-              document.getElementById("transaction-date")?.value || "",
-            amount: parseFloat(document.getElementById("amount").value) || 0,
-            for_what: document.getElementById("for-what")?.value || "",
-            note: document.getElementById("note")?.value || "",
+            reciept_no: getValueById("reciept-no"),
+            transaction_date: getValueById("transaction-date"),
+            amount: parseFloat(getValueById("amount")) || 0,
+            for_what: getValueById("for-what"),
+            note: getValueById("note"),
 
-            type: accountType || "",
-            transaction: transactionType || "",
-            place: selectedPlaceName || "",
-            section: selectedSectionText || "",
-            subsection: selectedSubText || "",
-            for_who: selectedPersonText || "",
-            pay_method: paymentType || "",
-            bank: document.getElementById("bank")?.value || "",
-            checkno: document.getElementById("check-no")?.value || "",
+            type: getCheckedRadioValue("category"),        // name="account-type"
+            transaction: getCheckedRadioValue("transaction-type"),  // name="transaction"
+            pay_method: getCheckedRadioValue("payment"),    // name="pay-method"
 
-            daily: dailyType,
+            daily: getCheckedRadioValue("daily"),
+
+            place: getSelectedTextById("place"),
+            section: getSelectedTextById("section"),
+            subsection: getSelectedTextById("sub-section"),
+            for_who: choices.getValue().label,
+
+            bank: getValueById("bank"),
+            checkno: getValueById("check-no"),
           };
+
           console.log("Data to be sent:", data);
 
           customFetch("api/create-storage-record", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-CSRFToken": getCSRFToken(), // Add the CSRF token here
+              "X-CSRFToken": getCSRFToken(),
             },
             body: JSON.stringify(data),
           })
@@ -1325,11 +1300,12 @@
                 refreshTable();
               } else {
                 alert("Error creating record.");
-                console.log(getCSRFToken()); // Check the value of the CSRF token
+                console.log(getCSRFToken());
               }
             })
             .catch((error) => console.error("Error:", error));
         }
+
 
         document
           .getElementById("deleteButton")
@@ -1512,7 +1488,7 @@
         document
           .getElementById("print-btn")
           .addEventListener("click", function () {
-            printTabulatorTable();
+            window.open('/print/today-treasury-statement/', '_blank');
           });
 
         function printTabulatorTable() {

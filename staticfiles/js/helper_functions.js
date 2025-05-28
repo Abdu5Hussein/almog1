@@ -27,6 +27,11 @@ function getCSRFToken() {
   return document.querySelector("[name=csrfmiddlewaretoken]").value;
 }
 
+const getCheckedRadioValue = (name) => {
+  const checkedRadio = document.querySelector(`input[name="${name}"]:checked`);
+  return checkedRadio ? checkedRadio.value : "";
+};
+
 const getValueById = (id) => {
   const element = document.getElementById(id);
   return element ? element.value.trim() : "";
@@ -40,6 +45,11 @@ const getSelectedTextById = (id) => {
 };
 
 const getChoicesTextById = (id) => {
+  const element = document.getElementById(id);
+  return element ? element.getValue(true).join("; ") : "";
+};
+
+const getChoiceTextById = (id) => {
   const element = document.getElementById(id);
   return element ? element.getValue(true).join("; ") : "";
 };

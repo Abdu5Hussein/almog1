@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 import json
 import random
+from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Count, Sum, Avg, F, Q, Case, When, Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
 from django.db.models.functions import TruncMonth, TruncDay
 from django.shortcuts import render, redirect, get_object_or_404
@@ -26,6 +27,7 @@ from asgiref.sync import async_to_sync
 from django.dispatch import receiver
 from rest_framework.decorators import action
 from django.db import transaction
+from .pagination import StandardResultsSetPagination
 from django_q.tasks import async_task
 from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
@@ -70,8 +72,17 @@ from django.core.paginator import Paginator
 from dateutil.relativedelta import relativedelta
 
 def get_last_PreOrderTable_no():
-    last_invoice = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
-    return last_invoice.invoice_no if last_invoice else 0
+    last_preorder = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
+    last_sell = almogOil_models.SellinvoiceTable.objects.order_by("-invoice_no").first()
+
+    last_preorder_no = last_preorder.invoice_no if last_preorder else 0
+    last_sell_no = last_sell.invoice_no if last_sell else 0
+
+    # Get the maximum of the two and add 1 to ensure uniqueness
+    next_unique_invoice_no = max(last_preorder_no, last_sell_no) + 1
+
+    return next_unique_invoice_no
+
 
 
 @extend_schema(
@@ -1302,6 +1313,11 @@ def edit_source_info(request, source_id):
 def safe_csv(value):
     return [v.strip() for v in (value or '').split(',') if v.strip()]
 
+
+def normalize_oem_list(oem_string):
+    return set(o.strip() for o in str(oem_string).split(',') if o.strip())
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
@@ -1312,16 +1328,28 @@ def create_mainitem_by_source(request):
         return Response({'error': f'الحقول المفقودة: {", ".join(missing)}'}, status=400)
 
     try:
-        oem_in = str(data.get('oem_number', '')).strip()
+        
         company = str(data.get('companyproduct', '')).strip()
         original_buyprice = Decimal(str(data.get('buyprice', '0'))).quantize(Decimal('0.0000'))
         showed = data.get('showed')
         source = str(data.get('source', '')).strip()
         discount = Decimal(str(data.get('discount') or '0'))
         discount_type = str(data.get('discount-type', 'source')).strip().lower()
-
+        category_type = str(data.get('category_type', '')).strip()
         pno = str(data.get('pno') or '').strip()
         source_pno = str(data.get('source_pno') or pno).strip()
+        oem_in = str(data.get('oem_number', ''))
+        external_oem = str(data.get('external_oem', ''))
+        oem_csv = ",".join(filter(None, [oem_in.strip(), external_oem.strip()]))
+
+        
+        incoming_oems = normalize_oem_list(oem_csv)
+
+        eitemname = str(data.get('eitemname', '')).strip()
+        if not almogOil_models.ItemCategory.objects.filter(name__iexact=category_type).exists():
+            return Response({'error': f' صنف الفئة "{category_type}" غير موجودة في جدول التصنيفات'}, status=400)
+        
+
 
         if discount > 0:
             discounted_buyprice = (original_buyprice - (original_buyprice * discount)).quantize(Decimal('0.0000'))
@@ -1344,6 +1372,36 @@ def create_mainitem_by_source(request):
             data['costprice'] = str(costprice)
         except almogOil_models.AllSourcesTable.DoesNotExist:
             return Response({'error': f'المصدر "{source}" غير موجود في جدول AllSourcesTable'}, status=400)
+        
+        existing_product = almogOil_models.Mainitem.objects.filter(
+            source__exact=source,
+            source_pno__exact=source_pno
+        ).first()
+
+        if existing_product:
+            update_data = {
+                'showed': showed,
+                'costprice': str(costprice),
+                'buyprice': str(discounted_buyprice),
+                'source_pno': source_pno   # احتفظ به حتى لو كان كما هو
+ 
+            }
+            serializer = products_serializers.MainitemSerializer(
+                existing_product,
+                data=update_data,
+                partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'message': 'تم تحديث الحقول showed و costprice و buyprice للمنتج المطابق لنفس المصدر و source_pno',
+                    'data': data
+                }, status=200)
+            return Response(serializer.errors, status=400)
+
+               # ❷ ــــ إذا لم يُوجد منتج مطابق لـ (source, source_pno) نتابع إنشاء/تحديث المنطق القديم
+        #      يمكنك حذف كتلة if-pno القديمة بالكامل أو إبقاؤها كمعيار ثانوي إن أردت.
+        #      هنا مثال سريع لجعلها معياراً ثانوياً:
 
         if pno:
             existing_product = almogOil_models.Mainitem.objects.filter(pno=pno).first()
@@ -1382,14 +1440,25 @@ def create_mainitem_by_source(request):
 
             data['source_pno'] = source_pno
 
-            oem_matches = almogOil_models.Oemtable.objects.filter(oemno__icontains=oem_in)
+            oem_matches = []
+            for row in almogOil_models.Oemtable.objects.all():
+                existing_oems = normalize_oem_list(row.oemno) 
+                if incoming_oems & existing_oems:  # Check if there is any intersection  
+                    oem_matches.append(row) 
 
-            if oem_matches.exists():
-                company_oem = oem_matches.filter(cname__iexact=company).first()
+
+
+            if oem_matches:
+                company_oem = None
+                for match in oem_matches:
+                    if match.cname.lower() == company.lower() or match.cno.lower() == eitemname.lower():
+                        company_oem = match
+                        break
 
                 if company_oem:
                     all_oems = safe_csv(company_oem.oemno)
-                    existing_items = almogOil_models.Mainitem.objects.filter(companyproduct__iexact=company)
+                    existing_items = almogOil_models.Mainitem.objects.filter(Q(companyproduct__iexact=company)
+                                                                              | Q(eitemname__iexact=eitemname))
                     item_to_update = None
                     for item in existing_items:
                         item_oems = safe_csv(item.oem_numbers)
@@ -1429,7 +1498,8 @@ def create_mainitem_by_source(request):
                 else:
                     new_oem_row = almogOil_models.Oemtable.objects.create(
                         cname=company,
-                        oemno=oem_in
+                        cno=eitemname,
+                        oemno=oem_csv
                     )
                     data['oem_numbers'] = new_oem_row.oemno
                     serializer = products_serializers.MainitemSerializer(data=data)
@@ -1441,7 +1511,8 @@ def create_mainitem_by_source(request):
             else:
                 new_oem_row = almogOil_models.Oemtable.objects.create(
                     cname=company,
-                    oemno=oem_in
+                    cno=eitemname,
+                    oemno=oem_csv
                 )
                 data['oem_numbers'] = new_oem_row.oemno
                 serializer = products_serializers.MainitemSerializer(data=data)
@@ -1519,8 +1590,15 @@ def web_filter_items(request):
                  filters_q &= Q(oem_numbers__icontains=filters['oem'])
              if filters.get('category'):
                  filters_q &= Q(category__icontains=filters['category'])
+             if filters.get("item_type"):
+                 filters_q &= Q(item_category__name__iexact=filters['item_type'])    
              if filters.get('discount') == "available":
                  filters_q &= Q(discount__isnull=False) & ~Q(discount=0)
+             if filters.get("oem_combined"):
+                 filters_q &= (
+                       Q(oem_numbers__icontains=filters['oem_combined']) |
+                       Q(eitemname__icontains=filters['oem_combined']))
+                               
 
            # Original filters (replacing itemvalue with showed)
              if filters.get('showed') == "0":
@@ -1686,7 +1764,17 @@ def delete_all_preorders_and_items(request):
         "message": f"Deleted {orders_deleted} orders and {items_deleted} items."
     }, status=status.HTTP_200_OK)
 
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def delete_all_preordersBuy_and_items(request):
+    # Delete all preorder items first (to avoid FK issues)
+    items_deleted, _ = almogOil_models.OrderBuyInvoiceItemsTable.objects.all().delete()
+    orders_deleted, _ = almogOil_models.OrderBuyinvoicetable.objects.all().delete()
 
+    return Response({
+        "message": f"Deleted {orders_deleted} orders and {items_deleted} items."
+    }, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -2359,13 +2447,224 @@ def item_detail_api(request, pno):
 @permission_classes([AllowAny])
 @authentication_classes([])
 def get_preorder_with_items_and_client(request, invoice_no):
+    client_id = request.query_params.get("client_id")
+    if not client_id:
+        return Response({"error": "client_id is required"}, status=400)
+
     try:
-        preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
+        preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no, client=client_id)
     except almogOil_models.PreOrderTable.DoesNotExist:
-        return Response({"error": "PreOrder not found"}, status=404)
+        return Response({"error": "PreOrder not found for this client"}, status=404)
 
     serializer = wholesale_serializers.PreOrderTableSerializerCart(preorder)
     return Response(serializer.data)
 
 
-    
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def get_client_preorders(request):
+    client_id = request.query_params.get("client_id")
+
+    if not client_id:
+        return Response({"error": "client_id is required"}, status=400)
+
+    preorders = almogOil_models.PreOrderTable.objects.filter(client=client_id)
+
+    if not preorders.exists():
+        return Response({"error": "No preorders found for this client"}, status=404)
+
+   
+    serializer = wholesale_serializers.SimplePreOrderSerializer(preorders, many=True)
+    return Response(serializer.data)
+
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def update_client_info(request, clientid):
+    try:
+        client = almogOil_models.AllClientsTable.objects.get(clientid=clientid)
+    except almogOil_models.AllClientsTable.DoesNotExist:
+        return Response({"detail": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    updatable_fields = [
+        "name", "address", "email", "website", "phone", "mobile",
+        "geo_location",
+    ]
+
+    updated = False
+    address_changed = False
+    geo_changed = False
+
+    for field in updatable_fields:
+        if field in request.data:
+            new_value = request.data[field]
+            old_value = getattr(client, field)
+            if new_value != old_value:
+                setattr(client, field, new_value)
+                updated = True
+                if field == "address":
+                    address_changed = True
+                elif field == "geo_location":
+                    geo_changed = True
+
+    if updated:
+        client.save()
+
+        # Check if address or geo_location changed
+        if address_changed or geo_changed:
+            message_body = f"تم تغيير معلومات العميل:\n"
+            if address_changed:
+                message_body += f"- العنوان الجديد: {client.address}\n"
+            if geo_changed:
+                message_body += f"- الموقع الجغرافي الجديد: {client.geo_location}\n"
+            message_body += f"اسم العميل: {client.name}"
+
+            # Send to client
+            if client.mobile:
+                send_whatsapp_message_via_green_api(client.mobile, message_body)
+
+            # Send to head of company
+            send_whatsapp_message_via_green_api("218942434823", message_body)
+
+        return Response({"detail": "Client info updated successfully."}, status=status.HTTP_200_OK)
+
+    return Response({"detail": "No data provided to update."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])  # No authentication
+def get_oem_table_data(request):
+    oem_data = almogOil_models.Oemtable.objects.all()
+    serializer = wholesale_serializers.OemTableSerializer(oem_data, many=True)
+    return Response(serializer.data)
+
+
+
+
+
+
+
+
+
+CACHE_TTL = 60 * 5   # 5 دقائق
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def cached_oemtable_list(request):
+    """
+    يستقبل فلترة عبر الـ POST:
+        {
+          "cname":  "...",
+          "cno":    "...",
+          "oemno":  "...",
+          "page":        2,          # اختياري: يمكن أيضاً إرساله كـ query-param
+          "page_size":  50           # اختياري
+        }
+    ويُعيد النتائج مقسّمة صفحات ومخزَّنة في الكاش.
+    """
+    # -------- بناء شروط الفلترة -------------
+    filters = {}
+    cname   = request.data.get('cname', '').strip()
+    cno     = request.data.get('cno', '').strip()
+    oemno   = request.data.get('oemno', '').strip()
+
+    if cname:
+        filters['cname__icontains'] = cname
+    if cno:
+        filters['cno__icontains'] = cno
+    if oemno:
+        filters['oemno__icontains'] = oemno
+
+    # -------- مفاتيح الصفحة والحجم ----------
+    page      = str(request.data.get('page') or request.query_params.get('page') or 1)
+    page_size = str(request.data.get('page_size') or request.query_params.get('page_size') or 20)
+
+    # -------- مفتاح الكاش  ------------------
+    cache_key = f"oemtable:{hashlib.md5(str(filters).encode()).hexdigest()}:{page}:{page_size}"
+
+    if cached := cache.get(cache_key):
+        return Response(cached)
+
+    # -------- جلب البيانات من قاعدة البيانات --
+    queryset = almogOil_models.Oemtable.objects.filter(**filters).order_by('fileid')
+
+    paginator = StandardResultsSetPagination()
+    paginator.page_size = int(page_size)
+
+    result_page = paginator.paginate_queryset(queryset, request)
+    serializer  = wholesale_serializers.OemTableSerializer(result_page, many=True)
+    response    = paginator.get_paginated_response(serializer.data).data
+
+    # -------- تخزين في الكاش -----------------
+    cache.set(cache_key, response, CACHE_TTL)
+
+    return Response(response)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def get_item_categories_with_counts(request):
+    categories = almogOil_models.ItemCategory.objects.all()
+    data = []
+
+    for category in categories:
+        count = almogOil_models.Mainitem.objects.filter(item_category=category).count()
+        data.append({
+            'id': category.id,
+            'name': category.name,
+            'item_count': count,
+        })
+
+    return Response({'categories': data})    
+
+@api_view(["POST"])
+@permission_classes([AllowAny])              # Allow anyone to access
+@authentication_classes([])                  # No authentication required
+def send_whatsapp_message(request):
+    serializer = wholesale_serializers.WhatsAppMessageSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    clientid = serializer.validated_data["clientid"]
+    message  = serializer.validated_data["message"]
+
+    try:
+        client = almogOil_models.AllClientsTable.objects.get(clientid=clientid)
+    except almogOil_models.AllClientsTable.DoesNotExist:
+        return Response(
+            {"detail": f"Client with ID {clientid} not found."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    number = client.mobile or client.phone
+    if not number:
+        return Response(
+            {"detail": "No phone or mobile number found for this client."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        response = send_whatsapp_message_via_green_api(number, message)
+    except Exception as e:
+        return Response(
+            {"detail": f"Failed to send message: {str(e)}"},
+            status=status.HTTP_502_BAD_GATEWAY
+        )
+
+    return Response(
+        {
+            "status": "sent",
+            "client": clientid,
+            "number": number,
+            "green_api_response": response,
+        },
+        status=status.HTTP_200_OK
+    )
+
