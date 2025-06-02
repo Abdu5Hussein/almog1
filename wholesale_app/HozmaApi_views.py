@@ -109,7 +109,7 @@ def create_pre_order(request):
             else:
                 client_obj = almogOil_models.AllClientsTable.objects.get(name=client_identifier)
 
-            balance_data = almogOil_models.TransactionsHistoryTable.objects.filter(object_id=client_obj.clientid).aggregate(
+            balance_data = almogOil_models.TransactionsHistoryTable.objects.filter(client_object_id=client_obj.clientid).aggregate(
                 total_debt=Sum('debt') or Decimal("0.0000"),
                 total_credit=Sum('credit') or Decimal("0.0000")
             )
@@ -188,8 +188,8 @@ description="""create a new pre-order item""",
 tags=["PreOrder","PreOrder Items"],
 )
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def Sell_invoice_create_item(request):
     if request.method == "POST":
         try:
@@ -418,8 +418,8 @@ def handle_confirm_action(preorder):
     return Response({"success": True, "message": "PreOrder items confirmed and moved to SellInvoice."}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-@permission_classes([AllowAny])  # Allow access for any user
-@authentication_classes([])  # No authentication required for this view
+@permission_classes([IsAuthenticated])  # Allow access for any user
+@authentication_classes([CookieAuthentication])  # No authentication required for this view
 def send_test_whatsapp_message(request):
     """
     A REST API endpoint to send a WhatsApp message using Green API.
@@ -461,8 +461,8 @@ def send_test_whatsapp_message(request):
 
  # Assuming you have this function
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def full_Sell_invoice_create_item(request):
     if request.method == "POST":
         try:
@@ -660,8 +660,8 @@ def full_Sell_invoice_create_item(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def show_all_preordersBuy(request):
     # Filter PreOrderTable for invoices where shop_confirm is False
     preorders = almogOil_models.OrderBuyinvoicetable.objects.filter(confirmed=False)
@@ -681,8 +681,8 @@ def show_all_preordersBuy(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def show_preordersBuy(request):
     invoice_no = request.query_params.get('invoice_no')  # Get the invoice_no from query params
 
@@ -708,8 +708,8 @@ def show_preordersBuy(request):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def show_preorders_buy_v2(request):
     """
     - GET  with ?invoice_no=…    → single invoice + items (unchanged, used by the modal).
@@ -814,8 +814,8 @@ def show_preorders_buy_v2(request):
         }
     })
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def confirm_or_update_preorderBuy_items(request):
     try:
         data = request.data
@@ -985,8 +985,8 @@ def Buyhandle_confirm_action(preorder):
     return Response({"success": True, "message": "PreOrder items confirmed and moved to buyinvoice."}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-@permission_classes([AllowAny])  # Allow access for any user
-@authentication_classes([])  # No authentication for this view
+@permission_classes([IsAuthenticated])  # Allow access for any user
+@authentication_classes([CookieAuthentication])  # No authentication for this view
 def send_unsent_invoices(request):
     # Extract the invoice number from the request body
     invoice_no = request.data.get('invoice_no')
@@ -1192,8 +1192,8 @@ def create_excel_invoice(invoice_data):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def create_mainitem(request):
     data = request.data.copy()
 
@@ -1227,8 +1227,8 @@ def create_mainitem(request):
 
 
 @api_view(["PUT", "PATCH"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_mainitem(request, pk):
     try:
         instance = almogOil_models.Mainitem.objects.get(pk=pk)
@@ -1247,8 +1247,8 @@ def update_mainitem(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
-@authentication_classes([])  # No authentication required
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # No authentication required
 def register_source_user(request):
     required_fields = ['username', 'password', 'name']
 
@@ -1275,16 +1275,16 @@ def register_source_user(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def show_all_sources(request):
     sources = almogOil_models.AllSourcesTable.objects.all()
     serializer = almogOil_serializers.SourcesSerializer(sources, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def show_source_details(request, source_id):
     try:
         source = almogOil_models.AllSourcesTable.objects.get(clientid=source_id)
@@ -1295,8 +1295,8 @@ def show_source_details(request, source_id):
     return Response(serializer.data)
 
 @api_view(['PUT'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def edit_source_info(request, source_id):
     try:
         source = almogOil_models.AllSourcesTable.objects.get(clientid=source_id)
@@ -1319,8 +1319,8 @@ def normalize_oem_list(oem_string):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def create_mainitem_by_source(request):
     data = request.data.copy()
     required = ['oem_number', 'companyproduct', 'buyprice', 'showed', 'source']
@@ -1524,8 +1524,8 @@ def create_mainitem_by_source(request):
     except Exception as e:
         return Response({'error': f'حدث خطأ غير متوقع: {str(e)}'}, status=500)
 @api_view(['POST'])
-@permission_classes([AllowAny])
-@authentication_classes([])  # anonymous OK
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # anonymous OK
 def create_oem_entry(request):
     """
     POST payload:
@@ -1540,8 +1540,8 @@ def create_oem_entry(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def web_filter_items(request):
      if request.method == "POST":
          try:
@@ -1708,8 +1708,8 @@ def web_filter_items(request):
              return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def delete_invoice(request):
     invoice_no = request.data.get('invoice_no')
 
@@ -1734,8 +1734,8 @@ def delete_invoice(request):
 
 
 @api_view(['DELETE'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def delete_preorder_and_items(request, invoice_no):
     try:
         preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
@@ -1753,8 +1753,8 @@ def delete_preorder_and_items(request, invoice_no):
     }, status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def delete_all_preorders_and_items(request):
     # Delete all preorder items first (to avoid FK issues)
     items_deleted, _ = almogOil_models.PreOrderItemsTable.objects.all().delete()
@@ -1765,8 +1765,8 @@ def delete_all_preorders_and_items(request):
     }, status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def delete_all_preordersBuy_and_items(request):
     # Delete all preorder items first (to avoid FK issues)
     items_deleted, _ = almogOil_models.OrderBuyInvoiceItemsTable.objects.all().delete()
@@ -1777,8 +1777,8 @@ def delete_all_preordersBuy_and_items(request):
     }, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_buy_invoices_for_preorder(request, invoice_no):
     try:
         preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
@@ -1801,8 +1801,8 @@ def get_buy_invoices_for_preorder(request, invoice_no):
         return Response({"error": "PreOrder invoice not found"}, status=404)
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_preorders_for_buy_invoice(request, buy_invoice_no):
     try:
         buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=buy_invoice_no)
@@ -1825,8 +1825,8 @@ def get_preorders_for_buy_invoice(request, buy_invoice_no):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_related_preorders(request, buy_invoice_id):
     try:
         buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=buy_invoice_id)
@@ -1853,8 +1853,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
-@authentication_classes([])  # Adjust if any authentication is needed
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # Adjust if any authentication is needed
 def api_auto_confirm_preorder(request):
     invoice_no = request.data.get('invoice_no')
     if not invoice_no:
@@ -1939,8 +1939,8 @@ def api_auto_confirm_preorder(request):
     
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def invoice_summary(request):
     today = now().date()
     this_month = today.replace(day=1)
@@ -1974,8 +1974,8 @@ def invoice_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def invoice_statistics(request):
     today = now()
 
@@ -2027,8 +2027,8 @@ def invoice_statistics(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def item_analytics(request):
     # Get time period from query params (default: last 30 days)
     period = request.GET.get('period', '30d')
@@ -2152,8 +2152,8 @@ def item_analytics(request):
 
    
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def item_category_analysis(request):
     analysis = (
         almogOil_models.Mainitem.objects
@@ -2230,8 +2230,8 @@ def calculate_percentile(sorted_data, percentile):
     return sorted_data[lower] * (Decimal(1) - weight) + sorted_data[upper] * weight
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def item_price_analysis(request):
     try:
         prices = list(
@@ -2267,8 +2267,8 @@ def item_price_analysis(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def item_source_analysis(request):
     try:
         # Annotate lead time
@@ -2332,8 +2332,8 @@ def item_source_analysis(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def SalesAnalysisView(request):
     # 1. Top 10 Clients by Total Purchases
     top_clients = (
@@ -2377,8 +2377,8 @@ def SalesAnalysisView(request):
         "monthly_sales": list(monthly_sales),
     })
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def purchase_analysis(request):
     # 1. Top 10 Vendors by Total Purchases
     top_vendors = (
@@ -2424,8 +2424,8 @@ def purchase_analysis(request):
     })
        
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])  # Allow anonymous access
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # Allow anonymous access
 def unique_company_products(request):
     company_products = almogOil_models.Mainitem.objects \
         .exclude(companyproduct__isnull=True) \
@@ -2436,16 +2436,16 @@ def unique_company_products(request):
     return Response(list(company_products))    
    
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def item_detail_api(request, pno):
     item = get_object_or_404(almogOil_models.Mainitem, pno=pno)
     return Response(products_serializers.MainitemSerializer(item).data)
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_preorder_with_items_and_client(request, invoice_no):
     client_id = request.query_params.get("client_id")
     if not client_id:
@@ -2461,8 +2461,8 @@ def get_preorder_with_items_and_client(request, invoice_no):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_client_preorders(request):
     client_id = request.query_params.get("client_id")
 
@@ -2481,8 +2481,8 @@ def get_client_preorders(request):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_client_info(request, clientid):
     try:
         client = almogOil_models.AllClientsTable.objects.get(clientid=clientid)
@@ -2535,8 +2535,8 @@ def update_client_info(request, clientid):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])  # No authentication
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # No authentication
 def get_oem_table_data(request):
     oem_data = almogOil_models.Oemtable.objects.all()
     serializer = wholesale_serializers.OemTableSerializer(oem_data, many=True)
@@ -2554,8 +2554,8 @@ CACHE_TTL = 60 * 5   # 5 دقائق
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def cached_oemtable_list(request):
     """
     يستقبل فلترة عبر الـ POST:
@@ -2608,8 +2608,8 @@ def cached_oemtable_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def get_item_categories_with_counts(request):
     categories = almogOil_models.ItemCategory.objects.all()
     data = []
@@ -2625,8 +2625,8 @@ def get_item_categories_with_counts(request):
     return Response({'categories': data})    
 
 @api_view(["POST"])
-@permission_classes([AllowAny])              # Allow anyone to access
-@authentication_classes([])                  # No authentication required
+@permission_classes([IsAuthenticated])             
+@authentication_classes([CookieAuthentication])                 
 def send_whatsapp_message(request):
     serializer = wholesale_serializers.WhatsAppMessageSerializer(data=request.data)
     if not serializer.is_valid():
@@ -2668,3 +2668,45 @@ def send_whatsapp_message(request):
         status=status.HTTP_200_OK
     )
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def get_employee_image(request, pk):
+    try:
+        employee = almogOil_models.EmployeesTable.objects.get(employee_id=pk)
+        serializer = almogOil_serializers.EmployeeImageUploadSerializer(employee)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except almogOil_models.EmployeesTable.DoesNotExist:
+        return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def create_terms_and_conditions(request):
+    serializer = wholesale_serializers.TermsAndConditionsSerializer(data=request.data)
+    if serializer.is_valid():
+        # Optional: deactivate previous active terms
+        if serializer.validated_data.get("is_active", False):
+            almogOil_models.TermsAndConditions.objects.filter(is_active=True).update(is_active=False)
+
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@authentication_classes([CookieAuthentication])
+@permission_classes([IsAuthenticated])
+def return_policy_api_view(request):
+    instance = almogOil_models.ReturnPolicy.objects.filter(is_active=True).first()
+    serializer = wholesale_serializers.ReturnPolicySerializer(instance, data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"success": True, "message": "تم تحديث سياسة الإرجاع بنجاح"})
+
+    return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    

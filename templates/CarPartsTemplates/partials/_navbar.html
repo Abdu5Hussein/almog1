@@ -1,44 +1,46 @@
 <!-- templates/partials/_navbar.html -->
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0F1B2E; border-bottom: 3px solid #FF6B00;">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية" style="font-size: 2rem; color: #FFD700; letter-spacing: 1px;">
-            <i class="bi bi-gear-fill me-2"></i>حزمة
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
+ {%load static %}
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0A1523; border-bottom: 2px solid #FF6B00;">  <div class="container  px-0 ">
+    <a class="navbar-brand" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية">
+      <img src="{% static 'images/log_hozma.png' %}" alt="حزمة" style="height: 40px;">
+  </a>  
+        <button class="navbar-toggler py-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
             <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozma/products/" aria-current="page">
+                    <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/products/" aria-current="page">
                         <i class="bi bi-speedometer2 me-1"></i> الرئيسية
                     </a>
                 </li>
-            
+                
                 <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto" href="http://45.13.59.226/hozma/hozmabrands/">
+                    <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/hozmabrands/">
                         <i class="bi bi-tags me-1"></i> الماركات
                     </a>
                 </li>
-            
+             
+                
                 <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto" href="/hozma/contact">
+                    <a class="nav-link nav-link-auto py-1 px-2" href="/hozma/contact">
                         <i class="bi bi-headset me-1"></i> الدعم الفني
                     </a>
                 </li>
                 <li class="nav-item position-relative mx-1">
-                    <a id="navbarCartIcon" class="nav-link nav-link-auto" href="javascript:void(0);" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة" onclick="toggleCart()">
-                        <i class="bi bi-cart3" aria-hidden="true"></i>
-                        <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" aria-live="polite" aria-atomic="true">0</span>
-                    </a>
+                  <a id="navbarCartIcon" class="nav-link nav-link-auto py-1 px-2" href="/hozma/hozmaCart/" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة">
+                      <i class="bi bi-cart3" aria-hidden="true"></i>
+                      <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.6rem;" aria-live="polite" aria-atomic="true">0</span>
+                  </a>
                 </li>
+              
                 <!-- Account Button -->
-                <li class="nav-item ms-3">
-                  <a id="accountButton" class="btn btn-warning fw-bold" href="/hozma/hozmaDashbord/" style="border-radius: 30px; min-width: 120px;">
+                <li class="nav-item ms-2">
+                  <a id="accountButton" class="btn btn-warning fw-bold py-1 px-3" href="/hozma/hozmaDashbord/" style="border-radius: 20px; min-width: 100px; font-size: 0.85rem;">
                       <i class="bi bi-person-circle me-1"></i> <span id="userNamePlaceholder">حسابي</span>
                   </a>
                 </li>
             </ul>
         </div>
     </div>
-</nav>
+  </nav>

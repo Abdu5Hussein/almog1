@@ -1,0 +1,261 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report_title }}</title>
+    <link rel="stylesheet" href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}" />
+    <style>
+        /* Base Styles */
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Logo Container */
+        .logo-container {
+            display: flex;
+            width: 100%;
+            top: 0;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .top-container {
+            overflow: hidden;
+            display: flex;
+            width: 100%;
+            top: 0;
+            height: 100px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #3498db;
+        }
+        .logo-left {
+            width: 20%;
+            text-align: right;
+        }
+
+        .logo-center {
+            width: 60%;
+            text-align: center;
+            padding: 0px 10px;
+        }
+
+        .logo-right {
+            width: 20%;
+            text-align: left;
+        }
+
+        .company-logo {
+            max-height: 300px;
+            max-width: 100%;
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0.5rem 0 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .header h2 {
+            color: #3498db;
+            margin: 0.5rem 0 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        /* Date Info */
+        .date-info {
+            text-align: center;
+            margin: 1.5rem 0;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            page-break-inside: avoid;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem;
+            text-align: right;
+            border: 1px solid #ddd;
+        }
+
+        td {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Totals */
+        .total {
+            font-weight: bold;
+            margin: 1rem 0;
+            padding: 0.8rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-right: 4px solid #3498db;
+            font-size: 1rem;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body {
+                padding: 0;
+                font-size: 12pt;
+            }
+
+            .header {
+                margin-top: 0;
+            }
+
+            table {
+                font-size: 10pt;
+            }
+
+            .no-print {
+                display: none;
+            }
+
+            .page-break {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo and Header -->
+    <div class="top-container">
+        <div class="company-logo">
+            <img src="{% static 'images/almog-palestine-logo.jpg' %}" alt="شعار الشركة" class="company-logo">
+        </div>
+    </div>
+
+    <div class="logo-container">
+        <div class="logo-left">
+            <div style="font-weight: bold; font-size: 0.9rem;">
+                <p>رقم المستند: {{ document_number }}</p>
+                <p>اعداد الموظف: {{ by_employee }}</p>
+                <p>الوقت: {{ time }}</p>
+            </div>
+        </div>
+        <div class="logo-center">
+            <div class="header">
+                <h1>{{ company_name }}</h1>
+                <h2>{{ report_title }}</h2>
+            </div>
+        </div>
+        <div class="logo-right d-flex justify-content-center align-items-center">
+            <div style="width: 150px;height: 90px; border: 1px dashed #ccc; padding: 10px; text-align: center;"
+                 class="d-flex justify-content-center align-items-center">
+                ختم الشركة
+            </div>
+        </div>
+    </div>
+
+    <div class="date-info">
+        <p>التاريخ: {{ report_date }} | {{ day_name }}</p>
+    </div>
+    <hr>
+    {% if text_statement %}
+    <div class="container w-100 px-2 mb-2 mx-0" style="font-weight: bold; font-size: 0.9rem;">
+        <p class="mb-4 w-100 text-right">{{ text_statement|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+
+    <!-- Dynamic Report Sections -->
+    {% for section in report_sections %}
+        <h4 class="text-center">{{ section.title }}</h4>
+        <table>
+            <thead>
+                <tr>
+                    {% for header in section.headers %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in section.rows %}
+                    <tr>
+                        {% for col in row %}
+                            <td>{{ col }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% for total in section.totals %}
+            <div class="total">{{ total.total_label }}  :  {{ total.total }}</div>
+        {% endfor %}
+    {% endfor %}
+
+    <!-- Print Button -->
+    <div class="p-2 row d-flex justify-content-center align-items-center no-print">
+        <div class="col d-flex justify-content-center align-items-center">
+            <button class="btn btn-primary no-print" onclick="window.print()">طباعة مرة اخرى</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>حالة اليومية لهذا التاريخ:</p>
+        <p>تم الطباعة في: {% now "DATETIME_FORMAT" %}</p>
+    </div>
+
+    <script>
+        function printPage() {
+            window.print();
+        }
+        printPage();
+    </script>
+</body>
+</html>

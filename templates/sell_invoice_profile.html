@@ -837,7 +837,7 @@
             data-bs-target="#exampleModal"
             {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}
           >تصدير</button>
-          <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_sellinvoice %}disabled{% endif %}>طباعة</button>
+          <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.print_client_sellinvoice %}disabled{% endif %}>طباعة</button>
           <button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.delete_sellinvoicetable %}disabled{% endif %}>حذف</button>
           <button
             type="button"
@@ -857,7 +857,7 @@
 
     <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script>
-
+      const show_sell_price_permission = {{ perms.almogOil.show_sell_price_sellinvoice|yesno:"true,false" }};
       const table = new Tabulator("#users-table", {
           height: "auto", // Adjust height or set a fixed height
           layout: "fitColumns",
@@ -877,7 +877,7 @@
           { title: "الكمية", field: "quantity", width: 90 },
           { title: "مستلم", field: "paid", width: 90 },
           { title: "باقي", field: "remaining", width: 90 },
-          { title: "سعر البيع", field: "dinar_unit_price", width: 90 },
+          { title: "سعر البيع", field: "dinar_unit_price", width: 90, visible: show_sell_price_permission },
           { title: "الاجمالي", field: "dinar_total_price", width: 90 },
           { title: "ترجيع", field: "returned", width: 90 },
           { title: "*", field: "xx", width: 90 },

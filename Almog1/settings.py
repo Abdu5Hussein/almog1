@@ -285,3 +285,12 @@ Q_CLUSTER = {
 
 GREEN_API_TOKEN = '66b95676d3344f3dbbbe3f6bcaa8faa3e5464f6109414ea990'
 GREEN_API_PHONE_NUMBER = '905338389061'
+
+# Expire session after 1 hour of inactivity
+SESSION_COOKIE_AGE = 60 * 60 * 1  # 1 hour in seconds
+
+# Kill session when browser closes (in combination with the timeout above)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Reset session timer with each request
+SESSION_SAVE_EVERY_REQUEST = True

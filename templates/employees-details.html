@@ -593,6 +593,19 @@
                       </div>
                       <input type="text" class="form-control" id="last_transaction" />
                     </div>
+                    <div class="input-group mb-1">
+                      <div class="width-95 d-flex align-items-center">
+                        <label for="type" class="form-label">نوع المستخدم</label>
+                      </div>
+                      <select class="form-control" id="type" name="type">
+                      
+                        <option value="driver">سائق</option>
+                        <option value="Shop_employee" selected>موظف متجر</option>
+                        <option value="Hozma_employee">موظف حزمة</option>
+                        <option value="manager">مدير</option>
+                        <option value="accountant">محاسب</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <div class="row py-2">
@@ -621,6 +634,14 @@
                         <label for="contract_image" class="form-label">ملف صورة العقد</label>
                       </div>
                       <input type="file" class="form-control" id="contract_image" />
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="input-group mb-1">
+                      <div class="width-95 d-flex align-items-center">
+                        <label for="employee_image" class="form-label">صورة الموظف</label>
+                      </div>
+                      <input type="file" class="form-control" id="employee_image" />
                     </div>
                   </div>
                 </div>
@@ -708,97 +729,158 @@
       });
 
       // Add
-    document.getElementById('add-btn').addEventListener("click", function () {
-      if (!document.getElementById("name").value || !document.getElementById("phone").value) {
-          alert("الرجاء إدخال اسم ورقم هاتف الموظف");
-          return;
-      }
-      const today = new Date();
+    document.getElementById('add-btn').addEventListener('click', async function () {
 
-      const newEmployee = {
-          name: document.getElementById("name").value,
-          nationality: document.getElementById("nationality").value,
-          identity_doc: document.getElementById("identity_doc").value,
-          address: document.getElementById("address").value,
-          phone: document.getElementById("phone").value,
-          salary: parseFloat(document.getElementById("salary").value) || 0,
-          last_transaction: document.getElementById("last_transaction").value,
-          start_date: (document.getElementById("start_date").value.trim() === "")
-                      ? today.toISOString().split('T')[0]
-                      : document.getElementById("start_date").value,
-          end_date: (document.getElementById("end_date").value.trim() === "")
-                    ? new Date(today.setFullYear(today.getFullYear() + 1)).toISOString().split('T')[0]
-                    : document.getElementById("end_date").value,
-          //contract_image: document.getElementById("contract_image").files[0] || null // Handle file upload if needed
-      };
+  /* 1- التحقّق من حقول الاسم والهاتف */
+  if (!document.getElementById('name').value ||
+      !document.getElementById('phone').value) {
+    alert('الرجاء إدخال اسم ورقم هاتف الموظف');
+    return;
+  }
 
-      console.log("details: ", newEmployee);
+  /* 2- تجهيز بيانات إنشاء الموظّف (بلا صور) */
+  const today       = new Date();
+  const startDate   = document.getElementById('start_date').value.trim();
+  const endDate     = document.getElementById('end_date').value.trim();
+  const employeeObj = {
+    name:            document.getElementById('name').value,
+    nationality:     document.getElementById('nationality').value,
+    identity_doc:    document.getElementById('identity_doc').value,
+    address:         document.getElementById('address').value,
+    phone:           document.getElementById('phone').value,
+    type:       document.getElementById('type').value,
+    salary:          parseFloat(document.getElementById('salary').value) || 0,
+    last_transaction:document.getElementById('last_transaction').value,
+    start_date:      startDate === '' ? today.toISOString().split('T')[0] : startDate,
+    end_date:        endDate   === '' ? new Date(today.setFullYear(today.getFullYear()+1))
+                                        .toISOString().split('T')[0] : endDate
+  };
 
-      // Send to backend API
-      customFetch("/api/employees-api/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newEmployee)
-      })
-      .then(res => res.json())
-      .then(data => {
-          clearForm();
-          alert("تم إضافة الموظف بنجاح");
-      }).catch(error => {
-            console.error('Error:', error);
-            alert("فشل إضافة الموظف. حاول مجددا.");
-          });
+  const employeeImage   = document.getElementById('employee_image').files[0] || null;
+  const contractImage   = document.getElementById('contract_image').files[0] || null;
+
+  try {
+    /* 3- إنشاء الموظّف (طلب JSON) */
+    const createRes = await customFetch('/api/employees-api/', {
+      method:        'POST',
+      headers:       { 'Content-Type': 'application/json' },
+      credentials:   'include',              // لإرسال الـ Cookie الخاصّة بالجلسة
+      body:          JSON.stringify(employeeObj)
     });
 
-    document.getElementById('edit-btn').addEventListener("click", function () {
-        const id = document.getElementById("employee_id").value;
-        if (!id) {
-            alert("اختر موظفًا أولاً");
-            return;
+    if (!createRes.ok) throw new Error('فشل إضافة الموظف');
+    const created   = await createRes.json();        // نتوقّع { employee_id: … }
+    const empId = created.employee.employee_id;
+
+    /* 4- رفع الصورة بعد التأكّد من وجودها */
+    if (employeeImage) {
+      const imgForm  = new FormData();
+      imgForm.append('employee_image', employeeImage);
+      const imgRes   = await fetch(`/employees/${empId}/upload-image/`, {
+        method:      'POST',
+        body:        imgForm,
+        credentials: 'include'
+      });
+      if (!imgRes.ok) throw new Error('فشل رفع صورة الموظف');
+    }
+
+    /* 5- رفع صورة العقد إذا أردت (مسار مشابه إن أنشأته في الباكенд) */
+    if (contractImage) {
+      const contractForm = new FormData();
+      contractForm.append('contract_image', contractImage);
+      await fetch(`/employees/${empId}/upload-contract/`, {    // أنشئ هذا المسار إن لزم
+        method: 'POST',
+        body:   contractForm,
+        credentials: 'include'
+      });
+    }
+
+    clearForm();           // دالة تفريغ الحقول إن كانت لديك
+    alert('تم إضافة الموظف ورفع الصور بنجاح');
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'حدث خطأ غير متوقَّع؛ حاول مجددًا');
+  }
+});
+
+document.getElementById('edit-btn').addEventListener("click", function () {
+    const id = document.getElementById("employee_id").value;
+    if (!id) {
+        alert("اختر موظفًا أولاً");
+        return;
+    }
+
+    const today = new Date();
+    const start_date = (document.getElementById("start_date").value.trim() === "")
+        ? today.toISOString().split('T')[0]
+        : document.getElementById("start_date").value;
+
+    const end_date = (document.getElementById("end_date").value.trim() === "")
+        ? new Date(today.setFullYear(today.getFullYear() + 1)).toISOString().split('T')[0]
+        : document.getElementById("end_date").value;
+
+    const updatedEmployee = {
+        name: document.getElementById("name").value,
+        nationality: document.getElementById("nationality").value,
+        identity_doc: document.getElementById("identity_doc").value,
+        address: document.getElementById("address").value,
+        phone: document.getElementById("phone").value,
+        type:           document.getElementById('type').value,
+        salary: parseFloat(document.getElementById("salary").value) || 0,
+        last_transaction: document.getElementById("last_transaction").value,
+        start_date: start_date,
+        end_date: end_date
+    };
+
+    // Step 1: Update JSON data
+    customFetch(`/api/employees-api/${id}/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedEmployee)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Update failed");
+        return res.json();
+    })
+    .then(() => {
+        // Step 2: Upload employee image (if selected)
+        const empImageFile = document.getElementById("employee_image").files[0];
+        if (empImageFile) {
+            const empForm = new FormData();
+            empForm.append("employee_image", empImageFile);
+
+            return fetch(`/employees/${id}/upload-image/`, {
+                method: "POST",
+                credentials: "include",
+                body: empForm
+            });
         }
+    })
+    .then(() => {
+        // Step 3: Upload contract image (if selected)
+        const contractFile = document.getElementById("contract_image").files[0];
+        if (contractFile) {
+            const contractForm = new FormData();
+            contractForm.append("contract_image", contractFile);
 
-        // Get today's date
-        const today = new Date();
-
-        // Set start date to today's date in YYYY-MM-DD format if input is empty
-        const start_date = (document.getElementById("start_date").value.trim() === "")
-                          ? today.toISOString().split('T')[0]
-                          : document.getElementById("start_date").value;
-
-        // Set end date to one year from today in YYYY-MM-DD format if input is empty
-        const end_date = (document.getElementById("end_date").value.trim() === "")
-                        ? new Date(today.setFullYear(today.getFullYear() + 1)).toISOString().split('T')[0]
-                        : document.getElementById("end_date").value;
-
-        // Collect form data without FormData, directly in a JSON object
-        const updatedEmployee = {
-            name: document.getElementById("name").value,
-            nationality: document.getElementById("nationality").value,
-            identity_doc: document.getElementById("identity_doc").value,
-            address: document.getElementById("address").value,
-            phone: document.getElementById("phone").value,
-            salary: parseFloat(document.getElementById("salary").value) || 0,
-            last_transaction: document.getElementById("last_transaction").value,
-            start_date: start_date,
-            end_date: end_date
-        };
-
-        // Sending the PUT request with the updated JSON data
-        customFetch(`/api/employees-api/${id}/`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedEmployee)
-        })
-        .then(res => res.json())
-        .then(() => {
-            // Reload the employee data or perform any post-update actions
-            alert("Employee updated successfully");
-            clearForm();
-        })
-        .catch(error => {
-            console.error('Error updating employee:', error);
-        });
+            return fetch(`/employees/${id}/upload-contract/`, {
+                method: "POST",
+                credentials: "include",
+                body: contractForm
+            });
+        }
+    })
+    .then(() => {
+        alert("تم تحديث الموظف بنجاح");
+        clearForm();
+    })
+    .catch(error => {
+        console.error('Error during employee update or image upload:', error);
+        alert("حدث خطأ أثناء التحديث");
     });
+});
+
 
 
 

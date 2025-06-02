@@ -17,8 +17,8 @@
 <!-- templates/partials/_navbar.html -->
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0A1523; border-bottom: 2px solid #FF6B00;">  <div class="container  px-0 ">
   <a class="navbar-brand" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية">
-    <img src="http://45.13.59.226/path/to/your-logo.png" alt="حزمة" style="height: 40px;">
-  </a>  
+    <img src="{% static 'images/log_hozma.png' %}" alt="حزمة" style="height: 40px;">
+</a>  
       <button class="navbar-toggler py-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
           <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
       </button>
@@ -313,39 +313,7 @@
       </div>
       <script>
     
-  document.addEventListener('DOMContentLoaded', () => {
-    customFetch('http://45.13.59.226/hozma/api/company-products/')
-      .then(response => response.json())
-      .then(data => {
-        const select = document.getElementById('companyproductFilter');
-        data.forEach(product => {
-          const option = document.createElement('option');
-          option.value = product;
-          option.textContent = product;  // You can replace this with Arabic translation if needed
-          select.appendChild(option);
-        });
-      })
-      .catch(error => {
-        console.error('Error fetching company products:', error);
-      });
-  });
-
-  document.addEventListener('DOMContentLoaded', () => {
-  customFetch('/hozma/api/item-categories/')
-    .then(response => response.json())
-    .then(payload => {
-      const categories = payload.categories || [];
-      const select = document.getElementById('companynoFilter');
-
-      categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.name; // 👈 استخدم الاسم كقيمة
-        option.textContent = `${cat.name} (${cat.item_count})`; // 👈 يعرض الاسم والعدد
-        select.appendChild(option);
-      });
-    })
-    .catch(err => console.error('خطأ في جلب فئات الأصناف:', err));
-});
+  
       </script>
       
       <!-- Action Buttons -------------------------------------------------------->
@@ -587,7 +555,7 @@
   <script src="{% static 'hozma/js/product.js' %}"></script>
   <script src="{% static 'hozma/js/cart.js' %}"></script>
   <script src="{% static 'hozma/js/itemmain.js' %}"></script>
-  
+  <script src="{% static 'HOZMA_FRONT/JS/item_page.js' %}"></script>
 </body>
 
 </html>

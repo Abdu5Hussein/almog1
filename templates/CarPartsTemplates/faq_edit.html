@@ -1,95 +1,159 @@
 {% extends 'CarPartsTemplates/base.html' %}
+{% load static %}
+{% load extra_tags %}
 
 {% block title %}تعديل الأسئلة الشائعة{% endblock %}
 
 {% block content %}
-<section class="faq-section py-5" style="background-color: #f8f9fa;">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="fw-bold mb-3" style="color: #0F1B2E;">تعديل الأسئلة الشائعة</h2>
-            <p class="lead text-muted">إدارة الأسئلة الشائعة</p>
-        </div>
-
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <!-- Add New FAQ Button -->
-                <div class="text-end mb-4">
-                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFaqModal">
-                        <i class="bi bi-plus-circle me-2"></i>إضافة سؤال جديد
-                    </button>
-                </div>
-
-                <!-- FAQ List for Editing -->
-                <div class="accordion" id="faqAccordion">
-                    {% for category in categories %}
-                    <h3 class="mt-4 mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
-                        <i class="bi bi-{{ category.icon }} me-2"></i>{{ category.get_category_display }}
-                    </h3>
-                    
-                    {% for faq in faqs %}
-                    {% if faq.category == category %}
-                    <div class="accordion-item mb-3 border-0 shadow-sm">
-                        <form method="POST" action="{% url 'faq_edit' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="id" value="{{ faq.id }}">
-                            <div class="accordion-header d-flex justify-content-between align-items-center p-3" style="background-color: #f8f9fa;">
-                                <input type="text" name="question" value="{{ faq.question }}" class="form-control me-2">
-                                <select name="category" class="form-select me-2" style="width: 200px;">
-                                    {% for cat in categories %}
-                                    <option value="{{ cat.0 }}" {% if faq.category == cat.0 %}selected{% endif %}>{{ cat.1 }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="btn btn-primary me-2">حفظ</button>
-                                <a href="{% url 'faq_delete' faq.id %}" class="btn btn-danger">حذف</a>
-                            </div>
-                            <div class="accordion-body">
-                                <textarea name="answer" class="form-control" rows="5">{{ faq.answer }}</textarea>
-                            </div>
-                        </form>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+<section class="faq-edit py-5" style="background-color: #f5f7fa;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold mb-3" style="color: #0F1B2E;">
+        <i class="bi bi-patch-question-fill me-2"></i>تعديل الأسئلة الشائعة
+      </h2>
+      <p class="lead text-muted">يمكنك إضافة، تعديل أو حذف الأسئلة الشائعة من هنا</p>
     </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <!-- Add New FAQ Button -->
+        <div class="text-end mb-4">
+          <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addFaqModal">
+            <i class="bi bi-plus-circle me-2"></i>إضافة سؤال جديد
+          </button>
+        </div>
+
+        <!-- FAQ List -->
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-0">
+            {% for cat_value, cat_label in categories %}
+            <div class="category-section">
+              <div class="category-header p-3" style="background-color: #0F1B2E;">
+                <h4 class="mb-0 text-white">
+                  <i class="bi bi-{{ icon_map|get_item:cat_value }} me-2"></i>{{ cat_label }}
+                </h4>
+              </div>
+              
+              <div class="category-content p-3">
+                {% for faq in faqs %}
+                {% if faq.category == cat_value %}
+                <div class="faq-item mb-4 p-3 rounded shadow-sm" style="background-color: #fff;">
+                  <form method="POST" action="{% url 'wholesale_app:faq_edit' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="{{ faq.id }}">
+                    
+                    <div class="row mb-3">
+                      <div class="col-md-8">
+                        <label class="form-label text-muted small">السؤال</label>
+                        <input type="text" name="question" value="{{ faq.question }}" 
+                               class="form-control form-control-lg border-0 border-bottom" 
+                               style="background-color: #f8f9fa;" required>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label text-muted small">التصنيف</label>
+                        <select name="category" class="form-select" required>
+                          {% for c_value, c_label in categories %}
+                          <option value="{{ c_value }}" {% if faq.category == c_value %}selected{% endif %}>
+                            {{ c_label }}
+                          </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label class="form-label text-muted small">الإجابة</label>
+                      <textarea name="answer" class="form-control" rows="4" 
+                                style="background-color: #f8f9fa;" required>{{ faq.answer }}</textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                      <button type="submit" class="btn btn-success me-2 px-4">
+                        <i class="bi bi-check-circle me-1"></i> حفظ
+                      </button>
+                      <a href="{% url 'wholesale_app:faq_delete' faq.id %}" class="btn btn-danger px-4">
+                        <i class="bi bi-trash me-1"></i> حذف
+                      </a>
+                    </div>
+                  </form>
+                </div>
+                {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- Add FAQ Modal -->
 <div class="modal fade" id="addFaqModal" tabindex="-1" aria-labelledby="addFaqModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="{% url 'faq_edit' %}">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addFaqModalLabel">إضافة سؤال جديد</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">السؤال</label>
-                        <input type="text" name="question" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">الإجابة</label>
-                        <textarea name="answer" class="form-control" rows="5" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">التصنيف</label>
-                        <select name="category" class="form-select" required>
-                            {% for cat in categories %}
-                            <option value="{{ cat.0 }}">{{ cat.1 }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">حفظ</button>
-                </div>
-            </form>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'wholesale_app:faq_edit' %}">
+        {% csrf_token %}
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="addFaqModalLabel">
+            <i class="bi bi-plus-circle me-2"></i>إضافة سؤال جديد
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body">
+          <div class="mb-4">
+            <label class="form-label fw-bold">السؤال</label>
+            <input type="text" name="question" class="form-control form-control-lg" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold">الإجابة</label>
+            <textarea name="answer" class="form-control" rows="6" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">التصنيف</label>
+            <select name="category" class="form-select" required>
+              {% for cat_value, cat_label in categories %}
+              <option value="{{ cat_value }}">{{ cat_label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-save me-1"></i> حفظ السؤال
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
+
+<style>
+  .category-section {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  
+  .category-header {
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+  }
+  
+  .faq-item {
+    transition: all 0.3s ease;
+  }
+  
+  .faq-item:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+  }
+  
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+</style>
 {% endblock %}

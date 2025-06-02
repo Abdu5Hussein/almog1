@@ -185,6 +185,8 @@
         <div class="logo-left">
             <div style="font-weight: bold; font-size: 0.9rem;">
                 <p>رقم المستند: {{ document_number }}</p>
+                <p>اعداد الموظف: {{ by_employee }}</p>
+                <p>الوقت: {{ time }}</p>
                 <p>الصفحة: 1 من 1</p>
             </div>
         </div>
@@ -232,8 +234,17 @@
             {% endfor %}
         </tbody>
     </table>
-
-    <div class="total">إبداع نقدى: {{ total_deposits }}</div>
+    <div class="row">
+        <div class="col">
+            <p class="total">إيداع نقدى: {{ total_cash_deposits }}</p>
+        </div>
+        <div class="col">
+            <p class="total">إيداع صك: {{ total_bank_deposits }}</p>
+        </div>
+        <div class="col">
+            <p class="total">اجمالي الايداع :  {{ total_deposits }}</p>
+        </div>
+    </div>
 
     <table>
         <thead>
@@ -262,8 +273,19 @@
         </tbody>
     </table>
 
-    <div class="total">إحصائى الصرف: {{ total_withdrawals }}</div>
-    <div class="total">المتنتهي: {{ net_balance }}</div>
+    <div class="row">
+        <div class="col">
+            <p class="total">صرف نقدى: {{ total_cash_withdrawals }}</p>
+        </div>
+        <div class="col">
+            <p class="total">صرف صك: {{ total_bank_withdrawals }}</p>
+        </div>
+        <div class="col">
+            <p class="total">اجمالي الصرف :  {{ total_withdrawals }}</p>
+        </div>
+    </div>
+
+د    <div class="total p-2 border">المتبقي: {{ net_balance }}</div>
 
     <div class="p-2 row d-flex justify-content-center align-items-center no-print">
         <div class="col d-flex justify-content-center align-items-center">
@@ -273,7 +295,7 @@
 
     <div class="footer">
         <p>حالة اليومية لهذا التاريخ:</p>
-        <p class="no-print">تم الطباعة في: {% now "DATETIME_FORMAT" %}</p>
+        <p>تم الطباعة في: {% now "DATETIME_FORMAT" %}</p>
     </div>
     <script>
     function printPage() {

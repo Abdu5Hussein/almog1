@@ -1,10 +1,6 @@
-
-
-
-
 {% extends 'CarPartsTemplates/base.html' %}
 
-{% block title %}سياسة الإرجاع والاستبدال {% endblock %}
+{% block title %}{{ policy.title }}{% endblock %}
 
 {% block content %}
 {% load static %}
@@ -12,21 +8,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
-  <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
-  <link rel="stylesheet" href="{% static 'hozma/css/prodcut.css' %}">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
+    <link rel="stylesheet" href="{% static 'hozma/css/prodcut.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </head>
 
 <section class="return-policy py-5" style="background-color: #f8f9fa;">
     <div class="container">
         <div class="text-center mb-5">
-            <h1 class="fw-bold mb-3" style="color: #0F1B2E;">سياسة الإرجاع والاستبدال</h1>
-            <p class="lead text-muted">نسعى لتوفير تجربة تسوق مرضية لجميع عملائنا</p>
+            <h1 class="fw-bold mb-3" style="color: #0F1B2E;">{{ policy.title }}</h1>
+            <p class="lead text-muted">{{ policy.overview }}</p>
         </div>
 
         <div class="row justify-content-center">
@@ -71,32 +66,7 @@
                                 <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
                                     <i class="bi bi-check-lg me-2"></i>الشروط العامة للإرجاع
                                 </h3>
-                                <p>نقبل إرجاع أو استبدال المنتجات في الحالات التالية فقط:</p>
-                                <div class="conditions-list">
-                                    <div class="condition-item p-3 mb-3" style="background-color: #f0f0f0; border-radius: 8px;">
-                                        <h5 class="fw-bold"><i class="bi bi-check2-square text-success me-2"></i>المنتج غير متوافق</h5>
-                                        <p>إذا كان المنتج غير متوافق مع موديل سيارتك (بعد التحقق من معلومات السيارة)</p>
-                                    </div>
-                                    <div class="condition-item p-3 mb-3" style="background-color: #f0f0f0; border-radius: 8px;">
-                                        <h5 class="fw-bold"><i class="bi bi-check2-square text-success me-2"></i>عيب في التصنيع</h5>
-                                        <p>إذا كان المنتج به عيب في التصنيع أو خلل في المواد</p>
-                                    </div>
-                                    <div class="condition-item p-3 mb-3" style="background-color: #f0f0f0; border-radius: 8px;">
-                                        <h5 class="fw-bold"><i class="bi bi-check2-square text-success me-2"></i>عدم المطابقة</h5>
-                                        <p>إذا كان المنتج غير مطابق للمواصفات المذكورة في صفحة المنتج</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="alert alert-warning mt-4">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    <strong>شروط إضافية:</strong>
-                                    <ul class="mt-2 mb-0">
-                                        <li>يجب أن يكون المنتج في حالته الأصلية (غير مستعمل)</li>
-                                        <li>يجب أن يحتوي على جميع التغليف والملحقات</li>
-                                        <li>يجب إرفاق الفاتورة الأصلية</li>
-                                        <li>يجب ألا تظهر علامات تلف بسبب سوء الاستخدام</li>
-                                    </ul>
-                                </div>
+                                {{ policy.general_conditions|safe }}
                             </div>
 
                             <!-- Section 2 -->
@@ -104,41 +74,7 @@
                                 <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
                                     <i class="bi bi-x-circle me-2"></i>المنتجات غير القابلة للإرجاع
                                 </h3>
-                                <p>لا يمكن إرجاع أو استبدال المنتجات التالية إلا في حالة وجود عيب في التصنيع:</p>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-start mb-3">
-                                            <i class="bi bi-slash-circle-fill text-danger me-3 fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 class="fw-bold mb-1">القطع المخصصة</h6>
-                                                <p class="small text-muted">القطع المصنوعة حسب الطلب أو المعدلة</p>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-start mb-3">
-                                            <i class="bi bi-slash-circle-fill text-danger me-3 fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 class="fw-bold mb-1">المواد الكيميائية</h6>
-                                                <p class="small text-muted">زيوت المحركات، سوائل الفرامل، إلخ</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-start mb-3">
-                                            <i class="bi bi-slash-circle-fill text-danger me-3 fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 class="fw-bold mb-1">القطع المثبتة</h6>
-                                                <p class="small text-muted">القطع التي تم تركيبها على السيارة</p>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-start mb-3">
-                                            <i class="bi bi-slash-circle-fill text-danger me-3 fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 class="fw-bold mb-1">القطع التالفة</h6>
-                                                <p class="small text-muted">بسبب سوء الاستخدام أو الحوادث</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {{ policy.non_returnable_items|safe }}
                             </div>
 
                             <!-- Section 3 -->
@@ -146,33 +82,7 @@
                                 <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
                                     <i class="bi bi-arrow-repeat me-2"></i>خطوات إرجاع المنتج
                                 </h3>
-                                <div class="steps-timeline">
-                                    <div class="step-item p-4 mb-3 position-relative" style="background-color: #FFF8E1; border-radius: 8px;">
-                                        <div class="step-number position-absolute" style="background-color: #FF6B00; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; right: -15px; top: 20px;">1</div>
-                                        <h5 class="fw-bold">طلب الإرجاع</h5>
-                                        <p>اتصل بخدمة العملاء على <strong>0914262604</strong> أو أرسل طلباً عبر حسابك في الموقع خلال 7 أيام من استلام المنتج</p>
-                                    </div>
-                                    <div class="step-item p-4 mb-3 position-relative" style="background-color: #E8F5E9; border-radius: 8px;">
-                                        <div class="step-number position-absolute" style="background-color: #4CAF50; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; right: -15px; top: 20px;">2</div>
-                                        <h5 class="fw-bold">الموافقة على الإرجاع</h5>
-                                        <p>سيقوم فريقنا بمراجعة طلبك وإرسال تعليمات الإرجاع خلال 24-48 ساعة</p>
-                                    </div>
-                                    <div class="step-item p-4 mb-3 position-relative" style="background-color: #E3F2FD; border-radius: 8px;">
-                                        <div class="step-number position-absolute" style="background-color: #2196F3; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; right: -15px; top: 20px;">3</div>
-                                        <h5 class="fw-bold">تغليف المنتج</h5>
-                                        <p>قم بتغليف المنتج بشكل آمن مع جميع ملحقاته وإرفاق الفاتورة الأصلية</p>
-                                    </div>
-                                    <div class="step-item p-4 mb-3 position-relative" style="background-color: #F3E5F5; border-radius: 8px;">
-                                        <div class="step-number position-absolute" style="background-color: #9C27B0; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; right: -15px; top: 20px;">4</div>
-                                        <h5 class="fw-bold">إرسال المنتج</h5>
-                                        <p>أرسل المنتج إلى العنوان المحدد أو انتظر مندوبنا لاستلامه (حسب منطقتك)</p>
-                                    </div>
-                                    <div class="step-item p-4 position-relative" style="background-color: #E0F7FA; border-radius: 8px;">
-                                        <div class="step-number position-absolute" style="background-color: #00BCD4; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; right: -15px; top: 20px;">5</div>
-                                        <h5 class="fw-bold">استكمال الإرجاع</h5>
-                                        <p>بعد فحص المنتج، سيتم إعلامك بقرار الإرجاع واستكمال العملية خلال 3-5 أيام عمل</p>
-                                    </div>
-                                </div>
+                                {{ policy.return_steps|safe }}
                             </div>
 
                             <!-- Section 4 -->
@@ -180,31 +90,7 @@
                                 <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
                                     <i class="bi bi-currency-exchange me-2"></i>المبالغ المستردة
                                 </h3>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="card h-100 border-0 p-4" style="background-color: #F5F5F5;">
-                                            <h5 class="fw-bold text-success"><i class="bi bi-check2-circle me-2"></i>إسترداد ناجح</h5>
-                                            <p>في حالة الموافقة على الإرجاع:</p>
-                                            <ul>
-                                                <li>سيتم استرداد المبلغ بنفس طريقة الدفع الأصلية</li>
-                                                <li>قد يستغرق الاسترداد 5-10 أيام عمل حسب طريقة الدفع</li>
-                                                <li>سيتم خصم تكاليف الشحن من المبلغ المسترد إذا كان الإرجاع بسبب تغيير رأي العميل</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="card h-100 border-0 p-4" style="background-color: #F5F5F5;">
-                                            <h5 class="fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>حالات عدم الاسترداد</h5>
-                                            <p>لا يتم استرداد المبلغ في الحالات التالية:</p>
-                                            <ul>
-                                                <li>إذا تم رفض الإرجاع لعدم استيفاء الشروط</li>
-                                                <li>تكاليف التركيب إذا تم تركيب القطعة</li>
-                                                <li>المنتجات التالفة بسبب سوء الاستخدام</li>
-                                                <li>المنتجات غير القابلة للإرجاع المذكورة أعلاه</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
+                                {{ policy.refund_policy|safe }}
                             </div>
 
                             <!-- Section 5 -->
@@ -212,29 +98,7 @@
                                 <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
                                     <i class="bi bi-arrow-left-right me-2"></i>سياسة الاستبدال
                                 </h3>
-                                <p>يمكنك اختيار استبدال المنتج بدلاً من استرداد المبلغ في الحالات التالية:</p>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="card h-100 border-0 p-3" style="background-color: #E8F5E9;">
-                                            <h5 class="fw-bold"><i class="bi bi-check-lg me-2 text-success"></i>شروط الاستبدال</h5>
-                                            <ul>
-                                                <li>يجب أن يكون المنتج ضمن فئة قابلة للإرجاع</li>
-                                                <li>يجب أن يكون المنتج البديل متوفراً في المخزن</li>
-                                                <li>يجب أن يكون سعر المنتج البديل مساوياً أو أقل من المنتج الأصلي</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="card h-100 border-0 p-3" style="background-color: #E1F5FE;">
-                                            <h5 class="fw-bold"><i class="bi bi-lightning me-2 text-primary"></i>عملية سريعة</h5>
-                                            <ul>
-                                                <li>يتم شحن المنتج البديل فور استلام المنتج المراد استبداله</li>
-                                                <li>لا توجد تكاليف شحن إضافية للاستبدال بنفس القيمة</li>
-                                                <li>في حالة اختيار منتج بسعر أعلى، يتم دفع الفرق فقط</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
+                                {{ policy.exchange_policy|safe }}
                             </div>
 
                             <!-- Warranty Section -->
@@ -242,46 +106,17 @@
                                 <h3 class="fw-bold mb-3 p-2 rounded" style="background-color: #0F1B2E; color: white;">
                                     <i class="bi bi-shield-check me-2"></i>الضمانات
                                 </h3>
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle-fill me-2"></i>
-                                    <strong>ملاحظة:</strong> سياسة الإرجاع هذه منفصلة عن ضمانات المصنع. يرجى مراجعة وثيقة الضمان المرفقة مع المنتج للتفاصيل.
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="card h-100 border-0">
-                                            <div class="card-body">
-                                                <h5 class="fw-bold text-primary"><i class="bi bi-patch-check me-2"></i>القطع الأصلية</h5>
-                                                <ul>
-                                                    <li>ضمان المصنع (6-24 شهراً حسب نوع القطعة)</li>
-                                                    <li>تغطي عيوب التصنيع فقط</li>
-                                                    <li>تتطلب ختم الورشة المعتمدة</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="card h-100 border-0">
-                                            <div class="card-body">
-                                                <h5 class="fw-bold text-warning"><i class="bi bi-shield me-2"></i>القطع البديلة</h5>
-                                                <ul>
-                                                    <li>ضمان المتجر (3-6 أشهر)</li>
-                                                    <li>تغطي عيوب التصنيع والمواد</li>
-                                                    <li>لا تشمل التلف الناتج عن التركيب الخاطئ</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {{ policy.warranty_info|safe }}
                             </div>
+                            
                             <div id="floatingCartIcon" style="display: none;">
                             </div>
                             <div id="cartBadge1" style="display: none;">
-                          </div>
-                        
+                            </div>
+
                             <!-- Contact Section -->
                             <div class="contact-return p-4 text-center" style="background-color: #0F1B2E; color: white; border-radius: 8px;">
-                                <h4 class="fw-bold mb-3">هل لديك استفسارات حول إرجاع منتج؟</h4>
-                                <p class="mb-4">فريق خدمة العملاء لدينا جاهز لمساعدتك في أي استفسار</p>
+                                {{ policy.contact_info|safe }}
                                 <div class="d-flex justify-content-center gap-3">
                                     <a href="tel:0914262604" class="btn btn-light rounded-pill px-4">
                                         <i class="bi bi-telephone me-2"></i> اتصل بنا
@@ -298,13 +133,15 @@
                 <!-- Additional Info -->
                 <div class="card mt-4 border-0 shadow-sm">
                     <div class="card-body text-center py-3">
-                        <p class="mb-0"><small class="text-muted">آخر تحديث: 21 أبريل 2025 | هذه السياسة تخضع للتغيير دون إشعار مسبق</small></p>
+                        <p class="mb-0"><small class="text-muted">آخر تحديث: {{ policy.last_updated|date:"d F Y" }} | هذه السياسة تخضع للتغيير دون إشعار مسبق</small></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Your existing styles -->
 <style>
     .steps-timeline {
         position: relative;
@@ -349,7 +186,7 @@
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
 <script src="{% static 'hozma/js/navbar.js' %}"></script>
-<script src="{% static 'hozma/js/product.js' %}"></script>
+
 <script src="{% static 'hozma/js/cart.js' %}"></script>
 <script src="{% static 'js/helper_functions.js' %}"></script>
 <script src="{% static 'hozma/js/itemmain.js' %}"></script>
@@ -366,8 +203,4 @@
         }, 200 * index);
     });
 </script>
-
-
-
-
 {% endblock %}

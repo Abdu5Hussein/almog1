@@ -72,3 +72,19 @@ class WhatsAppMessageSerializer(serializers.Serializer):
     clientid = serializers.IntegerField()
     message = serializers.CharField(max_length=2000)       
 
+class TermsAndConditionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.TermsAndConditions
+        fields = [
+            'title',
+            'last_updated',
+            'introduction',
+            'acceptance_text',
+            'contact_info',
+            'is_active',
+            'sections'
+        ]
+class ReturnPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.ReturnPolicy
+        fields = '__all__'

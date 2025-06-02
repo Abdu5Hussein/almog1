@@ -5,7 +5,7 @@ from . import api_views
 from rest_framework import permissions
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
-
+app_name = 'wholesale_app'
 
 urlpatterns = [
     # Down here is for car parts
@@ -21,7 +21,7 @@ urlpatterns = [
     path('hozmatrack-order/', views.track_order, name='track_order'),
     path('hozmareturn-policy/', views.return_policy, name='return_policy'),
     path('hozmafaq/', views.faq, name='faq'),
-   path('invoice/<str:invoice_no>/', views.invoice, name='invoice_view'),
+    path('invoice/<str:invoice_no>/', views.invoice, name='invoice_view'),
     path('hozmalogin/', views.hozmalogin, name='hozmalogin'),
     path('hozmaterms-conditions/', views.terms_conditions, name='terms_conditions'),
     path('products/<int:pno>/', api_views.item_detail_view, name='item_detail'),
@@ -52,8 +52,11 @@ urlpatterns = [
     path('api/mainitem/create/', HozmaApi_views.create_mainitem_by_source, name='create_mainitem_by_source'),
     path('api/edit_source_info/<int:source_id>/', HozmaApi_views.edit_source_info, name='edit_source_info'),
     path('Handle-source/', views.source_dashboard, name='source_dashboard'),
+    path('employees/<int:pk>/get-image/', HozmaApi_views.get_employee_image, name='get-employee-image'),
     path('profile/edit', views.edit_dashboard, name='edit_dashboard'),
+    path('api/terms/', HozmaApi_views.create_terms_and_conditions, name='create-terms'),
     path('Admin-Dashboard/', views.Admin_Dashboard, name='Admin_Dashboard'),
+    path('Settings/', views.Settings, name='Settings'),
     path('api/producuts/',HozmaApi_views.web_filter_items , name='producuts_detail'),
     path('api/delete-invoice/', HozmaApi_views.delete_invoice, name='delete-invoice'),
     path('api/preorder/<int:invoice_no>/delete-items/', HozmaApi_views.delete_preorder_and_items, name='delete-preorder-items-by-invoice-no'),
@@ -76,6 +79,12 @@ urlpatterns = [
      path('faq/edit/', views.faq_edit, name='faq_edit'),
     path('orders/', views.order_view, name='order_view'),
     path('contact/', views.contact, name='contact'),
+    path('HOZMAlogin',api_views.Hozma_Login, name='login'),
+    path('images/upload/', views.uploadimages, name='upload_images'),
+    path('api/return-policy/', HozmaApi_views.return_policy_api_view, name='return_policy_api'),
+    path('edit-terms-and-conditions/', views.edit_terms_and_conditions, name='edit_terms_and_conditions'),
+    path('return-policy/edit/', views.edit_return_policy, name='edit_return_policy'),
+    path('faq/delete/<int:faq_id>/', views.faq_delete, name='faq_delete'),  
     path('api/item-categories/', HozmaApi_views.get_item_categories_with_counts, name='item-categories-with-counts'),
     path('api/send-whatsapp-contact/', HozmaApi_views.send_whatsapp_message, name='send-whatsapp'),
     path('api/oemtable/', HozmaApi_views.get_oem_table_data, name='get_oem_table_data'),

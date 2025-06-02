@@ -646,6 +646,7 @@
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <script>
       const show_sell_price_permission = {{ perms.almogOil.show_sell_price_sellinvoice|yesno:"true,false" }};
+      const show_original_no_permission = {{ perms.almogOil.show_original_no|yesno:"true,false" }};
 
        const table = new Tabulator("#users-table", {
           height: "auto", // Adjust height or set a fixed height
@@ -684,7 +685,7 @@
               field: "itemno",
               headerMenu: false,
               width: 90,
-              visible: true,
+              visible: show_original_no_permission,
             },
             {
               title: "اسم الصنف ع",

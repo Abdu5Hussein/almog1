@@ -918,7 +918,7 @@ def update_client_record(request):
             client.website = data.get('website', client.website)
             client.phone = data.get('phone', client.phone)
             client.mobile = data.get('mobile', client.mobile)
-            client.last_transaction = data.get('last_transaction', client.last_transaction)
+            client.last_transaction = data.get('last_transaction', client.last_transaction) if data.get('last_transaction') not in [''] else None
             client.accountcurr = data.get('currency', client.accountcurr)
             client.type = data.get('account_type', client.type)
             client.category = data.get('sub_category', client.category)

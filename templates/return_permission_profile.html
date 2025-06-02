@@ -730,7 +730,7 @@
             {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}
           >
             تصدير</button
-          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}>طباعة</button>
+          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.print_client_return_permission %}disabled{% endif %}>طباعة</button>
           <button type="button" class="btn btn-primary m-1">حذف</button>
           <button
             type="button"

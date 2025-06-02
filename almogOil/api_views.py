@@ -21,6 +21,8 @@ from django.db.models import F, Q, Sum, IntegerField
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.urls import reverse
+
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.exceptions import NotFound
@@ -72,6 +74,16 @@ from django.conf import settings  # To access the Django SECRET_KEY
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.models import User
+
+
+EMPLOYEE_REDIRECTS = {
+    'driver':        'driver-dashboard',
+    'Shop_employee': 'home',
+    'Hozma_employee':'wholesale_app:Admin_Dashboard',
+    'admin':         'admin-dashboard',
+    'manager':       'manager-dashboard',
+    'accountant':    'accountant-dashboard',
+}
 
 """ Log Out,Login And Authentication Api's"""
 @extend_schema(
@@ -133,85 +145,92 @@ def logout_view(request):
     ''',
     tags=["User Management"],
 )
+
+
+
+
 @api_view(["POST"])
-@authentication_classes([])  # This excludes authentication for this view
-@permission_classes([AllowAny])  # Allows any user to access without authentication
+@authentication_classes([])      # no DRF authentication for this endpoint
+@permission_classes([AllowAny])  # anyone may hit it
 def sign_in(request):
     try:
-        if request.method == "POST":
-            # Parse JSON request body
-            body = json.loads(request.body)
+        if request.method != "POST":
+            return Response({"detail": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-            # Extract fields
-            username = body.get("username")
-            password = body.get("password")
-            role = body.get("role")
+        # ---- 1. Parse & validate -------------------------------------------------
+        body      = json.loads(request.body or '{}')
+        username  = body.get("username")
+        password  = body.get("password")
+        role      = body.get("role")             # sent from the client
 
-            if not username or not password or not role:
-                return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Authenticate the user based on the role
-            user = None
-            user_id = None
-            if role == "employee":
-                try:
-                    user = models.EmployeesTable.objects.get(phone=username)
-                    user_id = f"e-{user.employee_id}"
-                except models.EmployeesTable.DoesNotExist:
-                    return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            # Authenticate against the main User model
-            auth_user = authenticate(username=username, password=password)
-
-            if auth_user is None:
-                return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # If authentication successful, login the user (create session)
-            login(request, auth_user)
-
-            # Store session variables
-            request.session["username"] = user.username
-            request.session["name"] = user.name
-            request.session["role"] = role  # Store role for later use
-            request.session["user_id"] = user_id
-            request.session["is_authenticated"] = True  # Useful for templates
-            request.session.set_expiry(3600)
-
-            # Generate JWT tokens
-            refresh = RefreshToken.for_user(auth_user)
-            access_token = str(refresh.access_token)
-
-            # Create the response object
-            response = Response({
-                "message": "Signed in successfully",
-                "role": role,
-                "emp_id": user_id,
-                "user_id": auth_user.id,
-                "access_token": access_token,
-                "refresh_token": str(refresh),
-            })
-
-            # Set the access token cookie (15 minutes expiry)
-            response.set_cookie(
-                'access_token', access_token,
-                httponly=True,
-                max_age=7*60*60,  # 7 hours
-                path='/'
+        if not all([username, password, role]):
+            return Response(
+                {"error": "[username, password, role] fields are required"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-            # Set the refresh token cookie (7 days expiry)
-            response.set_cookie(
-                'refresh_token', str(refresh),
-                httponly=True,
-                max_age=7*24*60*60,  # 7 days
-                path='/'
-            )
+        # ---- 2. Pull the domain-specific user object ----------------------------
+        user = None           # <– EmployeesTable row
+        user_id=None
+        if role == "employee":
+            try:
+                user = models.EmployeesTable.objects.get(phone=username)
+                user_id = f"{user.employee_id}"
 
-            return response
+            except models.EmployeesTable.DoesNotExist:
+                return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    except Exception as e:
-        return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # ---- 3. Authenticate against Django’s auth_user -------------------------
+        auth_user = authenticate(request, username=username, password=password)
+        if auth_user is None:
+            return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # ---- 4. Create session + JWT --------------------------------------------
+        login(request, auth_user)  
+                              # Django session
+        request.session["username"] = user.username
+        request.session["name"] = user.name
+        request.session["role"] = role
+        request.session["user_id"] = user_id
+        request.session["is_authenticated"] = True
+        request.session.set_expiry(3600)  # 1 hour
+               # 1 h
+
+        refresh       = RefreshToken.for_user(auth_user)
+        access_token  = str(refresh.access_token)
+
+        # ---- 5. Work out where this user should land ----------------------------
+        employee_type = getattr(user, "type", None)      # CharField on EmployeesTable
+        # fall back to a safe default if missing / unmapped
+        redirect_url  = reverse(EMPLOYEE_REDIRECTS.get(employee_type, 'default-dashboard'))
+
+        # ---- 6. Return either JSON + redirect URL ­­­­­­or a real 302 -----------
+        # 👉 OPTION A – API style (recommended for SPA / mobile apps)
+        response = Response({
+            "message": "Signed in successfully",
+            "role": role,
+            "employee_type": employee_type,
+            "redirect_url": redirect_url,
+            "access_token": access_token,
+            "refresh_token": str(refresh),
+            "emp_id": user_id,
+            "user_id": auth_user.id,
+            "username": user.username,
+            "name": user.name,
+        })
+        # cookies:
+        response.set_cookie('access_token', access_token, httponly=True, max_age=7*60*60, path='/')
+        response.set_cookie('refresh_token', str(refresh), httponly=True, max_age=7*24*60*60, path='/')
+        return response
+
+        # 👉 OPTION B – server-side redirect (uncomment if you truly want 302)
+        #
+        # redirect_response       = redirect(redirect_url)   # 302 Found
+        # redirect_response.cookies = response.cookies       # copy JWT cookies
+        # return redirect_response
+
+    except Exception as exc:
+        return Response({"error": f"Unexpected error: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 """Drop Boxes"""
 @extend_schema(
 description='''
@@ -2627,7 +2646,7 @@ def mobile_sign_in(request):
             if role == "employee":
                 try:
                     user = models.EmployeesTable.objects.get(username=username)
-                    user_id = f"e-{user.employee_id}"
+                    user_id = f"{user.employee_id}"
                 except models.EmployeesTable.DoesNotExist:
                     return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
             if role == "client":
@@ -2678,7 +2697,7 @@ def mobile_sign_in(request):
             response.set_cookie(
                 'access_token', access_token,
                 httponly=True,
-                max_age=15*60,  # 15 minutes
+                max_age=7*60*60,  # 15 minutes
                 path='/'
             )
 
@@ -3499,3 +3518,75 @@ def create_user(request):
 class mainitem_copy_ViewSet(viewsets.ModelViewSet):
     queryset = models.Mainitem_copy.objects.order_by('-fileid')[:300]  # Show last 300
     serializer_class = product_serializers.MainitemSerializer
+
+@extend_schema(
+    description="Delete a user by ID.",
+    tags=["User Management"],
+)
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def delete_user(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+        user.delete()
+        return Response({"message": f"تم حذف المستخدم رقم - {user_id} .",
+                         "message_en":f"User with ID {user_id} has been deleted."}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@extend_schema(
+    description="Change a user's password by ID.",
+    tags=["User Management"],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def change_user_password(request, user_id):
+    new_password = request.data.get('password')
+
+    if not new_password:
+        return Response({"error": "Password is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+        user.set_password(new_password)
+        user.save()
+        return Response({"message_en": "Password changed successfully.",
+                         "message":"تم تغيير كلمة السر بنجاح"}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # Use CookieAuthentication or SessionAuthentication
+def upload_employee_image(request, employee_id):
+    try:
+        employee = EmployeesTable.objects.get(employee_id=employee_id)
+    except EmployeesTable.DoesNotExist:
+        return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = serializers.EmployeeImageUploadSerializer(employee, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({'message': 'Image uploaded successfully'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def upload_contract_image(request, employee_id):
+    try:
+        employee = EmployeesTable.objects.get(pk=employee_id)
+    except EmployeesTable.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = serializers.EmployeeContractUploadSerializer(employee, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "Contract image uploaded successfully"}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -39,7 +39,7 @@ async function fetchFilteredData(page = 1) {
     console.debug("Full filters being sent:", JSON.stringify(filters, null, 2));
 
     try {
-        const response = await customFetch(`${baseUrl}/hozma/api/producuts/`, {
+        const response = await customFetch(`/hozma/api/producuts/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(filters)
@@ -243,23 +243,30 @@ async function showItemDetail(pno) {
   /* توليد الـ HTML من البيانات */
   function buildItemHtml(item, images) {
     const firstImgTag =
-      images?.length
-        ? `<img src="${baseUrl}${images[0].image_obj}" class="img-fluid rounded" style="max-height: 60vh;">`
-        : `<div class="product-image-placeholder py-5 text-center bg-light rounded">
-             <i class="fas fa-car-parts fa-4x opacity-50"></i>
-           </div>`;
-  
-    const otherImgs =
-      images?.slice(1).map(imgObj => `
-        <div class="mb-3">
-          <img src="${baseUrl}${imgObj.image_obj}" class="img-fluid rounded mb-2" style="max-height: 60vh;">
-          <div class="text-center">
-            <a href="${baseUrl}${imgObj.image_obj}" target="_blank" class="btn btn-sm btn-outline-primary">
-              <i class="bi bi-arrows-angle-expand"></i> فتح الصورة في نافذة جديدة
-            </a>
-          </div>
+    images?.length
+      ? `<a href="${baseUrl}${images[0].image_obj}" target="_blank">
+           <img src="${baseUrl}${images[0].image_obj}"
+                class="img-fluid rounded product-image"
+                alt="الصورة الرئيسية للقطعة">
+         </a>`
+      : `<div class="product-image-placeholder py-5 text-center bg-light rounded">
+           <i class="fas fa-car-parts fa-4x opacity-50"></i>
+         </div>`;
+
+  const otherImgs =
+    images?.slice(1).map(imgObj => `
+      <div class="mb-3">
+        <img src="${baseUrl}${imgObj.image_obj}"
+             class="img-fluid rounded mb-2 product-image"
+             alt="صورة إضافية للقطعة">
+        <div class="text-center">
+          <a href="${baseUrl}${imgObj.image_obj}" target="_blank"
+             class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-arrows-angle-expand"></i> فتح الصورة في نافذة جديدة
+          </a>
         </div>
-      `).join("") || "";
+      </div>
+    `).join("") || "";
   
     return `
   <div class="container">
@@ -267,28 +274,12 @@ async function showItemDetail(pno) {
       <!-- الصور + التفاصيل -->
       <div class="col-lg-8">
         <div class="product-container">
-          <div class="row">
-            <div class="col-md-6">
-              ${firstImgTag}
-            </div>
-            <div class="col-md-6">
-              <div class="detail-card">
-                <h3><i class="fas fa-info-circle technical-icon"></i> معلومات أساسية</h3>
-                <div class="detail-item"><span class="detail-label">رقم القطعة:</span><span class="detail-value">${item.pno}</span></div>
-                <div class="detail-item"><span class="detail-label">الشركة المصنعة:</span><span class="detail-value">${item.companyproduct}</span></div>
-                <div class="detail-item">
-                  <span class="detail-label">تصنيف السيارة:</span>
-                  <ul class="detail-value list-unstyled mb-0">
-                    <li><strong>النوع:</strong> ${item.itemmain}</li>
-                    <li><strong>الموديل:</strong> ${item.itemsubmain}</li>
-                    <li><strong>سنة الصنع:</strong> ${item.itemthird}</li>
-                  </ul>
-                </div>
-                <div class="detail-item"><span class="detail-label">البلد المنتج:</span><span class="detail-value">${item.itemsize}</span></div>
-                <div class="detail-item"><span class="detail-label">رقم المحرك:</span><span class="detail-value">${item.engine_no}</span></div>
-              </div>
-            </div>
-          </div>
+<div class="product-image-wrapper mb-4 text-center">
+  ${firstImgTag}
+</div>
+
+
+
   
           <div class="specs-card mt-4">
             <h3><i class="fas fa-file-alt technical-icon"></i> وصف المنتج</h3>
@@ -307,7 +298,21 @@ async function showItemDetail(pno) {
   
       <!-- السعر والطلب -->
       <div class="col-lg-4">
-        
+      <div class="detail-card">
+  <h3><i class="fas fa-info-circle technical-icon"></i> معلومات أساسية</h3>
+  <div class="detail-item"><span class="detail-label">رقم القطعة:</span><span class="detail-value">${item.pno}</span></div>
+  <div class="detail-item"><span class="detail-label">الشركة المصنعة:</span><span class="detail-value">${item.companyproduct}</span></div>
+  <div class="detail-item">
+    <span class="detail-label">تصنيف السيارة:</span>
+    <ul class="detail-value list-unstyled mb-0">
+      <li><strong>النوع:</strong> ${item.itemmain}</li>
+      <li><strong>الموديل:</strong> ${item.itemsubmain}</li>
+      <li><strong>سنة الصنع:</strong> ${item.itemthird}</li>
+    </ul>
+  </div>
+  <div class="detail-item"><span class="detail-label">البلد المنتج:</span><span class="detail-value">${item.itemsize}</span></div>
+  <div class="detail-item"><span class="detail-label">رقم المحرك:</span><span class="detail-value">${item.engine_no}</span></div>
+</div>  
   
         <div class="specs-card mt-4">
           <h3><i class="fas fa-headset technical-icon"></i> هل تحتاج مساعدة؟</h3>
@@ -587,15 +592,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Add click event for apply filters button
-    document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
 
-    // Add click event for reset filters button
-    document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
-    // Pagination controls
-    document.getElementById('prevPageBtn').addEventListener('click', prevPage);
-    document.getElementById('nextPageBtn').addEventListener('click', nextPage);
+
+
     document.getElementById('pageInput').addEventListener('change', changePage);
     document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
 
@@ -609,10 +609,7 @@ window.onload = function () {
 };
 
 // Additional event bindings (duplicate entries kept as in original)
-document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
-document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
-document.getElementById('prevPageBtn').addEventListener('click', prevPage);
-document.getElementById('nextPageBtn').addEventListener('click', nextPage);
+
 document.getElementById('pageInput').addEventListener('change', changePage);
 document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
 applyFilters();

@@ -90,83 +90,88 @@
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.min.js' %}"></script>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
 
-        document.getElementById("login-form").addEventListener("submit", async function (event) {
-          event.preventDefault(); // Prevent default form submission
+document.addEventListener("DOMContentLoaded", () => {
+  /* -------------------------------------------------
+   * 1. Elements
+   * -------------------------------------------------*/
+  const loginForm       = document.getElementById("login-form");
+  const passwordInput   = document.getElementById("password");
+  const togglePassword  = document.getElementById("togglePassword");
+  const eyeIcon         = document.getElementById("eyeIcon");
 
-          const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
-          // Get form values
-          const username = document.getElementById("username").value;
-          const password = document.getElementById("password").value;
-          const role = "employee";
+  /* -------------------------------------------------
+   * 2. Submit handler
+   * -------------------------------------------------*/
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-          // Prepare the request payload
-          const payload = {
-            username: username,
-            password: password,
-            role: role
-          };
-          console.log(payload);
-          try {
-            // Send POST request
-            const response = await fetch("http://45.13.59.226/process-login", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "X-CSRFToken": csrfToken,
-              },
-              body: JSON.stringify(payload)
-            });
+    const csrfToken = document.querySelector("[name='csrfmiddlewaretoken']")?.value || "";
+    const payload   = {
+      username : document.getElementById("username").value.trim(),
+      password : passwordInput.value,
+      role     : "employee"
+    };
 
-            const result = await response.json();
-
-            if (response.ok) {
-              // Store session data in local storage
-              if (result.session_data) {
-                  localStorage.setItem("session_data@username", JSON.stringify(result.session_data.username));
-                  localStorage.setItem("session_data@name", JSON.stringify(result.session_data.name));
-                  localStorage.setItem("session_data@role", JSON.stringify(result.session_data.role));
-                  localStorage.setItem("session_data@user_id", JSON.stringify(result.session_data.user_id.replace(/"/g, '')));
-
-                  localStorage.setItem("session_data@access_token", JSON.stringify(result.access_token.replace(/"/g, '')));
-                  localStorage.setItem("session_data@refresh_token", JSON.stringify(result.refresh_token.replace(/"/g, '')));
-              }
-              // Redirect to dashboard on success
-              window.location.href = "/home"; // Change to your actual dashboard route
-            } else {
-              // Show error message
-              showError(result.message || "Login failed. Please try again.");
-            }
-          } catch (error) {
-            showError("An error occurred. Please check your internet connection.");
-          }
-        });
-
-        function showError(message) {
-          const alertBox = document.createElement("div");
-          alertBox.className = "alert alert-danger";
-          alertBox.textContent = message;
-          const formContainer = document.querySelector(".card-body");
-          formContainer.insertBefore(alertBox, formContainer.firstChild);
-
-          // Remove the error message after 5 seconds
-          setTimeout(() => alertBox.remove(), 5000);
-        }
+    try {
+      const res   = await fetch("http://45.13.59.226/process-login", {
+        method  : "POST",
+        headers : {
+          "Content-Type" : "application/json",
+          "Accept"       : "application/json",
+          "X-CSRFToken"  : csrfToken,
+        },
+        body : JSON.stringify(payload)
       });
 
-      const passwordInput = document.getElementById("password");
-      const togglePasswordBtn = document.getElementById("togglePassword");
-      const eyeIcon = document.getElementById("eyeIcon");
+      const result = await res.json();
 
-      togglePasswordBtn.addEventListener("click", () => {
-        const type = passwordInput.type === "password" ? "text" : "password";
-        passwordInput.type = type;
-        eyeIcon.classList.toggle("bi-eye");
-        eyeIcon.classList.toggle("bi-eye-slash");
-      });
+      if (res.ok) {
+        /* ---------- 2-A. Save response values ---------- */
+        localStorage.setItem("session_data@EMPusername",   JSON.stringify(result.username));
+        localStorage.setItem("session_data@EMPname",       JSON.stringify(result.name));
+        localStorage.setItem("session_data@EMProle",       JSON.stringify(result.role));
+        localStorage.setItem("session_data@EMPuser_id",    JSON.stringify(result.user_id));
+        localStorage.setItem("session_data@emp_id",        JSON.stringify(result.emp_id));
+        localStorage.setItem("session_data@employee_type", JSON.stringify(result.employee_type));
+        localStorage.setItem("session_data@access_token",  JSON.stringify(result.access_token));
+        localStorage.setItem("session_data@refresh_token", JSON.stringify(result.refresh_token));
 
-  </script>
+        /* ---------- 2-B. Redirect ---------- */
+        window.location.href = result.redirect_url || "/login";
+  
+      } else {
+        showError(result.message || "Login failed. Please try again.");
+      }
+    } catch {
+      showError("An error occurred. Please check your internet connection.");
+    }
+  });
+
+  /* -------------------------------------------------
+   * 3. Password visibility toggle
+   * -------------------------------------------------*/
+  togglePassword.addEventListener("click", () => {
+    const hidden = passwordInput.type === "password";
+    passwordInput.type = hidden ? "text" : "password";
+    eyeIcon.classList.toggle("bi-eye",        !hidden);
+    eyeIcon.classList.toggle("bi-eye-slash",   hidden);
+  });
+
+  /* -------------------------------------------------
+   * 4. Helper – flash error message
+   * -------------------------------------------------*/
+  function showError(msg) {
+    const box = document.createElement("div");
+    box.className = "alert alert-danger mb-2";
+    box.textContent = msg;
+    (document.querySelector(".card-body") || document.body).prepend(box);
+    setTimeout(() => box.remove(), 5_000);
+  }
+});
+
+
+      </script>
+      
 </body>
 </html>

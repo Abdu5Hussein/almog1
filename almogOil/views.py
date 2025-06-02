@@ -1,6 +1,8 @@
 #import datetime
 from decimal import Decimal
 import hashlib
+
+from django.forms import model_to_dict
 from .Tasks import assign_orders
 import json
 from django.contrib.contenttypes.models import ContentType
@@ -2562,9 +2564,16 @@ def user_profile_template(request):
         client = models.AllClientsTable.objects.get(clientid=employee.user_id)
     except models.AllClientsTable.DoesNotExist:
         client = None
+
+    # Convert model instances to dicts
+    employee_data = model_to_dict(employee) if employee else {}
+    client_data = model_to_dict(client) if client else {}
+
+    # Use employee data as base, fallback to client data for missing fields
+    merged_data = {**client_data, **employee_data}  # employee_data overrides client_data
+
     context = {
-        'employee': employee,
-        'client': client or None,
+        'data': merged_data,
     }
     return render(request, 'user_profile_template.html', context)
 
@@ -2615,8 +2624,12 @@ def statement_paper_template(request):
 
     # Calculate totals
     total_deposits = deposits_qs.aggregate(total=Sum('amount'))['total'] or 0
+    total_cash_deposits = deposits_qs.filter(payment='نقدا').aggregate(total=Sum('amount'))['total'] or 0
+    total_bank_deposits = deposits_qs.filter(payment='صك').aggregate(total=Sum('amount'))['total'] or 0
     total_withdrawals = withdrawals_qs.aggregate(total=Sum('amount'))['total'] or 0
-    net_balance = total_deposits - total_withdrawals
+    total_cash_withdrawals = withdrawals_qs.filter(payment='نقدا').aggregate(total=Sum('amount'))['total'] or 0
+    total_bank_withdrawals = withdrawals_qs.filter(payment='صك').aggregate(total=Sum('amount'))['total'] or 0
+    net_balance = total_cash_deposits - total_cash_withdrawals
     english_day = today.strftime('%A')
     arabic_day = ARABIC_DAY_NAMES.get(english_day, english_day)
 
@@ -2627,8 +2640,29 @@ def statement_paper_template(request):
         'day_name': arabic_day,  # will return in English, you can convert it if needed
         'deposits': deposits,
         'withdrawals': withdrawals,
-        'total_deposits': f"{total_deposits:.3f}",
-        'total_withdrawals': f"{total_withdrawals:.3f}",
-        'net_balance': f"{net_balance:.3f}",
+        'total_deposits': f"{total_deposits:.2f}",
+        'total_cash_deposits': f"{total_cash_deposits:.2f}",
+        'total_bank_deposits': f"{total_bank_deposits:.2f}",
+        'total_withdrawals': f"{total_withdrawals:.2f}",
+        'total_cash_withdrawals': f"{total_cash_withdrawals:.2f}",
+        'total_bank_withdrawals': f"{total_bank_withdrawals:.2f}",
+        'net_balance': f"{net_balance:.2f}",
+        "by_employee": request.session.get('name', 'Unknown User') if request.user.is_authenticated else 'Unknown User',
+        "time": localtime(timezone.now()).strftime('%H:%M:%S'),
     }
     return render(request, 'statement-paper-template.html', context)
+
+
+def dynamic_print_paper_template(request):
+    if request.method == 'POST':
+        context = json.loads(request.body)
+        today = timezone.now().date()
+        english_day = today.strftime('%A')
+        arabic_day = ARABIC_DAY_NAMES.get(english_day, english_day)
+        context['day_name'] = arabic_day
+        context['report_date'] = today.strftime('%d/%m/%Y')
+        context['time'] = localtime(timezone.now()).strftime('%H:%M:%S')
+        context['by_employee'] = request.session.get('name', 'Unknown User') if request.user.is_authenticated else 'Unknown User'
+        return render(request, 'paper-show-dynamic-print.html', context)
+    else:
+        return render(request, 'paper-input-dynamic-print.html')

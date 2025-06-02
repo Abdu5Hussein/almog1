@@ -42,32 +42,11 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Navbar search form submit handler
   // In navbar.js
-  document.addEventListener('DOMContentLoaded', function() {
-    // Navbar search form submit handler
-    const navbarSearchForm = document.getElementById('navbarSearchForm');
-    const navbarSearchInput = document.getElementById('navbarSearchInput');
-    if (navbarSearchForm) { // Check if the element exists
-      navbarSearchForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const searchTerm = navbarSearchInput.value.trim();
-        currentFilters.itemno = searchTerm;
-        currentFilters.itemmain = '';
-        currentFilters.itemsubmain = '';
-        currentFilters.engine_no = '';
-        currentPage = 1;
-        document.getElementById('pageInput').value = 1;
-        document.getElementById('productList').innerHTML = "";
-        document.getElementById('loading-spinner').style.display = 'block';
-        loadMoreItems();
-      });
-    } else {
-      console.error("Element with ID 'navbarSearchForm' not found.");
-    }
-  });
+  
 
   document.addEventListener('DOMContentLoaded', function () {
     try {
-        const username = localStorage.getItem("session_data@username");
+        const username = localStorage.getItem("session_data@name");
         const userNamePlaceholder = document.getElementById('userNamePlaceholder');
 
         if (username) {

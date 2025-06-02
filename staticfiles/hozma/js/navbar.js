@@ -37,22 +37,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.addEventListener('DOMContentLoaded', function () {
     try {
-      const username = localStorage.getItem("session_data@username");
-      const userNamePlaceholder = document.getElementById('hozmaUserNamePlaceholder');
-      const accountBtn = document.getElementById('hozmaAccountButton');
-  
-      if (username) {
-        userNamePlaceholder.textContent = `مرحبًا, ${username}`;
-        accountBtn.href = "/hozma/hozmaDashbord/";
-      } else {
-        userNamePlaceholder.textContent = "حسابي";
-        accountBtn.href = "/hozma/login";
-        alert("No user data found. Please log in.");
-      }
-    } catch (e) {
+        const username = localStorage.getItem("session_data@name");
+        const userNamePlaceholder = document.getElementById('userNamePlaceholder');
 
+        if (username) {
+            userNamePlaceholder.textContent = `مرحبًا, ${username}`;
+            document.getElementById('accountButton').href = "/hozma/hozmaDashbord/";
+        } else {
+            userNamePlaceholder.textContent = "حسابي";
+            document.getElementById('accountButton').href = "/hozma/login";
+            alert("No user data found. Please log in.");
+        }
+    } catch (e) {
+        console.error('Error accessing localStorage:', e);
     }
-  });
+});
   
 
 
@@ -72,14 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > 10) {
-      document.querySelector('.hozma-navbar').classList.add('scrolled');
-    } else {
-      document.querySelector('.hozma-navbar').classList.remove('scrolled');
-    }
-  });
-  
+
   // Cart badge animation
 // Cart badge animation
 function animateCart() {

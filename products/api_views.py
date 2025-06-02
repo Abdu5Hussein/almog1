@@ -38,7 +38,10 @@ from rest_framework.response import Response
 from almogOil import models
 from django.db.models import F, Q, Sum, IntegerField
 from django.core.paginator import Paginator
-
+from rest_framework.parsers import MultiPartParser
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import os
 
 """ Mainitem / Products Api's """
 
@@ -927,3 +930,71 @@ def list_item_categories(request):
     categories = almogOil_Models.ItemCategory.objects.all().order_by('-id')  # optional: newest first
     serializer = products_serializers.ItemCategorySerializer(categories, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+@api_view(["POST"])
+@authentication_classes([CookieAuthentication])
+@permission_classes([IsAuthenticated])
+def upload_and_assign_images(request):
+    parser_classes = [MultiPartParser]
+
+    if not request.FILES:
+        return Response({'error': 'لم يتم رفع أي صور'}, status=status.HTTP_400_BAD_REQUEST)
+
+    response_data = []
+
+    try:
+        for file_key in request.FILES:
+            try:
+                image_file = request.FILES[file_key]
+                original_name = os.path.splitext(image_file.name)[0].strip()
+
+                try:
+                    matched_items = almogOil_Models.Mainitem.objects.filter(oem_numbers__icontains=original_name)
+                except Exception as e:
+                    response_data.append({
+                        'image_name': image_file.name,
+                        'status': f'خطأ في البحث عن المنتج: {str(e)}'
+                    })
+                    continue
+
+                if matched_items.exists():
+                    for item in matched_items:
+                        try:
+                            saved_path = default_storage.save(
+                                f'product_images/{image_file.name}',
+                                ContentFile(image_file.read())
+                            )
+
+                            almogOil_Models.Imagetable.objects.create(
+                                productid=item.fileid,
+                                image=image_file.name,
+                                image_obj=saved_path
+                            )
+
+                            response_data.append({
+                                'pno': item.pno,
+                                'oem_number_match': original_name,
+                                'status': f'تم ربط الصورة بنجاح بالقطعة رقم {item.pno}'
+                            })
+                        except Exception as e:
+                            response_data.append({
+                                'pno': item.pno,
+                                'status': f'فشل في حفظ الصورة أو ربطها: {str(e)}'
+                            })
+                else:
+                    response_data.append({
+                        'image_name': image_file.name,
+                        'status': 'لم يتم العثور على منتج يطابق رقم OEM'
+                    })
+            except Exception as e:
+                response_data.append({
+                    'image_key': file_key,
+                    'status': f'فشل في معالجة الصورة: {str(e)}'
+                })
+
+    except Exception as general_error:
+        return Response({'error': f'حدث خطأ غير متوقع: {str(general_error)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(response_data, status=status.HTTP_200_OK)

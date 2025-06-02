@@ -1,4 +1,6 @@
 // Toggle cart visibility
+
+
 function toggleCart() {
   const cartSidebar = document.getElementById('cartSidebar');
   const cartOverlay = document.getElementById('cartOverlay');
@@ -576,7 +578,7 @@ window.location.href = `/hozma/invoice/${invoiceNo}`;
 // Initialize cart on page load
 document.addEventListener('DOMContentLoaded', function () {
   console.log("Page loaded. Initializing cart UI...");
-  updateCartPageUI();
+  updateCartUI();
 });
 
 (() => {

@@ -5,10 +5,12 @@
 }
 
 .hozma-navbar.hozma-navbar-expand-lg.hozma-navbar-dark.hozma-shadow-sm {
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
 }
-
+nav.navbar.navbar-expand-lg.navbar-dark.shadow-sm {
+  padding: 0px !important;
+}
 .hozma-navbar-brand {
   font-weight: 700;
   transition: all 0.2s ease;
@@ -82,4 +84,8 @@
     width: 100%;
     text-align: center;
   }
+}
+img {
+  width: 120px;
+  height: 60px; /* This maintains the aspect ratio */
 }

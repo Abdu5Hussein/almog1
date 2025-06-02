@@ -542,7 +542,7 @@
                           <div class="width-95 d-flex align-items-center">
                             <label for="storage-balance" class="form-label">اسم المستخدم</label>
                           </div>
-                          <input type="text" class="form-control" id="user-name" />
+                          <input type="text" class="form-control" id="user-name" readonly/>
                         </div>
                         <div class="input-group mb-1">
                           <div class="width-95 d-flex align-items-center">
@@ -560,7 +560,9 @@
                         <input type="checkbox" id="is_active_toggle_check" style="margin-left: 5px" />
                         <label for="check1">ايقاف الحساب</label>
                       </div>
-
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <button type="button" class="btn btn-primary" id="change_password_btn" style="width: 100px">تغيير كلمة السر</button>
+                      </div>
                     </div>
                 </div>
                 </form>
@@ -626,6 +628,14 @@
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="export_mainitems" style="margin-left: 5px" />
                           <label for="check1">تصدير</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="show_original_no" style="margin-left: 5px" />
+                          <label for="check1">عرض الرقم الاصلي</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_mainitems" style="margin-left: 5px" />
+                          <label for="check1">طباعة الاصناف</label>
                         </div>
                       </div>
                     </div>
@@ -720,8 +730,16 @@
                           <label for="check1">حذف</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
-                          <input type="checkbox" value="buy_invoice_export" style="margin-left: 5px" />
+                          <input type="checkbox" value="export_buyinvoice" style="margin-left: 5px" />
                           <label for="check1">تصدير</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_client_buyinvoice" style="margin-left: 5px" />
+                          <label for="check1">طباعة فاتورة العميل</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_all_buyinvoice" style="margin-left: 5px" />
+                          <label for="check1">طباعة فواتير الشراء</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="show_total_buyinvoice" style="margin-left: 5px" />
@@ -784,6 +802,14 @@
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="export_sellinvoice" style="margin-left: 5px" />
                           <label for="check1">تصدير</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_client_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">طباعة فاتورة العميل</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_all_sellinvoice" style="margin-left: 5px" />
+                          <label for="check1">طباعة فواتير البيع</label>
                         </div>
                       </div>
                     </div>
@@ -870,6 +896,14 @@
                           <input type="checkbox" value="export_return_permissions" style="margin-left: 5px" />
                           <label for="check1">تصدير</label>
                         </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_all_return_permission" style="margin-left: 5px" />
+                          <label for="check1">طباعة فواتير الترجيع</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_client_return_permission" style="margin-left: 5px" />
+                          <label for="check1">طباعة فاتورة ترجيع للعميل</label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -932,6 +966,10 @@
                           <label for="check1">تصدير</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_clients" style="margin-left: 5px" />
+                          <label for="check1">طباعة</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="show_total_clients" style="margin-left: 5px" />
                           <label for="check1">عرض تفاصيل المجاميع</label>
                         </div>
@@ -988,6 +1026,10 @@
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="export_suppliers" style="margin-left: 5px" />
                           <label for="check1">تصدير</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_suppliers" style="margin-left: 5px" />
+                          <label for="check1">طباعة</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="show_total_suppliers" style="margin-left: 5px" />
@@ -1070,6 +1112,10 @@
                           <label for="check1">تصدير</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_employees" style="margin-left: 5px" />
+                          <label for="check1">طباعة</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="edit_account_employees" style="margin-left: 5px" />
                           <label for="check1">تعديل الحساب</label>
                         </div>
@@ -1129,6 +1175,10 @@
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="export_treasury" style="margin-left: 5px" />
                           <label for="treasury-check2">تصدير</label>
+                        </div>
+                        <div class="row-md-2 d-flex align-items-center mb-2">
+                          <input type="checkbox" value="print_treasury" style="margin-left: 5px" />
+                          <label for="treasury-check2">طباعة</label>
                         </div>
                         <div class="row-md-2 d-flex align-items-center mb-2">
                           <input type="checkbox" value="show_withdraw_records_treasury" style="margin-left: 5px" />
@@ -1219,6 +1269,10 @@
                       <div class="row-md-2 d-flex align-items-center mb-2">
                         <input type="checkbox" value="show_statistics" style="margin-left: 5px" />
                         <label for="treasury-check1">عرض الاحصائيات</label>
+                      </div>
+                      <div class="row-md-2 d-flex align-items-center mb-2">
+                        <input type="checkbox" value="print_paper" style="margin-left: 5px" />
+                        <label for="treasury-check1">طباعة ورقة / مستند</label>
                       </div>
 
                     </div>
@@ -1771,11 +1825,9 @@
       }
       createUser(username, password);
     });
-document
-          .getElementById("clear-btn")
-          .addEventListener("click", function () {
-            clearForm();
-          });
+    document.getElementById("clear-btn").addEventListener("click", function () {
+      clearForm();
+    });
         function clearForm() {
           // Select all inputs except the CSRF token
           const inputs = document.querySelectorAll(
@@ -1799,6 +1851,94 @@ document
           return;
         }
         document.getElementById("user-name").value = username;
+      });
+      function deleteUser(userId) {
+          fetch(`/users/${userId}/delete/`, {
+              method: 'DELETE',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': getCSRFToken(),  // Function defined below
+              },
+              credentials: 'include'
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.message) {
+                  alert(data.message);
+              } else {
+                  alert(data.error || 'Failed to delete user.');
+              }
+          })
+          .catch(error => console.error('Error deleting user:', error)).finally(() => {
+              // Optionally refresh the table or clear the form
+              refreshTable();
+              clearForm();
+          });
+      }
+      function changeUserPassword(userId, newPassword) {
+          fetch(`/users/${userId}/change-password/`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': getCSRFToken(),
+              },
+              credentials: 'include',
+              body: JSON.stringify({ password: newPassword })
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.message) {
+                  alert(data.message);
+              } else {
+                  alert(data.error || 'Failed to change password.');
+              }
+          })
+          .catch(error => console.error('Error changing password:', error)).finally(() => {
+              // Optionally refresh the table or clear the form
+              refreshTable();
+              clearForm();
+          });
+      }
+      document.getElementById('delete_user_btn').addEventListener('click', function () {
+          const userId = document.getElementById('user-no').value;
+          if (userId) {
+              if (confirm("هل أنت متأكد من حذف هذا المستخدم؟")) {
+                  deleteUser(userId);
+              }
+          } else {
+              alert('يرجى إدخال رقم المستخدم أولاً.');
+          }
+      });
+
+      document.getElementById('change_password_btn').addEventListener('click', function () {
+          const userId = document.getElementById('user-no').value;
+          const newPassword = document.getElementById('password').value;
+
+          if (!userId) {
+              alert('يرجى إدخال رقم المستخدم أولاً.');
+              return;
+          }
+
+          if (!newPassword) {
+              alert('يرجى إدخال كلمة مرور جديدة.');
+              return;
+          }
+
+          const confirmPassword = prompt("يرجى إعادة إدخال كلمة المرور للتأكيد:");
+
+          if (confirmPassword === null) {
+            // User cancelled the prompt
+            return;
+          }
+
+          if (newPassword !== confirmPassword) {
+            alert("كلمتا المرور غير متطابقتين.");
+            return;
+          }
+
+          if (confirm("هل تريد تغيير كلمة المرور لهذا المستخدم؟")) {
+              changeUserPassword(userId, newPassword);
+          }
       });
     </script>
 

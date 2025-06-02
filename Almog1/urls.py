@@ -60,7 +60,8 @@ urlpatterns = [
     path('process-login', api_views.sign_in, name='login-process'),
     path('mobile/login', api_views.mobile_sign_in, name='mobile-login'),
     path('api/user/logout', api_views.logout_view, name='logout'),
-
+    path('employees/<int:employee_id>/upload-image/', api_views.upload_employee_image, name='upload-employee-image'),
+    path("employees/<int:employee_id>/upload-contract/", api_views.upload_contract_image),
     path('home', views.HomeView, name='home'),
     path('products-details', views.ProductsDetails, name='products-details'),
     path('products-reports', views.ProductsReports, name='products-reports'),
@@ -281,6 +282,7 @@ urlpatterns = [
     path('api/get/employees-details-with-balance',api_views.get_all_employees_with_balance,name='employees-details-with-balance'),
     path('api/employees-api/<int:id>/edit-balance',api_views.Edit_employee_balance,name="employee-edit-balance"),
     path('lib/two_way/',api_views.two_way,name="two_way"),
+     path('api/upload-images/', products_api_views.upload_and_assign_images, name='upload_images'),
     path('api/employees/<int:employee_id>/', api_views.get_employee_details, name='get_employee_details'),
     path('api/create-category/', products_api_views.create_item_category, name='create-item-category'),
     path('api/balance-editions/user/<int:id>',api_views.Get_balance_editions_by_employee, name='balance-editions-for-user'),
@@ -295,6 +297,10 @@ urlpatterns = [
     path('api/users/create-auth-user/', api_views.create_user, name='create_auth_user'),
     path('api/categories/', products_api_views.list_item_categories, name='list-item-categories'),
     path('print/today-treasury-statement/', views.statement_paper_template, name='statement_paper_template'),
+    path('users/<int:user_id>/delete/', api_views.delete_user, name='delete_user'),
+    path('users/<int:user_id>/change-password/', api_views.change_user_password, name='change_user_password'),
+    path('print/dynamic-paper', views.dynamic_print_paper_template, name='dynamic-paper'),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 
 # Ensure static files are served in development mode

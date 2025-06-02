@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from almogOil.authentication import CookieAuthentication
 from rest_framework.decorators import api_view
 from rest_framework.status import HTTP_200_OK
 from rest_framework import status
@@ -21,9 +22,12 @@ from rest_framework.permissions import AllowAny
 from django.core.paginator import Paginator
 from datetime import datetime, timedelta
 from django.utils.timezone import now
-
+from django.contrib.auth import authenticate, login
+from rest_framework_simplejwt.tokens import RefreshToken
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def item_detail_view(request, pno):
     item = get_object_or_404(almogOil_models.Mainitem, pno=pno)
     context = {
@@ -43,7 +47,9 @@ def item_detail_view(request, pno):
     return render(request, 'CarPartsTemplates/item_detail.html', context)
 
 
-@api_view(['GET'])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def get_employee_details(request, employee_id):
     try:
         employee = almogOil_models.EmployeesTable.objects.get(employee_id=employee_id)
@@ -80,6 +86,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def item_detail_view(request, pno):
     try:
         item = get_object_or_404(almogOil_models.Mainitem, pno=pno)
@@ -103,7 +111,9 @@ def item_detail_view(request, pno):
         logger.error(f"Error accessing item detail view for item {pno}: {str(e)}")
         return render(request, 'CarPartsTemplates/item_detail.html', {})
 
-@api_view(['GET'])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def get_employee_details(request, employee_id):
     try:
         employee = almogOil_models.EmployeesTable.objects.get(employee_id=employee_id)
@@ -139,7 +149,9 @@ def get_employee_details(request, employee_id):
         logger.error(f"Error accessing employee details for employee {employee_id}: {str(e)}")
         return Response({'error': 'Internal Server Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def brand_items(request, brand):
     try:
         items = almogOil_models.Mainitem.objects.filter(itemmain=brand)
@@ -148,7 +160,9 @@ def brand_items(request, brand):
     except Exception as e:
         logger.error(f"Error accessing brand items for brand {brand}: {str(e)}")
         return render(request, 'CarPartsTemplates/brand-item.html', {})
-@api_view(['GET'])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def brand_items(request, brand):
     items = almogOil_models.Mainitem.objects.filter(itemmain=brand)
     return render(request, 'CarPartsTemplates/brand-item.html', {'items': items, 'brand': brand})
@@ -156,7 +170,8 @@ def brand_items(request, brand):
 
 
 # Create your views here.
-@api_view(['GET'])
+@api_view(["GET"])
+@authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])
 def get_product_images(request, id):
     try:
@@ -169,7 +184,9 @@ def get_product_images(request, id):
 
     return Response(serializer.data)  # Added return statement
 
-@api_view(['GET'])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def show_all_preorders(request):
     # Filter PreOrderTable for invoices where shop_confirm is False
     preorders = almogOil_models.PreOrderTable.objects.filter(shop_confrim=False)
@@ -187,9 +204,9 @@ def show_all_preorders(request):
         'preorder_items': preorder_items_serializer.data
     })
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def show_preorders(request):
     invoice_no = request.query_params.get('invoice_no')  # Get the invoice_no from query params
     
@@ -211,8 +228,8 @@ def show_preorders(request):
     })
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
 def show_preorders_v2(request):
     # Get filters from request data
     data = request.data
@@ -281,3 +298,83 @@ def show_preorders_v2(request):
             'has_previous': page_obj.has_previous()
         }
     })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated]) 
+@authentication_classes([CookieAuthentication])
+def Hozma_Login(request):
+    try:
+        if request.method == "POST":
+            # Parse JSON request body
+            body = json.loads(request.body)
+
+            # Extract fields
+            username = body.get("username")
+            password = body.get("password")
+            role = body.get("role")
+
+            if not username or not password or not role:
+                return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Authenticate the user based on the role
+            user = None
+            user_id = None
+            if role == "client":
+                try:
+                    user = almogOil_models.AllClientsTable.objects.get(phone=username)
+                    user_id = f"e-{user.clientid}"
+                except almogOil_models.AllClientsTable.DoesNotExist:
+                    return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Authenticate against the main User model
+            auth_user = authenticate(username=username, password=password)
+
+            if auth_user is None:
+                return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # If authentication successful, login the user (create session)
+            login(request, auth_user)
+
+            # Store session variables
+            request.session["username"] = user.username
+            request.session["name"] = user.name
+            request.session["role"] = role  # Store role for later use
+            request.session["user_id"] = user_id
+            request.session["is_authenticated"] = True  # Useful for templates
+            request.session.set_expiry(3600)
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(auth_user)
+            access_token = str(refresh.access_token)
+
+            # Create the response object
+            response = Response({
+                "message": "Signed in successfully",
+                "role": role,
+                "emp_id": user_id,
+                "user_id": auth_user.id,
+                "access_token": access_token,
+                "refresh_token": str(refresh),
+            })
+
+            # Set the access token cookie (15 minutes expiry)
+            response.set_cookie(
+                'access_token', access_token,
+                httponly=True,
+                max_age=7*60*60,  # 7 hours
+                path='/'
+            )
+
+            # Set the refresh token cookie (7 days expiry)
+            response.set_cookie(
+                'refresh_token', str(refresh),
+                httponly=True,
+                max_age=7*24*60*60,  # 7 days
+                path='/'
+            )
+
+            return response
+
+    except Exception as e:
+        return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

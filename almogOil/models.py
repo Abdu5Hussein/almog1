@@ -12,6 +12,7 @@ from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime
+from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
@@ -321,7 +322,7 @@ class Mainitem(models.Model):
         if self.category_type:
             self.item_category, _ = ItemCategory.objects.get_or_create(name=self.category_type)
         super().save(*args, **kwargs)
-        
+
     class Meta:
         managed = True
         db_table = 'MainItem'
@@ -539,6 +540,8 @@ class AuthUser(models.Model):
             ('template_items_with_notes', 'اصناف بالملاحظات'),
             ('template_add_item_specifications', 'اضافة مواصفات الصنف'),
             ('export_mainitems', 'تصدير الاصناف'),
+            ('print_mainitems', 'طباعة الاصناف'),
+            ('show_original_no', 'عرض الرقم الاصلي'),
 
             ('category_sell_invoice', 'قسم فواتير البيع'),
             ('template_sell_invoice_entry', 'ادخال فاتورة بيع'),
@@ -547,6 +550,8 @@ class AuthUser(models.Model):
             ('template_sell_inventory_item_search', 'بحث باصناف المخزن'),
             ('template_sell_invoice_preparation_reports', 'تقارير التحضير'),
             ('export_sellinvoice', 'تصدير فواتير البيع'),
+            ('print_all_sellinvoice', 'طباعة فواتير البيع'),
+            ('print_client_sellinvoice', 'طباعة فاتورة البيع للعميل'),
             ('custom_export_sellinvoice', 'تصدير مخصص لفواتير البيع'),
             ('show_total_sellinvoice', 'عرض مجاميع فواتير البيع'),
             ('show_items_sellinvoice', 'عرض اصناف فواتير البيع'),
@@ -565,12 +570,16 @@ class AuthUser(models.Model):
             ('template_buy_temp_item_posting', 'ترحيل الاصناف المؤقتة'),
             ('template_buy_invoice_inventory', 'جرد فواتير الشراء'),
             ('export_buyinvoice', 'تصدير فواتير الشراء'),
+            ('print_all_buyinvoice', 'طباعة فواتير الشراء'),
+            ('print_client_buyinvoice', 'طباعة فاتورة الشراء للعميل'),
             ('show_total_buyinvoice', 'عرض مجاميع فواتير الشراء'),
 
             ('category_return_permission', 'قسم الترجيعات'),
             ('template_return_permission_entry', 'ادخال اذن ترجيع'),
             ('template_return_reports', 'تقارير الترجيع'),
             ('export_return_permissions', 'تصدير الترجيعات'),
+            ('print_all_return_permission', 'طباعة فواتير الترجيع'),
+            ('print_client_return_permission', 'طباعة فاتورة الترجيع للعميل'),
 
             ('category_clients', 'قسم العملاء'),
             ('template_customer_guide', 'دليل العملاء'),
@@ -580,6 +589,7 @@ class AuthUser(models.Model):
             ('template_audit_reports', 'تقارير المراجعة للعملاء'),
             ('edit_account_statement_clients', 'تعديل كشف الحساب للعملاء'),
             ('export_clients', 'تصدير العملاء'),
+            ('print_clients', 'طباعة العملاء'),
             ('show_total_clients', 'عرض مجاميع العملاء'),
 
             ('category_suppliers', 'قسم الموردين'),
@@ -591,6 +601,7 @@ class AuthUser(models.Model):
             ('template_audit_reports_suppliers', 'تقارير المراجعة للموردين'),
             ('edit_account_statement_suppliers', 'تعديل كشف الحساب للموردين'),
             ('export_suppliers', 'تصدير الموردين'),
+            ('print_suppliers', 'طباعة الموردين'),
             ('show_total_suppliers', 'عرض مجاميع الموردين'),
 
             ('category_employees', 'قسم الموظفين'),
@@ -603,6 +614,7 @@ class AuthUser(models.Model):
             ('template_attendance_absence', 'حضور وغياب'),
             ('edit_account_employees', 'تعديل حساب الموظفين'),
             ('export_employees', 'تصدير الموظفين'),
+            ('print_employees', 'طباعة الموظفين'),
             ('allow_over_salary_depts_employees', 'السماح بالصرف بتجاوز المرتب للموظف'),
 
             ('category_storage', 'قسم الخزينة'),
@@ -611,12 +623,14 @@ class AuthUser(models.Model):
             ('template_request_value', 'طلب قيمة من الخزينة'),
             ('template_treasury_movements', 'حركة الخزينة'),
             ('export_treasury', 'تصدير بيانات الخزينة'),
+            ('print_treasury', 'طباعة قيود الخزينة'),
             ('show_withdraw_records_treasury', 'عرض قيود صرف من الخزينة'),
             ('add_withdraw_records_treasury', 'ادخال قيود صرف للخزينة'),
 
             ('category_users', 'قسم المستخدمين'),
             ('template_users_management', 'ادارة المستخدمين'),
             ('show_statistics', 'عرض الاحصائيات'),
+            ('print_paper', 'اصدار ورقة / مستند'),
         ]
 
 class AuthUserGroups(models.Model):
@@ -912,11 +926,26 @@ class EmployeesTable(models.Model):
     has_active_order = models.BooleanField(default=False)
     fcm_token = models.TextField(null=True, blank=True)
     user_id = models.IntegerField(unique=True, null=True)  # Unique user ID for the employee
+    type= models.CharField(
+        max_length=50,
+        choices=[
+            ('driver', 'Driver'),
+            ('Shop_employee', 'Shop Employee'),
+            ('Hozma_employee', 'Hozma Employee'),
+            ('admin', 'Admin'),
+            ('manager', 'Manager'),
+            ('accountant', 'Accountant'),
+        ],
+        default='Shop_employee'
+    )
 
 
     # New fields
     username = models.CharField(max_length=150, unique=True,null=True)  # Ensure username is unique
     password = models.CharField(max_length=255,null=True)  # This will store the hashed password
+    employee_image = models.ImageField(upload_to='employee_images/', blank=True, null=True)  # Field for employee image
+    contract_image = models.ImageField(upload_to='employee_contracts/', blank=True, null=True)
+
 
     class Meta:
         managed = True
@@ -1480,16 +1509,58 @@ class FAQ(models.Model):
         ('products', 'المنتجات والقطع'),
         ('payments', 'الدفع والأسعار'),
     ]
-    
+
     question = models.CharField(max_length=255)
     answer = models.TextField()
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = 'سؤال شائع'
         verbose_name_plural = 'الأسئلة الشائعة'
-    
+
     def __str__(self):
         return self.question
+
+
+class ReturnPolicy(models.Model):
+    title = models.CharField(_("Title"), max_length=200)
+    overview = models.TextField(_("Overview"))
+    general_conditions = models.TextField(_("General Conditions"))
+    non_returnable_items = models.TextField(_("Non-Returnable Items"))
+    return_steps = models.TextField(_("Return Steps"))
+    refund_policy = models.TextField(_("Refund Policy"))
+    exchange_policy = models.TextField(_("Exchange Policy"))
+    warranty_info = models.TextField(_("Warranty Information"))
+    contact_info = models.TextField(_("Contact Information"))
+    last_updated = models.DateField(_("Last Updated"), auto_now=True)
+    is_active = models.BooleanField(_("Active"), default=True)
+
+    class Meta:
+        verbose_name = _("Return Policy")
+        verbose_name_plural = _("Return Policies")
+
+    def __str__(self):
+        return self.title
+
+
+class TermsAndConditions(models.Model):
+    title = models.CharField(_("Title"), max_length=200, default="الشروط والأحكام")
+    last_updated = models.DateField(_("Last Updated"), auto_now=True)
+    introduction = models.TextField(_("Introduction"))
+    acceptance_text = models.TextField(_("Acceptance Text"))
+    contact_info = models.TextField(_("Contact Information"))
+    is_active = models.BooleanField(_("Active"), default=True)
+
+   # Dynamic sections - we'll use JSON field to store unlimited sections
+    sections = models.JSONField(default=list)
+
+    # Add more sections as needed (up to 11 for your current structure)
+
+    class Meta:
+
+        verbose_name_plural = _("Terms and Conditions")
+
+    def __str__(self):
+        return self.title

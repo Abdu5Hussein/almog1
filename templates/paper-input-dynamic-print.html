@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تقرير مالي ديناميكي</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <style>
+        body {
+            padding: 20px;
+            background-color: white;
+            width: 100%;
+            height: 100%;
+
+        }
+        .remove-btn {
+            cursor: pointer;
+            color: red;
+        }
+        table input {
+            width: 100%;
+            border: none;
+            background: transparent;
+        }
+        table input:focus {
+            outline: none;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="mb-4 mt-2">إنشاء تقرير مالي ديناميكي</h2>
+
+    <!-- Report Header -->
+    <div class="mb-3">
+        <label class="form-label">عنوان التقرير</label>
+        <input type="text" class="form-control" id="report_title" value="تقرير مالي">
+    </div>
+    <div class="row">
+        <div class="col mb-3">
+            <label class="form-label">اسم الشركة</label>
+            <input type="text" class="form-control" id="company_name" readonly value="شركة مارين لاستيراد قطع غيار السيارات و زيوتها">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col mb-3">
+            <label class="form-label">رقم المستند</label>
+            <input type="text" class="form-control" id="document_number" value="D123">
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col">
+            <label class="form-label">نص البيان</label>
+            <textarea type="text" class="form-control" id="text_statement" rows="3" placeholder="أدخل نص البيان هنا..."></textarea>
+        </div>
+    </div>
+
+    <!-- Dynamic Sections -->
+    <div id="sections-container"></div>
+
+    <div class="d-grid mb-3">
+        <button class="btn btn-secondary" onclick="addSection()">إضافة قسم جديد</button>
+    </div>
+    <div class="d-grid">
+        <button class="btn btn-primary" onclick="sendReport()">إرسال التقرير</button>
+    </div>
+</div>
+
+<script>
+    let sectionCounter = 0;
+
+    function addSection() {
+        const headers = prompt("أدخل رؤوس الأعمدة مفصولة بفواصل (مثال: رمز,تاريخ,قيد,نوع)").split(',').map(h => h.trim()).filter(Boolean);
+        if (headers.length === 0) return;
+
+        const container = document.getElementById('sections-container');
+        const sectionId = sectionCounter++;
+
+        const card = document.createElement('div');
+        card.className = 'card mb-4';
+        card.dataset.sectionId = sectionId;
+
+        card.innerHTML = `
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">القسم ${sectionId + 1}</h5>
+                <span class="remove-btn" onclick="this.closest('.card').remove()">🗑️</span>
+            </div>
+            <div class="card-body">
+                <label class="form-label">عنوان القسم</label>
+                <input type="text" class="form-control mb-3" name="section_title" value="قسم ${sectionId + 1}">
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered text-center mb-0" data-table-id="${sectionId}">
+                        <thead class="table-light">
+                            <tr>
+                                ${headers.map(h => `<th>${h}</th>`).join('')}
+                                <th>❌</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${createRowHTML(headers.length)}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-grid mb-3">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="addRow(${sectionId})">إضافة صف</button>
+                </div>
+                <div class="totals-container"></div>
+                <div class="d-grid">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="addTotal(this)">إضافة إجمالي</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+        addTotal(card.querySelector('.btn-outline-secondary'));
+    }
+
+    function createRowHTML(colCount) {
+        let row = '<tr>';
+        for (let i = 0; i < colCount; i++) {
+            row += `<td><input type="text" /></td>`;
+        }
+        row += `<td><span class="remove-btn" onclick="this.closest('tr').remove()">❌</span></td></tr>`;
+        return row;
+    }
+
+    function addRow(sectionId) {
+        const table = document.querySelector(`table[data-table-id="${sectionId}"] tbody`);
+        const colCount = table.closest('table').querySelectorAll('thead th').length - 1;
+        table.insertAdjacentHTML('beforeend', createRowHTML(colCount));
+    }
+
+    function addTotal(button) {
+        const totalsContainer = button.closest('.card-body').querySelector('.totals-container');
+        const totalGroup = document.createElement('div');
+        totalGroup.className = 'row align-items-end mb-2';
+        totalGroup.innerHTML = `
+            <div class="col-md-6 mb-2">
+                <label class="form-label">الإجمالي</label>
+                <input type="number" class="form-control" name="section_total" value="0">
+            </div>
+            <div class="col-md-5 mb-2">
+                <label class="form-label">عنوان الإجمالي</label>
+                <input type="text" class="form-control" name="section_total_label" value="إجمالي">
+            </div>
+            <div class="col-md-1 mb-2 text-center">
+                <span class="remove-btn" onclick="this.closest('.row').remove()">❌</span>
+            </div>
+        `;
+        totalsContainer.appendChild(totalGroup);
+    }
+
+    function sendReport() {
+        const context = {
+            report_title: document.getElementById('report_title').value,
+            company_name: document.getElementById('company_name').value,
+            document_number: document.getElementById('document_number').value,
+            text_statement: document.getElementById('text_statement').value,
+            report_sections: []
+        };
+
+        document.querySelectorAll('#sections-container .card').forEach(card => {
+            const title = card.querySelector('[name="section_title"]').value;
+            const headers = Array.from(card.querySelectorAll('thead th'))
+                .map(th => th.textContent.trim()).filter(h => h !== '❌');
+
+            const rows = Array.from(card.querySelectorAll('tbody tr')).map(tr => {
+                return Array.from(tr.querySelectorAll('td input')).map(input => input.value.trim());
+            });
+
+            const totals = [];
+            card.querySelectorAll('.totals-container .row').forEach(row => {
+                const total = parseFloat(row.querySelector('[name="section_total"]').value) || 0;
+                const label = row.querySelector('[name="section_total_label"]').value;
+                totals.push({ total, total_label: label });
+            });
+
+            context.report_sections.push({ title, headers, rows, totals });
+        });
+
+        fetch("{% url 'dynamic-paper' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(context)
+        })
+        .then(response => response.text())
+        .then(html => {
+            const newWindow = window.open('', '_blank');
+            newWindow.document.open();
+            newWindow.document.write(html);
+            newWindow.document.close();
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("حدث خطأ أثناء إرسال التقرير");
+        });
+    }
+
+    window.onload = () => {
+        addSection();
+    };
+</script>
+
+</body>
+</html>

@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Add click event for apply filters button
-    document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+   
 
     // Add click event for reset filters button
     document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
@@ -588,7 +588,7 @@ window.onload = function () {
 };
 
 // Additional event bindings (duplicate entries kept as in original)
-document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+
 document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 document.getElementById('prevPageBtn').addEventListener('click', prevPage);
 document.getElementById('nextPageBtn').addEventListener('click', nextPage);

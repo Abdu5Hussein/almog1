@@ -66,3 +66,11 @@ class ItemCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ItemCategory
         fields = ['id', 'name']        
+
+
+class BulkImageUploadSerializer(serializers.Serializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        allow_empty=False,
+        write_only=True
+    )

@@ -243,3 +243,20 @@ class PreOrderItemsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class EmployeeImageUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.EmployeesTable
+        fields = ['employee_image']
+
+
+class EmployeeContractUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.EmployeesTable
+        fields = ['contract_image']
+
+class BulkImageUploadSerializer(serializers.Serializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        allow_empty=False,
+        write_only=True
+    )

@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Upload Manager</title>
+    <style>
+       :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #2ecc71;
+            --info-color: #1abc9c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--secondary-color);
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .upload-area:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .upload-area.highlight {
+            border-color: var(--success-color);
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .upload-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-btn {
+            background-color: var(--success-color);
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #27ae60;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--dark-color);
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .download-btn {
+            background-color: var(--info-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            background-color: #16a085;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .result-card {
+            border: 1px solid var(--light-color);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-card.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .result-card.error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .result-card .filename {
+            font-weight: 500;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-card .status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .status.success {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success-color);
+        }
+
+        .status.error {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger-color);
+        }
+
+        .thumbnail {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin: 10px 0;
+            background-color: var(--light-color);
+        }
+
+        .summary {
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: var(--dark-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .total {
+            color: var(--primary-color);
+        }
+
+        .success-count {
+            color: var(--success-color);
+        }
+
+        .error-count {
+            color: var(--danger-color);
+        }
+
+        .item-table {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .item-table h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .item-card {
+            border: 1px solid var(--light-color);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .item-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-name {
+            font-weight: 500;
+            margin: 10px 0;
+        }
+
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            color: var(--primary-color);
+        }
+
+
+        /* Add these styles to your existing CSS */
+    .filter-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--light-color);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .filter-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+        grid-column: span 4;
+    }
+
+    .filter-btn:hover {
+        background-color: #2980b9;
+    }
+
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .items-table th {
+        background-color: var(--light-color);
+        padding: 12px;
+        text-align: right;
+        font-weight: 500;
+    }
+
+    .items-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--light-color);
+        text-align: right;
+    }
+
+    .items-table tr:hover {
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+
+    .item-thumbnail {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        gap: 10px;
+    }
+
+    .page-btn {
+        padding: 8px 12px;
+        background-color: var(--light-color);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .page-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .page-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .add-image-btn {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s;
+    }
+
+    .add-image-btn:hover {
+        background-color: #27ae60;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>مدير تحميل الصور</h2>
+        
+        <div class="tab-container">
+            <div class="tab active" id="uploadTab">تحميل الصور</div>
+            <div class="tab" id="itemsTab">معرض الصور</div>
+        </div>
+        
+        <div id="uploadSection">
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="images" class="file-input" name="images" multiple accept="image/*" required />
+                <label for="images" class="upload-btn">اختر الصور</label>
+                <div class="file-info" id="fileInfo">لم يتم اختيار أي ملفات</div>
+            </div>
+            
+            <button type="submit" class="upload-btn submit-btn" id="submitBtn">تحميل ومعالجة الصور</button>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-header">
+                    <span>جاري معالجة الصور...</span>
+                    <span id="progressText">0/0</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <div class="results" id="resultsContainer">
+                <div class="result-header">
+                    <h3>نتائج التحميل</h3>
+                    <button class="download-btn" id="downloadBtn">تحميل التقرير</button>
+                </div>
+                
+                <div class="summary">
+                    <div class="summary-item">
+                        <div class="summary-value total" id="totalCount">0</div>
+                        <div class="summary-label">إجمالي الصور</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value success-count" id="successCount">0</div>
+                        <div class="summary-label">نجحت</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value error-count" id="errorCount">0</div>
+                        <div class="summary-label">فشلت</div>
+                    </div>
+                </div>
+                
+                <div class="result-grid" id="resultGrid"></div>
+            </div>
+        </div>
+        
+        <div class="item-table" id="itemsSection">
+            <h3>معرض العناصر</h3>
+            
+            <div class="filter-container">
+                <input type="text" class="filter-input" id="pnoFilter" placeholder="رقم الجزء (PNO)">
+                <input type="text" class="filter-input" id="oemFilter" placeholder="رقم OEM">
+                <input type="text" class="filter-input" id="itemNameFilter" placeholder="اسم العنصر">
+                <input type="text" class="filter-input" id="categoryFilter" placeholder="الفئة">
+                <button class="filter-btn" id="applyFilter">تطبيق الفلتر</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>رقم الخاص</th>
+                            <th>OEM</th>
+                            <th>اسم العنصر</th>
+                            <th>الفئة</th>
+                            <th>الصور</th>
+                            <th>إضافة صورة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        <!-- Items will be loaded here -->
+                        <tr>
+                            <td colspan="6" style="text-align: center;">جاري تحميل البيانات...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pagination">
+                <button class="page-btn" id="prevPage" disabled>السابق</button>
+                <span id="pageInfo">الصفحة 1</span>
+                <button class="page-btn" id="nextPage">التالي</button>
+            </div>
+        </div>
+    </div>
+    <script>
+
+         // Tab switching functionality
+        const uploadTab = document.getElementById('uploadTab');
+        const itemsTab = document.getElementById('itemsTab');
+        const uploadSection = document.getElementById('uploadSection');
+        const itemsSection = document.getElementById('itemsSection');
+
+        uploadTab.addEventListener('click', () => {
+            uploadTab.classList.add('active');
+            itemsTab.classList.remove('active');
+            uploadSection.style.display = 'block';
+            itemsSection.style.display = 'none';
+        });
+
+        itemsTab.addEventListener('click', () => {
+            itemsTab.classList.add('active');
+            uploadTab.classList.remove('active');
+            itemsSection.style.display = 'block';
+            uploadSection.style.display = 'none';
+            fetchItems();
+        });
+        document.addEventListener('DOMContentLoaded', () => {
+            /* ----------  DOM refs ---------- */
+          
+            const uploadArea        = document.getElementById('uploadArea');
+            const fileInput         = document.getElementById('images');
+            const fileInfo          = document.getElementById('fileInfo');
+            const submitBtn         = document.getElementById('submitBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressText      = document.getElementById('progressText');
+            const progressFill      = document.getElementById('progressFill');
+            const resultsContainer  = document.getElementById('resultsContainer');
+            const resultGrid        = document.getElementById('resultGrid');
+            const totalCount        = document.getElementById('totalCount');
+            const successCount      = document.getElementById('successCount');
+            const errorCount        = document.getElementById('errorCount');
+            const downloadBtn       = document.getElementById('downloadBtn');
+        
+            /* ----------  Config ---------- */
+            const API_URL             = '/api/upload-images/';            // POST single file
+            const IMAGES_ENDPOINT     = (pno) => `/api/products/${pno}/get-images`; // GET
+        
+            /* ----------  State ---------- */
+            let files   = [];
+            let results = [];
+        
+            /* ----------  Helpers ---------- */
+            const getCookie = (name) => {
+                const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+                return v ? v.pop() : '';
+            };
+        
+            const classify = (entry) =>
+                (entry.pno || /تم\s+ربط\s+الصورة\s+بنجاح/.test(entry.status)) ? 'success' : 'error';
+        
+            const fetchProductImages = async (pno) => {
+                const res = await fetch(IMAGES_ENDPOINT(pno), { credentials: 'include' });
+                if (!res.ok) throw new Error(`Failed to fetch images for pno ${pno}`);
+                return res.json();                           // expecting an array
+            };
+             
+        
+            const createThumbImg = (src) => {
+                const img = document.createElement('img');
+                img.src         = src;
+                img.alt         = 'Thumbnail';
+                img.className   = 'thumbnail';
+                img.addEventListener('click', () => window.open(src, '_blank'));
+                return img;
+            };
+        
+            const renderResultCard = (entry) => {
+                const status = classify(entry);
+                const card   = document.createElement('div');
+                card.className = `result-card ${status}`;
+        
+                /* skeleton */
+                card.innerHTML = `
+                    <div class="filename" title="${entry.image_name || entry.oem_number_match || ''}">
+                        ${entry.image_name || entry.oem_number_match || '(غير معلوم)'}
+                    </div>
+                    <div class="status ${status}">${status.toUpperCase()}</div>
+                    <div class="thumb-wrapper"></div>
+                    <div class="message">${entry.status}</div>
+                `;
+                resultGrid.appendChild(card);
+        
+                /* if success → fetch & show images */
+                if (status === 'success' && entry.pno) {
+                    fetchProductImages(entry.pno)
+                        .then(imgArr => {
+                            if (!Array.isArray(imgArr) || !imgArr.length) return;
+                            /* try to resolve URL whether API returns strings or objects */
+                            const first = imgArr[0];
+                            const url   = typeof first === 'string'
+                                          ? first
+                                          : (first.image_obj || first.image || '');
+                            if (url) {
+                                const thumbWrapper = card.querySelector('.thumb-wrapper');
+                                thumbWrapper.appendChild(createThumbImg(url));
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            card.querySelector('.message').textContent += ' (⚠️ تعذّر جلب الصورة)';
+                        });
+                }
+            };
+        
+            const showResults = () => {
+                progressContainer.style.display = 'none';
+                resultsContainer.style.display  = 'block';
+        
+                const total   = results.length;
+                const success = results.filter(r => classify(r) === 'success').length;
+                const error   = total - success;
+        
+                totalCount.textContent    = total;
+                successCount.textContent  = success;
+                errorCount.textContent    = error;
+            };
+        
+            /* ----------  Drag-and-drop ---------- */
+            uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('highlight'); });
+            uploadArea.addEventListener('dragleave', () =>  uploadArea.classList.remove('highlight'));
+            uploadArea.addEventListener('drop', e => {
+                e.preventDefault(); uploadArea.classList.remove('highlight');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateFileInfo();
+                }
+            });
+            fileInput.addEventListener('change', updateFileInfo);
+        
+            function updateFileInfo() {
+                files = Array.from(fileInput.files);
+                if (files.length) {
+                    const names = files.map(f => f.name);
+                    fileInfo.textContent = `${files.length} file(s) selected: ${
+                        files.length > 3 ? names.slice(0,3).join(', ') + '…' : names.join(', ')
+                    }`;
+                } else {
+                    fileInfo.textContent = 'No files selected';
+                }
+            }
+        
+            /* ----------  Submit (sequential) ---------- */
+            submitBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (!files.length) { alert('Please select at least one image.'); return; }
+        
+                results = [];
+                resultGrid.innerHTML        = '';
+                progressFill.style.width    = '0%';
+                progressText.textContent    = '0%';
+                progressContainer.style.display = 'block';
+                resultsContainer.style.display  = 'none';
+        
+                for (let i = 0; i < files.length; i++) {
+                    const file     = files[i];
+                    const formData = new FormData();
+                    formData.append('images', file);        // backend expects 'images'
+        
+                    try {
+                        const res = await uploadImage(formData, i, files.length);
+                        results.push(...res);               // API returns array
+                        renderResultCard(res[0]);
+                    } catch (err) {
+                        const errorRes = { image_name: file.name, status: `Upload failed: ${err.message}` };
+                        results.push(errorRes);
+                        renderResultCard(errorRes);
+                    }
+                }
+                showResults();
+            });
+        
+            /* ----------  Upload helper ---------- */
+            function uploadImage(formData, idx, total) {
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', API_URL);
+                    xhr.responseType  = 'json';
+                    xhr.withCredentials = true;
+                    xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+        
+                    xhr.upload.onprogress = evt => {
+                        if (!evt.lengthComputable) return;
+                        const percent = Math.round(((idx + evt.loaded / evt.total) / total) * 100);
+                        progressFill.style.width = `${percent}%`;
+                        progressText.textContent = `${percent}%`;
+                    };
+        
+                    xhr.onload  = () => xhr.status === 200 ? resolve(xhr.response)
+                                                           : reject(new Error(`HTTP ${xhr.status}`));
+                    xhr.onerror = () => reject(new Error('Network error'));
+                    xhr.send(formData);
+                });
+            }
+        
+            /* ----------  Download report ---------- */
+            downloadBtn.addEventListener('click', () => {
+                if (!results.length) return;
+                const report = {
+                    summary : {
+                        total   : results.length,
+                        success : results.filter(r => classify(r) === 'success').length,
+                        error   : results.filter(r => classify(r) === 'error').length,
+                        timestamp: new Date().toISOString()
+                    },
+                    details : results
+                };
+                const blob = new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'});
+                const url  = URL.createObjectURL(blob);
+                const a    = Object.assign(document.createElement('a'), {
+                    href: url,
+                    download: `image-upload-report-${new Date().toISOString().slice(0,10)}.json`
+                });
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
+
+
+
+         // Fetch items for the gallery
+         // Items table functionality
+    const pnoFilter = document.getElementById('pnoFilter');
+    const oemFilter = document.getElementById('oemFilter');
+    const itemNameFilter = document.getElementById('itemNameFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const applyFilter = document.getElementById('applyFilter');
+    const itemsTableBody = document.getElementById('itemsTableBody');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+
+    let currentPage = 1;
+let pageSize    = 12;     // ★ let, not const
+let totalItems  = 0;
+let totalPages  = 1;
+
+
+const fetchProductImages2 = async (pno) => {
+                const res = await fetch(`/api/products/${pno}/get-images`, { credentials: 'include' });
+                if (!res.ok) throw new Error(`Failed to fetch images for pno ${pno}`);
+                return res.json();                           // expecting an array
+            };
+            function fetchItems() {
+    prevPageBtn.disabled = true;
+    nextPageBtn.disabled = true;
+
+    const filterData = {
+        pno:          pnoFilter.value,
+        oem_combined: oemFilter.value,
+        itemname:     itemNameFilter.value,
+        category:     categoryFilter.value,
+        page_no:      currentPage,
+        page_size:    pageSize
+    };
+
+    itemsTableBody.innerHTML =
+        '<tr><td colspan="6" style="text-align: center;">جاري تحميل البيانات...</td></tr>';
+
+    fetch('/hozma/api/producuts/', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(filterData)
+    })
+    .then(resp => {
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return resp.json();
+    })
+    .then(apiRes => {
+        const items = apiRes.data.map(rec => ({
+            id:           rec.fileid,
+            pno:          rec.pno ?? '',
+            oem_combined: rec.oem_numbers,
+            itemname:     rec.itemname,
+            category:     rec.item_category,
+            image_count:  0,
+            thumbnail:    ''
+        }));
+
+        displayItems(items);
+        updatePagination(apiRes.total_rows, apiRes.page_size);
+    })
+    .catch(err => {
+        console.error('Error fetching items:', err);
+        itemsTableBody.innerHTML =
+            '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">حدث خطأ أثناء جلب البيانات</td></tr>';
+    });
+}
+
+
+async function displayItems(items) {
+    console.log("displayItems called with items:", items);
+
+    if (items.length === 0) {
+        itemsTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد عناصر متطابقة</td></tr>';
+        return;
+    }
+
+    itemsTableBody.innerHTML = '';
+
+    for (const item of items) {
+        console.log("Fetching images for item:", item.pno);
+
+        let images = [];
+        try {
+            images = await fetchProductImages2(item.pno);
+            console.log(`Fetched ${images.length} images for ${item.pno}`);
+        } catch (e) {
+            console.warn(`Error loading images for ${item.pno}:`, e);
+        }
+
+        const imageCount = images.length;
+        const thumbnailUrl = imageCount > 0 ? images[0].image_obj : '';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.pno}</td>
+            <td>${item.oem_combined}</td>
+            <td>${item.itemname}</td>
+            <td>${item.category}</td>
+            <td>
+                ${imageCount > 0 
+                    ? `<img src="${thumbnailUrl}" class="item-thumbnail" title="${imageCount} صور" style="height: 40px;"> ${imageCount}`
+                    : 'لا توجد صور'}
+            </td>
+            <td>
+                <button class="add-image-btn" data-id="${item.id}">إضافة صورة</button>
+            </td>
+        `;
+
+        itemsTableBody.appendChild(row);
+
+        row.querySelector('.add-image-btn').addEventListener('click', () => {
+            addImageToItem(item.id);
+        });
+    }
+}
+
+
+function updatePagination(totalRows, size) {
+    totalItems = totalRows;
+    pageSize   = size;                        // allowed: pageSize is now let
+    totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+    pageInfo.textContent = `الصفحة ${currentPage} من ${totalPages}`;
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage === totalPages;
+}
+    // Add image to item (simulated)
+    function addImageToItem(itemId) {
+        // In a real app, this would open a modal or file selector
+        alert(`سيتم إضافة صورة للعنصر رقم ${itemId} في التطبيق الفعلي`);
+        
+        // This would be replaced with actual API call in real app
+        /*
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            fetch(`https://api.example.com/items/${itemId}/images`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('تمت إضافة الصورة بنجاح');
+                fetchItems(); // Refresh the list
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ أثناء إضافة الصورة');
+            });
+        };
+        fileInput.click();
+        */
+    }
+
+    // Event listeners
+    applyFilter.addEventListener('click', () => {
+        currentPage = 1;
+        fetchItems();
+    });
+
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchItems();
+        }
+    });
+
+    nextPageBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            fetchItems();
+        }
+    });
+
+    // Load items when section is shown
+    itemsTab.addEventListener('click', () => {
+        if (itemsSection.style.display !== 'none') {
+            fetchItems();
+        }
+    });
+
+    firstPageBtn.addEventListener('click', () => {
+    if (currentPage !== 1) {
+        currentPage = 1;
+        fetchItems();
+    }
+});
+
+lastPageBtn.addEventListener('click', () => {
+    if (currentPage !== totalPages) {
+        currentPage = totalPages;
+        fetchItems();
+    }
+});
+
+    // Load initial data
+    fetchItems();
+
+
+
+    
+        </script>
+        
+        
+        
+</body>
+</html>

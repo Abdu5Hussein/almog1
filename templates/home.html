@@ -1273,6 +1273,15 @@
                 <a class="nav-link" href="#subitem12-2">Subitem 12-2</a>
               </div>
             </li>
+            {% if perms.almogOil.print_paper %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#"
+                ><i class="fas fa-chevron-down"></i>طباعة</a>
+              <div class="sub-menu">
+                <a class="nav-link" id="item-14-1">طباعة مستند</a>
+              </div>
+            </li>
+            {% endif %}
           </ul>
         </div>
 
@@ -1986,6 +1995,13 @@
           id: "item-8-7",
           url: "/employees/management/attendance",
           name: "employees-attendance-history/",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-14-1",
+          url: "/print/dynamic-paper",
+          name: "print-doc",
           width: 1100,
           height: 700,
         },
