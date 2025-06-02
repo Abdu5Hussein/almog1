@@ -931,6 +931,12 @@
           border-radius: 0 3px 11px 0;
           padding: 0 20px;
         }
+        .disabled-item {
+          pointer-events: none;        /* Prevents clicks */
+          opacity: 0.5;                /* Makes it look dimmed */
+          cursor: not-allowed;         /* Shows 'not allowed' cursor */
+          color: #999;                 /* Optional: grey text */
+        }
 
     </style>
   </head>
@@ -1108,7 +1114,7 @@
               </div>
             </li>
             {% endif %}
-            <li class="nav-item">
+            <li class="nav-item disabled-item">
               <a class="nav-link toggle-submenu" href="#"
                 ><i class="fas fa-chevron-down"></i>ف. البيع المبدئية</a
               >
@@ -1243,7 +1249,7 @@
               </div>
             </li>
             {% endif %}
-            <li class="nav-item">
+            <li class="nav-item disabled-item">
               <a class="nav-link toggle-submenu" href="#"
                 ><i class="fas fa-chevron-down"></i>الحسابات</a
               >
@@ -1264,7 +1270,7 @@
               </div>
             </li>
             {% endif %}
-            <li class="nav-item">
+            <li class="nav-item disabled-item">
               <a class="nav-link toggle-submenu" href="#"
                 ><i class="fas fa-chevron-down"></i>تعديل بيانات الشركة</a
               >

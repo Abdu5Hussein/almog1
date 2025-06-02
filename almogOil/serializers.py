@@ -254,9 +254,3 @@ class EmployeeContractUploadSerializer(serializers.ModelSerializer):
         model = models.EmployeesTable
         fields = ['contract_image']
 
-class BulkImageUploadSerializer(serializers.Serializer):
-    images = serializers.ListField(
-        child=serializers.ImageField(),
-        allow_empty=False,
-        write_only=True
-    )
