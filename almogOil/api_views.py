@@ -186,7 +186,7 @@ def sign_in(request):
             return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
 
         # ---- 4. Create session + JWT --------------------------------------------
-        login(request, auth_user)  
+        login(request, auth_user)
                               # Django session
         request.session["username"] = user.username
         request.session["name"] = user.name
@@ -2062,10 +2062,9 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
                     current_balance=round(last_balance_amount + Decimal(returned_item_instance.total), 2),
                     client_object_id=invoice.client_obj.pk
                 )
-
+                client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
                 # Storage transaction if payment is cash
                 if permission_obj.payment == "نقدي":
-                    client_object = AllClientsTable.objects.get(clientid=invoice.client_id)
                     models.StorageTransactionsTable.objects.create(
                         reciept_no=f"ف.ب : {invoice_item.invoice_no}",
                         transaction_date=timezone.now(),
@@ -2268,71 +2267,53 @@ def accept_payment_req(request, id):
 """ Sources Related Api's """
 
 @extend_schema(
-description="""Create a new source.""",
-tags=["Sources"],
+    description="Manage sources",
+    tags=["Sources"]
 )
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@authentication_classes([CookieAuthentication])
-def create_source_record(request):
-    data = request.data  # Use DRF's request.data
+class SourcesViewSet(viewsets.ModelViewSet):
+    queryset = models.AllSourcesTable.objects.all()
+    serializer_class = serializers.SourcesSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieAuthentication]
 
-    # Ensure the phone number is provided
-    if not data.get('phone'):
-        return Response({'status': 'error', 'message': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Check if the phone number already exists
-    existing_phones = User.objects.values_list('username', flat=True)
-    if data.get('phone') in existing_phones:
-        return Response({'status': 'error', 'message': 'Phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Hash the password
-    password = make_password(data.get('password'))
-    is_correct = check_password(data.get('password'), password)
-
-    # Create and save the user
-    try:
-        user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=data.get('password'))
-        user.full_clean()  # Validate user fields
-        user.save()
-    except ValidationError as e:
-        return Response({'status': 'error', 'message': f'Validation Error: {e.message_dict}'}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Create a new source record (AllSourcesTable)
-    new_item = models.AllSourcesTable(
-        name=data.get('client_name', '').strip() or None,
-        address=data.get('address', '').strip() or None,
-        email=data.get('email', '').strip() or None,
-        website=data.get('website', '').strip() or None,
-        phone=data.get('phone', '').strip() or None,
-        mobile=data.get('mobile', '').strip() or None,
-        last_transaction_amount=data.get('last_transaction', '0').strip() or '0',
-        accountcurr=data.get('currency', '').strip() or None,
-        type="مورد",
-        category=data.get('sub_category', '').strip() or None,
-        loan_period=int(data.get('limit', '0')) if str(data.get('limit', '0')).isdigit() else None,
-        loan_limit=float(data.get('limit_value', '0.0')) if data.get('limit_value') else None,
-        loan_day=data.get('installments') or None,
-        subtype=data.get('types', '').strip() or None,
-        client_stop=True if str(data.get('client_stop', '0')).lower() in ['on', '1', 'true'] else False,
-        curr_flag=bool(int(data.get('curr_flag', '0'))) if str(data.get('curr_flag', '0')).isdigit() else False,
-        permissions=data.get('permissions', '').strip() or None,
-        other=data.get('other', '').strip() or None,
-        username=data.get('phone'),
-        password=password,
+    @extend_schema(
+        description="Create a new source.",
+        tags=["Sources"]
     )
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        data['last_transaction'] = None
 
-    # Validate and save the new source record (AllSourcesTable)
-    try:
-        new_item.full_clean()  # Ensure the object is valid before saving
-        new_item.save()
-    except ValidationError as e:
-        return Response({'status': 'error', 'message': f'Validation Error: {e.message_dict}'}, status=status.HTTP_400_BAD_REQUEST)
+        if not data.get('phone'):
+            return Response({
+                'status': 'error',
+                'message': 'رقم الهاتف مطلوب',
+                'message_en': 'Phone number is required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Return success response
-    return Response({'status': 'success', 'message': 'Record created successfully!', 'p': password, 'is_correct': is_correct}, status=status.HTTP_201_CREATED)
+        if User.objects.filter(username=data.get('phone')).exists():
+            return Response({
+                'status': 'error',
+                'message': 'رقم الهاتف موجود بالفعل.',
+                'message_en': 'Phone number already exists.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid():
+            serializer.save(type="مورد")
+            return Response({
+                'status': 'success',
+                'message': 'تم إنشاء المورد بنجاح!',
+                'message_en': 'Record created successfully!'
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'status': 'error',
+                'message': 'خطأ في التحقق من الصحة.',
+                'message_en': 'Validation Error',
+                'data': data,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("serviceAccountKey.json")

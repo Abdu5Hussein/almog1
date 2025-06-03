@@ -75,7 +75,7 @@ class AllSourcesTable(models.Model):
     accountcurr = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     type = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     category = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
-    loan_period = models.IntegerField(blank=True, null=True)
+    loan_period = models.IntegerField(default=None,blank=True, null=True)
     loan_limit = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     loan_day = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     subtype = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -84,8 +84,8 @@ class AllSourcesTable(models.Model):
     permissions = models.CharField(max_length=400, db_collation='Arabic_CI_AS', blank=True, null=True)
     other = models.CharField(max_length=400, db_collation='Arabic_CI_AS', blank=True, null=True)
     # New fields
-    username = models.CharField(max_length=150, unique=True,null=False)  # Ensure username is unique
-    password = models.CharField(max_length=255,null=False)  # This will store the hashed password
+    username = models.CharField(max_length=150,null=True, blank=True)  # Ensure username is unique
+    password = models.CharField(max_length=255,null=True, blank=True)  # This will store the hashed password
     commission = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
 
 

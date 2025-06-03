@@ -192,7 +192,7 @@ def create_sell_invoice(request):
                 'client_category': client_obj.subtype,
                 'client_limit': client_obj.loan_limit,
                 'client_balance': client_balance,
-                'invoice_date': data.get("invoice_date"),
+                'invoice_date':  timezone.now().date(),
                 'invoice_status': "لم تحضر",
                 'payment_status': data.get("payment_status"),
                 'for_who': for_who,

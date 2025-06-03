@@ -418,6 +418,16 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("refresh").addEventListener("click", function () {
         get_invoice_items();
     });
+    window.addEventListener('storage', function (event) {
+        if (event.key === 'refresh_buy_items' && event.newValue === 'true') {
+            console.log('localStorage changed and flag is true:', event.newValue);
+
+            get_invoice_items();  // your function to refresh data
+
+            // Optional: reset the flag so it doesn't keep triggering
+            localStorage.setItem('refresh_buy_items', 'false');
+        }
+    });
     async function fetchInvoiceItems(invoiceId) {
         const url = `/fetch-buy-invoice-items?id=${encodeURIComponent(invoiceId)}`; // Replace `/your-endpoint-url/` with the actual endpoint path
 

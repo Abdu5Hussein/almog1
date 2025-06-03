@@ -1502,7 +1502,16 @@
           const netPrice = total - discount - returned;
           updateInput("net-total",netPrice + " دل ");
       }
+      window.addEventListener('storage', function(event) {
+        if (event.key === 'refresh_sell_items' && event.newValue === 'true') {
+          console.log('localStorage changed and flag is true:', event.newValue);
 
+          get_invoice_items();  // your function to refresh data
+
+          // Optional: reset the flag so it doesn't keep triggering
+          localStorage.setItem('refresh_sell_items', 'false');
+        }
+      });
     </script>
 
   </body>

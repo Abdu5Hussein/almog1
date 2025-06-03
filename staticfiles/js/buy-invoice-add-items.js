@@ -563,5 +563,15 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
         openWindow('payment-installments');
     });
+    window.addEventListener('storage', function (event) {
+        if (event.key === 'refresh_sell_items' && event.newValue === 'true') {
+            console.log('localStorage changed and flag is true:', event.newValue);
+
+            get_invoice_items();  // your function to refresh data
+
+            // Optional: reset the flag so it doesn't keep triggering
+            localStorage.setItem('refresh_sell_items', 'false');
+        }
+    });
 
 });

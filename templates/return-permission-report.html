@@ -49,7 +49,7 @@
           color:rgb(255, 255, 255);
       }
       .choices {
-        width: calc(100% - 73px); /*edit later*/
+        width: calc(100% - 95px); /*edit later*/
       }
       .dropdown {
         display: none;
@@ -499,14 +499,21 @@
         max-width: 500px;
       }
       #more-info {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-in-out;
-        }
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.5s ease-in-out;
+      }
 
-        #more-info.show {
-            max-height: 500px; /* Adjust this value depending on the content height */
-        }
+      #more-info.show {
+          max-height: 500px; /* Adjust this value depending on the content height */
+      }
+      .disabled-item {
+        background-color: #ccc;
+        pointer-events: none;
+        color: #666;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
     </style>
   </head>
   <body>
@@ -516,7 +523,7 @@
                 <a class="nav-link active" id="tab-1-navigator" data-bs-toggle="tab" href="#tab-1">اذونات</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="tab-2-navigator" data-bs-toggle="tab" href="#tab-2">اصناف</a>
+                <a class="nav-link disabled-item" id="tab-2-navigator" data-bs-toggle="tab" href="#tab-2">اصناف</a>
             </li>
         </ul>
         <div class="tab-content">
@@ -712,6 +719,11 @@
         resizableRows: true,  // Allow rows to be resized
         pagination: true,     // Enable pagination
         paginationSize: 5,   // Set number of rows per page
+    });
+    const element = document.getElementById("client");
+    const choices = new Choices(element, {
+      searchEnabled: true,
+      removeItemButton: true, // Optional: allows removal of selected items
     });
 
     function fetchData(){

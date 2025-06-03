@@ -210,6 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (items) {
                         console.log("Invoice items:", items);
                         second_table.replaceData(items); // Add the row data to second_table
+                        localStorage.setItem('refresh_buy_items', 'true');
                         // Handle the fetched items, e.g., display them in the UI
                     } else {
                         console.log("No items fetched or an error occurred.");

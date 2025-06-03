@@ -1248,6 +1248,7 @@
             }
             console.log(result);
             clearForm();
+            localStorage.setItem('refresh_return_items', 'true');
             alert("تم ترجيع الصنف ");
           })
           .catch((error) => {

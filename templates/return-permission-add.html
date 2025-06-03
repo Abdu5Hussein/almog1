@@ -543,7 +543,7 @@
 
               </div>
               <div class="input-group mb-1 d-flex align-items-center">
-                <div class="d-flex max-width-500">
+                <div class="d-flex w-100">
                     <div class="width-95 d-flex align-items-center">
                         <label for="storage-balance" class="form-label">اسم العميل</label>
                     </div>
@@ -743,7 +743,7 @@
             {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}
           >
             تصدير</button
-          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.export_return_permissions %}disabled{% endif %}>طباعة</button>
+          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.print_client_return_permission %}disabled{% endif %}>طباعة</button>
           <button type="button" class="btn btn-primary m-1">حذف</button>
           <button
             type="button"
@@ -784,6 +784,11 @@
         pagination: true,     // Enable pagination
         paginationSize: 5,   // Set number of rows per page
     });
+    const element = document.getElementById("client");
+        const choices = new Choices(element, {
+          searchEnabled: true,
+          removeItemButton: true, // Optional: allows removal of selected items
+        });
 function setInputValue(id,value){
   document.getElementById(id).value = value;
 }
@@ -865,6 +870,21 @@ function fetchData(){
       {
         fetchInvoiceItems(invoice);
       }
+    });
+    window.addEventListener('storage', function (event) {
+        if (event.key === 'refresh_return_items' && event.newValue === 'true') {
+            console.log('localStorage changed and flag is true:', event.newValue);
+
+            const invoice = document.getElementById("invoice").value
+
+            if (invoice)
+            {
+              fetchInvoiceItems(invoice);
+            }
+
+            // Optional: reset the flag so it doesn't keep triggering
+            localStorage.setItem('refresh_return_items', 'false');
+        }
     });
     document.getElementById("client").addEventListener("change", function () {
     const selectedClient = this.options[this.selectedIndex].dataset.clientName;

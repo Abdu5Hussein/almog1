@@ -482,9 +482,22 @@
                 <input type="text" class="filter-input" id="oemFilter" placeholder="رقم OEM">
                 <input type="text" class="filter-input" id="itemNameFilter" placeholder="اسم العنصر">
                 <input type="text" class="filter-input" id="categoryFilter" placeholder="الفئة">
+                
+                <!-- New Select Input for Has Image -->
+                <select class="filter-input" id="hasImageFilter">
+                    <option value="">هل يحتوي على صورة؟</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            
                 <button class="filter-btn" id="applyFilter">تطبيق الفلتر</button>
             </div>
             
+            <div class="pagination">
+                <button class="page-btn" id="prevPage" disabled>السابق</button>
+                <span id="pageInfo">الصفحة 1</span>
+                <button class="page-btn" id="nextPage">التالي</button>
+            </div>
             <div class="table-responsive">
                 <table class="items-table">
                     <thead>
@@ -506,11 +519,7 @@
                 </table>
             </div>
             
-            <div class="pagination">
-                <button class="page-btn" id="prevPage" disabled>السابق</button>
-                <span id="pageInfo">الصفحة 1</span>
-                <button class="page-btn" id="nextPage">التالي</button>
-            </div>
+            
         </div>
     </div>
     <script>
@@ -713,242 +722,325 @@
                 });
             }
         
-            /* ----------  Download report ---------- */
-            downloadBtn.addEventListener('click', () => {
-                if (!results.length) return;
-                const report = {
-                    summary : {
-                        total   : results.length,
-                        success : results.filter(r => classify(r) === 'success').length,
-                        error   : results.filter(r => classify(r) === 'error').length,
-                        timestamp: new Date().toISOString()
-                    },
-                    details : results
-                };
-                const blob = new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'});
-                const url  = URL.createObjectURL(blob);
-                const a    = Object.assign(document.createElement('a'), {
-                    href: url,
-                    download: `image-upload-report-${new Date().toISOString().slice(0,10)}.json`
-                });
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-        });
-
-
-
-         // Fetch items for the gallery
-         // Items table functionality
-    const pnoFilter = document.getElementById('pnoFilter');
-    const oemFilter = document.getElementById('oemFilter');
-    const itemNameFilter = document.getElementById('itemNameFilter');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const applyFilter = document.getElementById('applyFilter');
-    const itemsTableBody = document.getElementById('itemsTableBody');
-    const prevPageBtn = document.getElementById('prevPage');
-    const nextPageBtn = document.getElementById('nextPage');
-    const pageInfo = document.getElementById('pageInfo');
-
-    let currentPage = 1;
-let pageSize    = 12;     // ★ let, not const
-let totalItems  = 0;
-let totalPages  = 1;
-
-
-const fetchProductImages2 = async (pno) => {
-                const res = await fetch(`/api/products/${pno}/get-images`, { credentials: 'include' });
-                if (!res.ok) throw new Error(`Failed to fetch images for pno ${pno}`);
-                return res.json();                           // expecting an array
-            };
-            function fetchItems() {
-    prevPageBtn.disabled = true;
-    nextPageBtn.disabled = true;
-
-    const filterData = {
-        pno:          pnoFilter.value,
-        oem_combined: oemFilter.value,
-        itemname:     itemNameFilter.value,
-        category:     categoryFilter.value,
-        page_no:      currentPage,
-        page_size:    pageSize
-    };
-
-    itemsTableBody.innerHTML =
-        '<tr><td colspan="6" style="text-align: center;">جاري تحميل البيانات...</td></tr>';
-
-    fetch('/hozma/api/producuts/', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(filterData)
-    })
-    .then(resp => {
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        return resp.json();
-    })
-    .then(apiRes => {
-        const items = apiRes.data.map(rec => ({
-            id:           rec.fileid,
-            pno:          rec.pno ?? '',
-            oem_combined: rec.oem_numbers,
-            itemname:     rec.itemname,
-            category:     rec.item_category,
-            image_count:  0,
-            thumbnail:    ''
-        }));
-
-        displayItems(items);
-        updatePagination(apiRes.total_rows, apiRes.page_size);
-    })
-    .catch(err => {
-        console.error('Error fetching items:', err);
-        itemsTableBody.innerHTML =
-            '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">حدث خطأ أثناء جلب البيانات</td></tr>';
-    });
-}
-
-
-async function displayItems(items) {
-    console.log("displayItems called with items:", items);
-
-    if (items.length === 0) {
-        itemsTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد عناصر متطابقة</td></tr>';
+           downloadBtn.addEventListener('click', () => {
+    const failed = results.filter(r => classify(r) === 'error');
+    if (!failed.length) {
+        alert('No errors to report.');
         return;
     }
 
-    itemsTableBody.innerHTML = '';
+    const data = failed.map((r, index) => ({
+        'رقم': index + 1,
+        'اسم الصورة': r.image_name || '(غير معروف)',
+        'السبب': r.status || '(لا يوجد سبب)'
+    }));
 
-    for (const item of items) {
-        console.log("Fetching images for item:", item.pno);
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'الاخطاء');
 
-        let images = [];
-        try {
-            images = await fetchProductImages2(item.pno);
-            console.log(`Fetched ${images.length} images for ${item.pno}`);
-        } catch (e) {
-            console.warn(`Error loading images for ${item.pno}:`, e);
-        }
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
 
-        const imageCount = images.length;
-        const thumbnailUrl = imageCount > 0 ? images[0].image_obj : '';
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${item.pno}</td>
-            <td>${item.oem_combined}</td>
-            <td>${item.itemname}</td>
-            <td>${item.category}</td>
-            <td>
-                ${imageCount > 0 
-                    ? `<img src="${thumbnailUrl}" class="item-thumbnail" title="${imageCount} صور" style="height: 40px;"> ${imageCount}`
-                    : 'لا توجد صور'}
-            </td>
-            <td>
-                <button class="add-image-btn" data-id="${item.id}">إضافة صورة</button>
-            </td>
-        `;
-
-        itemsTableBody.appendChild(row);
-
-        row.querySelector('.add-image-btn').addEventListener('click', () => {
-            addImageToItem(item.id);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'الاخطآ في الصور.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
         });
-    }
-}
-
-
-function updatePagination(totalRows, size) {
-    totalItems = totalRows;
-    pageSize   = size;                        // allowed: pageSize is now let
-    totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
-    pageInfo.textContent = `الصفحة ${currentPage} من ${totalPages}`;
-    prevPageBtn.disabled = currentPage === 1;
-    nextPageBtn.disabled = currentPage === totalPages;
-}
-    // Add image to item (simulated)
-    function addImageToItem(itemId) {
-        // In a real app, this would open a modal or file selector
-        alert(`سيتم إضافة صورة للعنصر رقم ${itemId} في التطبيق الفعلي`);
-        
-        // This would be replaced with actual API call in real app
-        /*
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.onchange = (e) => {
-            const file = e.target.files[0];
-            const formData = new FormData();
-            formData.append('image', file);
-            
-            fetch(`https://api.example.com/items/${itemId}/images`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('تمت إضافة الصورة بنجاح');
-                fetchItems(); // Refresh the list
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('حدث خطأ أثناء إضافة الصورة');
-            });
-        };
-        fileInput.click();
-        */
-    }
-
-    // Event listeners
-    applyFilter.addEventListener('click', () => {
-        currentPage = 1;
-        fetchItems();
-    });
-
-    prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            fetchItems();
-        }
-    });
-
-    nextPageBtn.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            fetchItems();
-        }
-    });
-
-    // Load items when section is shown
-    itemsTab.addEventListener('click', () => {
-        if (itemsSection.style.display !== 'none') {
-            fetchItems();
-        }
-    });
-
-    firstPageBtn.addEventListener('click', () => {
-    if (currentPage !== 1) {
-        currentPage = 1;
-        fetchItems();
-    }
-});
-
-lastPageBtn.addEventListener('click', () => {
-    if (currentPage !== totalPages) {
-        currentPage = totalPages;
-        fetchItems();
-    }
-});
-
-    // Load initial data
-    fetchItems();
-
-
 
     
-        </script>
-        
-        
+// ----------------------------------------------------
+// DOM references and global state
+// ----------------------------------------------------
+const pnoFilter        = document.getElementById('pnoFilter');
+const oemFilter        = document.getElementById('oemFilter');
+const itemNameFilter   = document.getElementById('itemNameFilter');
+const categoryFilter   = document.getElementById('categoryFilter');
+const applyFilter      = document.getElementById('applyFilter');
+const itemsTableBody   = document.getElementById('itemsTableBody');
+const prevPageBtn      = document.getElementById('prevPage');
+const nextPageBtn      = document.getElementById('nextPage');
+const firstPageBtn     = document.getElementById('firstPage');
+const lastPageBtn      = document.getElementById('lastPage');
+const pageInfo         = document.getElementById('pageInfo');
+const hasImageFilter   = document.getElementById('hasImageFilter');
+
+let currentPage = 1;
+let pageSize    = 12;
+let totalItems  = 0;
+let totalPages  = 1;
+
+// In-memory cache for pages: { [pageNumber]: { data: [...], total_rows, page_size, … } }
+const pageCache = {};
+
+// ----------------------------------------------------------
+// Fetch images for a single pno
+// ----------------------------------------------------------
+async function fetchProductImages2(pno) {
+  try {
+    const res = await fetch(`/api/products/${pno}/get-images`, { credentials: 'include' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn(`Failed to fetch images for pno ${pno}`, err);
+    return [];
+  }
+}
+
+// ----------------------------------------------------------
+// Core: fetch ONE page from the backend (returns full API JSON)
+// ----------------------------------------------------------
+async function fetchOnePage(pageNumber) {
+  const filterData = {
+    pno:           pnoFilter.value,
+    oem_combined:  oemFilter.value,
+    has_image:     hasImageFilter.value, // new filter for images
+    itemname:      itemNameFilter.value,
+    category:      categoryFilter.value,
+    page:          pageNumber,
+    size:          pageSize
+  };
+
+  const resp = await fetch('/hozma/api/producuts/', {
+    method:      'POST',
+    headers:     { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body:        JSON.stringify(filterData)
+  });
+
+  if (!resp.ok) {
+    throw new Error(`HTTP ${resp.status}`);
+  }
+
+  return await resp.json();
+}
+
+// ----------------------------------------------------------
+// Display one page’s worth of items (already fetched Data)
+// ----------------------------------------------------------
+async function renderPageFromData(apiRes) {
+  const itemsData = apiRes.data;
+
+  // Update pagination info
+  totalItems = apiRes.total_rows;
+  pageSize   = apiRes.page_size;
+  totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  pageInfo.textContent = `الصفحة ${currentPage} من ${totalPages}`;
+  prevPageBtn.disabled = currentPage === 1;
+  nextPageBtn.disabled = currentPage === totalPages;
+
+  if (!itemsData || itemsData.length === 0) {
+    itemsTableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center;">
+          لا توجد عناصر متطابقة
+        </td>
+      </tr>
+    `;
+    // Immediately try to prefetch next page (if any)
+    prefetchNextPage();
+    return;
+  }
+
+  // Show “loading images…” while we fetch thumbnails
+  itemsTableBody.innerHTML = `
+    <tr>
+      <td colspan="6" style="text-align: center;">
+        جاري تحميل الصور...
+      </td>
+    </tr>
+  `;
+
+  // Build a minimal list of items for image-fetching
+  const items = itemsData.map(rec => ({
+    fileid:       rec.fileid,
+    pno:          rec.pno || "",
+    oem_combined: rec.oem_numbers,
+    itemname:     rec.itemname,
+    category:     rec.item_category
+  }));
+
+  // Fetch all image‐lists in parallel
+  const imagePromises = items.map(it => fetchProductImages2(it.pno));
+  const imagesArray   = await Promise.all(imagePromises);
+
+  // Now render each row
+  itemsTableBody.innerHTML = "";
+  items.forEach((item, idx) => {
+    const images     = imagesArray[idx] || [];
+    const imageCount = images.length;
+    const thumbUrl   = imageCount > 0 ? images[0].image_obj : "";
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${item.pno}</td>
+      <td>${item.oem_combined}</td>
+      <td>${item.itemname}</td>
+      <td>${item.category}</td>
+      <td>
+        ${
+          imageCount > 0
+            ? `<img
+                src="${thumbUrl}"
+                class="item-thumbnail"
+                title="${imageCount} صور"
+                style="height: 40px;">
+               ${imageCount}`
+            : "لا توجد صور"
+        }
+      </td>
+      <td>
+        <button class="add-image-btn" data-id="${item.fileid}">
+          إضافة صورة
+        </button>
+      </td>
+    `;
+    itemsTableBody.appendChild(row);
+
+    row
+      .querySelector(".add-image-btn")
+      .addEventListener("click", () => {
+        addImageToItem(item.fileid);
+      });
+  });
+
+  // As soon as page is rendered, prefetch page+1
+  prefetchNextPage();
+}
+
+// ----------------------------------------------------------
+// If there’s a “next” page (currentPage +1), start fetching it.
+// ----------------------------------------------------------
+function prefetchNextPage() {
+  const nextPage = currentPage + 1;
+  if (nextPage > totalPages) return;
+  if (pageCache[nextPage]) return; // already cached
+
+  // Fetch in background, store in pageCache
+  fetchOnePage(nextPage)
+    .then(apiRes => {
+      pageCache[nextPage] = apiRes;
+    })
+    .catch(err => {
+      console.warn(`Prefetch of page ${nextPage} failed`, err);
+    });
+}
+
+// ----------------------------------------------------------
+// Attempt to display a page from `pageCache` or fetch if missing
+// ----------------------------------------------------------
+async function goToPage(pageNum) {
+  if (pageNum < 1 || pageNum > totalPages) return;
+  currentPage = pageNum;
+
+  // If cached, render directly
+  if (pageCache[pageNum]) {
+    await renderPageFromData(pageCache[pageNum]);
+    return;
+  }
+
+  // Otherwise, fetch now, cache, then render
+  itemsTableBody.innerHTML = `
+    <tr>
+      <td colspan="6" style="text-align: center;">
+        جاري تحميل البيانات...
+      </td>
+    </tr>
+  `;
+  try {
+    const apiRes = await fetchOnePage(pageNum);
+    pageCache[pageNum] = apiRes;
+    await renderPageFromData(apiRes);
+  } catch (err) {
+    console.error("Error fetching page", pageNum, err);
+    itemsTableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--danger-color);">
+          حدث خطأ أثناء جلب البيانات.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+// ----------------------------------------------------------
+// “Fetch items” resets cache and loads page 1
+// ----------------------------------------------------------
+function fetchItems() {
+  Object.keys(pageCache).forEach(k => delete pageCache[k]);
+  currentPage = 1;
+  goToPage(1);
+}
+
+// ----------------------------------------------------------
+// “Add image” (unchanged)
+// ----------------------------------------------------------
+function addImageToItem(pno) {
+  const width = 600;
+  const height = 720;
+
+  // Get browser’s current left/top (cross‐browser)
+  const browserLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+  const browserTop  = window.screenTop  !== undefined ? window.screenTop  : window.screenY;
+
+  // Get viewport size
+  const browserWidth  = window.innerWidth;
+  const browserHeight = window.innerHeight;
+
+  // Calculate center relative to the browser window
+  const left = browserLeft + (browserWidth  - width)  / 2;
+  const top  = browserTop  + (browserHeight - height) / 2;
+
+  window.open(
+    `/images/?product_id=${encodeURIComponent(pno)}`,
+    '_blank',
+    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+  );
+}
+
+
+
+// ----------------------------------------------------------
+// Event listeners
+// ----------------------------------------------------------
+applyFilter.addEventListener("click", () => {
+  fetchItems();
+});
+
+prevPageBtn.addEventListener("click", () => {
+  if (currentPage > 1) {
+    goToPage(currentPage - 1);
+  }
+});
+
+nextPageBtn.addEventListener("click", () => {
+  if (currentPage < totalPages) {
+    goToPage(currentPage + 1);
+  }
+});
+
+firstPageBtn.addEventListener("click", () => {
+  if (currentPage !== 1) goToPage(1);
+});
+
+lastPageBtn.addEventListener("click", () => {
+  if (currentPage !== totalPages) goToPage(totalPages);
+});
+
+// Initial load: fetch page 1 and immediately prefetch page 2
+fetchItems();
+
+    
+</script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+    
         
 </body>
 </html>

@@ -43,6 +43,7 @@ router.register(r'api/employees-api', api_views.EmployeesTableViewSet)
 router.register(r'api/balance-editions-api', api_views.BalanceEditionsTableViewSet)
 router.register(r'api/attendance-api', api_views.AttendanceTableViewSet)
 router.register(r'api/mainitem_copy-api', api_views.mainitem_copy_ViewSet)
+router.register(r'api/sources-api', api_views.SourcesViewSet)
 
 urlpatterns = [
     path('hozma/', include('wholesale_app.urls')),
@@ -259,7 +260,6 @@ urlpatterns = [
     path('sources/management',views.sources_management_View,name='sources_management_View'),
     path('register_fcm/', api_views.register_fcm_token, name='register_fcm_token'),
     path('send_notifications/', api_views.send_notification, name='send_notification'),
-    path('api/create_source',api_views.create_source_record,name="create_source_record"),
     path('return-permissions/<int:id>/profile/',views.return_permission_profile,name="return_permission-profile"),
     path('api/products/<int:id>/get-images',products_api_views.get_product_images,name="product-get-images"),
     path('users/management', views.users_management,name="users_management"),

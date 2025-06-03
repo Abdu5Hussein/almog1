@@ -8,7 +8,7 @@ from django.contrib.auth.hashers import check_password
 import json
 import random
 from django.contrib.auth.hashers import check_password, make_password
-from django.db.models import Count, Sum, Avg, F, Q, Case, When, Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
+from django.db.models import Count, Sum, Avg, F, Q, Exists, Case, When, OuterRef,Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
 from django.db.models.functions import TruncMonth, TruncDay
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
@@ -70,6 +70,9 @@ import hashlib
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from dateutil.relativedelta import relativedelta
+
+
+CACHE_TTL = 60 * 5   # 5 دقائق
 
 def get_last_PreOrderTable_no():
     last_preorder = almogOil_models.PreOrderTable.objects.order_by("-invoice_no").first()
@@ -460,6 +463,7 @@ def send_test_whatsapp_message(request):
         )
 
  # Assuming you have this function
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -478,41 +482,37 @@ def full_Sell_invoice_create_item(request):
             except almogOil_models.Mainitem.DoesNotExist:
                 return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
+            # Check quantity before updating invoice
+            item_value = int(data.get("itemvalue") or 0)
+            if item_value > product.showed:
+                return Response({"error": "Insufficient quantity available"}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-             invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
+                invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
 
-             item_value = Decimal(data.get("itemvalue") or 0)
-             buy_price = Decimal(product.buyprice or 0)
-             line_total = buy_price * item_value
+                buy_price = Decimal(product.buyprice or 0)
+                line_total = buy_price * Decimal(item_value)
 
- 
-             invoice.amount += line_total
+                invoice.amount += line_total
 
-  
-             discount = Decimal(invoice.client.discount or 0)
-             delivery_price = Decimal(invoice.client.delivery_price or 0)
-             amount = invoice.amount
-             invoice.net_amount = amount - (discount * amount) + delivery_price
+                discount = Decimal(invoice.client.discount or 0)
+                delivery_price = Decimal(invoice.client.delivery_price or 0)
+                amount = invoice.amount
+                invoice.net_amount = amount - (discount * amount) + delivery_price
 
-             invoice.save()
+                invoice.save()
             except almogOil_models.PreOrderTable.DoesNotExist:
                 return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            item_value = int(data.get("itemvalue") or 0)
-            if item_value > product.showed:
-                # Handle insufficient quantity
-                return Response({"error": "Insufficient quantity available"}, status=status.HTTP_400_BAD_REQUEST)
+            # Update product quantity
+            if item_value <= product.showed:
+                product.showed -= item_value
+                product.save()
+                dinar_unit_price = Decimal(product.buyprice or 0)
+                dinar_total_price = dinar_unit_price * item_value
             else:
-                if item_value < product.showed:
-                  product_showed = product.showed - item_value
-                  product.showed  = product_showed
-                  product.save()
-                  dinar_unit_price = Decimal(product.buyprice or 0)
-                  dinar_total_price = dinar_unit_price * item_value
+                dinar_total_price = Decimal(product.buyprice or 0) * item_value
 
-            # Create Sell Item
             item_data = {
                 'invoice_instance': invoice.autoid,
                 'invoice_no': data.get("invoice_id"),
@@ -533,9 +533,9 @@ def full_Sell_invoice_create_item(request):
                 "returned": 0,
                 'current_quantity': product.showed - item_value,
             }
+
             client_phone = invoice.client.mobile if invoice.client and invoice.client.mobile else "218942434823"
             source_name = product.source.name if product.source else "Unknown"
-
 
             serializer = almogOil_serializers.PreOrderItemsSerializer(data=item_data)
             if serializer.is_valid():
@@ -544,39 +544,28 @@ def full_Sell_invoice_create_item(request):
                 # === BUY INVOICE LOGIC START ===
                 source_obj = product.source
 
-                buyitem_value = int(data.get("itemvalue") or 0)
+                buyitem_value = item_value
                 buy_dinar_unit_price = Decimal(product.costprice or 0)
                 buy_dinar_total_price = buy_dinar_unit_price * buyitem_value
 
-                # Try to get unconfirmed invoice for the source
                 buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.filter(
                     source=source_name,
                     send=False,
                     confirmed=False
                 ).first()
 
-                # If invoice would exceed 200, mark it as sent and create a new one
-
-                    # force creation of new invoice
-
-                # If no valid invoice exists, create a new one
                 if not buy_invoice:
-                   buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
-                   source=source_name,
-                   invoice_date=timezone.now(),
-                   amount=0,
-                   net_amount=0,
-                   invoice_no=int(timezone.now().timestamp()),
-                   source_obj=product.source
-                   )
+                    buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
+                        source=source_name,
+                        invoice_date=timezone.now(),
+                        amount=0,
+                        net_amount=0,
+                        invoice_no=int(timezone.now().timestamp()),
+                        source_obj=product.source
+                    )
 
-# Always add the preorder to the buy invoice (even if it already exists)
                 buy_invoice.related_preorders.add(invoice)
 
-
-
-
-                # Check if item already exists in BuyInvoiceItemsTable
                 existing_buy_item = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(
                     invoice_no=buy_invoice,
                     pno=product.pno
@@ -619,7 +608,6 @@ def full_Sell_invoice_create_item(request):
                         source=source_obj
                     )
 
-                # Add total and save
                 buy_invoice.amount = (buy_invoice.amount or 0) + buy_dinar_total_price
                 buy_invoice.net_amount = buy_invoice.amount
                 buy_invoice.save()
@@ -627,13 +615,12 @@ def full_Sell_invoice_create_item(request):
                 # === BUY INVOICE LOGIC END ===
 
                 message_body = (
-                      f"👋 مرحبًا، تمت إضافة المنتج ({product.itemname}) إلى فاتورتك رقم {data.get('invoice_id')}.\n"
-                      f"الكمية: {item_value}\n"
-                      f"السعر للوحدة: {product.buyprice}\n"
-                      f"الإجمالي: {dinar_total_price}\n"
-                      f"📦 شكراً لتعاملك معنا!"
-                        )
-
+                    f"👋 مرحبًا، تمت إضافة المنتج ({product.itemname}) إلى فاتورتك رقم {data.get('invoice_id')}.\n"
+                    f"الكمية: {item_value}\n"
+                    f"السعر للوحدة: {product.buyprice}\n"
+                    f"الإجمالي: {dinar_total_price}\n"
+                    f"📦 شكراً لتعاملك معنا!"
+                )
 
                 response = send_whatsapp_message_via_green_api(client_phone, message_body)
 
@@ -645,7 +632,7 @@ def full_Sell_invoice_create_item(request):
                     "buy_invoice_send": buy_invoice.send,
                     "confirmation": buy_invoice.confirmed,
                     "buy_invoice_id": buy_invoice.invoice_no,
-                    "source_name" : source_name,
+                    "source_name": source_name,
                     "left item": product.showed
                 }, status=status.HTTP_201_CREATED)
 
@@ -1539,173 +1526,209 @@ def create_oem_entry(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def web_filter_items(request):
-     if request.method == "POST":
-         try:
-             # Get the filters from the request body
-             filters = request.data  # Decoding bytes and loading JSON
-             cache_key = f"filter_{hashlib.md5(str(filters).encode()).hexdigest()}"
-             cached_data = cache.get(cache_key)
+    """
+    POST body is a JSON containing filter keys (pno, itemname, category, fromdate, todate, etc.)
+    plus pagination keys: page (int) and size (int).
+    We will:
+      1. Build a Q‐object from all provided filters.
+      2. Compute cache_key = MD5(str(filters_dict)) + page + size
+      3. If cached, return immediately.
+      4. Otherwise, filter -> paginate -> serialize -> compute totals -> cache -> return.
+    """
+    if request.method != "POST":
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-             if cached_data:
-                 cached_data["cached_flag"] = True
-                 return Response(cached_data, status=status.HTTP_200_OK)
+    try:
+        filters = request.data  # a dict
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
 
-             # Initialize the base Q object for filtering
-             filters_q = Q()
+    # Extract page/size (defaults)
+    try:
+        page_number = int(filters.get("page", 1))
+    except (ValueError, TypeError):
+        page_number = 1
 
-             # Build the query based on the filters
-             if filters.get('fileid'):
-                 filters_q &= Q(fileid__icontains=filters['fileid'])
-             if filters.get('itemno'):
-                 filters_q &= Q(itemno__icontains=filters['itemno'])
-             if filters.get('itemmain'):
-                 filters_q &= Q(itemmain__icontains=filters['itemmain'])
-             if filters.get('itemsubmain'):
-                 filters_q &= Q(itemsubmain__icontains=filters['itemsubmain'])
-             if filters.get('engine_no'):
-                 filters_q &= Q(engine_no__icontains=filters['engine_no'])
-             if filters.get('itemthird'):
-                 filters_q &= Q(itemthird__icontains=filters['itemthird'])
-             if filters.get('companyproduct'):
-                 filters_q &= Q(companyproduct__icontains=filters['companyproduct'])
-             if filters.get('itemname'):
-                 filters_q &= Q(itemname__icontains=filters['itemname'])
-             if filters.get('eitemname'):
-                 filters_q &= Q(eitemname__icontains=filters['eitemname'])
-             if filters.get('companyno'):
-                 filters_q &= Q(replaceno__icontains=filters['companyno'])
-             if filters.get('pno'):
-                 filters_q &= Q(pno__icontains=filters['pno'])
-             if filters.get('source'):
-                 filters_q &= Q(ordersource__icontains=filters['source'])
-             if filters.get('model'):
-                 filters_q &= Q(itemthird__icontains=filters['model'])
-             if filters.get('country'):
-                 filters_q &= Q(itemsize__icontains=filters['country'])
-             if filters.get('oem'):
-                 filters_q &= Q(oem_numbers__icontains=filters['oem'])
-             if filters.get('category'):
-                 filters_q &= Q(category__icontains=filters['category'])
-             if filters.get("item_type"):
-                 filters_q &= Q(item_category__name__iexact=filters['item_type'])    
-             if filters.get('discount') == "available":
-                 filters_q &= Q(discount__isnull=False) & ~Q(discount=0)
-             if filters.get("oem_combined"):
-                 filters_q &= (
-                       Q(oem_numbers__icontains=filters['oem_combined']) |
-                       Q(eitemname__icontains=filters['oem_combined']))
-                               
+    try:
+        page_size = int(filters.get("size", 20))
+    except (ValueError, TypeError):
+        page_size = 20
 
-           # Original filters (replacing itemvalue with showed)
-             if filters.get('showed') == "0":
-                filters_q &= Q(showed=0)
-             if filters.get('showed') == ">0":
-                 filters_q &= Q(showed__gt=0)
+    # Build a reproducible string for all filter fields EXCEPT page/size,
+    # so that changing only page/size still hits different cache entries:
+    filters_for_key = dict(filters)  # shallow copy
+    # Remove pagination keys before hashing
+    filters_for_key.pop("page", None)
+    filters_for_key.pop("size", None)
 
-# New availability logic (based on 'showed' field)
-             availability = filters.get('availability')
-             if availability == "not_available":
-                filters_q &= Q(showed=0)
-             elif availability == "limited":
-                 filters_q &= Q(showed__lte=10, showed__gt=0)
-             elif availability == "available":
-                  filters_q &= Q(showed__gt=10)
+    # Compute MD5 of sorted filter‐dict (so ordering doesn’t matter):
+    filters_json = json.dumps(filters_for_key, sort_keys=True)
+    base_hash   = hashlib.md5(filters_json.encode("utf-8")).hexdigest()
+    cache_key   = f"webfilter_{base_hash}_p{page_number}_s{page_size}"
 
-# Replacing itemvalue-related logic
-             if filters.get('resvalue') == ">0":
-                 filters_q &= Q(rshowed__gt=0)
-             if filters.get('showed_itemtemp') == "lte":
-                 filters_q &= Q(showed__lte=F('itemtemp'))  # Compare fields
+    # 1) Check cache
+    cached = cache.get(cache_key)
+    if isinstance(cached, dict):
+        # Return a shallow copy with a "cached_flag" set
+        result = cached.copy()
+        result["cached_flag"] = True
+        return Response(result, status=status.HTTP_200_OK)
 
-             # Apply date range filter on `orderlastdate`
-             fromdate = filters.get('fromdate', '').strip()
-             todate = filters.get('todate', '').strip()
+    # 2) Build the Q‐object from all possible filters
+    filters_q = Q()
 
-             if fromdate and todate:
-                 try:
-                     from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
-                     to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
-                     filters_q &= Q(orderlastdate__range=[from_date_obj, to_date_obj])
-                 except ValueError:
-                     return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+    # Example of your existing filters logic:
+    if filters.get("fileid"):
+        filters_q &= Q(fileid__icontains=filters["fileid"])
+    if filters.get("itemno"):
+        filters_q &= Q(itemno__icontains=filters["itemno"])
+    if filters.get("itemmain"):
+        filters_q &= Q(itemmain__icontains=filters["itemmain"])
+    if filters.get("itemsubmain"):
+        filters_q &= Q(itemsubmain__icontains=filters["itemsubmain"])
+    if filters.get("engine_no"):
+        filters_q &= Q(engine_no__icontains=filters["engine_no"])
+    if filters.get("itemthird"):
+        filters_q &= Q(itemthird__icontains=filters["itemthird"])
+    if filters.get("companyproduct"):
+        filters_q &= Q(companyproduct__icontains=filters["companyproduct"])
+    if filters.get("itemname"):
+        filters_q &= Q(itemname__icontains=filters["itemname"])
+    if filters.get("eitemname"):
+        filters_q &= Q(eitemname__icontains=filters["eitemname"])
+    if filters.get("companyno"):
+        filters_q &= Q(replaceno__icontains=filters["companyno"])
+    if filters.get("pno"):
+        filters_q &= Q(pno__icontains=filters["pno"])
+    if filters.get("source"):
+        filters_q &= Q(ordersource__icontains=filters["source"])
+    if filters.get("model"):
+        filters_q &= Q(itemthird__icontains=filters["model"])
+    if filters.get("country"):
+        filters_q &= Q(itemsize__icontains=filters["country"])
+    if filters.get("oem"):
+        filters_q &= Q(oem_numbers__icontains=filters["oem"])
+    if filters.get("category"):
+        filters_q &= Q(category__icontains=filters["category"])
+    if filters.get("item_type"):
+        filters_q &= Q(item_category__name__iexact=filters["item_type"])
 
-             # Now filter the queryset using the combined Q object
-             queryset = almogOil_models.Mainitem.objects.filter(filters_q).order_by('itemname')
+    if filters.get("discount") == "available":
+        filters_q &= Q(discount__isnull=False) & ~Q(discount=0)
 
-             # Serialize the filtered data
-             serializer = products_serializers.MainitemSerializer(queryset, many=True)
-             items_data = serializer.data
+    if filters.get("oem_combined"):
+        val = filters["oem_combined"]
+        filters_q &= (Q(oem_numbers__icontains=val) | Q(eitemname__icontains=val))
 
-             # Initialize totals
-             total_itemvalue = total_itemvalueb = total_resvalue = total_cost = total_order = total_buy = 0
+    # "showed" logic (0 or >0)
+    if filters.get("showed") == "0":
+        filters_q &= Q(showed=0)
+    if filters.get("showed") == ">0":
+        filters_q &= Q(showed__gt=0)
 
-             # Calculate totals
-             for item in items_data:
-                    # Use safe conversion functions
-                 itemvalue = float(item.get('itemvalue') or 0)
-                 itemvalueb = float(item.get('itemvalueb') or 0)
-                 resvalue = float(item.get('resvalue') or 0)
-                 costprice = float(item.get('costprice') or 0)
-                 orderprice = float(item.get('orderprice') or 0)
-                 buyprice = float(item.get('buyprice') or 0)
+    # availability logic:
+    availability = filters.get("availability")
+    if availability == "not_available":
+        filters_q &= Q(showed=0)
+    elif availability == "limited":
+        filters_q &= Q(showed__lte=10, showed__gt=0)
+    elif availability == "available":
+        filters_q &= Q(showed__gt=10)
 
+    # resvalue logic:
+    if filters.get("resvalue") == ">0":
+        filters_q &= Q(rshowed__gt=0)
 
-                 total_itemvalue += itemvalue
-                 total_itemvalueb += itemvalueb
-                 total_resvalue += resvalue
-                 total_cost += itemvalue * costprice
-                 total_order += itemvalue * orderprice
-                 total_buy += itemvalue * buyprice
+    # showed_itemtemp logic:
+    if filters.get("showed_itemtemp") == "lte":
+        filters_q &= Q(showed__lte=F("itemtemp"))
 
-             fullTable = filters.get('fullTable')
-             if fullTable:
-                 response = {
-                     "data": items_data,
-                     "fullTable": True,
-                     "last_page": 1,
-                     "total_rows": queryset.count(),
-                     "page_no": 1,
-                     "total_itemvalue": total_itemvalue,
-                     "total_itemvalueb": total_itemvalueb,
-                     "total_resvalue": total_resvalue,
-                     "total_cost": total_cost,
-                     "total_order": total_order,
-                     "total_buy": total_buy,
-                 }
-                 return Response(response)
+    # Date‐range on orderlastdate
+    fromdate = filters.get("fromdate", "").strip()
+    todate   = filters.get("todate", "").strip()
+    if fromdate and todate:
+        try:
+            from_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+            # include entire end‐day:
+            to_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+            filters_q &= Q(orderlastdate__range=[from_obj, to_obj])
+        except ValueError:
+            return Response({"error": "Invalid date format"}, status=status.HTTP_400_BAD_REQUEST)
 
-             # Pagination
-             page_number = int(filters.get('page') or 1)
-             page_size = int(filters.get('size') or 20)
-             paginator = Paginator(items_data, page_size)
-             page_obj = paginator.get_page(page_number)
+    # 3) Apply the Q filter and order
 
-             response = {
-                 "data": list(page_obj),
-                 "last_page": paginator.num_pages,
-                 "total_rows": paginator.count,
-                 "page_size": page_size,
-                 "page_no": page_number,
-                 "total_itemvalue": total_itemvalue,
-                 "total_itemvalueb": total_itemvalueb,
-                 "total_resvalue": total_resvalue,
-                 "total_cost": total_cost,
-                 "total_order": total_order,
-                 "total_buy": total_buy,
-                 "cached_flag": False,
-             }
+     # 3) Handle has_image filter by annotating then applying to the Q
+    # First prepare a subquery that checks ImageTable.productid == Mainitem.pno
+    images_subquery = almogOil_models.Imagetable.objects.filter(productid=OuterRef("fileid"))
 
-             cache.set(cache_key, response, timeout=300)
-             return Response(response)
+# …everything up to the has_image logic stays the same…
+    base_queryset = (
+    almogOil_models.Mainitem.objects
+    .filter(filters_q)
+    .annotate(has_image_exists=Exists(images_subquery))
+    )
 
-         except json.JSONDecodeError:
-             return Response({'error': 'Invalid JSON format'}, status=status.HTTP_400_BAD_REQUEST)
-         except Exception as e:
-             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    if filters.get("has_image") == "yes":
+        base_queryset = base_queryset.filter(has_image_exists=True)
+    elif filters.get("has_image") == "no":
+        base_queryset = base_queryset.filter(has_image_exists=False)
+
+# Use the annotated+filtered queryset directly:
+    base_qs = base_queryset.order_by("itemname")
+    # 4) Paginate on the server:
+    paginator = Paginator(base_qs, page_size)
+    page_obj  = paginator.get_page(page_number)  # this handles out‐of‐range gracefully
+    serialized_data = products_serializers.MainitemSerializer(page_obj, many=True).data
+
+    # 5) Compute totals over the ENTIRE filtered queryset (not just this page):
+    #     (If you want to compute only for the current page, move this inside the loop below.)
+    total_itemvalue = total_itemvalueb = total_resvalue = 0
+    total_cost = total_order = total_buy = 0.0
+
+    # We want overall sums over all items in filtered base_qs, not just page_obj.
+    # To avoid fetching every row into Python, you might do an aggregate. But if you want them serially:
+    for rec in base_qs.values(
+        "itemvalue", "itemvalueb", "resvalue", "costprice", "orderprice", "buyprice"
+    ):
+        iv = float(rec.get("itemvalue") or 0)
+        ivb = float(rec.get("itemvalueb") or 0)
+        rv = float(rec.get("resvalue") or 0)
+        cp = float(rec.get("costprice") or 0)
+        op = float(rec.get("orderprice") or 0)
+        bp = float(rec.get("buyprice") or 0)
+
+        total_itemvalue += iv
+        total_itemvalueb += ivb
+        total_resvalue += rv
+        total_cost += iv * cp
+        total_order += iv * op
+        total_buy += iv * bp
+
+    # 6) Build the response payload
+    response_payload = {
+        "data": serialized_data,
+        "last_page": paginator.num_pages,
+        "total_rows": paginator.count,
+        "page_size": page_size,
+        "page": page_number,
+        "total_itemvalue": total_itemvalue,
+        "total_itemvalueb": total_itemvalueb,
+        "total_resvalue": total_resvalue,
+        "total_cost": total_cost,
+        "total_order": total_order,
+        "total_buy": total_buy,
+        "cached_flag": False,
+    }
+
+    # 7) Cache it (for, say, 5 minutes = 300 s)
+    cache.set(cache_key, response_payload, timeout=300)
+
+    return Response(response_payload)
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -2534,6 +2557,19 @@ def update_client_info(request, clientid):
     return Response({"detail": "No data provided to update."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+
+
+
+
+@extend_schema(
+    description="Retrieve all OEM table entries (no filtering, paginating, or caching).",
+    responses={
+        200: wholesale_serializers.OemTableSerializer(many=True)
+    },
+    tags=["OEM Table"],
+)
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])  # No authentication
@@ -2550,8 +2586,32 @@ def get_oem_table_data(request):
 
 
 
-CACHE_TTL = 60 * 5   # 5 دقائق
-
+@extend_schema(
+    description=(
+        "Filter, paginate, and cache OEM table entries. "
+        "Accepts POST payload with optional filter fields (`cname`, `cno`, `oemno`), "
+        "plus pagination params (`page`, `page_size`). "
+        "Results are cached for 5 minutes per unique filter+page combination."
+    ),
+    request=wholesale_serializers.OemTableSerializer,  # used only for documentation of filter fields
+    responses={
+        200: OpenApiResponse(
+            response=wholesale_serializers.OemTableSerializer(many=True),
+            description="Paginated list of filtered OEM entries (with `results`, `count`, `next`, `previous`)."
+        )
+    },
+    parameters=[
+        OpenApiParameter(
+            name="page", description="Page number (optional, default=1).",
+            type=OpenApiTypes.INT, location=OpenApiParameter.QUERY
+        ),
+        OpenApiParameter(
+            name="page_size", description="Items per page (optional, default=20).",
+            type=OpenApiTypes.INT, location=OpenApiParameter.QUERY
+        ),
+    ],
+    tags=["OEM Table"],
+)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -2624,6 +2684,28 @@ def get_item_categories_with_counts(request):
 
     return Response({'categories': data})    
 
+@extend_schema(
+    description=(
+        "Send a WhatsApp message via Green API to a client. "
+        "Requires `clientid` and `message` in the POST payload."
+    ),
+    request=wholesale_serializers.WhatsAppMessageSerializer,
+    responses={
+        200: {
+            "type": OpenApiTypes.OBJECT,
+            "properties": {
+                "status": {"type": OpenApiTypes.STR},
+                "client": {"type": OpenApiTypes.INT},
+                "number": {"type": OpenApiTypes.STR},
+                "green_api_response": {"type": OpenApiTypes.OBJECT},
+            },
+        },
+        400: OpenApiResponse(description="Bad request or missing fields."),
+        404: OpenApiResponse(description="Client not found."),
+        502: OpenApiResponse(description="Failed to send message via external API."),
+    },
+    tags=["Messaging"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])             
 @authentication_classes([CookieAuthentication])                 
@@ -2668,6 +2750,8 @@ def send_whatsapp_message(request):
         status=status.HTTP_200_OK
     )
 
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -2680,7 +2764,18 @@ def get_employee_image(request, pk):
         return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-
+@extend_schema(
+    description=(
+        "Create a new Terms and Conditions entry. "
+        "If `is_active=True`, automatically deactivate any previously active terms."
+    ),
+    request=wholesale_serializers.TermsAndConditionsSerializer,
+    responses={
+        201: wholesale_serializers.TermsAndConditionsSerializer,
+        400: OpenApiResponse(description="Validation errors."),
+    },
+    tags=["Terms & Conditions"],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -2696,7 +2791,24 @@ def create_terms_and_conditions(request):
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+    description=(
+        "Update (or create) the active Return Policy. "
+        "This view fetches the currently active `ReturnPolicy` instance and applies the provided data."
+    ),
+    request=wholesale_serializers.ReturnPolicySerializer,
+    responses={
+        200: {
+            "type": OpenApiTypes.OBJECT,
+            "properties": {
+                "success": {"type": OpenApiTypes.BOOL},
+                "message": {"type": OpenApiTypes.STR},
+            },
+        },
+        400: OpenApiResponse(description="Validation errors."),
+    },
+    tags=["Return Policy"],
+)
 @api_view(["POST"])
 @authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])

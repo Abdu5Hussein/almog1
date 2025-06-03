@@ -532,7 +532,7 @@
 
               </div>
               <div class="input-group mb-1 d-flex align-items-center">
-                <div class="d-flex max-width-500">
+                <div class="d-flex w-100">
                     <div class="width-95 d-flex align-items-center" style="margin-left:30px; ">
                         <label for="storage-balance" class="form-label">اسم العميل</label>
                     </div>
@@ -771,6 +771,11 @@
         pagination: true,     // Enable pagination
         paginationSize: 5,   // Set number of rows per page
     });
+    const element = document.getElementById("client");
+        const choices = new Choices(element, {
+          searchEnabled: true,
+          removeItemButton: true, // Optional: allows removal of selected items
+        });
 function setInputValue(id,value){
   document.getElementById(id).value = value;
 }

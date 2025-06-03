@@ -138,37 +138,55 @@ async function loadInvoiceDetails(invoiceNo) {
   }
 }
 
-function fillInvoice(data) {
+async function fillInvoice(data) {
+  const PLACEHOLDER_IMG = '/img/placeholder.png'; // Define your placeholder path
+  const baseURL = 'http://45.13.59.226'; // Define your backend base URL
+
   /* —— 1. status badge —— */
   const badge = document.getElementById('order-status-badge');
   const statusMap = {
     false: { label: 'قيد المعالجة', class: 'bg-warning' },
     true: { label: 'مكتمل', class: 'bg-success' }
   };
-  
-  // Get the correct mapping based on shop_confirm
   const mapping = statusMap[data.shop_confrim] || { label: 'غير معروف', class: 'bg-secondary' };
-  
-  // Update the badge
   badge.textContent = mapping.label;
   badge.className = `badge badge-order-status ${mapping.class}`;
-  
+
   /* —— 2. items table —— */
   const tbody = document.getElementById('invoice-items-tbody');
   tbody.innerHTML = ''; // clear
   let subtotal = 0;
-  
-  data.preorderitems.forEach(item => {
+
+  for (const item of data.preorderitems) {
     const unit = parseFloat(item.dinar_unit_price || 0);
-    const qty = parseFloat(item.quantity || 0);
+    const originalQty = parseFloat(item.quantity || 0);
+    const confirmQty = item.confirm_quantity ? parseFloat(item.confirm_quantity) : null;
+    const qty = confirmQty !== null ? confirmQty : originalQty;
     const total = unit * qty;
     subtotal += total;
-    
+
+    // Get image
+    const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
+
+    // Conditional quantity display
+    let quantityHtml = `<td>${qty}</td>`;
+    if (confirmQty !== null && confirmQty !== originalQty) {
+      quantityHtml = `
+        <td>
+          <div>
+            <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
+            <span class="fw-bold text-dark">${confirmQty}</span><br>
+            <span class="badge bg-warning text-dark mt-1">تم تعديل الكمية</span>
+          </div>
+        </td>
+      `;
+    }
+
     tbody.insertAdjacentHTML('beforeend', `
       <tr>
         <td>
           <div class="d-flex align-items-center">
-            <img src="${item.image || PLACEHOLDER_IMG}" class="part-img-invoice me-3" alt="part">
+            <img src="${imageURL}" class="part-img-invoice me-3" alt="part">
             <div>
               <div class="fw-bold">${item.name}</div>
               <div class="text-muted small">رقم القطعة: ${item.pno}</div>
@@ -177,18 +195,18 @@ function fillInvoice(data) {
           </div>
         </td>
         <td>${unit.toFixed(2)} د.ل</td>
-        <td>${qty}</td>
+        ${quantityHtml}
         <td>${total.toFixed(2)} د.ل</td>
       </tr>
     `);
-  });
-  
+  }
+
   /* —— summary rows —— */
   const shipping = data.client.delivery_price || 0;
   const discount = data.client.discount || 0;
   const total = data.net_amount || 0;
   const subtotals = data.amount || 0;
-  
+
   tbody.insertAdjacentHTML('beforeend', `
     <tr class="summary-row">
       <td colspan="3" class="text-end">المجموع الجزئي:</td>
@@ -207,7 +225,7 @@ function fillInvoice(data) {
       <td>${parseFloat(total).toFixed(2)} د.ل</td>
     </tr>
   `);
-  
+
   /* —— 3. order summary list —— */
   document.getElementById('order-summary-list').innerHTML = `
     <li class="mb-2"><span class="fw-semibold">رقم الطلب:</span> #ORD-${data.invoice_no}</li>
@@ -220,7 +238,7 @@ function fillInvoice(data) {
     </li>
     <li><span class="fw-semibold">حالة الطلب:</span> ${data.shop_confrim ? 'تمت معالجة الطلب' : 'قيد المعالجة'}</li>
   `;
-  
+
   /* —— 4. customer details —— */
   document.getElementById('customer-details-list').innerHTML = `
     <li class="mb-2"><span class="fw-semibold">الاسم:</span> ${data.client_name}</li>
@@ -228,7 +246,7 @@ function fillInvoice(data) {
     <li class="mb-2"><span class="fw-semibold">رقم الهاتف:</span> ${data.client.phone || data.client.mobile || 'غير متوفر'}</li>
     <li><span class="fw-semibold">العنوان:</span> ${data.client.address || 'غير متوفر'}</li>
   `;
-  
+
   /* —— 5. shipping details —— */
   document.getElementById('shipping-details-list').innerHTML = `
     <li class="mb-2"><span class="fw-semibold">طريقة الشحن:</span> ${data.shipping_method || 'الشحن السريع'}</li>
@@ -254,6 +272,22 @@ function fillInvoice(data) {
     ` : ''}
   `;
 }
+
+
+
+async function getProductImageURL(pno, placeholder, baseURL) {
+  try {
+    const response = await fetch(`/api/products/${pno}/get-images`);
+    const images = await response.json();
+    if (images.length > 0 && images[0].image_obj) {
+      return `${baseURL}${images[0].image_obj}`;
+    }
+  } catch (err) {
+    console.warn(`Image fetch failed for PNO: ${pno}`, err);
+  }
+  return placeholder;
+}
+
 
 function printInvoice() {
   try {

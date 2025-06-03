@@ -81,28 +81,48 @@ function updateCartUI() {
     totalAmount += itemTotal;
     
     html += `
-      <div class="cart-item" id="cart-item-${item.pno}">
+      <div class="cart-item d-flex justify-content-between align-items-center mb-3"
+           id="cart-item-${item.pno}">
+        
+        <!-- 1) Image placeholder: we give it an <img> with a data-id and leave src blank for now -->
         <div class="d-flex align-items-center">
-          <div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
-            <div class="spinner-border text-primary" role="status" style="width:1.5rem; height:1.5rem;">
+          <div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" 
+               style="width:50px; height:50px; position: relative;">
+            <!-- Spinner (still show until image loads) -->
+            <div class="spinner-border text-primary spinner-${item.pno}" 
+                 role="status" 
+                 style="width:1.5rem; height:1.5rem; position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);">
               <span class="visually-hidden">Loading...</span>
             </div>
+            <!-- Empty <img> that we will fill in asynchronously -->
+            <img 
+              id="img-${item.pno}" 
+              alt="Image for ${item.pno}"
+              style="width:50px; height:50px; object-fit: contain; border-radius:4px; display: none;"
+            />
           </div>
+          
           <div>
             <h6 class="mb-0">${item.name}</h6>
             <small class="text-muted">| ${item.price.toFixed(2)} د.ل</small>
           </div>
         </div>
+        
+        <!-- 2) Quantity + remove buttons -->
         <div class="d-flex align-items-center">
-          <div class="quantity-control">
+          <div class="quantity-control d-flex align-items-center">
             <button class="btn btn-sm btn-outline-secondary quantity-btn" 
-              onclick="decrementCartQuantity('${item.pno}')">-</button>
+                    onclick="decrementCartQuantity('${item.pno}')">
+              -
+            </button>
             <span class="mx-2">${item.quantity}</span>
             <button class="btn btn-sm btn-outline-secondary quantity-btn" 
-              onclick="incrementCartQuantity('${item.pno}')">+</button>
+                    onclick="incrementCartQuantity('${item.pno}')">
+              +
+            </button>
           </div>
           <button class="btn btn-sm btn-outline-danger ms-2" 
-            onclick="removeFromCart('${item.pno}')">
+                  onclick="removeFromCart('${item.pno}')">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -114,46 +134,92 @@ function updateCartUI() {
   document.getElementById('cartItemsCount').textContent = cart.length;
   document.getElementById('cartTotalAmount').textContent = totalAmount.toFixed(2) + ' د.أ';
 
-  // Fetch images asynchronously
+  // 3) After inserting all items, trigger image fetches
   for (const item of cart) {
     fetchAndUpdateCartItemImage(item.pno);
   }
 }
 
+
 async function fetchAndUpdateCartItemImage(pno) {
   try {
-    const response = await customFetch(`${baseUrl}/api/products/${pno}/get-images`);
+    // 1) Fetch your list of images for this product
+    const rawResponse = await fetch(`/api/products/${pno}/get-images`);
+    if (!rawResponse.ok) {
+      console.error(`Network error fetching images for ${pno}:`, rawResponse.status, rawResponse.statusText);
+      return;
+    }
+
+    const data = await rawResponse.json();
+    console.log("API JSON for", pno, "→", data);
 
     let imageUrl = '';
-    if (response && Array.isArray(response) && response.length > 0) {
-      imageUrl = `${baseUrl}${response[0].image_obj}`;
+    if (Array.isArray(data) && data.length > 0 && data[0].image_obj) {
+      // Build the full URL (make sure baseUrl is defined, with trailing slash if needed)
+      imageUrl = `${baseUrl}${data[0].image_obj}`;
+    } else {
+      console.warn(`No images returned for ${pno} (or 'image_obj' missing)`);
     }
 
-    const cartItemDiv = document.getElementById(`cart-item-${pno}`);
-    if (!cartItemDiv) {
-      
+    // 2) Grab the <img> we inserted by ID
+    const imgEl = document.getElementById(`img-${pno}`);
+    const spinnerEl = document.querySelector(`.spinner-${pno}`);
+
+    if (!imgEl) {
+      console.warn(`Could not find <img id="img-${pno}"> in DOM`);
       return;
     }
-
-    const imgDiv = cartItemDiv.querySelector('.cart-item-img');
-    if (!imgDiv) {
-     
-      return;
+    if (!spinnerEl) {
+      console.warn(`Could not find .spinner-${pno} (the loading spinner)`);
     }
 
     if (imageUrl) {
-      imgDiv.innerHTML = `<img src="${imageUrl}" class="cart-item-img me-2" alt="Image for ${pno}" style="width:50px; height:50px; object-fit: contain; border-radius: 4px;">`;
-    } else {
-      imgDiv.innerHTML = `<div class="cart-item-img me-2 bg-light d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
-        <i class="bi bi-image text-muted"></i>
-      </div>`;
-     
-    }
+      // 3) Temporarily set src, and wait until it actually loads
+      imgEl.src = imageUrl;
 
+      // When the image successfully loads, hide the spinner and show the <img>
+      imgEl.onload = () => {
+        imgEl.style.display = 'block';
+        if (spinnerEl) spinnerEl.style.display = 'none';
+      };
+
+      // If the image fails to load (404, CORS, etc.), show a “broken image” icon or placeholder:
+      imgEl.onerror = () => {
+        console.error(`Failed to load image for ${pno} at ${imageUrl}`);
+        // Replace <img> with a fallback icon:
+        imgEl.style.display = 'none';
+        if (spinnerEl) spinnerEl.style.display = 'none';
+
+        const parentDiv = imgEl.parentElement;
+        if (parentDiv) {
+          parentDiv.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center" 
+                 style="width:50px; height:50px;">
+              <i class="bi bi-image text-muted"></i>
+            </div>
+          `;
+        }
+      };
+    } else {
+      // No image URL → immediately remove spinner and show placeholder
+      if (imgEl) imgEl.style.display = 'none';
+      if (spinnerEl) spinnerEl.style.display = 'none';
+
+      const parentDiv = imgEl.parentElement;
+      if (parentDiv) {
+        parentDiv.innerHTML = `
+          <div class="d-flex align-items-center justify-content-center" 
+               style="width:50px; height:50px;">
+            <i class="bi bi-image text-muted"></i>
+          </div>
+        `;
+      }
+    }
   } catch (error) {
-    
+    console.error("Exception in fetchAndUpdateCartItemImage:", error);
   }
 }
+
 
 
 
@@ -380,78 +446,169 @@ function openCartPage() {
   window.location.href = "/hozma/hozmaCart"; // Update this to your actual cart page URL
 }
 
-  
+// 1) Global map to store image URLs (or null if “no image”)
+const imagesMap = {}; // { [pno]: "http://…/foo.jpg"  or  null }
+
+// 2) Call this whenever the ‘cart’ array changes, or when the page first loads.
 function updateCartPageUI() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartContainer = document.getElementById('cartItems');
-  
+
   if (cart.length === 0) {
-      cartContainer.innerHTML = `
+    cartContainer.innerHTML = `
       <div class="auto-cart-empty">
-          <i class="bi bi-cart-x auto-cart-empty-icon"></i>
-          <h5>سلة التسوق فارغة</h5>
-          <p class="text-muted">لم تقم بإضافة أي قطع غيار بعد</p>
-          <a href="/products" class="btn btn-outline-primary mt-2">
+        <i class="bi bi-cart-x auto-cart-empty-icon"></i>
+        <h5>سلة التسوق فارغة</h5>
+        <p class="text-muted">لم تقم بإضافة أي قطع غيار بعد</p>
+        <a href="/products" class="btn btn-outline-primary mt-2">
           <i class="bi bi-arrow-left"></i> متابعة التسوق
-          </a>
+        </a>
       </div>
-      `;
-      
-      document.getElementById('summaryItemsCount').textContent = '0';
-      document.getElementById('summarySubtotal').textContent = '0.00 د.أ';
-      document.getElementById('summaryTotalAmount').textContent = '0.00 د.أ';
-      return;
+    `;
+    document.getElementById('summaryItemsCount').textContent = '0';
+    document.getElementById('summarySubtotal').textContent = '0.00 د.أ';
+    document.getElementById('summaryTotalAmount').textContent = '0.00 د.أ';
+    return;
   }
-  
+
   let html = '';
   let totalAmount = 0;
 
   cart.forEach(item => {
-      const itemTotal = item.price * item.quantity;
-      totalAmount += itemTotal;
-      
-      html += `
-      <div class="auto-cart-item" id="cart-item-${item.pno}">
-          <div class="d-flex align-items-center" style="min-width:0;">
-              <div class="auto-cart-img cart-item-img me-2 d-flex align-items-center justify-content-center bg-light"
-                   style="width:50px; height:50px;">
-                  <i class="bi bi-image text-muted"></i>
-              </div>
-              <div class="auto-cart-info">
-                  <h6 class="auto-part-title mb-1">${item.name}</h6>
-                  <div class="auto-part-number">${item.pno}</div>
-                  ${item.compatibility ? `<div class="part-compatibility"><i class="bi bi-check-circle"></i> متوافق مع ${item.compatibility}</div>` : ''}
-                  <div class="auto-part-price">${item.price.toFixed(2)} د.ل للقطعة</div>
-                  ${item.origin ? `<div class="auto-part-origin">${item.origin}</div>` : ''}
-              </div>
-          </div>
-          <div class="d-flex align-items-center">
-              <button class="auto-remove-btn" onclick="removeFromCart('${item.pno}')">
-                  <i class="bi bi-trash"></i>
-              </button>
-              <div class="auto-qty-control">
-                  <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
-                          onclick="decrementCartQuantity('${item.pno}')">-</button>
-                  <input type="text" class="auto-qty-value mx-2" id="qty-${item.pno}" 
-                         value="${item.quantity}" readonly>
-                  <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
-                          onclick="incrementCartQuantity('${item.pno}')">+</button>
-              </div>
-          </div>
-      </div>
-      `;
+    const itemTotal = item.price * item.quantity;
+    totalAmount += itemTotal;
 
-      
+    // Check imagesMap to see if we already fetched for this pno:
+    const imgRecord = imagesMap[item.pno];
+    // imgRecord === undefined  → not fetched yet
+    // imgRecord === null       → fetched & no usable image
+    // imgRecord === "http://…" → fetched & valid image URL
+
+    let imageSection = "";
+
+    if (imgRecord === undefined) {
+      // We have not fetched yet. Show spinner + hidden img,
+      // then immediately start the fetch.
+      imageSection = `
+        <div class="auto-cart-img cart-item-img me-2 d-flex align-items-center justify-content-center bg-light"
+             style="width:50px; height:50px; position: relative;">
+          <div class="spinner-border text-primary spinner-${item.pno}"
+               role="status"
+               style="width:1.5rem; height:1.5rem; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <img
+            id="img-${item.pno}"
+            alt="الصورة لـ ${item.pno}"
+            style="width:50px; height:50px; object-fit: contain; border-radius:4px; display: none;"
+          />
+        </div>
+      `;
+      // Kick off the fetch only once:
+      fetchAndUpdateCartItemImage1(item.pno);
+
+    } else if (imgRecord === null) {
+      // We fetched already but there was no valid image → show fallback icon
+      imageSection = `
+        <div class="auto-cart-img cart-item-img me-2 d-flex align-items-center justify-content-center bg-light"
+             style="width:50px; height:50px;">
+          <i class="bi bi-image text-muted"></i>
+        </div>
+      `;
+    } else {
+      // imgRecord is a non-empty URL → show the <img> directly, no spinner
+      imageSection = `
+        <div class="auto-cart-img cart-item-img me-2 d-flex align-items-center justify-content-center bg-light"
+             style="width:50px; height:50px;">
+          <img
+            src="${imgRecord}"
+            alt="الصورة لـ ${item.pno}"
+            style="width:50px; height:50px; object-fit: contain; border-radius:4px; display: block;"
+          />
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="auto-cart-item d-flex justify-content-between align-items-center mb-3"
+           id="cart-item-${item.pno}">
+        
+        <!-- IMAGE AREA -->
+        <div class="d-flex align-items-center" style="min-width: 0;">
+          ${imageSection}
+          
+          <div class="auto-cart-info">
+            <h6 class="auto-part-title mb-1">${item.name}</h6>
+            <div class="auto-part-number">${item.pno}</div>
+            ${item.compatibility ? `<div class="part-compatibility">
+              <i class="bi bi-check-circle"></i> متوافق مع ${item.compatibility}
+            </div>` : ''}
+            <div class="auto-part-price">${item.price.toFixed(2)} د.ل للقطعة</div>
+            ${item.origin ? `<div class="auto-part-origin">${item.origin}</div>` : ''}
+          </div>
+        </div>
+        
+        <!-- QUANTITY / REMOVE BUTTONS -->
+        <div class="d-flex align-items-center">
+          <button class="auto-remove-btn" onclick="removeFromCart('${item.pno}')">
+            <i class="bi bi-trash"></i>
+          </button>
+          <div class="auto-qty-control d-flex align-items-center ms-3">
+            <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
+                    onclick="decrementCartQuantity('${item.pno}')">-</button>
+            <input type="text" class="auto-qty-value mx-2" id="qty-${item.pno}" 
+                   value="${item.quantity}" readonly>
+            <button class="btn btn-sm btn-outline-secondary auto-qty-btn" 
+                    onclick="incrementCartQuantity('${item.pno}')">+</button>
+          </div>
+        </div>
+      </div>
+    `;
   });
 
   cartContainer.innerHTML = html;
   document.getElementById('summaryItemsCount').textContent = totalItems;
-  document.getElementById('summarySubtotal').textContent = totalAmount.toFixed(2) + ' د.ل ';
-  document.getElementById('summaryTotalAmount').textContent = totalAmount.toFixed(2) + ' د.ل ';
-  for (const item of cart) {
-    fetchAndUpdateCartItemImage(item.pno);
-  }
+  document.getElementById('summarySubtotal').textContent = totalAmount.toFixed(2) + ' د.ل';
+  document.getElementById('summaryTotalAmount').textContent = totalAmount.toFixed(2) + ' د.ل';
 }
+
+
+// 2) This function fetches once per pno and updates imagesMap[pno]. Then it re-renders:
+async function fetchAndUpdateCartItemImage1(pno) {
+  // If we already fetched once, do nothing:
+  if (imagesMap[pno] !== undefined) {
+    return;
+  }
+
+  try {
+    const rawResponse = await fetch(`/api/products/${pno}/get-images`);
+    if (!rawResponse.ok) {
+      console.error(`Network error fetching images for ${pno}:`, rawResponse.status, rawResponse.statusText);
+      imagesMap[pno] = null;
+      updateCartPageUI();
+      return;
+    }
+
+    const data = await rawResponse.json();
+    console.log("API JSON for", pno, "→", data);
+
+    if (Array.isArray(data) && data.length > 0 && data[0].image_obj) {
+      // Build the full URL:
+      const fullUrl = `${baseUrl}${data[0].image_obj}`;
+      imagesMap[pno] = fullUrl;
+    } else {
+      // No valid image returned
+      imagesMap[pno] = null;
+    }
+  } catch (error) {
+    console.error("Exception in fetchAndUpdateCartItemImage1:", error);
+    imagesMap[pno] = null;
+  }
+
+  // Each time we get a response (either an image URL or null), re-render:
+  updateCartPageUI();
+}
+
 
 
 async function checkout() {
@@ -579,6 +736,7 @@ window.location.href = `/hozma/invoice/${invoiceNo}`;
 document.addEventListener('DOMContentLoaded', function () {
   console.log("Page loaded. Initializing cart UI...");
   updateCartUI();
+  updateCartPageUI(); // Update cart page UI as well
 });
 
 (() => {
