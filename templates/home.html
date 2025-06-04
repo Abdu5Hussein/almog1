@@ -1033,7 +1033,7 @@
                     <a class="nav-link" id="item-1-17" onclick="window.open('/hozma/images/upload/', '_blank', 'width=820,height=1024'); return false;">
                       رفع الصور
                   </a>
-                  
+
                     {% if perms.almogOil.template_local_item_reports %}
                         <a class="nav-link" id="item-1-2">تقارير الاصناف المحلية</a>
                     {% endif %}
@@ -1087,8 +1087,24 @@
                 ><i class="fas fa-chevron-down"></i>فواتير شراء محلية</a
               >
               <div class="sub-menu">
-                <a class="nav-link" id="item-2-1">Subitem</a>
-                <a class="nav-link" id="item-2-2">Subitem</a>
+                  {% if perms.almogOil.template_buy_invoice_entry %}
+                      <a class="nav-link" id="item-2-1">ادخال فاتورة شراء</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_invoices %}
+                      <a class="nav-link" id="item-2-2">فواتير الشراء</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_price_modifications %}
+                      <a class="nav-link" id="item-2-3">تعديل اسعار البيع</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_invoice_settlement %}
+                      <a class="nav-link" id="item-2-4">تسوية حساب الفواتير</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_temp_item_posting %}
+                      <a class="nav-link" id="item-2-5">ترحيل الاصناف المؤقتة</a>
+                  {% endif %}
+                  {% if perms.almogOil.template_buy_invoice_inventory %}
+                      <a class="nav-link" id="item-2-6">جرد فواتير الشراء</a>
+                  {% endif %}
               </div>
             </li>
             {% if perms.almogOil.category_buy_invoice %}
@@ -1876,6 +1892,34 @@
           height: 700,
         },
         {
+          id: "item-2-1",
+          url: "/add-buy-invoice",
+          name: "add-buy-invoice",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-2-2",
+          url: "/b_invoice_management",
+          name: "b_invoice_management",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-2-3",
+          url: "/buy-invoice_edit-prices",
+          name: "buy-invoice_edit-prices",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-2-5",
+          url: "/temp_confirm",
+          name: "temp_confirm",
+          width: 1100,
+          height: 700,
+        },
+        {
           id: "item-3-1",
           url: "/add-buy-invoice",
           name: "add-buy-invoice",
@@ -1956,6 +2000,13 @@
           id: "item-13-1",
           url: "/sources/management",
           name: "sources-management/",
+          width: 1100,
+          height: 700,
+        },
+        {
+          id: "item-13-2",
+          url: "/sources/report",
+          name: "sources-report/",
           width: 1100,
           height: 700,
         },

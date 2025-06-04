@@ -587,7 +587,7 @@ def update_itemvalue(request):
         item.itemvalue = new_itemvalue
         item.save()
 
-        movement_Record = almogOil_Models.Clientstable.objects.create(
+        movement_Record = almogOil_Models.ProductsMovementHistory.objects.create(
             itemno=item.itemno,
             itemname=item.itemname,
             maintype=item.itemmain,

@@ -598,7 +598,7 @@
                         <label for="type" class="form-label">نوع المستخدم</label>
                       </div>
                       <select class="form-control" id="type" name="type">
-                      
+
                         <option value="driver">سائق</option>
                         <option value="Shop_employee" selected>موظف متجر</option>
                         <option value="Hozma_employee">موظف حزمة</option>
@@ -680,6 +680,7 @@
           { title: "رقم الموظف", field: "employee_id", hozAlign: "center", width: 120 },
           { title: "اسم الموظف", field: "name", hozAlign: "right" },
           { title: "رقم الهاتف", field: "phone", hozAlign: "center" },
+          { title: "القسم", field: "type", hozAlign: "center" },
           {
             title: "المرتب الشهري",
             field: "salary",
@@ -932,6 +933,7 @@ document.getElementById('edit-btn').addEventListener("click", function () {
             document.getElementById("last_transaction").value = data.last_transaction || '';
             document.getElementById("start_date").value = data.start_date || '';
             document.getElementById("end_date").value = data.end_date || '';
+            document.getElementById("type").value = data.type || ''; // Default to 'Shop_employee' if not set
 
             // Handle contract image (if exists)
             if (data.contract_image) {

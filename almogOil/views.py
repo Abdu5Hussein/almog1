@@ -2327,6 +2327,15 @@ def sources_management_View(request):
     context = {}
     return render(request,'sources-management.html',context)
 
+@login_required
+@permission_required('almogOil.category_suppliers', raise_exception=True)
+def sources_reports_View(request):
+    types = models.Clienttypestable.objects.all()
+    context = {
+       'types':types,
+    }
+    return render(request,'sources-report.html',context)
+
 
 class AddToCartView(APIView):
     def post(self, request):

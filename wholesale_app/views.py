@@ -315,3 +315,10 @@ def Settings(request):
 @login_required
 def uploadimages(request):
     return render(request, 'CarPartsTemplates/source/images_uploaders.html')
+
+
+@login_required
+def hozmaclient(request):
+    return render(request, 'CarPartsTemplates/hozmaclient.html')
+
+

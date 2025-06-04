@@ -15,6 +15,7 @@ import datetime
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from datetime import timedelta
 
 
 class AllClientsTable(models.Model):
@@ -43,9 +44,12 @@ class AllClientsTable(models.Model):
     geo_location = models.CharField(max_length=200, blank=True, null=True)
     delivery_price = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     discount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    is_online = models.BooleanField(default=False)
+    last_activity = models.DateTimeField(auto_now=True)
+
     # New fields
-    username = models.CharField(max_length=150, unique=True,null=True)  # Ensure username is unique
-    password = models.CharField(max_length=255,null=True)  # This will store the hashed password
+    username = models.CharField(max_length=150, unique=True,blank=True,null=True)  # Ensure username is unique
+    password = models.CharField(max_length=255,blank=True,null=True)  # This will store the hashed password
 
     class Meta:
         managed = True
@@ -59,6 +63,13 @@ class AllClientsTable(models.Model):
         """Checks if the given raw password matches the stored hash."""
         from django.contrib.auth.hashers import check_password
         return check_password(raw_password, self.password)
+
+    @property
+    def is_still_online(self):
+        """
+        Consider client online if their last_activity was within the last hour.
+        """
+        return self.last_activity >= timezone.now() - timedelta(hours=1)
 
 
 class AllSourcesTable(models.Model):
@@ -87,7 +98,7 @@ class AllSourcesTable(models.Model):
     username = models.CharField(max_length=150,null=True, blank=True)  # Ensure username is unique
     password = models.CharField(max_length=255,null=True, blank=True)  # This will store the hashed password
     commission = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
-
+    client_id = models.IntegerField(unique=True, blank=True, null=True)  # Unique identifier for the source
 
 
     class Meta:
@@ -206,7 +217,7 @@ class SellinvoiceTable(models.Model):
         managed = True
         db_table = 'SellInvoiceTable'
 
-class Clientstable(models.Model):
+class ProductsMovementHistory(models.Model):
     fileid = models.AutoField(db_column='FileId', primary_key=True)  # Field name made lowercase.
     pno_instance = models.ForeignKey('Mainitem', on_delete=models.DO_NOTHING)
     itemno = models.CharField(db_column='itemno', max_length=150, blank=True, null=True)  # Field name made lowercase.
@@ -223,7 +234,7 @@ class Clientstable(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'ClientsTable'
+        db_table = 'ProductsMovementHistory'
 
 
 class Companytable(models.Model):
@@ -941,8 +952,8 @@ class EmployeesTable(models.Model):
 
 
     # New fields
-    username = models.CharField(max_length=150, unique=True,null=True)  # Ensure username is unique
-    password = models.CharField(max_length=255,null=True)  # This will store the hashed password
+    username = models.CharField(max_length=150, unique=True,blank=True,null=True)  # Ensure username is unique
+    password = models.CharField(max_length=255,blank=True,null=True)  # This will store the hashed password
     employee_image = models.ImageField(upload_to='employee_images/', blank=True, null=True)  # Field for employee image
     contract_image = models.ImageField(upload_to='employee_contracts/', blank=True, null=True)
 

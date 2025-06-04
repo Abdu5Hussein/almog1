@@ -917,7 +917,7 @@
           })
             .then((response) => response.json())
             .then((data) => {
-              table.setData(data.results || data); // Use .results if paginated, else data
+              table.setData(data.data || data); // Use .results if paginated, else data
               updatePagination(data.last_page || 1, data.page_no || 1);
             })
             .catch((error) => console.error("Error fetching data:", error))

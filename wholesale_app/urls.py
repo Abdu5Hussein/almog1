@@ -84,6 +84,7 @@ urlpatterns = [
     path('api/return-policy/', HozmaApi_views.return_policy_api_view, name='return_policy_api'),
     path('edit-terms-and-conditions/', views.edit_terms_and_conditions, name='edit_terms_and_conditions'),
     path('return-policy/edit/', views.edit_return_policy, name='edit_return_policy'),
+    path('hozmaclient/', views.hozmaclient, name='hozmaclient'),
     path('faq/delete/<int:faq_id>/', views.faq_delete, name='faq_delete'),  
     path('api/item-categories/', HozmaApi_views.get_item_categories_with_counts, name='item-categories-with-counts'),
     path('api/send-whatsapp-contact/', HozmaApi_views.send_whatsapp_message, name='send-whatsapp'),

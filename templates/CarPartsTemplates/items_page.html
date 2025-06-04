@@ -53,6 +53,15 @@
                     <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.6rem;" aria-live="polite" aria-atomic="true">0</span>
                 </a>
               </li>
+              <!-- Logout Button -->
+<!-- Logout Button -->
+<li class="nav-item ms-2">
+  <button onclick="signOutClient()" class="btn btn-outline-light fw-bold py-1 px-3" style="border-radius: 20px; min-width: 100px; font-size: 0.85rem;">
+    <i class="bi bi-box-arrow-right me-1"></i> تسجيل الخروج
+  </button>
+</li>
+
+
             
               <!-- Account Button -->
               <li class="nav-item ms-2">
@@ -556,6 +565,31 @@
   <script src="{% static 'hozma/js/cart.js' %}"></script>
   <script src="{% static 'hozma/js/itemmain.js' %}"></script>
   <script src="{% static 'HOZMA_FRONT/JS/item_page.js' %}"></script>
+  <script>
+async function signOutClient() {
+    const sessionData = JSON.parse(localStorage.getItem("session_data@username"));
+    const role = JSON.parse(localStorage.getItem("session_data@role"));
+    const payload = { username: sessionData, role: role };
+  
+    const res = await fetch("/mobile/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+  
+    if (res.ok) {
+      localStorage.clear();
+      window.location.href = "/hozma/hozmalogin/";
+    } else {
+      const err = await res.json();
+      console.error("Logout error:", err);
+      alert("حدث خطأ أثناء تسجيل الخروج. حاول مرة أخرى.");
+    }
+  }
+  </script>
 </body>
 
 </html>

@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 import json
 import random
+import re
 from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Count, Sum, Avg, F, Q, Exists, Case, When, OuterRef,Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
 from django.db.models.functions import TruncMonth, TruncDay
@@ -1297,12 +1298,14 @@ def edit_source_info(request, source_id):
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
 
-def safe_csv(value):
-    return [v.strip() for v in (value or '').split(',') if v.strip()]
 
+
+def safe_csv(value):
+    # Splits on both ',' and ';'
+    return [v.strip() for v in re.split(r'[;,]', value or '') if v.strip()]
 
 def normalize_oem_list(oem_string):
-    return set(o.strip() for o in str(oem_string).split(',') if o.strip())
+    return set(o.strip() for o in re.split(r'[;,]', str(oem_string)) if o.strip())
 
 
 @api_view(['POST'])
@@ -1310,10 +1313,21 @@ def normalize_oem_list(oem_string):
 @authentication_classes([CookieAuthentication])
 def create_mainitem_by_source(request):
     data = request.data.copy()
-    required = ['oem_number', 'companyproduct', 'buyprice', 'showed', 'source']
-    if missing := [f for f in required if not data.get(f)]:
-        return Response({'error': f'الحقول المفقودة: {", ".join(missing)}'}, status=400)
 
+    # Define required fields and their Arabic labels
+    required_fields = {
+        'oem_number': 'رقم OEM',
+        'companyproduct': 'الشركة المصنعة',
+        'buyprice': 'سعر الشراء',
+        'showed': 'الكمية المعروضة',
+        'source': 'المصدر'
+    }
+
+    # Check for missing fields
+    missing = [arabic for key, arabic in required_fields.items() if not data.get(key)]
+    
+    if missing:
+        return Response({'error': f'الحقول التالية مفقودة: {", ".join(missing)}'}, status=400)
     try:
         
         company = str(data.get('companyproduct', '')).strip()
@@ -1327,7 +1341,9 @@ def create_mainitem_by_source(request):
         source_pno = str(data.get('source_pno') or pno).strip()
         oem_in = str(data.get('oem_number', ''))
         external_oem = str(data.get('external_oem', ''))
-        oem_csv = ",".join(filter(None, [oem_in.strip(), external_oem.strip()]))
+        all_oems = safe_csv(oem_in) + safe_csv(external_oem)
+        oem_csv = ",".join(all_oems)
+
 
         
         incoming_oems = normalize_oem_list(oem_csv)
@@ -1358,7 +1374,7 @@ def create_mainitem_by_source(request):
 
             data['costprice'] = str(costprice)
         except almogOil_models.AllSourcesTable.DoesNotExist:
-            return Response({'error': f'المصدر "{source}" غير موجود في جدول AllSourcesTable'}, status=400)
+            return Response({'error': f'المصدر "{source}" غير موجود في جدول الموردين'}, status=400)
         
         existing_product = almogOil_models.Mainitem.objects.filter(
             source__exact=source,
@@ -1381,7 +1397,7 @@ def create_mainitem_by_source(request):
             if serializer.is_valid():
                 serializer.save()
                 return Response({
-                    'message': 'تم تحديث الحقول showed و costprice و buyprice للمنتج المطابق لنفس المصدر و source_pno',
+                    'message': 'تم تحديث الحقول: الكمية المعروضة، سعر التكلفة، وسعر الشراء للمنتج المطابق لنفس المورد ورقم الخص بالمورد.',
                     'data': data
                 }, status=200)
             return Response(serializer.errors, status=400)
@@ -1407,7 +1423,7 @@ def create_mainitem_by_source(request):
                 if serializer.is_valid():
                     serializer.save()
                     return Response({
-                        'message': 'تم تحديث الحقول showed و costprice و buyprice للمنتج الموجود مسبقاً',
+                        'message': ' تم تحديث الحقول الكمية المعروضة، وسعر التكلفة، وسعر الشراء للمنتج الموجود مسبقًا',
                         'data': data
                     }, status=200)
                 return Response(serializer.errors, status=400)
@@ -2690,20 +2706,7 @@ def get_item_categories_with_counts(request):
         "Requires `clientid` and `message` in the POST payload."
     ),
     request=wholesale_serializers.WhatsAppMessageSerializer,
-    responses={
-        200: {
-            "type": OpenApiTypes.OBJECT,
-            "properties": {
-                "status": {"type": OpenApiTypes.STR},
-                "client": {"type": OpenApiTypes.INT},
-                "number": {"type": OpenApiTypes.STR},
-                "green_api_response": {"type": OpenApiTypes.OBJECT},
-            },
-        },
-        400: OpenApiResponse(description="Bad request or missing fields."),
-        404: OpenApiResponse(description="Client not found."),
-        502: OpenApiResponse(description="Failed to send message via external API."),
-    },
+
     tags=["Messaging"],
 )
 @api_view(["POST"])
@@ -2797,16 +2800,7 @@ def create_terms_and_conditions(request):
         "This view fetches the currently active `ReturnPolicy` instance and applies the provided data."
     ),
     request=wholesale_serializers.ReturnPolicySerializer,
-    responses={
-        200: {
-            "type": OpenApiTypes.OBJECT,
-            "properties": {
-                "success": {"type": OpenApiTypes.BOOL},
-                "message": {"type": OpenApiTypes.STR},
-            },
-        },
-        400: OpenApiResponse(description="Validation errors."),
-    },
+    
     tags=["Return Policy"],
 )
 @api_view(["POST"])

@@ -90,6 +90,8 @@ CHANNEL_LAYERS = {
 }
 # Configure JWT settings
 REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,  # default number of items per page
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
     'almogOil.authentication.CookieAuthentication',  # Adjust the path based on your app's structure

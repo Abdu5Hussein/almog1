@@ -148,7 +148,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Clientstable
+        model = models.ProductsMovementHistory
         fields = '__all__'
 
 

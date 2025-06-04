@@ -51,8 +51,7 @@ from rest_framework.permissions import IsAuthenticated
 # Local imports
 from .models import (
     EmployeesTable, CartItem, AllClientsTable, OrderQueue, EmployeeQueue,
-    SupportChatConversation, FeedbackMessage, Feedback, SupportChatMessageSys,
-    Clientstable, AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable,
+    SupportChatConversation, FeedbackMessage, Feedback, SupportChatMessageSys, AllSourcesTable, SellInvoiceItemsTable, SellinvoiceTable,
     TransactionsHistoryTable, BuyInvoiceItemsTable, Buyinvoicetable, LostAndDamagedTable,
     Modeltable, Imagetable, Mainitem, MeasurementsTable, Maintypetable, Sectionstable,
     StorageTransactionsTable, Subsectionstable, Subtypetable, Companytable, Manufaccountrytable,
@@ -167,8 +166,8 @@ def filter_clients(request):
         if not pno:
             return Response({'error': 'Missing pno parameter'}, status=400)
 
-        clients = Clientstable.objects.filter(pno=pno)
-        serializer = ClientSerializer(clients, many=True)
+        ProductsMovement = models.ProductsMovementHistory.objects.filter(pno=pno)
+        serializer = ClientSerializer(ProductsMovement, many=True)
 
         return Response(serializer.data)
 
@@ -192,7 +191,7 @@ def filter_clients_input(request):
         filters = request.data  # This will automatically parse the JSON into a dictionary
 
         # Build the query based on the filters
-        queryset = Clientstable.objects.all()
+        queryset = models.ProductsMovementHistory.objects.all()
         filters_applied = False
 
         # Apply filters if they exist in the request
@@ -607,8 +606,8 @@ tags=["Products"],
 @permission_classes([IsAuthenticated])
 def get_clients(request):
     try:
-        # Query the database for all Clientstable entries
-        items = Clientstable.objects.all()
+        # Query the database for all ProductsMovement entries
+        items = models.ProductsMovementHistory.objects.all()
         serializer = ClientSerializer(items, many=True)  # Serialize the queryset
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
@@ -740,7 +739,7 @@ def add_lost_damaged(request):
             date=date
         )
 
-        movement_record = Clientstable.objects.create(
+        movement_record = models.ProductsMovementHistory.objects.create(
             itemno=itemno,
             itemname=itemname,
             maintype=itemmain,
@@ -1865,7 +1864,7 @@ def confirm_temp_invoice(request):
                 main.itemno = item['item_no']
                 main.save()
 
-                movement_Record = Clientstable.objects.create(
+                movement_Record = models.ProductsMovementHistory.objects.create(
                     itemno=main.itemno,
                     itemname=main.itemname,
                     maintype=main.itemmain,
@@ -2000,7 +1999,7 @@ def BuyInvoiceItemCreateView(request):
 
                 confirm_message = "confirmed"
 
-                movement_Record = Clientstable.objects.create(
+                movement_Record = models.ProductsMovementHistory.objects.create(
                     itemno=main.itemno,
                     itemname=main.itemname,
                     maintype=main.itemmain,

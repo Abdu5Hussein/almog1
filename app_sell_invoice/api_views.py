@@ -289,7 +289,7 @@ def Sell_invoice_create_item(request):
                 serializer.save()
 
 
-                movement_record = almogOil_models.Clientstable.objects.create(
+                movement_record = almogOil_models.ProductsMovementHistory.objects.create(
                     itemno=product.itemno,
                     itemname=product.itemname,
                     maintype=product.itemmain,

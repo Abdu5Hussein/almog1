@@ -166,7 +166,8 @@ async function fillInvoice(data) {
     subtotal += total;
 
     // Get image
-    const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
+// Inside fillInvoice(data):
+const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
 
     // Conditional quantity display
     let quantityHtml = `<td>${qty}</td>`;

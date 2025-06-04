@@ -1,6 +1,8 @@
 from decimal import Decimal
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.core.paginator import Paginator
+
 from django.contrib.auth import authenticate, login
 from rest_framework import status
 from django.contrib.contenttypes.models import ContentType
@@ -145,10 +147,6 @@ def logout_view(request):
     ''',
     tags=["User Management"],
 )
-
-
-
-
 @api_view(["POST"])
 @authentication_classes([])      # no DRF authentication for this endpoint
 @permission_classes([AllowAny])  # anyone may hit it
@@ -2082,7 +2080,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
                     )
 
                 # Add to product movement history
-                models.Clientstable.objects.create(
+                models.ProductsMovementHistory.objects.create(
                     itemno=mainitem.itemno,
                     itemname=mainitem.itemname,
                     maintype=mainitem.itemmain,
@@ -2267,6 +2265,122 @@ def accept_payment_req(request, id):
 """ Sources Related Api's """
 
 @extend_schema(
+description="""filter all sources from DB""",
+tags=["Sources"],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def filter_all_sources(request):
+    try:
+        filters = request.data  # Get the filters from the request body
+
+        # Default query
+        queryset = models.AllSourcesTable.objects.all()
+
+        # Apply filters (ID, Name, Email, etc.)
+        if filters.get("id"):
+            queryset = queryset.filter(clientid__icontains=filters["id"])
+        if filters.get("name"):
+            queryset = queryset.filter(name__icontains=filters["name"])
+        if filters.get("email"):
+            queryset = queryset.filter(email__icontains=filters["email"])
+        if filters.get("phone"):
+            queryset = queryset.filter(phone__icontains=filters["phone"])
+        if filters.get("mobile"):
+            queryset = queryset.filter(mobile__icontains=filters["mobile"])
+        if filters.get("subtype"):
+            queryset = queryset.filter(category__icontains=filters["subtype"])
+
+        # Date range filter
+        fromdate = filters.get('fromdate', '').strip()
+        todate = filters.get('todate', '').strip()
+
+        if fromdate and todate:
+            try:
+                # Parse dates
+                from_date_obj = make_aware(datetime.strptime(fromdate, "%Y-%m-%d"))
+                to_date_obj = make_aware(datetime.strptime(todate, "%Y-%m-%d")) + timedelta(days=1) - timedelta(seconds=1)
+
+                # Apply date range filter
+                queryset = queryset.filter(last_transaction__range=[from_date_obj, to_date_obj])
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prepare the data
+        sources_data = []
+        for source in queryset:
+            client_id = source.client_id
+            try:
+                source_object = models.AllClientsTable.objects.get(clientid=client_id)
+                exists = True
+            except models.AllClientsTable.DoesNotExist:
+                exists = False
+            balance = calculate_balance_for_instance(source_object) if exists else 0
+
+            # Apply balance filters (Paid, Debtor, Creditor)
+            filter_type = filters.get("filter")
+            if filter_type == "paid" and balance != 0:
+                continue  # Skip if balance is not zero
+            elif filter_type == "debtor" and balance >= 0:
+                continue  # Skip if balance is not negative
+            elif filter_type == "creditor" and balance <= 0:
+                continue  # Skip if balance is not positive
+            if fromdate and todate:
+                # Fetch total credit for specific client_id and where details = "دفعة على حساب"
+                specific_credit_data = models.TransactionsHistoryTable.objects.filter(
+                    client_object=client_id, details="دفعة على حساب", registration_date__range=[from_date_obj, to_date_obj]
+                ).aggregate(total_specific_credit=Sum('credit'))
+            else:
+                # Fetch total credit for specific client_id and where details = "دفعة على حساب"
+                specific_credit_data = models.TransactionsHistoryTable.objects.filter(
+                    client_object=client_id, details="دفعة على حساب"
+                ).aggregate(total_specific_credit=Sum('credit'))
+
+            total_specific_credit = specific_credit_data.get('total_specific_credit') or 0
+
+            # Add the filtered client data
+            sources_data.append(
+                {
+                    "clientid": source.clientid,
+                    "loan_limit": source.loan_limit,
+                    "name": source.name,
+                    "address": source.address,
+                    "email": source.email,
+                    "phone": source.phone,
+                    "mobile": source.mobile,
+                    "subtype": source.subtype,
+                    "category": source.category,
+                    "last_transaction_amount": source.last_transaction_amount,
+                    "last_transaction": source.last_transaction,
+                    "balance": balance,
+                    "paid_total": total_specific_credit,
+                }
+            )
+
+        # Pagination parameters from the request
+        page_number = int(filters.get("page") or 1)
+        page_size = int(filters.get("size") or 100)
+
+        # Create paginator
+        paginator = Paginator(sources_data, page_size)
+        page_obj = paginator.get_page(page_number)
+
+        # Prepare the response
+        response = {
+            "data": list(page_obj),  # Convert the current page items to a list
+            "last_page": paginator.num_pages,  # Total number of pages
+            "total_rows": paginator.count,  # Total number of rows
+            "page_size": page_size,
+            "page_no": page_number,
+        }
+        return Response(response)
+
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": f"Internal Server Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@extend_schema(
     description="Manage sources",
     tags=["Sources"]
 )
@@ -2300,11 +2414,26 @@ class SourcesViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(data=data)
         if serializer.is_valid():
-            serializer.save(type="مورد")
+            # Save the source (AllSourcesTable) and also create the client (AllClientsTable)
+            source_instance = serializer.save(type="مورد")
+            # Use the same data for AllClientsTable, just change the model
+            client_serializer = serializers.AllClientsTableSerializer(data=serializer.data)
+            if client_serializer.is_valid():
+                client_serializer.save()
+            else:
+                # If client creation fails, rollback source creation
+                source_instance.delete()
+                return Response({
+                    'status': 'error',
+                    'message': 'خطأ في إنشاء العميل.',
+                    'message_en': 'Client creation failed.',
+                    'errors': client_serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             return Response({
                 'status': 'success',
-                'message': 'تم إنشاء المورد بنجاح!',
-                'message_en': 'Record created successfully!'
+                'message': 'تم إنشاء المورد والعميل بنجاح!',
+                'message_en': 'Source and client created successfully!'
             }, status=status.HTTP_201_CREATED)
         else:
             return Response({
@@ -2314,6 +2443,53 @@ class SourcesViewSet(viewsets.ModelViewSet):
                 'data': data,
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Apply pagination
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = serializer.data
+
+            # Calculate balance for each source object
+            for idx, source_obj in enumerate(page):
+                try:
+                    client = AllClientsTable.objects.get(clientid=source_obj.client_id)
+                    balance = calculate_balance_for_instance(client)
+                except AllClientsTable.DoesNotExist:
+                    balance = None
+                data[idx]['balance'] = str(balance) if balance is not None else 0
+
+            return Response({
+                "data": data,
+                "last_page": paginator.page.paginator.num_pages,
+                "total_rows": paginator.page.paginator.count,
+                "page_size": paginator.get_page_size(request),
+                "page_no": paginator.page.number
+            }, status=status.HTTP_200_OK)
+
+        # In case pagination doesn't apply
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        for idx, source_obj in enumerate(queryset):
+            try:
+                client = AllClientsTable.objects.get(clientid=source_obj.client_id)
+                balance = calculate_balance_for_instance(client)
+            except AllClientsTable.DoesNotExist:
+                balance = None
+            data[idx]['balance'] = str(balance) if balance is not None else None
+
+        return Response({
+            "data": data,
+            "last_page": 1,
+            "total_rows": len(data),
+            "page_size": len(data),
+            "page_no": 1
+        }, status=status.HTTP_200_OK)
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("serviceAccountKey.json")
@@ -2610,91 +2786,182 @@ tags=["User Management","Mobile App"],
 def mobile_sign_in(request):
     try:
         if request.method == "POST":
-            # Parse JSON request body
             body = json.loads(request.body)
-
-            # Extract fields
             username = body.get("username")
             password = body.get("password")
             role = body.get("role")
 
             if not username or not password or not role:
-                return Response({"error": "[username, password, role] fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "[username, password, role] fields are required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            # Authenticate the user based on the role
             user = None
             user_id = None
+
+            # Lookup user record by role
             if role == "employee":
                 try:
                     user = models.EmployeesTable.objects.get(username=username)
                     user_id = f"{user.employee_id}"
                 except models.EmployeesTable.DoesNotExist:
-                    return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
-            if role == "client":
-                    try:
-                        user = models.AllClientsTable.objects.get(username=username)
-                        user_id = f"c-{user.clientid}"
-                    except models.AllClientsTable.DoesNotExist:
-                        return Response({"error": "لم يتم التعرف على العميل", "message": "لم يتم التعرف على العميل"}, status=status.HTTP_404_NOT_FOUND)
+                    return Response(
+                        {"error": "Employee not found"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
 
-            # Authenticate against the main User model
+            elif role == "client":
+                try:
+                    user = models.AllClientsTable.objects.get(username=username)
+                    user_id = f"c-{user.clientid}"
+                except models.AllClientsTable.DoesNotExist:
+                    return Response(
+                        {
+                            "error": "لم يتم التعرف على العميل",
+                            "message": "لم يتم التعرف على العميل"
+                        },
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+            # Verify credentials against Django’s built-in User model
             auth_user = authenticate(username=username, password=password)
-
             if auth_user is None:
-                return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Invalid username or password"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            # If authentication successful, login the user (create session)
+            # Log in the Django session
             login(request, auth_user)
+
+            # --- MARK THE CLIENT (OR EMPLOYEE) AS ONLINE ---
+            # (If role == "client") set is_online = True
+            if role == "client":
+                user.is_online = True
+                user.save()
+
+            # If you also want to track employees, do the same for EmployeesTable:
+            # if role == "employee":
+            #     emp = user
+            #     emp.is_online = True
+            #     emp.save()
 
             # Store session variables
             request.session["username"] = user.username
             request.session["name"] = user.name
-            request.session["role"] = role  # Store role for later use
+            request.session["role"] = role
             request.session["user_id"] = user_id
-            request.session["is_authenticated"] = True  # Useful for templates
-            request.session.set_expiry(3600)
+            request.session["is_authenticated"] = True
+            request.session.set_expiry(3600)  # 1 hour
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(auth_user)
             access_token = str(refresh.access_token)
 
-            # Create the response object
+            # Build response
             response = Response({
                 "message": "Signed in successfully",
                 "role": role,
                 "client_id": user_id,
-                "session_data":{
-                                "role": role,
-                                "user_id": user_id,
-                                "username": username,
-                                "name": user.name,
-                                },
+                "session_data": {
+                    "role": role,
+                    "user_id": user_id,
+                    "username": username,
+                    "name": user.name,
+                },
                 "user_auth_id": auth_user.id,
                 "access_token": access_token,
                 "refresh_token": str(refresh),
             })
 
-            # Set the access token cookie (15 minutes expiry)
+            # Set cookies for access & refresh tokens
             response.set_cookie(
                 'access_token', access_token,
                 httponly=True,
-                max_age=7*60*60,  # 15 minutes
+                max_age=15 * 60,  # 15 minutes
                 path='/'
             )
-
-            # Set the refresh token cookie (7 days expiry)
             response.set_cookie(
                 'refresh_token', str(refresh),
                 httponly=True,
-                max_age=7*24*60*60,  # 7 days
+                max_age=7 * 24 * 60 * 60,  # 7 days
                 path='/'
             )
 
             return response
+
     except Exception as e:
-        return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"error": f"Unexpected error: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def mobile_sign_out(request):
+    """
+    Client calls this when they tap “Logout” in the mobile app.
+    We:
+    - read the username (and/or user_id) from the session or request data,
+    - set is_online=False,
+    - call Django’s logout(), 
+    - clear any cookies if desired.
+    """
+    try:
+        body = json.loads(request.body)
+        username = body.get("username")
+        role = body.get("role")
+
+        if not username or not role:
+            return Response(
+                {"error": "[username, role] are required to sign out"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Find the correct model and set them offline
+        if role == "client":
+            try:
+                client = models.AllClientsTable.objects.get(username=username)
+                client.is_online = False
+                client.save()
+            except models.AllClientsTable.DoesNotExist:
+                return Response(
+                    {"error": "العميل غير موجود"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        elif role == "employee":
+            try:
+                emp = models.EmployeesTable.objects.get(username=username)
+                emp.is_online = False
+                emp.save()
+            except models.EmployeesTable.DoesNotExist:
+                return Response(
+                    {"error": "الموظف غير موجود"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        # Log out of the Django session
+        logout(request)
+
+        # Optionally clear the JWT cookies (so the client can’t reuse them)
+        response = Response(
+            {"message": "Signed out successfully"},
+            status=status.HTTP_200_OK
+        )
+        response.delete_cookie('access_token', path='/')
+        response.delete_cookie('refresh_token', path='/')
+        return response
+
+    except Exception as e:
+        return Response(
+            {"error": f"Unexpected error: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 @extend_schema(
 description="""Retrieve Token and validate it.""",
 tags=["User Management"],

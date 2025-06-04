@@ -317,28 +317,59 @@ try {
 
 
 function downloadFailedItemsReport(failedItems) {
-if (!failedItems || failedItems.length === 0) {
-  showResponse('لا توجد عناصر فاشلة لتحميلها', 'info');
-  return;
+  if (!failedItems || failedItems.length === 0) {
+    showResponse('لا توجد عناصر فاشلة لتحميلها', 'info');
+    return;
+  }
+
+  // Get all original headers from the first failed item
+  const originalHeaders = failedItems[0].originalRow ? 
+    Object.keys(failedItems[0].originalRow) : 
+    [];
+
+  // Create report data with all original columns plus error info
+  const reportData = failedItems.map(item => {
+    const rowData = {};
+    
+    // First add all original headers (even if empty)
+    originalHeaders.forEach(header => {
+      rowData[header] = item.originalRow ? 
+        (item.originalRow[header] || '') : 
+        '';
+    });
+    
+    // Then add our error information columns
+    return {
+      ...rowData,
+      'حالة العملية': item.success ? 'نجاح' : 'فشل',
+      'رسالة الخطأ': item.message || 'لا توجد رسالة خطأ',
+      'PNO المستخدم': item.pno || 'N/A'
+    };
+  });
+
+  // Create worksheet with all columns in correct order
+  const ws = XLSX.utils.json_to_sheet(reportData);
+  
+  // Reorder columns to put original headers first
+  const newHeaders = [
+    ...originalHeaders,
+    'حالة العملية',
+    'رسالة الخطأ', 
+    'PNO المستخدم'
+  ];
+  
+  // Reconstruct worksheet with correct column order
+  const newWs = XLSX.utils.json_to_sheet(reportData, { header: newHeaders });
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, newWs, "العناصر الفاشلة");
+
+  // Download file
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  XLSX.writeFile(wb, `العناصر_الفاشلة_${timestamp}.xlsx`);
+
+  showResponse('تم تحميل تقرير العناصر الفاشلة بنجاح', 'success');
 }
-
-// ⬅️  exact rows from the original upload
-const reportData = failedItems.map(item => item.originalRow);
-
-// preserve the header order of the first row
-const headers = Object.keys(reportData[0]);
-
-// build the worksheet
-const ws = XLSX.utils.json_to_sheet(reportData, { header: headers });
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, "العناصر الفاشلة");
-
-const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-XLSX.writeFile(wb, `العناصر_الفاشلة_${timestamp}.xlsx`);
-
-showResponse('تم تحميل العناصر الفاشلة بنجاح', 'success');
-}
-
 
 /**
 * Read an .xlsx file in the browser, convert the first sheet to JSON,

@@ -93,3 +93,28 @@ document.addEventListener('DOMContentLoaded', function() {
     badge.classList.add('pulse');
     setTimeout(() => badge.classList.remove('pulse'), 500);
   }
+
+  async function signOutClient() {
+    const sessionData = JSON.parse(localStorage.getItem("session_data@username"));
+    const role = JSON.parse(localStorage.getItem("session_data@role"));
+    const payload = { username: sessionData, role: role };
+  
+    const res = await fetch("/mobile/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+  
+    if (res.ok) {
+      localStorage.clear();
+      window.location.href = "/hozma/hozmalogin/";
+    } else {
+      const err = await res.json();
+      console.error("Logout error:", err);
+      alert("حدث خطأ أثناء تسجيل الخروج. حاول مرة أخرى.");
+    }
+  }
+  
