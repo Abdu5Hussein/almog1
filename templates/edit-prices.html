@@ -20,7 +20,11 @@
       href="{% static 'tabulator/custom-tabulator.css' %}"
     />
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- <script src="{% static 'js/products-details.js' %}" defer></script>-->
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script src="{% static 'js/edit-prices.js' %}"></script>
     <style>
       .small-font {
         font-size: 13px;
@@ -79,6 +83,40 @@
 
         text-align: right;
         direction: rtl;
+      }
+      .form-select-with-icon {
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+        appearance: auto;
+
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 0;
+        direction: rtl;
+        box-sizing: border-box;
+        margin: 0;
+        font-family: inherit;
+        text-transform: none;
+        word-wrap: normal;
+        --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        display: block;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--bs-body-color);
+        border: 1px solid #ced4da;
+        transition:
+          border-color 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
+        background: none;
+        padding: 5px;
+        font-size: 12px;
+        height: 30px;
+        border-radius: 0;
+        text-align: center;
+        position: relative;
+        flex: 1 1 auto;
+        width: 1%;
       }
 
       select.form-select {
@@ -195,99 +233,96 @@
           <h3>تعديل الاسعار</h3>
         </div>
         <form>
-          <div class="row">
+          {% csrf_token %}
+          <div class="row g-3">
             <!-- First column -->
             <div class="col-md-4">
-              <div class="mb-1 d-flex align-items-center">
-                <div style="width: 100px">
-                  <label for="input1" class="form-label">البيان الرئيسي</label>
+              <div class="row align-items-center mb-2">
+                <div class="col-auto">
+                  <label for="item-main" class="form-label">البيان الرئيسي</label>
                 </div>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="input1"
-                  placeholder="Enter value"
-                  required
-                />
+                <div class="col">
+                  <select name="car_brand" id="item-main" class="form-select text-center" required>
+                    <option value="" selected>اختر بيان رئيسي</option>
+                    {% for x in mainType %}
+                    <option value="{{ x.fileid }}">{{ x.typename }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
               </div>
-              <div class="mb-1 d-flex align-items-center">
-                <div style="width: 100px">
-                  <label for="input2" class="form-label">اسم الصنف</label>
+              <div class="row align-items-center mb-2">
+                <div class="col-auto">
+                  <label for="pname-arabic" class="form-label">اسم الصنف</label>
                 </div>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="input2"
-                  placeholder="Enter value"
-                  required
-                />
+                <div class="col">
+                  <input type="text" class="form-control" id="pname-arabic" placeholder="Enter value" required />
+                </div>
               </div>
             </div>
 
             <!-- Second column -->
             <div class="col-md-3">
-              <div class="mb-1 d-flex align-items-center">
-                <div style="width: 120px">
-                  <label for="input3" class="form-label">الرقم الاصلي</label>
+              <div class="row align-items-center mb-2">
+                <div class="col-auto">
+                  <label for="original-no" class="form-label">الرقم الاصلي</label>
                 </div>
-
-                <input
-                  type="text"
-                  class="form-control"
-                  id="input3"
-                  placeholder="Enter value"
-                  required
-                />
+                <div class="col">
+                  <input type="text" class="form-control" id="original-no" placeholder="Enter value" required />
+                </div>
+              </div>
+              <div class="row align-items-center mb-2">
+                <div class="col-auto">
+                  <label for="pno" class="form-label">رقم خاص</label>
+                </div>
+                <div class="col">
+                  <input type="text" class="form-control" id="pno" placeholder="Enter value" required />
+                </div>
               </div>
             </div>
 
             <!-- Third column -->
             <div class="col-md-4">
-              <div class="mb-1 d-flex align-items-center">
-                <div style="width: 100px">
-                  <label for="input5" class="form-label">اسم الشركة</label>
+              <div class="row align-items-center mb-2">
+                <div class="col-auto">
+                  <label for="company" class="form-label">اسم الشركة</label>
                 </div>
-
-                <input
-                  type="text"
-                  class="form-control"
-                  id="input5"
-                  placeholder="Enter value"
-                  required
-                />
+                <div class="col">
+                  <select name="company" id="company" class="form-select text-center" required>
+                    <option value="" selected>اختر شركة</option>
+                    {% for x in company %}
+                    <option value="{{ x.fileid }}">{{ x.companyname }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
               </div>
-              <div class="mb-1 d-flex align-items-center">
-                <div style="width: 100px">
-                  <label for="input4" class="form-label">رقم الشركة</label>
+              <div class="row align-items-center mb-2">
+                <div class="col-auto">
+                  <label for="company-no" class="form-label">رقم الشركة</label>
                 </div>
-
-                <input
-                  type="text"
-                  class="form-control"
-                  id="input4"
-                  placeholder="Enter value"
-                  required
-                />
+                <div class="col">
+                  <input type="text" class="form-control" id="company-no" placeholder="Enter value" required />
+                </div>
               </div>
             </div>
           </div>
 
+
           <!-- Checkbox Row -->
           <div class="row mt-2 justify-content-center">
             <div class="col-md-2 d-flex align-items-center">
-              <input type="checkbox" id="check1" style="margin-left: 5px" />
+              <input type="radio" name="conditions" id="check1" style="margin-left: 5px" />
               <label for="check1">كمية محجوزة</label>
             </div>
             <div class="col-md-2 d-flex align-items-center">
-              <input type="checkbox" id="check2" style="margin-left: 5px" />
+              <input type="radio" name="conditions" id="check2" style="margin-left: 5px" />
               <label for="check2">كمية غير موجودة</label>
             </div>
             <div class="col-md-2 d-flex align-items-center">
-              <input type="checkbox" id="check3" style="margin-left: 5px" />
+              <input type="radio" name="conditions" id="check3" style="margin-left: 5px" />
               <label for="check3">كمية موجودة</label>
             </div>
             <div class="col-md-2 d-flex align-items-center">
-              <input type="checkbox" id="check4" style="margin-left: 5px" />
+              <input type="radio" name="conditions" id="check4" style="margin-left: 5px" />
               <label for="check4">حد الطلب</label>
             </div>
           </div>
@@ -330,137 +365,71 @@
 
       <!-- Form Section with 5 input columns -->
 
-      <div class="row">
+      <div class="row d-flex justify-content-center align-items-center">
+<!-- Second Column: Value Field with +/- Checkbox -->
+        <div class="col-md-3 d-flex flex-column gap-[5px]">
+          <div class="row mb-3 border p-2 m-0 d-flex align-items-center justify-content-center">
+            <div class="col-md-2" style="margin-left: 10px">اسم الصنف:</div>
+            <div class="col-md-7 text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Enter value"
+                id="item_name"
+              />
+            </div>
+          </div>
+          <div class="row mb-3 border p-2 m-0 d-flex align-items-center justify-content-center">
+            <div class="col-md-2" style="margin-left: 10px">رقم الصنف:</div>
+            <div class="col-md-7 text-center">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Enter value"
+                readonly
+                id="show-pno"
+              />
+            </div>
+          </div>
+        </div>
         <!-- First Column: Checkboxes with Labels -->
         <div class="col-md-5">
-          <div class="row mb-3">
-            <div class="col-12">
-              <div class="form-group border p-2">
-                <div class="row">
-                  <!-- First Column of Checkboxes -->
-                  <div class="col-md-6">
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check1"
-                        />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-check-label label-width" for="check1"
-                          >سعر التوريد</label
-                        >
-                      </div>
-                    </div>
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check2"
-                        />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-check-label label-width" for="check2"
-                          >سعر الشراء</label
-                        >
-                      </div>
-                    </div>
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check3"
-                        />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-check-label label-width" for="check3"
-                          >سعر التكلفة</label
-                        >
-                      </div>
-                    </div>
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check4"
-                        />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-check-label label-width" for="check4"
-                          >سعر البيع</label
-                        >
-                      </div>
-                    </div>
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check5"
-                        />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-check-label label-width" for="check5"
-                          >اقل سعر للبيع</label
-                        >
-                      </div>
-                    </div>
-                  </div>
+          <div class="form-group border p-3 rounded">
+            <div class="row g-1">
+              <!-- Loop through each price type row -->
+              <div class="col-12 d-flex align-items-center" dir="rtl">
+                <input class="form-check-input me-2" type="radio" name="price-type" value="orgprice" id="check1">
+                <label class="form-check-label me-3" for="check1" style="width: 100px;">سعر التوريد</label>
+                <input class="form-control form-control-sm w-auto" type="text" readonly name="show-orgprice" id="show-orgprice">
+              </div>
 
-                  <!-- Second Column of Checkboxes -->
-                  <div class="col-md-6">
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check6"
-                        />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-check-label label-width" for="check6"
-                          >اقل سعر للبيع = سعر التكلفة +</label
-                        >
-                      </div>
-                    </div>
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check7"
-                        />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-check-label label-width" for="check7"
-                          >اقل سعر للبيع = سعر البيع +/-</label
-                        >
-                      </div>
-                    </div>
-                    <div class="row" style="width: 200px">
-                      <div class="col-md-2">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          id="check8"
-                        />
-                      </div>
-                      <div class="col-md-6 label-width">
-                        <label class="form-check-label" for="check8"
-                          >تقريب سعر واقل سعر للبيع</label
-                        >
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="col-12 d-flex align-items-center" dir="rtl">
+                <input class="form-check-input me-2" type="radio" name="price-type" value="orderprice" id="check2">
+                <label class="form-check-label me-3" for="check2" style="width: 100px;">سعر الشراء</label>
+                <input class="form-control form-control-sm w-auto" type="text" readonly name="show-orderprice" id="show-orderprice">
+              </div>
+
+              <div class="col-12 d-flex align-items-center" dir="rtl">
+                <input class="form-check-input me-2" type="radio" name="price-type" value="costprice" id="check3">
+                <label class="form-check-label me-3" for="check3" style="width: 100px;">سعر التكلفة</label>
+                <input class="form-control form-control-sm w-auto" type="text" readonly name="show-costprice" id="show-costprice">
+              </div>
+
+              <div class="col-12 d-flex align-items-center" dir="rtl">
+                <input class="form-check-input me-2" type="radio" name="price-type" value="buyprice" id="check4">
+                <label class="form-check-label me-3" for="check4" style="width: 100px;">سعر البيع</label>
+                <input class="form-control form-control-sm w-auto" type="text" readonly name="show-buyprice" id="show-buyprice">
+              </div>
+
+              <div class="col-12 d-flex align-items-center" dir="rtl">
+                <input class="form-check-input me-2" type="radio" name="price-type" value="lessprice" id="check5">
+                <label class="form-check-label me-3" for="check5" style="width: 100px;">اقل سعر للبيع</label>
+                <input class="form-control form-control-sm w-auto" type="text" readonly name="show-lessprice" id="show-lessprice">
               </div>
             </div>
           </div>
         </div>
+
 
         <!-- Second Column: Value Field with +/- Checkbox -->
         <div class="col-md-3 d-flex flex-column gap-[5px]">
@@ -473,9 +442,10 @@
                 type="text"
                 class="form-control"
                 placeholder="Enter value"
+                id="amount"
               />
             </div>
-            <div class="col-md-1"><input type="checkbox" /></div>
+            <div class="col-md-1"><input type="checkbox" id="isPercentage"/></div>
             <div class="col-md-1">%</div>
           </div>
 
@@ -483,7 +453,15 @@
             <div class="col-md-2 align-items-center justify-content-center">
               <div class="row" style="width: 100px">
                 <div class="col-md-2">
-                  <input class="form-check-input" type="checkbox" id="check9" />
+                  <input class="form-check-input" value="=" name="operation" type="radio" id="check9" />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-check-label" for="check9">=</label>
+                </div>
+              </div>
+              <div class="row" style="width: 100px">
+                <div class="col-md-2">
+                  <input class="form-check-input" value="+" name="operation" type="radio" id="check9" />
                 </div>
                 <div class="col-md-2">
                   <label class="form-check-label" for="check9">+</label>
@@ -493,7 +471,9 @@
                 <div class="col-md-2">
                   <input
                     class="form-check-input"
-                    type="checkbox"
+                    type="radio"
+                    value="-"
+                    name="operation"
                     id="check10"
                   />
                 </div>
@@ -505,43 +485,9 @@
           </div>
         </div>
 
-        <!-- Third Column: Buttons and Textarea -->
-        <div class="col-md-4">
-          <div class="row">
-            <!-- First Sub-Column for Buttons -->
-            <div class="col-4 button-container full-height">
-              <button class="btn btn-primary btn-block p-1 small-font">
-                اضافة القطعة الحالية
-              </button>
-              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
-                اضافة جميع القطع
-              </button>
-              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
-                مسح القطعة الحالية
-              </button>
-            </div>
-            <div class="col-3 button-container full-height">
-              <button class="btn btn-primary btn-block p-1 small-font">
-                مسح جميع القطع
-              </button>
-              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
-                اختيار الكل
-              </button>
-              <button class="btn btn-primary btn-block mt-1 p-1 small-font">
-                رفض الكل
-              </button>
-            </div>
-            <!-- Second Sub-Column for Text Field -->
-            <div class="col-5 full-height">
-              <textarea
-                class="form-control large-textarea"
-                placeholder="Enter text here"
-              ></textarea>
-            </div>
-          </div>
-        </div>
+
       </div>
-      <div class="row">
+      <div class="row d-flex justify-content-center align-items-center">
         <button
           class="btn btn-primary p-1 small-font"
           style="width: 100px; margin: 5px"
@@ -557,6 +503,7 @@
         <button
           class="btn btn-primary p-1 small-font"
           style="width: 100px; margin: 5px"
+          id="apply-price-change"
         >
           موافق
         </button>
@@ -568,290 +515,5 @@
         </button>
       </div>
     </div>
-
-    <!-- <script src="{% static 'js/products-details.js' %}" defer></script>-->
-    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
-    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
-    <script>
-      $(document).ready(function () {
-
-        // Initialize Tabulator
-        table = new Tabulator("#users-table", {
-          height: "auto",
-          layout: "fitColumns",
-          selectable: true,
-          rowHeight: 20,
-          //pagination: "remote", // Enable local pagination
-          //paginationSize: 100, // Number of rows per page
-          movableColumns: true,
-          columnHeaderVertAlign: "bottom",
-          columnMenu: true, // Enable column menu
-          rowFormatter: function (row) {
-            // Set the height directly on each row
-            row.getElement().style.height = "20px";
-          },
-          data: [], // Placeholder, will be loaded dynamically
-          columns: [
-            { title: "الرقم الخاص", field: "pno", headerMenu: false, width: 100, visible: true },
-            { title: "الشركة المصنعة", field: "companyproduct", headerMenu: false, width: 96, visible: true },
-            { title: "رقم الشركة", field: "replaceno", headerMenu: false, width: 150, visible: true },
-            { title: "الرقم الاصلي", field: "itemno", headerMenu: false, width: 90, visible: true },
-            { title: "اسم الصنف ع", field: "itemname", headerMenu: false, width: 280, visible: true },
-            { title: "الرصيد", field: "itemvalue", headerMenu: false, width: 81, visible: true },
-            { title: "سعر البيع", field: "buyprice", headerMenu: false, width: 75, visible: true },
-            { title: "الموقع", field: "itemplace", headerMenu: false, width: 75, visible: true },
-            { title: "سعر الشراء", field: "orderprice", visible: true , width: 75},
-            { title: "سعر التوريد", field: "orgprice", visible: true , width: 75},
-            { title: "سعر التكلفة", field: "costprice", visible: true , width: 75},
-          ],
-        });
-
-        // Allow editing of table cells
-        $("#users-table").on("dblclick", ".editable", function () {
-          $(this).attr("contenteditable", "true").focus();
-        });
-        table.on("rowClick", function (e, row) {
-          console.log("Row clicked:", row.getData().pno);
-          const id = row.getData().pno;
-          console.log("sent pno: ", id);
-      });
-
-  let currentPage = 1; // Tracks the current page
-  let lastPage = false; // Indicates if the last page is reached
-  let isLoading = false; // Prevents multiple fetch calls
-  const pageSize = 100; // Number of rows per page
-  const tableContainer = document.getElementById("users-table");// Table scroll container
-  // Function to fetch and append the next page of data
-  const fetchNextPage = () => {
-    if (!lastPage) {
-      currentPage++;
-      console.log(`Fetching page ${currentPage}...`);
-      console.log("fetching active url : ", active_url);
-
-      if (active_url == "server_filtered_data") {
-        //console.log("apply filters current page: ",currentPage);
-        //applyFilters(currentPage, pageSize);
-      } else {
-        fetchDataFromServer({ page: currentPage, size: pageSize });
-      }
-      //hideLoader();
-    }
-  };
-
-  // Scroll event listener
-  const handleScroll = () => {
-    //console.log("scroll area");
-    const scrollPosition = tableContainer.scrollTop + tableContainer.clientHeight;
-    const scrollThreshold = tableContainer.scrollHeight - 2000; // Adjust threshold as needed
-    console.log("isLoading: ", isLoading);
-    console.log("lastPage: ", lastPage);
-
-    if (scrollPosition >= scrollThreshold && !lastPage && !isLoading) {
-      console.log("scrollPosition: ", scrollPosition);
-      console.log("scrollThreshold: ", scrollThreshold);
-      console.log("scrollHeight: ", tableContainer.scrollHeight);
-      //console.log("lastPage: ",lastPage);
-      //console.log("isLoading: ",isLoading);
-      isLoading = true;
-      showLoader();
-      fetchNextPage();
-    }
-  };
-  function fetchDataFromServer({ page = 1, size = 100 }) {
-    //if (isLoading) return; // Prevent fetch if already loading
-    //isLoading = true; // Set loading flag before initiating fetch
-
-    // Use the URL in your fetch request
-
-
-    console.time("fetchData"); // Start timer
-
-    customFetch(`api/get-data/?page=${page}&size=${size}`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Fetched Data:", data);
-        active_url = "server_Data_No_Filter";
-        console.log("active_url for pagination:", active_url);
-        //console.log("page:", page);
-
-        console.time("tableTime");
-        //console.log("sort status: ", table.getDataCount());
-        if (page === 1) {
-          // For the first page, replace the existing data
-          table.setData(data.data);
-          console.log("data set to the table");
-          //console.log("getDataCount: ", table.getDataCount());
-          currentPage = 1;
-        } else {
-          let scrollPosition = tableContainer.scrollTop; // Save scroll position
-          //let currentData = table.getData();  // Get current table data
-          //let combinedData = currentData.concat(data.data);  // Combine existing data with new data
-          table.addData(data.data);
-          tableContainer.scrollTop = scrollPosition;
-          console.log("data added to the table");
-          //console.log("getDataCount: ", table.getDataCount());
-        }
-        console.timeEnd("tableTime");
-
-        // Update lastPage flag
-        lastPage = data.page_no == data.last_page ? true : false;
-        console.time("PaginationTime");
-        updatePagination(data.last_page, data.page_no);
-        console.timeEnd("PaginationTime");
-
-
-        return data; // Return data for further processing
-      })
-      .catch((error) => console.error("Error fetching data:", error)).finally(() => {
-        console.timeEnd("fetchData"); // End the timer regardless of success or failure
-        isLoading = false; // Reset loading flag after fetch completes
-        hideLoader();
-      });
-  }
-  // Attach the scroll event listener
-  tableContainer.addEventListener("scroll", handleScroll);
-
-// Debounce function definition
-  function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
-
-  // Apply debounce to applyFilters with a 300ms delay
-  //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
-  fetchDataFromServer({ page: 1, size: 100 });
-
-      function showLoader() {
-        const loader = document.getElementById("loader-element");
-        loader.classList.remove("d-none"); // Show the loader by removing d-none
-        loader.classList.add("d-flex"); // Ensure d-flex is applied for flexbox display
-        //console.log("loader shown");
-      }
-
-      function hideLoader() {
-        const loader = document.getElementById("loader-element");
-
-        // Set a delay (e.g., 2000ms = 2 seconds)
-        setTimeout(function() {
-          loader.classList.remove("d-flex"); // Remove d-flex
-          loader.classList.add("d-none"); // Hide the loader by adding d-none
-          //console.log("loader hidden after delay");
-        }, 3000); // 2000ms = 2 seconds delay
-      }
-      function updatePagination(lastPage, currentPage) {
-         const pagination = document.querySelector(".pagination");
-          const existingPageLinks = pagination.querySelectorAll(".page-item:not(:first-child):not(:last-child):not(#page-size)");
-          //console.log("existingPageLinks: ",existingPageLinks);
-
-          const startPage = Math.max(1, currentPage);
-          const endPage = Math.min(lastPage, startPage + 2);
-          //console.log("startPage: ",startPage);
-          //console.log("endPage: ",endPage);
-
-          let index = 0; // Track the current index in existing page items
-          for (let i = startPage; i <= endPage; i++) {
-              let pageItem;
-              if (index < existingPageLinks.length) {
-                   //console.log("if: done");
-                  // Update an existing item
-                  pageItem = existingPageLinks[index];
-                  pageItem.querySelector(".page-link").innerText = i;
-                  pageItem.querySelector(".page-link").setAttribute("data-page", i);
-              } else {
-                //console.log("else: done");
-                  // Add a new item if needed
-                  pageItem = document.createElement("li");
-                  pageItem.className = "page-item";
-                  pageItem.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
-                  pagination.insertBefore(pageItem, pagination.querySelector("li:last-child"));
-              }
-              pageItem.querySelector(".page-link").classList.toggle("page-link-active", i === currentPage); // Set active class
-              index++;
-              //console.log("index: ",index);
-          }
-
-          // Remove any extra items beyond the new range
-          /*while (index < existingPageLinks.length) {
-              pagination.removeChild(existingPageLinks[index]);
-              index++;
-          }*/
-
-          // Update Previous button
-          const previousBtn = document.querySelector(".page-prev");
-          previousBtn.classList.toggle("item-disabled", currentPage === 1);
-          previousBtn.querySelector(".page-link").setAttribute("data-page", currentPage - 1);
-          //console.log("previousBtn: ",previousBtn);
-          // Update Next button
-          const nextBtn = document.querySelector(".page-next");
-          nextBtn.classList.toggle("item-disabled", currentPage === endPage);
-          nextBtn.querySelector(".page-link").setAttribute("data-page", currentPage + 1);
-          //console.log("nextBtn: ",nextBtn);
-          // Update First button
-          const firstBtn = document.querySelector(".page-first");
-          firstBtn.querySelector(".page-link").setAttribute("data-page", 1);
-          //console.log("firstBtn: ",firstBtn);
-          // Update Last button
-          const lastBtn = document.querySelector(".page-last");
-          lastBtn.querySelector(".page-link").setAttribute("data-page", lastPage);
-          //console.log("lastBtn: ",lastBtn);
-          //update no of pages paragraph
-          document.getElementById("page-total").innerHTML = "تم تحميل "+ currentPage + " من اجمالي " + lastPage + " صفحات " ;
-      }
-
-
-      // Example usage with API response
-      //const response = { last_page: 10, page_no: 3 }; // Example data
-      //updatePagination(response.last_page, response.page_no);
-
-      // Event listener for page links
-      document.querySelector(".pagination").addEventListener("click", function (event) {
-    const target = event.target;
-    if (target.classList.contains("page-link") &&
-        !target.parentNode.classList.contains("disabled") &&
-        !target.closest("#page-size") ) {  // Ensures page-size is not part of the event
-        event.preventDefault();
-        const selectedPage = parseInt(target.getAttribute("data-page"), 10);
-        const selectedPageSize = document.getElementById("page-size").value;
-
-        if(lastPage){
-          return
-        }
-
-        // Fetch data for selected page
-        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
-        if(active_url=="server_filtered_data"){
-            currentPage = selectedPage;
-            //applyFilters(selectedPage,selectedPageSize);
-        }else{
-            currentPage = selectedPage;
-            fetchDataFromServer({page: selectedPage,size: selectedPageSize});
-        }
-    }
-});
-
-
-      // Event listener for page size change
-      document.querySelector("#page-size").addEventListener("change", function () {
-        const selectedPageSize = this.value;
-        const selectedPage = document.querySelector(".page-link.page-link-active").innerHTML;
-
-        //console.log(`Selected page size: ${selectedPageSize}`);
-        console.log(`Fetching data for page: ${selectedPage}, with page size ${selectedPageSize}, for ${active_url}`);
-        if(active_url=="server_filtered_data"){
-           // applyFilters(selectedPage,selectedPageSize);
-        }else{
-            fetchDataFromServer({page: selectedPage,size: selectedPageSize});
-        }
-      });
-      });
-    </script>
   </body>
 </html>

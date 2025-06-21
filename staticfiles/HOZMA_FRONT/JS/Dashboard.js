@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Retrieve customer data from localStorage
-    const customerId = JSON.parse(localStorage.getItem("session_data@user_id"));
+    const customerId = JSON.parse(localStorage.getItem("session_data@client_id"));
     
     if (customerId) {
         const customerIdNumber = customerId.replace(/^c-/, '');
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function fetchCustomerDetails(customerId) {
-    customFetch(`/api/clients/${customerId}/`)
+    customFetch(`/hozma/api/clients/${customerId}/`)
         .then(response => response.json())
         .then(data => {
             if (!data || !data.clients || data.clients.length === 0) {
@@ -45,11 +45,20 @@ function fetchOrderHistory(customerId) {
             if (!invoices || invoices.length === 0) {
                 orderHistoryDiv.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center py-4">لا توجد فواتير سابقة</td>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="alert alert-info" role="alert">
+                                <h5 class="mb-3">لا توجد لديك أي طلبات سابقة</h5>
+                                <p class="mb-3">ابدأ التسوق الآن واختر قطع الغيار المناسبة لسيارتك.</p>
+                                <a href="/hozma/products/" class="btn btn-primary">
+                                    <i class="fas fa-shopping-cart me-1"></i> انتقل إلى المتجر
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                 `;
                 return;
             }
+            
 
             invoices.sort((a, b) => b.autoid - a.autoid);
             const recentInvoices = invoices.slice(0, 5);
@@ -57,17 +66,18 @@ function fetchOrderHistory(customerId) {
             let html = '';
             recentInvoices.forEach(invoice => {
                 const statusClass = getStatusClass(invoice.invoice_status);
-                
+                const statusBadge = (invoice.invoice_status === "لم تشتري")
+  ? '<span class="badge bg-warning badge-order-status">قيد المعالجة</span>'
+  : (invoice.invoice_status === "تم شراءهن المورد")
+    ? '<span class="badge bg-success badge-order-status">جاري التحضير</span>'
+    : `<span class="badge bg-secondary badge-order-status">${invoice.invoice_status}</span>`;
+
                 html += `
 <tr>
 <td>#${invoice.invoice_no}</td>
 <td>${new Date(invoice.date_time).toLocaleDateString('ar-LY')}</td>
 <td>${parseFloat(invoice.net_amount).toFixed(2)} د.ل</td>
-<td>
-    <span class="status-badge ${invoice.shop_confirm ? 'green' : 'red'}">
-        ${invoice.shop_confrim ? 'تم التأكيد' : 'غير مؤكد'}
-    </span>
-</td>
+ <td>${statusBadge}</td>
 <td>
     <button class="view-details-btn" onclick="viewOrderDetails('${invoice.invoice_no}')">
         <i class="fas fa-eye me-1"></i>التفاصيل
@@ -105,5 +115,5 @@ function editProfile() {
 }
 
 function viewOrderDetails(orderId) {
-    window.location.href = `/orders/${orderId}`;
+    window.location.href = `/hozma/invoice/${orderId}`;
 }

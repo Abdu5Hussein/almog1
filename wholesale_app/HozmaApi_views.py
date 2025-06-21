@@ -8,6 +8,7 @@ from django.contrib.auth.hashers import check_password
 import json
 import random
 import re
+import difflib
 from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Count, Sum, Avg, F, Q, Exists, Case, When, OuterRef,Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
 from django.db.models.functions import TruncMonth, TruncDay
@@ -17,7 +18,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db.models import F, Q, Sum, IntegerField
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from rest_framework.views import APIView
@@ -71,7 +72,7 @@ import hashlib
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from dateutil.relativedelta import relativedelta
-
+from almogOil.api_views import create_transactions_history_record
 
 CACHE_TTL = 60 * 5   # 5 دقائق
 
@@ -229,7 +230,7 @@ def Sell_invoice_create_item(request):
             item_data = {
                 'invoice_instance': invoice.autoid,
                 'invoice_no': data.get("invoice_id"),
-                'item_no': product.itemno,
+                'item_no': product.oem_numbers,
                 'pno': data.get("pno"),
                 'main_cat': product.itemmain,
                 'sub_cat': product.itemsubmain,
@@ -391,7 +392,7 @@ def handle_confirm_action(preorder):
         almogOil_models.SellInvoiceItemsTable.objects.create(
             invoice_instance=sell_invoice,
             invoice_no=preorder.invoice_no,
-            item_no=item.item_no,
+            item_no=item.oem_numbers,
             pno=item.pno,
             main_cat=item.main_cat,
             sub_cat=item.sub_cat,
@@ -465,185 +466,187 @@ def send_test_whatsapp_message(request):
 
  # Assuming you have this function
 
+from django.db import transaction
+
+from django.db import transaction
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def full_Sell_invoice_create_item(request):
-    if request.method == "POST":
-        try:
-            data = request.data
+    if request.method != "POST":
+        return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-            required_fields = ["pno", "fileid", "invoice_id", "itemvalue", "sellprice"]
-            missing_fields = [field for field in required_fields if field not in data or not data[field]]
-            if missing_fields:
-                return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
+    data = request.data
+    required_fields = ["pno", "fileid", "invoice_id", "itemvalue", "sellprice"]
+    missing_fields = [field for field in required_fields if field not in data or not data[field]]
+    if missing_fields:
+        return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
 
+    invoice_id = data.get("invoice_id")
+
+    try:
+        with transaction.atomic():
+            # Lock product row
             try:
-                product = almogOil_models.Mainitem.objects.get(pno=data.get("pno"), fileid=data.get("fileid"))
+                product = almogOil_models.Mainitem.objects.select_for_update().get(
+                    pno=data.get("pno"),
+                    fileid=data.get("fileid")
+                )
             except almogOil_models.Mainitem.DoesNotExist:
-                return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+                raise ValueError("Product not found")
 
-            # Check quantity before updating invoice
             item_value = int(data.get("itemvalue") or 0)
             if item_value > product.showed:
-                return Response({"error": "Insufficient quantity available"}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValueError("Insufficient quantity available")
 
             try:
-                invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=data.get("invoice_id"))
-
-                buy_price = Decimal(product.buyprice or 0)
-                line_total = buy_price * Decimal(item_value)
-
-                invoice.amount += line_total
-
-                discount = Decimal(invoice.client.discount or 0)
-                delivery_price = Decimal(invoice.client.delivery_price or 0)
-                amount = invoice.amount
-                invoice.net_amount = amount - (discount * amount) + delivery_price
-
-                invoice.save()
+                invoice = almogOil_models.PreOrderTable.objects.select_for_update().get(invoice_no=invoice_id)
             except almogOil_models.PreOrderTable.DoesNotExist:
-                return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+                raise ValueError("Invoice not found")
+
+            # Update invoice
+            buy_price = Decimal(product.buyprice or 0)
+            line_total = buy_price * item_value
+            invoice.amount += line_total
+            discount = Decimal(invoice.client.discount or 0)
+            delivery_price = Decimal(invoice.client.delivery_price or 0)
+            invoice.net_amount = invoice.amount - (discount * invoice.amount) + delivery_price
+            invoice.save()
 
             # Update product quantity
-            if item_value <= product.showed:
-                product.showed -= item_value
-                product.save()
-                dinar_unit_price = Decimal(product.buyprice or 0)
-                dinar_total_price = dinar_unit_price * item_value
-            else:
-                dinar_total_price = Decimal(product.buyprice or 0) * item_value
+            product.showed -= item_value
+            product.save()
 
+            dinar_total_price = buy_price * item_value
             item_data = {
                 'invoice_instance': invoice.autoid,
-                'invoice_no': data.get("invoice_id"),
-                'item_no': product.itemno,
+                'invoice_no': invoice_id,
+                'item_no': product.oem_numbers,
                 'pno': data.get("pno"),
                 'main_cat': product.itemmain,
                 'sub_cat': product.itemsubmain,
                 'name': product.itemname,
                 'company': product.companyproduct,
-                'company_no': product.eitemname,
+                'company_no': product.replaceno,
                 'quantity': item_value,
                 'date': timezone.now(),
                 'place': product.itemplace,
                 'dinar_unit_price': product.buyprice,
                 'dinar_total_price': dinar_total_price,
-                'prev_quantity': product.showed,
+                'prev_quantity': product.showed + item_value,
                 "remaining": 0,
                 "returned": 0,
-                'current_quantity': product.showed - item_value,
+                'current_quantity': product.showed,
             }
 
-            client_phone = invoice.client.mobile if invoice.client and invoice.client.mobile else "218942434823"
-            source_name = product.source.name if product.source else "Unknown"
-
             serializer = almogOil_serializers.PreOrderItemsSerializer(data=item_data)
-            if serializer.is_valid():
-                serializer.save()
+            if not serializer.is_valid():
+                # Ensure rollback
+                transaction.set_rollback(True)
+                raise ValueError(serializer.errors)
 
-                # === BUY INVOICE LOGIC START ===
-                source_obj = product.source
+            serializer.save()
 
-                buyitem_value = item_value
-                buy_dinar_unit_price = Decimal(product.costprice or 0)
-                buy_dinar_total_price = buy_dinar_unit_price * buyitem_value
+            # === Buy Invoice ===
+            source_name = product.source.name if product.source else "Unknown"
+            source_obj = product.source
+            buyitem_value = item_value
+            cost_price = Decimal(product.costprice or 0)
+            buy_dinar_total_price = cost_price * buyitem_value
 
-                buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.filter(
+            buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.filter(
+                source=source_name,
+                send=False,
+                confirmed=False
+            ).first()
+
+            if not buy_invoice:
+                buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
                     source=source_name,
-                    send=False,
-                    confirmed=False
-                ).first()
-
-                if not buy_invoice:
-                    buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
-                        source=source_name,
-                        invoice_date=timezone.now(),
-                        amount=0,
-                        net_amount=0,
-                        invoice_no=int(timezone.now().timestamp()),
-                        source_obj=product.source
-                    )
-
-                buy_invoice.related_preorders.add(invoice)
-
-                existing_buy_item = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(
-                    invoice_no=buy_invoice,
-                    pno=product.pno
-                ).first()
-
-                if existing_buy_item:
-                    new_total_quantity = existing_buy_item.Asked_quantity + item_value
-                    existing_buy_item.Asked_quantity = new_total_quantity
-                    existing_buy_item.dinar_total_price = Decimal(new_total_quantity) * Decimal(product.buyprice or 0)
-                    existing_buy_item.cost_total_price = Decimal(new_total_quantity) * Decimal(product.costprice or 0)
-                    existing_buy_item.invoice_no2 = buy_invoice.invoice_no
-                    existing_buy_item.date = timezone.now().date()
-                    existing_buy_item.prev_quantity = product.itemvalue
-                    existing_buy_item.main_cat = product.itemmain
-                    existing_buy_item.sub_cat = product.itemsubmain
-                    existing_buy_item.source = source_obj
-
-                    existing_buy_item.save()
-                else:
-                    almogOil_models.OrderBuyInvoiceItemsTable.objects.create(
-                        item_no=product.itemno,
-                        pno=product.pno,
-                        sourrce_pno=product.source_pno,
-                        name=product.itemname,
-                        company=product.companyproduct,
-                        company_no=product.eitemname,
-                        Asked_quantity=buyitem_value,
-                        date=str(timezone.now().date()),
-                        quantity_unit="",
-                        dinar_unit_price=product.costprice,
-                        dinar_total_price=buyitem_value * buy_dinar_unit_price,
-                        cost_unit_price=buy_dinar_unit_price,
-                        cost_total_price=buyitem_value * buy_dinar_unit_price,
-                        prev_quantity=product.itemvalue,
-                        current_buy_price=product.buyprice,
-                        invoice_no2=buy_invoice.invoice_no,
-                        invoice_no=buy_invoice,
-                        main_cat=product.itemmain,
-                        sub_cat=product.itemsubmain,
-                        source=source_obj
-                    )
-
-                buy_invoice.amount = (buy_invoice.amount or 0) + buy_dinar_total_price
-                buy_invoice.net_amount = buy_invoice.amount
-                buy_invoice.save()
-
-                # === BUY INVOICE LOGIC END ===
-
-                message_body = (
-                    f"👋 مرحبًا، تمت إضافة المنتج ({product.itemname}) إلى فاتورتك رقم {data.get('invoice_id')}.\n"
-                    f"الكمية: {item_value}\n"
-                    f"السعر للوحدة: {product.buyprice}\n"
-                    f"الإجمالي: {dinar_total_price}\n"
-                    f"📦 شكراً لتعاملك معنا!"
+                    invoice_date=timezone.now(),
+                    amount=0,
+                    net_amount=0,
+                    invoice_no=int(timezone.now().timestamp()),
+                    source_obj=product.source
                 )
 
-                response = send_whatsapp_message_via_green_api(client_phone, message_body)
+            buy_invoice.related_preorders.add(invoice)
 
-                return Response({
-                    "message": "Item created successfully.",
-                    "item_id": serializer.instance.autoid,
-                    "whatsapp_sent": "idMessage" in response if response else False,
-                    "phone_number": client_phone,
-                    "buy_invoice_send": buy_invoice.send,
-                    "confirmation": buy_invoice.confirmed,
-                    "buy_invoice_id": buy_invoice.invoice_no,
-                    "source_name": source_name,
-                    "left item": product.showed
-                }, status=status.HTTP_201_CREATED)
+            existing_buy_item = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(
+                invoice_no=buy_invoice,
+                pno=product.pno
+            ).first()
 
-            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            if existing_buy_item:
+                new_total_quantity = existing_buy_item.Asked_quantity + item_value
+                existing_buy_item.Asked_quantity = new_total_quantity
+                existing_buy_item.dinar_total_price = new_total_quantity * buy_price
+                existing_buy_item.cost_total_price = new_total_quantity * cost_price
+                existing_buy_item.invoice_no2 = buy_invoice.invoice_no
+                existing_buy_item.date = timezone.now().date()
+                existing_buy_item.prev_quantity = product.itemvalue
+                existing_buy_item.main_cat = product.itemmain
+                existing_buy_item.sub_cat = product.itemsubmain
+                existing_buy_item.source = source_obj
+                existing_buy_item.save()
+            else:
+                almogOil_models.OrderBuyInvoiceItemsTable.objects.create(
+                    item_no=product.oem_numbers,
+                    pno=product.pno,
+                    oem=product.oem_numbers,
+                    sourrce_pno=product.source_pno,
+                    name=product.itemname,
+                    company=product.companyproduct,
+                    company_no=product.replaceno,
+                    Asked_quantity=buyitem_value,
+                    date=timezone.now().date(),
+                    quantity_unit="",
+                    dinar_unit_price=product.costprice,
+                    dinar_total_price=buyitem_value * cost_price,
+                    cost_unit_price=cost_price,
+                    cost_total_price=buyitem_value * cost_price,
+                    prev_quantity=product.itemvalue,
+                    current_buy_price=product.buyprice,
+                    invoice_no2=buy_invoice.invoice_no,
+                    invoice_no=buy_invoice,
+                    main_cat=product.itemmain,
+                    sub_cat=product.itemsubmain,
+                    source=source_obj
+                )
 
-        except Exception as e:
-            return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            buy_invoice.amount += buy_dinar_total_price
+            buy_invoice.net_amount = buy_invoice.amount
+            buy_invoice.save()
 
-    return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            # Optional WhatsApp
+            client_phone = invoice.client.mobile
+            message_body = (
+                f"👋 مرحبًا، تمت إضافة المنتج ({product.itemname}) إلى فاتورتك رقم {invoice_id}.\n"
+                f"الكمية: {item_value}\n"
+                f"السعر للوحدة: {product.buyprice}\n"
+                f"الإجمالي: {dinar_total_price}\n"
+                f"📦 شكراً لتعاملك معنا!"
+            )
+            send_whatsapp_message_via_green_api(client_phone, message_body)
 
+            return Response({
+                "message": "Item created successfully.",
+                "item_id": serializer.instance.autoid,
+                "phone_number": client_phone,
+                "buy_invoice_send": buy_invoice.send,
+                "confirmation": buy_invoice.confirmed,
+                "buy_invoice_id": buy_invoice.invoice_no,
+                "source_name": source_name,
+                "left item": product.showed
+            }, status=status.HTTP_201_CREATED)
+
+    except ValueError as ve:
+        return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        # Optional: delete invoice if you know it's a temporary/test invoice
+        almogOil_models.PreOrderTable.objects.filter(invoice_no=invoice_id).delete()
+        return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -898,7 +901,7 @@ def Buyhandle_confirm_action(preorder):
         net_amount=preorder.net_amount,
         amount=preorder.amount,
     )
-
+     
     # Process PreOrder items and move them to BuyInvoiceItemsTable
     preorder_items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=preorder.autoid)
     confirmed_quantity = sum(item.Confirmed_quantity or 0 for item in preorder_items)
@@ -969,6 +972,9 @@ def Buyhandle_confirm_action(preorder):
 
     preorder.confirmed = True
     preorder.save()
+    transaction = f" {Buy_invoice.invoice_no}فاتورة  شراء- رقم" ,
+    details = f"تأكيد طلب شراء رقم {Buy_invoice.invoice_no} من المصدر {source.name}، بتاريخ {timezone.now().date()}، عدد الأصناف: {preorder_items.count()}، الكمية الإجمالية المؤكدة: {confirmed_quantity}"
+    create_transactions_history_record("source", source, "debit", Buy_invoice.amount, transaction, details)
 
     return Response({"success": True, "message": "PreOrder items confirmed and moved to buyinvoice."}, status=status.HTTP_200_OK)
 
@@ -1023,27 +1029,32 @@ def send_unsent_invoices(request):
         return Response({'error': f'Error processing invoice: {str(e)}'}, status=500)
 
 
+
 def prepare_invoice_data(record, items):
     # Extract relevant fields and prepare data for invoice creation
-    invoice_date = record.send_date or timezone.now().date(),
+    invoice_date = record.send_date or timezone.now().date()
+
     total_amount = float(record.amount) if hasattr(record, 'amount') else 0
+    total = float(record.buy_net_amount) if hasattr(record, 'buy_net_amount') else 0
 
     # Convert total amount to words (Libyan Dinar)
     total_in_words = num2words(total_amount, lang='ar') + ' دينار ليبي فقط لا غير'
 
     invoice_data = {
-        'company_name': 'شركة مارين لاستيراد قطع غيار السيارات و زيوتها',
+        'company_name': 'منصة حُزمة',
         'invoice_no': record.invoice_no,
         'date': invoice_date,
         'payment_type':  'آجلة',
         'customer_name': record.source_obj.name if record.source_obj else '',
         'customer_info': record.source_obj.address if record.source_obj else '',
+        'commission': record.source_obj.commission if record.source_obj else 0,
         'items': [],
         'total': total_amount,
+        'hoz_total': total,
         'total_in_words': total_in_words,
         'notes': [
-            '💻 زر موقعنا الإلكتروني الآن واستمتع بالعروض الحصرية: [www.hozma.com]',
-    '📞 لمزيد من التفاصيل، يمكنك الاتصال بنا على الرقم: 123-456-7890.'
+            '💻 زر موقعنا الإلكتروني الآن واستمتع بالعروض الحصرية: www.hozma.net',
+    '📞 لمزيد من التفاصيل، يمكنك الاتصال بنا على الرقم: 123-7890.'
         ]
     }
 
@@ -1053,131 +1064,253 @@ def prepare_invoice_data(record, items):
             'name': item.name,
             'company': item.company,
             'Asked_quantity': item.Asked_quantity,
-            'Confirmed_quantity': item.Confirmed_quantity,
-            'dinar_unit_price': item.dinar_unit_price,
-            'main_cat': item.main_cat,
-            'sub_cat': item.sub_cat
+            
+            'dinar_unit_price': item.current_buy_price,
+           
         })
+
 
     return invoice_data
 
 
+
+
 def create_excel_invoice(invoice_data):
-    # Generate the Excel file
     excel_buffer = BytesIO()
     workbook = xlsxwriter.Workbook(excel_buffer)
     worksheet = workbook.add_worksheet('فاتورة')
 
-    # Arabic formatting styles
-    arabic_header_format = workbook.add_format({
-        'bold': True,
-        'font_size': 16,
-        'align': 'center',
-        'valign': 'vcenter',
-        'font_name': 'Arial'
-    })
+    # Page setup for A4
+    worksheet.set_paper(9)  # A4 paper
+    worksheet.set_portrait()
+    worksheet.set_margins(left=0.5, right=0.5, top=0.5, bottom=0.5)
+    worksheet.set_print_scale(90)
+    worksheet.hide_gridlines(2)
+    worksheet.fit_to_pages(1, 1)
 
-    arabic_company_format = workbook.add_format({
+    rtl_format = {'reading_order': 2}
+
+    # Company Name - Larger, bold, and center-aligned with bottom border
+    company_format = workbook.add_format({
+        **rtl_format,
         'bold': True,
         'font_size': 18,
         'align': 'center',
         'valign': 'vcenter',
-        'font_name': 'Arial'
+        'font_name': 'Arial',
+        'bottom': 3,
+        'font_color': '#003366'
     })
 
-    arabic_info_format = workbook.add_format({
-        'font_size': 14,
-        'align': 'right',
-        'font_name': 'Arial'
-    })
-
-    arabic_table_header_format = workbook.add_format({
+    # Invoice header info format - bold, medium size, right-aligned
+    header_label_format = workbook.add_format({
+        **rtl_format,
         'bold': True,
         'font_size': 12,
-        'bg_color': '#DDDDDD',
-        'border': 1,
-        'align': 'center',
-        'font_name': 'Arial'
+        'align': 'right',
+        'font_name': 'Arial',
+        'valign': 'vcenter'
     })
 
-    arabic_cell_format = workbook.add_format({
+    header_value_format = workbook.add_format({
+        **rtl_format,
         'font_size': 12,
-        'border': 1,
-        'align': 'center',
-        'font_name': 'Arial'
+        'align': 'right',
+        'font_name': 'Arial',
+        'valign': 'vcenter'
     })
 
-    arabic_right_align_format = workbook.add_format({
+    # Address and customer info format
+    customer_info_format = workbook.add_format({
+        **rtl_format,
+        'font_size': 11,
+        'align': 'right',
+        'font_name': 'Arial',
+        'text_wrap': True,
+        'valign': 'top'
+    })
+
+    # Table header format - bold with background and border
+    table_header_format = workbook.add_format({
+        **rtl_format,
+        'bold': True,
         'font_size': 12,
+        'bg_color': '#4F81BD',
+        'font_color': 'white',
+        'border': 1,
+        'align': 'center',
+        'valign': 'vcenter',
+        'font_name': 'Arial',
+        'text_wrap': True
+    })
+
+    # Item cell format (Right aligned)
+    item_cell_right = workbook.add_format({
+        **rtl_format,
+        'font_size': 11,
         'border': 1,
         'align': 'right',
-        'font_name': 'Arial'
+        'valign': 'vcenter',
+        'font_name': 'Arial',
+        'text_wrap': True
     })
 
-    arabic_currency_format = workbook.add_format({
-        'font_size': 12,
+    # Item name format - larger, bold, right aligned
+    item_name_format = workbook.add_format({
+        **rtl_format,
+        'bold': True,
+        'font_size': 13,
         'border': 1,
-        'align': 'center',
+        'align': 'right',
+        'valign': 'vcenter',
+        'font_name': 'Arial',
+        'text_wrap': True,
+        'font_color': '#2F5496'
+    })
+
+    # Currency format (Right aligned)
+    currency_format = workbook.add_format({
+        **rtl_format,
+        'font_size': 11,
+        'border': 1,
+        'align': 'right',
         'num_format': '#,##0.00 "د.ل"',
         'font_name': 'Arial'
     })
 
-    # Write company header (bigger font)
-    worksheet.merge_range('A1:F1', invoice_data['company_name'], arabic_company_format)
+    # Total row format - bold, larger font, right aligned with border
+    total_format = workbook.add_format({
+        **rtl_format,
+        'bold': True,
+        'font_size': 13,
+        'border': 1,
+        'align': 'right',
+        'font_name': 'Arial',
+        'font_color': '#000000'
+    })
 
-    # Write invoice info (bigger cells for invoice number)
-    worksheet.merge_range('A3:B3', f'فاتورة شراء رقم : {invoice_data["invoice_no"]}', arabic_info_format)
-    worksheet.write('C3', f'التاريخ : {invoice_data["date"]}', arabic_info_format)
-    worksheet.write('D3', invoice_data['payment_type'], arabic_info_format)
+    # Total amount value format - bold, larger font, center aligned
+    total_value_format = workbook.add_format({
+        **rtl_format,
+        'bold': True,
+        'font_size': 13,
+        'border': 1,
+        'align': 'center',
+        'font_name': 'Arial',
+        'num_format': '#,##0.00 "د.ل"',
+        'font_color': '#000000'
+    })
 
-    # Write customer info (bigger cells for customer name)
-    worksheet.merge_range('A4:B4', f'اسم المورد : {invoice_data["customer_name"]}', arabic_info_format)
-    worksheet.write('C4', invoice_data['customer_info'], arabic_info_format)
+    # Amount in words format - italic, right aligned
+    amount_words_format = workbook.add_format({
+        **rtl_format,
+        'italic': True,
+        'font_size': 11,
+        'align': 'right',
+        'font_name': 'Arial',
+        'text_wrap': True,
+        'font_color': '#666666'
+    })
 
-    # Write table headers
-    headers = ['رقم الصنف', 'بيان الصنف', 'الكمية المطلوبة', 'الكمية المؤكدة', 'سعر الوحدة', 'التصنيف']
-    for col, header in enumerate(headers):
-        worksheet.write(5, col, header, arabic_table_header_format)
+    # Notes format
+    notes_format = workbook.add_format({
+        **rtl_format,
+        'font_size': 11,
+        'align': 'right',
+        'font_name': 'Arial',
+        'text_wrap': True,
+        'valign': 'top'
+    })
 
-    # Write items
+    # Signature format
+    signature_format = workbook.add_format({
+        **rtl_format,
+        'bold': True,
+        'font_size': 12,
+        'align': 'center',
+        'font_name': 'Arial',
+        'bottom': 1
+    })
+
+    # Write Company Name (Merged across B-G to center it better)
+    worksheet.merge_range('B1:G1', invoice_data['company_name'], company_format)
+    worksheet.set_row(0, 30)
+
+    # Invoice details - shifted one column to the right (B instead of A)
+    worksheet.merge_range('B2:C2', f'فاتورة شراء رقم:{invoice_data["invoice_no"]}', header_value_format)
+    worksheet.merge_range('E2:F2', f'التاريخ:{invoice_data["date"]}', header_value_format)
+    worksheet.merge_range('B3:C3', f'نوع الدفع:{invoice_data["payment_type"]}', header_value_format)
+    worksheet.merge_range('E3:F3', f'اسم المورد:{invoice_data["customer_name"]}', header_value_format)
+    worksheet.merge_range('E4:G4', f'عنوان المورد:{invoice_data["customer_info"]}', customer_info_format)
+
+    # Spacing rows
+    worksheet.set_row(3, 35)
+    worksheet.set_row(4, 30)
+
+    # Table headers starting at row 5 (index 5) - shifted one column to the right
+    headers = ['رقم الصنف', 'بيان الصنف', 'الكمية', 'السعر']
+ # Reversed order
+    col_widths = [15, 50, 15, 15]
+
+    start_col = 4  # Column E
+    for i, (header, width) in enumerate(zip(headers, col_widths)):
+        col_idx = start_col - i
+        worksheet.write(5, col_idx, header, table_header_format)
+        worksheet.set_column(col_idx, col_idx, width)
+
+
+    # Write items starting at row 6 - shifted one column to the right
     row = 6
     for item in invoice_data['items']:
-        worksheet.write(row, 0, item['pno'], arabic_cell_format)
-        worksheet.write(row, 1, f"{item['name']} / {item['company'] if item['company'] else ''}", arabic_right_align_format)
-        worksheet.write(row, 2, item['Asked_quantity'], arabic_cell_format)
-        worksheet.write(row, 3, item['Confirmed_quantity'] if item['Confirmed_quantity'] else '-', arabic_cell_format)
-        worksheet.write(row, 4, item['dinar_unit_price'], arabic_currency_format)
-        worksheet.write(row, 5, f"{item['main_cat']} / {item['sub_cat']}", arabic_cell_format)
+        worksheet.write(row, 1, item['dinar_unit_price'], currency_format)  # السعر
+        worksheet.write(row, 2, item['Asked_quantity'], item_cell_right)    # الكمية
+        worksheet.write(row, 3, f"{item['name']} / {item['company'] or ''}", item_name_format)  # بيان الصنف
+        worksheet.write(row, 4, item['pno'], item_cell_right)     # column E
+        worksheet.set_row(row, 25)
         row += 1
 
-    # Write total amount in Libyan Dinar
-    worksheet.write(row, 3, 'المبلغ الإجمالي:', arabic_table_header_format)
-    worksheet.write(row, 4, invoice_data['total'], arabic_currency_format)
+    # Total row - shifted one column to the right
+     # Total rows - one under the other, right-aligned
+    worksheet.write(row, 2, 'المبلغ الإجمالي:', total_format)
+    worksheet.write(row, 1, invoice_data['hoz_total'], total_value_format)
+    worksheet.set_row(row, 25)
+    row += 1
+
+    worksheet.write(row, 2, 'الخصم:', total_format)
+    worksheet.write(row, 1, invoice_data['commission'], total_value_format)
+    worksheet.set_row(row, 25)
+    row += 1
+
+    worksheet.write(row, 2, 'الصافي:', total_format)
+    worksheet.write(row,1, invoice_data['total'], total_value_format)
+    worksheet.set_row(row, 25)
+    row += 1
+
+
+    # Empty row for spacing
+    worksheet.set_row(row, 10)
+    row += 1
+
+    # Total amount in words - shifted one column to the right
+    worksheet.merge_range(row, 1, row, 6, f'المبلغ بالحروف: {invoice_data["total_in_words"]}', amount_words_format)
+    worksheet.set_row(row, 25)
     row += 2
 
-    # Write total in words (Libyan Dinar)
-    worksheet.merge_range(f'A{row+1}:F{row+1}', f'فقط {invoice_data["total_in_words"]}', arabic_info_format)
-    row += 2
-
-    # Write notes
+    # Notes - shifted one column to the right
     for note in invoice_data['notes']:
-        worksheet.write(row, 0, note, arabic_right_align_format)
+        worksheet.merge_range(row, 1, row, 6, note, notes_format)
+        worksheet.set_row(row, 20)
         row += 1
 
-    # Adjust column widths (larger for Arabic text)
-    worksheet.set_column('A:A', 15)  # Wider for item numbers
-    worksheet.set_column('B:B', 40)  # Much wider for Arabic descriptions
-    worksheet.set_column('C:C', 20)  # Quantity columns wider
-    worksheet.set_column('D:D', 20)
-    worksheet.set_column('E:E', 20)  # Price column
-    worksheet.set_column('F:F', 25)  # Category column
+    # Signature lines - shifted one column to the right
+    row += 2
+    worksheet.merge_range(row, 1, row, 3, 'توقيع المورد:', signature_format)  # columns B-D
+    worksheet.merge_range(row, 4, row, 6, 'توقيع المستلم:', signature_format)  # columns E-G
+    worksheet.set_row(row, 35)
 
     workbook.close()
     excel_buffer.seek(0)
-
     return excel_buffer
-
-
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -1308,6 +1441,28 @@ def normalize_oem_list(oem_string):
     return set(o.strip() for o in re.split(r'[;,]', str(oem_string)) if o.strip())
 
 
+
+# Assuming your model name is CompanyTable (adjust accordingly)
+def validate_company_name(name):
+    all_companies = almogOil_models.Companytable.objects.values_list('companyname', flat=True)
+    normalized_name = name.strip().lower()
+    if normalized_name in [c.lower() for c in all_companies]:
+        return None  # Name is valid
+    else:
+        close_matches = difflib.get_close_matches(normalized_name, [c.lower() for c in all_companies], n=1, cutoff=0.6)
+        if close_matches:
+            # Suggest the closest match
+            original_case_match = next((c for c in all_companies if c.lower() == close_matches[0]), close_matches[0])
+            return Response(
+                {'error': f'اسم الشركة "{name}" غير موجود. هل تقصد "{original_case_match}"؟'},
+                status=400
+            )
+        else:
+            return Response({'error': f'اسم الشركة "{name}" غير موجود في قاعدة البيانات'}, status=400)
+
+
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -1331,6 +1486,9 @@ def create_mainitem_by_source(request):
     try:
         
         company = str(data.get('companyproduct', '')).strip()
+        company_validation = validate_company_name(company)
+        if company_validation:
+           return company_validation
         original_buyprice = Decimal(str(data.get('buyprice', '0'))).quantize(Decimal('0.0000'))
         showed = data.get('showed')
         source = str(data.get('source', '')).strip()
@@ -1348,7 +1506,7 @@ def create_mainitem_by_source(request):
         
         incoming_oems = normalize_oem_list(oem_csv)
 
-        eitemname = str(data.get('eitemname', '')).strip()
+        replaceno = str(data.get('replaceno', '')).strip()
         if not almogOil_models.ItemCategory.objects.filter(name__iexact=category_type).exists():
             return Response({'error': f' صنف الفئة "{category_type}" غير موجودة في جدول التصنيفات'}, status=400)
         
@@ -1407,8 +1565,9 @@ def create_mainitem_by_source(request):
         #      هنا مثال سريع لجعلها معياراً ثانوياً:
 
         if pno:
-            existing_product = almogOil_models.Mainitem.objects.filter(pno=pno).first()
-            if existing_product:
+            with transaction.atomic():
+             existing_product = almogOil_models.Mainitem.objects.select_for_update().filter(pno=pno).first()
+             if existing_product:
                 update_data = {
                     'showed': showed,
                     'costprice': str(costprice),
@@ -1454,14 +1613,14 @@ def create_mainitem_by_source(request):
             if oem_matches:
                 company_oem = None
                 for match in oem_matches:
-                    if match.cname.lower() == company.lower() or match.cno.lower() == eitemname.lower():
+                    if match.cname.lower() == company.lower() or match.cno.lower() == replaceno.lower():
                         company_oem = match
                         break
 
                 if company_oem:
                     all_oems = safe_csv(company_oem.oemno)
                     existing_items = almogOil_models.Mainitem.objects.filter(Q(companyproduct__iexact=company)
-                                                                              | Q(eitemname__iexact=eitemname))
+                                                                              | Q(replaceno__iexact=replaceno))
                     item_to_update = None
                     for item in existing_items:
                         item_oems = safe_csv(item.oem_numbers)
@@ -1501,7 +1660,7 @@ def create_mainitem_by_source(request):
                 else:
                     new_oem_row = almogOil_models.Oemtable.objects.create(
                         cname=company,
-                        cno=eitemname,
+                        cno=replaceno,
                         oemno=oem_csv
                     )
                     data['oem_numbers'] = new_oem_row.oemno
@@ -1514,7 +1673,7 @@ def create_mainitem_by_source(request):
             else:
                 new_oem_row = almogOil_models.Oemtable.objects.create(
                     cname=company,
-                    cno=eitemname,
+                    cno=replaceno,
                     oemno=oem_csv
                 )
                 data['oem_numbers'] = new_oem_row.oemno
@@ -1639,7 +1798,7 @@ def web_filter_items(request):
 
     if filters.get("oem_combined"):
         val = filters["oem_combined"]
-        filters_q &= (Q(oem_numbers__icontains=val) | Q(eitemname__icontains=val))
+        filters_q &= (Q(oem_numbers__icontains=val) | Q(replaceno__icontains=val))
 
     # "showed" logic (0 or >0)
     if filters.get("showed") == "0":
@@ -1699,7 +1858,7 @@ def web_filter_items(request):
     # 4) Paginate on the server:
     paginator = Paginator(base_qs, page_size)
     page_obj  = paginator.get_page(page_number)  # this handles out‐of‐range gracefully
-    serialized_data = products_serializers.MainitemSerializer(page_obj, many=True).data
+    serialized_data = wholesale_serializers.MainitemSerializerHozma(page_obj, many=True).data
 
     # 5) Compute totals over the ENTIRE filtered queryset (not just this page):
     #     (If you want to compute only for the current page, move this inside the loop below.)
@@ -2510,8 +2669,7 @@ def get_client_preorders(request):
 
     preorders = almogOil_models.PreOrderTable.objects.filter(client=client_id)
 
-    if not preorders.exists():
-        return Response({"error": "No preorders found for this client"}, status=404)
+
 
    
     serializer = wholesale_serializers.SimplePreOrderSerializer(preorders, many=True)
@@ -2816,3 +2974,645 @@ def return_policy_api_view(request):
 
     return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
+
+@api_view(['DELETE'])
+@authentication_classes([CookieAuthentication])
+@permission_classes([IsAuthenticated])
+def delete_all_images(request):
+    almogOil_models.Imagetable.objects.all().delete()
+    return Response({'message': 'All images deleted successfully.'}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@authentication_classes([CookieAuthentication])
+@permission_classes([IsAuthenticated])  # Or CookieAuthentication if you have a custom one
+def filter_clients(request):
+    data = request.data
+    page = int(data.get('page', 1))
+    page_size = int(data.get('page_size', 10))
+    is_online = data.get('is_online', None)  # true, false or null
+    sort_by = data.get('sort_by', 'name_asc')  # e.g., 'total_amount_desc', 'orders_asc', 'name_z_to_a', etc.
+
+    # Unique cache key based on request payload
+    cache_key = f"filtered_clients_{hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return Response(cached_data)
+
+    # Fetch all clients
+    clients = almogOil_models.AllClientsTable.objects.all()
+
+    # Filter by online status if provided
+    if is_online is not None:
+        clients = clients.filter(is_online=is_online)
+
+    # Annotate clients with total orders and amount
+    clients = clients.annotate(
+        total_orders=Count('preordertable'),
+        total_amount=Sum('preordertable__amount')
+    )
+
+    # Sorting logic
+    if sort_by == 'total_amount_desc':
+        clients = clients.order_by('-total_amount')
+    elif sort_by == 'total_amount_asc':
+        clients = clients.order_by('total_amount')
+    elif sort_by == 'orders_desc':
+        clients = clients.order_by('-total_orders')
+    elif sort_by == 'orders_asc':
+        clients = clients.order_by('total_orders')
+    elif sort_by == 'newest':
+        clients = clients.order_by('-last_activity')
+    elif sort_by == 'oldest':
+        clients = clients.order_by('last_activity')
+    elif sort_by == 'name_a_to_z':
+        clients = clients.order_by('name')
+    elif sort_by == 'name_z_to_a':
+        clients = clients.order_by('-name')
+    else:
+        clients = clients.order_by('name')  # Default
+
+    paginator = Paginator(clients, page_size)
+    page_obj = paginator.get_page(page)
+
+    serializer = wholesale_serializers.ClientInfoSerializer(page_obj, many=True, context={'request': request})
+    
+    response_data = {
+        'total_clients': paginator.count,
+        'total_pages': paginator.num_pages,
+        'current_page': page,
+        'page_size': page_size,
+        'results': serializer.data
+    }
+
+    # Cache for 5 minutes
+    cache.set(cache_key, response_data, timeout=300)
+
+    return Response(response_data)
+
+
+
+@api_view(['GET'])
+@authentication_classes([CookieAuthentication])
+@permission_classes([IsAuthenticated])
+def get_invoice_status_summary(request):
+    unconfirmed_count = almogOil_models.OrderBuyinvoicetable.objects.filter(confirmed=False).count()
+    unsent_count = almogOil_models.OrderBuyinvoicetable.objects.filter(send=False).count()
+
+    return Response({
+        'unconfirmed_invoices': unconfirmed_count,
+        'unsent_invoices': unsent_count
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def get_product_images(request, id):
+    try:
+        product = almogOil_models.Mainitem.objects.get(pno=id)
+    except almogOil_models.Mainitem.DoesNotExist:
+        return Response({"error": "Product not found!"}, status=404)
+
+    images = almogOil_models.Imagetable.objects.filter(productid=product.fileid)
+    serializer = products_serializers.productImageSerializer(images, many=True)
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def get_company_list(request):
+    companies = almogOil_models.Companytable.objects.all()
+
+    data = {
+        "main_types": [
+            {
+                "typename": company.companyname or "بدون اسم",
+                "logo_obj": company.logo_obj.url if company.logo_obj else "/media/default.png"
+            }
+            for company in companies
+        ]
+    }
+
+    return Response(data)
+
+
+@extend_schema(
+description="""Get a specific client from db.""",
+tags=["Clients"],
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def get_all_clients1(request,id=None):
+    if request.method == 'GET':
+        clients = almogOil_models.AllClientsTable.objects.all().filter(clientid=id)
+        serializer = almogOil_serializers.AllClientsTableSerializer(clients, many=True)
+        return Response({'clients': serializer.data})
+@extend_schema(
+    description="Create a new pre-order and immediately add an item to it.",
+    tags=["PreOrder Combined"],
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def create_preorder_with_item(request):
+    data = request.data
+
+    required_fields = ["client", "items"]
+    if any(not data.get(f) for f in required_fields):
+        return Response({"error": "يرجى تعبئة الحقول المطلوبة: العميل والعناصر."}, status=400)
+
+    if not isinstance(data["items"], list) or not data["items"]:
+        return Response({"error": "قائمة العناصر مطلوبة ويجب ألا تكون فارغة."}, status=400)
+
+    try:
+        with transaction.atomic():
+            # === 1. Get Client ===
+            client_identifier = data["client"]
+            if str(client_identifier).isdigit():
+                client_obj = almogOil_models.AllClientsTable.objects.get(clientid=int(client_identifier))
+            else:
+                client_obj = almogOil_models.AllClientsTable.objects.get(name=client_identifier)
+
+            balance_data = almogOil_models.TransactionsHistoryTable.objects.filter(
+                client_object_id=client_obj.clientid
+            ).aggregate(
+                total_debt=Sum('debt') or Decimal("0.0000"),
+                total_credit=Sum('credit') or Decimal("0.0000")
+            )
+
+            total_debt = balance_data.get('total_debt') or Decimal('0.0000')
+            total_credit = balance_data.get('total_credit') or Decimal('0.0000')
+            client_balance = total_credit - total_debt
+
+            # === 2. Validate All Items First ===
+            validated_items = []
+            for item in data["items"]:
+                pno = item.get("pno")
+                fileid = item.get("fileid")
+                item_value = item.get("itemvalue")
+
+                if not (pno and fileid and item_value):
+                    raise ValueError("أحد العناصر يحتوي على بيانات غير مكتملة.")
+
+                product = almogOil_models.Mainitem.objects.select_for_update().get(pno=pno, fileid=fileid)
+
+                if int(item_value) > product.showed:
+                    raise ValueError(
+    f"الكمية المطلوبة للمنتج {product.itemname} (رقم القطعة: {product.pno}) غير متوفرة. الكمية المتاحة: {product.showed}"
+)
+
+
+                validated_items.append((product, int(item_value)))
+
+            # === 3. Create Invoice ===
+            last_receipt_no = get_last_PreOrderTable_no()
+            for_who = "application" if data.get("for_who") == "application" else None
+
+            invoice_data = {
+                'invoice_no': last_receipt_no,
+                'client': client_obj.clientid,
+                'client_id': client_obj.clientid,
+                'client_name': client_obj.name,
+                'client_rate': client_obj.category,
+                'client_category': client_obj.subtype,
+                'client_limit': client_obj.loan_limit,
+                'client_balance': client_balance,
+                'invoice_date': timezone.now(),
+                'invoice_status': "لم تشتري",
+                'payment_status': data.get("payment_status"),
+                'for_who': for_who,
+                'date_time': timezone.now(),
+                'price_status': "",
+                'mobile': data.get("mobile") if data.get("mobile") else False,
+                'amount': 0,
+                'net_amount': 0
+            }
+
+            invoice_serializer = almogOil_serializers.PreOrderSerializer(data=invoice_data)
+            invoice_serializer.is_valid(raise_exception=True)
+            invoice = invoice_serializer.save()
+
+            # === 4. Process Each Item ===
+            total_amount = Decimal("0.000")
+            for product, item_value in validated_items:
+                buy_price = Decimal(product.buyprice or 0)
+                discount = Decimal(client_obj.discount or 0)
+                delivery_price = Decimal(client_obj.delivery_price or 0)
+
+                # Update stock
+                product.showed -= item_value
+                product.save()
+
+                dinar_total_price = buy_price * item_value
+                total_amount += dinar_total_price
+
+                # Save PreOrder Item
+                item_data = {
+                    'invoice_instance': invoice.autoid,
+                    'invoice_no': invoice.invoice_no,
+                    'item_no': product.oem_numbers,
+                    'pno': product.pno,
+                    'main_cat': product.itemmain,
+                    'sub_cat': product.itemsubmain,
+                    'name': product.itemname,
+                    'company': product.companyproduct,
+                    'company_no': product.replaceno,
+                    'quantity': item_value,
+                    'date': timezone.now(),
+                    'place': product.itemplace,
+                    'dinar_unit_price': product.buyprice,
+                    'dinar_total_price': dinar_total_price,
+                    'prev_quantity': product.showed + item_value,
+                    "remaining": 0,
+                    "returned": 0,
+                    'current_quantity': product.showed,
+                }
+                 # When creating or updating buy_invoice items:
+                print("itemname length:", len(product.itemname or ""), product.itemname)
+                print("company length:", len(product.companyproduct or ""), product.companyproduct)
+                print("company_no length:", len(product.replaceno or ""), product.replaceno)
+ 
+
+    
+                item_serializer = almogOil_serializers.PreOrderItemsSerializer(data=item_data)
+                item_serializer.is_valid(raise_exception=True)
+                item_serializer.save()
+                
+                # Update/Create Buy Invoice (same logic as before...)
+                source_name = product.source.name if product.source else "Unknown"
+                source_obj = product.source
+                cost_price = Decimal(product.costprice or 0)
+                
+
+                buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.filter(
+                    source=source_name,
+                    send=False,
+                    confirmed=False
+                ).first()
+
+                if not buy_invoice:
+                    buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
+                        source=source_name,
+                        invoice_date=timezone.now(),
+                        amount=0,
+                        net_amount=0,
+                        invoice_no=int(timezone.now().timestamp()),
+                        source_obj=product.source
+                    )
+
+                buy_invoice.related_preorders.add(invoice)
+
+                existing_buy_item = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(
+                    invoice_no=buy_invoice,
+                    pno=product.pno
+                ).first()
+
+                if existing_buy_item:
+                    new_total_quantity = existing_buy_item.Asked_quantity + item_value
+                    existing_buy_item.Asked_quantity = new_total_quantity
+                    existing_buy_item.dinar_total_price = new_total_quantity * buy_price
+                    existing_buy_item.cost_total_price = new_total_quantity * cost_price
+                    existing_buy_item.invoice_no2 = buy_invoice.invoice_no
+                    existing_buy_item.date = timezone.now().date()
+                    existing_buy_item.prev_quantity = product.itemvalue
+                    existing_buy_item.main_cat = product.itemmain
+                    existing_buy_item.sub_cat = product.itemsubmain
+                    existing_buy_item.source = source_obj
+                    existing_buy_item.save()
+                else:
+                    almogOil_models.OrderBuyInvoiceItemsTable.objects.create(
+                        item_no=product.oem_numbers,
+                        pno=product.pno,
+                        sourrce_pno=product.source_pno,
+                        oem=product.oem_numbers,
+                        name=product.itemname,
+                        company=product.companyproduct,
+                        company_no=product.replaceno,
+                        Asked_quantity=item_value,
+                        date=timezone.now().date(),
+                        quantity_unit="",
+                        dinar_unit_price=product.costprice,
+                        dinar_total_price=item_value * cost_price,
+                        cost_unit_price=cost_price,
+                        cost_total_price=item_value * cost_price,
+                        prev_quantity=product.itemvalue,
+                        current_buy_price=product.buyprice,
+                        invoice_no2=buy_invoice.invoice_no,
+                        invoice_no=buy_invoice,
+                        main_cat=product.itemmain,
+                        sub_cat=product.itemsubmain,
+                        source=source_obj
+                    )
+
+
+
+                
+                buy_invoice.buy_net_amount = total_amount
+                buy_invoice.amount += item_value * cost_price
+                buy_invoice.net_amount = buy_invoice.amount
+                buy_invoice.save()
+                invoice.related_buyorders.add(buy_invoice)
+
+                # Optional: WhatsApp
+                message = f"✅ تم إضافة {product.itemname}، الكمية {item_value}، لفاتورتك رقم {invoice.invoice_no}."
+                send_whatsapp_message_via_green_api(invoice.client.mobile, message)
+
+            # === 5. Finalize Invoice Total ===
+            invoice.amount = total_amount
+            invoice.net_amount = total_amount - (discount * total_amount) + delivery_price
+            invoice.save()
+
+            return Response({
+                "success": True,
+                "message": "تم إنشاء الفاتورة بنجاح.",
+                "invoice_no": invoice.invoice_no,
+            }, status=201)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def create_supplier_packing_list_api(request):
+    invoice_no = request.data.get('invoice_no')
+    
+    if not invoice_no:
+        return Response({'error': 'invoice_no is required'}, status=400)
+
+    try:
+        record = almogOil_models.OrderBuyinvoicetable.objects.get(
+            invoice_no=invoice_no, 
+            source_obj__isnull=False
+        )
+    except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=404)
+
+    try:
+        items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=record)
+        if not items.exists():
+            return Response({'error': 'No items found for this invoice'}, status=404)
+
+        # Prepare the packing list data
+        invoice_date = record.send_date or timezone.now().date()
+        packing_list_data = {
+            'invoice_no': record.invoice_no,
+            'date': invoice_date,
+            'customer_name': record.source_obj.name if record.source_obj else '',
+            'items': []
+        }
+
+        for item in items:
+            packing_list_data['items'].append({
+                'pno': item.pno,
+                'name': item.name,
+                'company': item.company,
+                'Asked_quantity': item.Asked_quantity,
+                'internal_code': getattr(item, 'sourrce_pno', ''),
+                'company_code': getattr(item, 'company_no', ''),
+                'original_code': getattr(item, 'oem', ''),
+            })
+
+        # Create the packing list Excel file
+        excel_buffer = create_supplier_packing_list(packing_list_data)
+
+        # Create response with the Excel file
+        response = HttpResponse(
+            excel_buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename=packing_list_{invoice_no}.xlsx'
+        
+        return response
+
+    except Exception as e:
+        return Response({'error': f'Error processing packing list: {str(e)}'}, status=500)
+
+
+def create_supplier_packing_list(invoice_data):
+    excel_buffer = BytesIO()
+    workbook = xlsxwriter.Workbook(excel_buffer)
+    worksheet = workbook.add_worksheet('قائمة تعبيئة')
+
+    # Page setup for A4
+    worksheet.set_paper(9)  # A4 paper
+    worksheet.set_portrait()
+    worksheet.set_margins(left=0.5, right=0.5, top=0.5, bottom=0.5)
+    worksheet.set_print_scale(90)
+    worksheet.hide_gridlines(2)
+    worksheet.fit_to_pages(1, 1)
+
+    rtl_format = {'reading_order': 2}
+
+    # Title format - larger font and more prominent
+    title_format = workbook.add_format({
+        **rtl_format,
+        'bold': True,
+        'font_size': 22,  # Increased from 18
+        'align': 'center',
+        'valign': 'vcenter',
+        'font_name': 'Arial',
+        'font_color': '#003366'
+    })
+
+    # Header info format - larger font
+    header_format = workbook.add_format({
+        **rtl_format,
+        'font_size': 16,  # Increased from 14
+        'align': 'right',
+        'font_name': 'Arial',
+        'valign': 'vcenter'
+    })
+
+    # Table header format - larger font
+    table_header_format = workbook.add_format({
+        **rtl_format,
+        'bold': True,
+        'font_size': 14,  # Increased from 12
+        'bg_color': '#4F81BD',
+        'font_color': 'white',
+        'border': 1,
+        'align': 'center',
+        'font_name': 'Arial'
+    })
+
+    # Item cell formats - larger font
+    item_cell_center = workbook.add_format({
+        **rtl_format,
+        'font_size': 14,  # Increased from 12
+        'border': 1,
+        'align': 'center',
+        'font_name': 'Arial'
+    })
+
+    item_cell_right = workbook.add_format({
+        **rtl_format,
+        'font_size': 14,  # Increased from 12
+        'border': 1,
+        'align': 'right',
+        'font_name': 'Arial'
+    })
+
+    # Write title with increased row height
+    worksheet.merge_range('A1:G1', 'قائمة تعبيئة (المورد)', title_format)
+    worksheet.set_row(0, 40)  # Increased from 30
+
+    # Write header info with increased row heights
+    worksheet.write('G2', f'التاريخ : {invoice_data["date"]}', header_format)
+    worksheet.set_row(1, 25)  # Added row height
+    worksheet.write('G3', f'فاتورة شراء رقم : {invoice_data["invoice_no"]}', header_format)
+    worksheet.set_row(2, 25)  # Added row height
+    worksheet.write('G4', f'اسم المورد : {invoice_data["customer_name"]}', header_format)
+    worksheet.set_row(3, 25)  # Added row height
+
+    # Write empty row for spacing with increased height
+    worksheet.set_row(4, 20)  # Increased from 15
+
+    # Table headers
+    headers = [
+        '(+/-)',
+        'جرد',
+        'الكمية',
+        'الرقم الأصلي',
+        'رقم الشركة',
+        'بيان الصنف',
+        'رقم الصنف م',
+        'الرقم الخاص'
+    ]
+
+    # Write table headers with increased row height
+    for col, header in enumerate(headers):
+        worksheet.write(5, col, header, table_header_format)
+    worksheet.set_row(5, 30)  # Increased table header row height
+
+    # Write items with increased row heights
+    row = 6
+    for item in invoice_data['items']:
+        worksheet.write(row, 0, '', item_cell_center)  # (+/-)
+        worksheet.write(row, 1, '', item_cell_center)  # جرد
+        worksheet.write(row, 2, item.get('Asked_quantity', 0), item_cell_center)  # الكمية
+        worksheet.write(row, 3, item.get('original_code', ''), item_cell_center)  # الرقم الأصلي
+        worksheet.write(row, 4, item.get('company_code', ''), item_cell_center)  # رقم الشركة
+        worksheet.write(row, 5, f"{item.get('name', '')} / {item.get('company', '')}", item_cell_right)  # بيان الصنف
+        worksheet.write(row, 6, item.get('internal_code', ''), item_cell_center)  # رقم الصنف م
+        worksheet.write(row, 7, item.get('pno', ''), item_cell_center)  # الرقم الخاص
+
+        worksheet.set_row(row, 35)  # Increased from 25
+        row += 1
+
+    # Set column widths (adjusted slightly for larger fonts)
+    worksheet.set_column('H:H', 12)  # (+/-)
+    worksheet.set_column('G:G', 12)  # جرد
+    worksheet.set_column('F:F', 55)  # الكمية (wider for larger font)
+    worksheet.set_column('E:E', 18)  # الرقم الأصلي
+    worksheet.set_column('D:D', 18)  # رقم الشركة
+    worksheet.set_column('C:C', 12)  # بيان الصنف
+    worksheet.set_column('B:B', 12)  # رقم الصنف م
+    worksheet.set_column('A:A', 12)  # الرقم الخاص
+
+    workbook.close()
+    excel_buffer.seek(0)
+    return excel_buffer
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def download_invoice(request):
+    # Extract the invoice number from the request body
+    invoice_no = request.data.get('invoice_no')
+
+    if not invoice_no:
+        return Response({'error': 'invoice_no is required'}, status=400)
+
+    try:
+        # Fetch the invoice record from the database
+        record = almogOil_models.OrderBuyinvoicetable.objects.get(
+            invoice_no=invoice_no, 
+            source_obj__isnull=False
+        )
+    except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=404)
+
+    try:
+        # Get the invoice items
+        items = almogOil_models.OrderBuyInvoiceItemsTable.objects.filter(invoice_no=record)
+        if not items.exists():
+            return Response({'error': 'No items found for this invoice'}, status=404)
+
+        # Prepare the invoice data
+        invoice_data = prepare_invoice_data(record, items)
+
+        # Create an Excel file with Arabic formatting
+        excel_buffer = create_excel_invoice(invoice_data)
+
+        # Create response with Excel file
+        response = HttpResponse(
+            excel_buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename=invoice_{invoice_no}.xlsx'
+        return response
+
+    except Exception as e:
+        return Response({'error': f'Error generating invoice: {str(e)}'}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def assign_preorder(request):
+    serializer = wholesale_serializers.AssignPreOrderSerializer(data=request.data)
+    if serializer.is_valid():
+        preorder = serializer.validated_data['preorder']
+        employee = serializer.validated_data['employee']
+
+        preorder.assigned_employee = employee
+        preorder.delivery_status = 'assigned'
+        preorder.delivery_start_time = timezone.now()
+        preorder.save()
+
+        return Response({'success': True, 'message': f"Order assigned to {employee.name}."})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_assigned_orders(request):
+    try:
+        emp = almogOil_models.EmployeesTable.objects.get(phone=request.user, type='driver')
+    except almogOil_models.EmployeesTable.DoesNotExist:
+        return Response({'error': 'Not authorized as delivery employee'}, status=403)
+
+    orders = almogOil_models.PreOrderTable.objects.filter(assigned_employee=emp).order_by('-invoice_date')
+    serializer = wholesale_serializers.driverPreOrderSerializer(orders, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_drivers(request):
+    drivers = almogOil_models.EmployeesTable.objects.filter(type='driver', active=True)
+    data = [{'id': d.employee_id, 'name': d.name} for d in drivers]
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_unassigned_preorders(request):
+    preorders = almogOil_models.PreOrderTable.objects.filter(delivery_status='not_assigned')
+    data = [{'id': p.autoid, 'invoice_no': p.invoice_no} for p in preorders]
+    return Response(data)
+
+
+@api_view(['GET'])
+def get_invoice_items(request, invoice_no):
+    items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_no=invoice_no)
+    if not items.exists():
+        return Response({'error': 'No items found for this invoice.'}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = wholesale_serializers.DeleveryPreOrderItemSerializer(items, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)    

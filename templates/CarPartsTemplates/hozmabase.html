@@ -578,7 +578,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/hozma/preorders-buy/' %}active{% endif %}"
-                           href="/hozma/preorders-buy/">
+                           href="/hozma/preorder-dashboard/">
                             <i class="fas fa-shopping-cart me-1"></i>الطلبات
                         </a>
                     </li>
@@ -638,51 +638,7 @@
     </nav>
     
     <div class="container-fluid dashboard-container">
-        <div class="row">
-            {# ================= Sidebar ================= #}
-            <div class="col-lg-3 mb-4">
-                <div class="card sidebar hover-scale">
-                    <div class="profile-section text-center">
-                        <img src="{% static 'HOZMA_FRONT/images/placeholder.png' %}"
-                             id="employee-profile-image-profile"
-                             class="profile-img rounded-circle"
-                             alt="صورة المدير">
-                        <h5 class="card-title mb-1" id="userNamePlaceholder">{{ user.get_full_name|default:'مدير النظام' }}</h5>
-                        <p class="text-muted small mb-3" id="userEmailPlaceholder">{{ user.email|default:'admin@example.com' }}</p>
-                        <p class="text-muted small">
-                            <i class="fas fa-clock me-1"></i>
-                            آخر دخول: {{ user.last_login|date:"Y-m-d H:i" }}
-                        </p>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        <a href="/hozma/Handle-source/" class="list-group-item list-group-item-action">
-                            <i class="fas fa-database me-1"></i>لوحة تحكم المصادر
-                        </a>
-                        <a href="/hozma/preorder-dashboard/" class="list-group-item list-group-item-action">
-                            <i class="fas fa-shopping-bag me-1"></i>الطلبات الجديدة
-                            <span class="badge bg-danger rounded-pill">{{ new_orders_count|default:0 }}</span>
-                        </a>
-                        <a href="/hozma/preorders-buy/" class="list-group-item list-group-item-action">
-                            <i class="fas fa-cart-plus me-1"></i>طلبات الشراء المبدئية
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action">
-                            <i class="fas fa-users-cog me-1"></i>إدارة المستخدمين
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action">
-                            <i class="fas fa-tags me-1"></i>التصنيفات
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action">
-                            <i class="fas fa-chart-pie me-1"></i>التحليلات
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action">
-                            <i class="fas fa-cog me-1"></i>الإعدادات
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            {# ================= Main Content ================= #}
-            <div class="col-lg-9">
+
                 {% block content %}
                 {# Child templates will override this block #}
                 {% endblock %}

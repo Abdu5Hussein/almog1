@@ -46,6 +46,7 @@ class AllClientsTable(models.Model):
     discount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
     is_online = models.BooleanField(default=False)
     last_activity = models.DateTimeField(auto_now=True)
+    client_photo = models.ImageField(upload_to='client_photos/', blank=True, null=True)
 
     # New fields
     username = models.CharField(max_length=150, unique=True,blank=True,null=True)  # Ensure username is unique
@@ -160,7 +161,7 @@ class Buyinvoicetable(models.Model):
     send = models.BooleanField(default=False)
     send_date = models.DateTimeField(blank=True, null=True)
     source_obj = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
-
+    local = models.BooleanField(default=False)
 
 
     class Meta:
@@ -642,6 +643,15 @@ class AuthUser(models.Model):
             ('template_users_management', 'ادارة المستخدمين'),
             ('show_statistics', 'عرض الاحصائيات'),
             ('print_paper', 'اصدار ورقة / مستند'),
+
+
+            ('hozma_Dashboard', 'لوحة تحكم حزمة'),
+            ('hozma_Products', 'اصناف حزمة'),
+            ('hozma_Clients', 'عملاء حزمة'),
+            ('hozma_Suppliers', 'موردين حزمة'),
+            ('hozma_SellInvoices', 'فواتير بيع حزمة'),
+            ('hozma_BuyInvoices', 'فواتير شراء حزمة'),
+            ('hozma_Settings', 'اعدادات حزمة'),
         ]
 
 class AuthUserGroups(models.Model):
@@ -670,9 +680,10 @@ class BuyInvoiceItemsTable(models.Model):
     autoid = models.BigAutoField(primary_key=True)
     item_no = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
-    name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    name = models.CharField(max_length=255, db_collation='Arabic_CI_AS', blank=True, null=True)
     company = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     company_no = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    current_quantity_after_return = models.IntegerField(blank=True, null=True)
     quantity = models.IntegerField(blank=True, null=True)
     quantity_unit = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     currency = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -875,8 +886,26 @@ class TransactionsHistoryTable(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'transactions_history_Table'
+        db_table = 'transactions_history_Table_for_clients'
 
+class TransactionsHistoryTableForSuppliers(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    transaction = models.CharField(max_length=200, db_collation='Arabic_CI_AS', blank=True, null=True)
+    debt = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    credit = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+    details = models.CharField(max_length=400, db_collation='Arabic_CI_AS', blank=True, null=True)
+    registration_date = models.DateTimeField(blank=True, null=True)
+    delivered_date = models.DateTimeField(blank=True, null=True)
+    delivered_for = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    current_balance = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+
+    #  foreign key fields
+    source_object = models.ForeignKey(AllSourcesTable, on_delete=models.CASCADE)
+
+
+    class Meta:
+        managed = True
+        db_table = 'transactions_history_Table_for_suppliers'
 
 class SellInvoiceItemsTable(models.Model):
     autoid = models.BigAutoField(primary_key=True)
@@ -1105,7 +1134,44 @@ class return_permission_items(models.Model):
 
     def __str__(self):
         return f"{self.item_name} - {self.total}"
+    
+class buy_return_permission(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    source=models.ForeignKey(AllSourcesTable,on_delete=models.CASCADE)
+    employee=models.CharField(max_length=200,null=True,blank=True)
+    date = models.DateField(auto_now_add=True)
+    quantity = models.IntegerField(default=0)
+    invoice_obj = models.ForeignKey(Buyinvoicetable,on_delete=models.CASCADE)
+    invoice_no = models.CharField(max_length=200,null=True,blank=True)
+    amount = models.DecimalField(default=0,max_digits=19,decimal_places=4)
+    payment = models.CharField(max_length=150,default='نقدي')
 
+    def __str__(self):
+        return str(self.autoid) + "- invoice: " + str(self.invoice_obj.invoice_no) + "- amount: " + str(self.amount)
+
+class buy_return_permission_items(models.Model):
+    autoid = models.AutoField(primary_key=True)
+    pno = models.IntegerField(blank=True,null=True)
+    company_no = models.CharField(max_length=200,null=True,blank=True)
+    company = models.CharField(max_length=200,null=True,blank=True)
+    item_name = models.CharField(max_length=200,null=True,blank=True)
+    org_quantity = models.IntegerField(blank=True,null=True)
+    returned_quantity = models.IntegerField(blank=True,null=True)
+    price = models.DecimalField(max_digits=19,decimal_places=4,null=False)
+    total = models.DecimalField(max_digits=19,decimal_places=4,null=False)
+    invoice_obj = models.ForeignKey(Buyinvoicetable,on_delete=models.CASCADE)
+    invoice_no = models.CharField(max_length=40,null=True,blank=True)
+    permission_obj = models.ForeignKey(buy_return_permission,on_delete=models.CASCADE)
+    return_reason = models.CharField(max_length=500, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        # Ensure total is always calculated as returned_quantity * price
+        self.total = (self.returned_quantity or 0) * (self.price or 0)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.item_name} - {self.total}"
+    
 
 class PaymentRequestTable(models.Model):
     autoid = models.AutoField(primary_key=True)
@@ -1282,8 +1348,30 @@ class PreOrderTable(models.Model):
     shop_confrim = models.BooleanField(default=False)
     processing_status = models.CharField(max_length=20, default="pending") # or "waiting", "done"
     processing_status_confirmed = models.BooleanField(default=False)
-
-
+    related_buyorders = models.ManyToManyField(
+        'OrderBuyinvoicetable',
+        blank=True,
+        related_name='related_buy_invoices'
+    )
+    assigned_employee = models.ForeignKey(
+    'EmployeesTable',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='assigned_preorders'
+)
+    delivery_status = models.CharField(
+        max_length=50,
+        choices=[
+            ('not_assigned', 'Not Assigned'),
+            ('assigned', 'Assigned'),
+            ('in_progress', 'In Progress'),
+            ('delivered', 'Delivered'),
+        ],
+        default='not_assigned'
+    )
+    delivery_start_time = models.DateTimeField(null=True, blank=True)
+    delivery_end_time = models.DateTimeField(null=True, blank=True)
     class Meta:
         db_table = 'PreOrderTable'
 
@@ -1309,7 +1397,7 @@ class ConfirmedOrderTable(models.Model):
     date_time = models.DateTimeField(default=timezone.now)
     preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
     date_confirmed = models.DateTimeField(auto_now_add=True)
-
+   
 
     class Meta:
         db_table = 'ConfirmedOrderTable'
@@ -1329,7 +1417,7 @@ class PreOrderItemsTable(models.Model):
     autoid = models.BigAutoField(primary_key=True)
     item_no = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
     pno = models.CharField(max_length=125, db_collation='Arabic_CI_AS', blank=True, null=True)
-    name = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    name = models.CharField(max_length=255, db_collation='Arabic_CI_AS', blank=True, null=True)
     company = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     company_no = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     quantity = models.IntegerField(blank=True, null=True)
@@ -1352,7 +1440,8 @@ class PreOrderItemsTable(models.Model):
     returned = models.DecimalField(max_digits=19, decimal_places=4, default=0)
     confirm_quantity = models.IntegerField(blank=True, null=True)
     quantity_proccessed = models.BooleanField(default=False)
-
+    confirmed_delevery_quantity = models.IntegerField(blank=True, null=True)
+    
 
     class Meta:
         managed = True
@@ -1401,6 +1490,8 @@ class OrderBuyinvoicetable(models.Model):
     send = models.BooleanField(default=False)
     send_date = models.DateTimeField(blank=True, null=True)
     source_obj = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
+    buy_net_amount = models.DecimalField(max_digits=19, decimal_places=4, blank=True, null=True)
+
     related_preorders = models.ManyToManyField(
         'PreOrderTable',
         blank=True,
@@ -1418,7 +1509,8 @@ class OrderBuyInvoiceItemsTable(models.Model):
     item_no = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     sourrce_pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
-    name = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    oem= models.CharField(max_length=255, db_collation='Arabic_CI_AS', blank=True, null=True)
+    name = models.CharField(max_length=255, db_collation='Arabic_CI_AS', blank=True, null=True)
     company = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     company_no = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
     Asked_quantity = models.IntegerField(blank=True, null=True)

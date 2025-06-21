@@ -318,7 +318,7 @@
       <h1 class="cart-page-title">
         <i class="bi bi-cart3"></i> سلة التسوق
       </h1>
-      <p class="mt-3 mb-0">راجع طلبك قبل إتمام الشراء</p>
+      <p class="mt-3 mb-0">الرجاء مراجعة الطلبية قبل إتمام عملية الشراء</p>
     </div>
   </header>
 
@@ -411,7 +411,16 @@
   <script src="{% static 'js/helper_functions.js' %}"></script>
   <script src="{% static 'hozma/js/cart.js' %}"></script>
   <script src="{% static 'hozma/js/itemmain.js' %}"></script>
-  
+  <script>
+    // Detect if the page was restored from the browser cache
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            // If the page was loaded from bfcache (back-forward cache), reload it
+            window.location.reload();
+        }
+    });
+</script>
+
  
 </body>
 </html>

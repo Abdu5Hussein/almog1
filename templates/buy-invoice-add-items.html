@@ -864,7 +864,7 @@
             {% if not perms.almogOil.export_buyinvoice %}disabled{% endif %}
           >
             تصدير</button
-          ><button type="button" class="btn btn-primary m-1" {% if not perms.almogOil.print_client_buyinvoice %}disabled{% endif %}>طباعة</button>
+          ><button type="button" class="btn btn-primary m-1" id="print-btn" {% if not perms.almogOil.print_client_buyinvoice %}disabled{% endif %}>طباعة</button>
           <button type="button" class="btn btn-primary m-1">حذف</button>
           <button
             type="button"

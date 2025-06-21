@@ -175,8 +175,7 @@ function renderTable(preorders) {
           </td>
           <td>
               <span class="badge bg-success rounded-pill d-inline-flex align-items-center">
-                  <i class="fas fa-dollar-sign me-1"></i>
-                  ${parseFloat(preorder.amount).toFixed(2)}
+${Number(preorder.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل
               </span>
           </td>
           <td>

@@ -1,7 +1,7 @@
 <!-- templates/partials/_navbar.html -->
  {%load static %}
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0A1523; border-bottom: 2px solid #FF6B00;">  <div class="container  px-0 ">
-    <a class="navbar-brand" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية">
+    <a class="navbar-brand" href="/hozma/products/" aria-label="الرئيسية">
       <img src="{% static 'images/log_hozma.png' %}" alt="حزمة" style="height: 40px;">
   </a>  
         <button class="navbar-toggler py-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
@@ -10,14 +10,14 @@
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/products/" aria-current="page">
+                    <a class="nav-link nav-link-auto py-1 px-2" href="/hozma/products/" aria-current="page">
                         <i class="bi bi-speedometer2 me-1"></i> الرئيسية
                     </a>
                 </li>
                 
                 <li class="nav-item mx-1">
-                    <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/hozmabrands/">
-                        <i class="bi bi-tags me-1"></i> الماركات
+                    <a class="nav-link nav-link-auto py-1 px-2" href="/hozma/hozmabrands/">
+                        <i class="bi bi-tags me-1"></i> الشركات
                     </a>
                 </li>
              
@@ -28,12 +28,29 @@
                     </a>
                 </li>
                 <li class="nav-item position-relative mx-1">
-                  <a id="navbarCartIcon" class="nav-link nav-link-auto py-1 px-2" href="/hozma/hozmaCart/" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة">
-                      <i class="bi bi-cart3" aria-hidden="true"></i>
-                      <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.6rem;" aria-live="polite" aria-atomic="true">0</span>
-                  </a>
-                </li>
-              
+                    <a id="navbarCartIcon" class="nav-link nav-link-auto py-1 px-2 position-relative" href="/hozma/hozmaCart/" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة">
+                      <i class="bi bi-cart3 fs-5" aria-hidden="true"></i> <!-- Smaller cart -->
+                      <span id="cartBadge"
+                        class="position-absolute start-100 translate-middle badge rounded-pill bg-warning text-dark text-center d-none"
+                        style="
+                          top: 16%;
+                          font-size: 0.75rem;
+                          padding: 0.4rem 0.6rem;
+                          min-width: 2.2rem;
+                          line-height: 1.2;
+                          white-space: nowrap;
+                        "
+                        aria-live="polite" aria-atomic="true">
+                        0
+                      </span>
+                    </a>
+                  </li>
+                  
+                <li class="nav-item ms-2">
+                    <button onclick="signOutClient()" class="btn btn-outline-light fw-bold py-1 px-3" style="border-radius: 20px; min-width: 100px; font-size: 0.85rem;">
+                      <i class="bi bi-box-arrow-right me-1"></i> تسجيل الخروج
+                    </button>
+                  </li>
                 <!-- Account Button -->
                 <li class="nav-item ms-2">
                   <a id="accountButton" class="btn btn-warning fw-bold py-1 px-3" href="/hozma/hozmaDashbord/" style="border-radius: 20px; min-width: 100px; font-size: 0.85rem;">

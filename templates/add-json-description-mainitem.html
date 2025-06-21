@@ -1,63 +1,192 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Key-Value Descriptions</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="{% static 'js/helper_functions.js' %}"></script>
-    <!-- Bootstrap JS (optional, for better functionality with components like modals, tooltips, etc.) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'js/add-json-description-mainitem.js' %}"></script>
+    <title>إضافة وصف للمنتجات</title>
+    <!-- Bootstrap CSS RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .key-value-pair {
-            margin-bottom: 10px;
+        :root {
+            --primary-color: #3498db;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
         }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Tahoma', Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .form-title {
+            color: #2c3e50;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        .product-select-section {
+            background-color: #f1f8fe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .key-value-pair {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .key-value-pair:hover {
+            background-color: #f1f1f1;
+        }
+
         .remove-btn {
-            padding: 5px;
-            cursor: pointer;
-            color: red;
+            color: var(--danger-color);
+            background: none;
             border: none;
-            background: transparent;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+
+        .remove-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-add {
+            background-color: var(--primary-color);
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .btn-add:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-submit {
+            background-color: var(--success-color);
+            border: none;
+            padding: 10px 25px;
+            font-weight: bold;
+        }
+
+        .btn-submit:hover {
+            background-color: #27ae60;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin-top: 15px;
+            }
+
+            .key-value-pair {
+                flex-direction: column;
+            }
+
+            .remove-btn {
+                align-self: flex-end;
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="container mt-4">
-    <h2 class="mb-4">Add Key-Value Descriptions</h2>
+<div class="container">
+    <h2 class="form-title text-center mb-4">إضافة وصف تفصيلي للمنتج</h2>
+
     <form id="keyValueForm" method="POST">
         {% csrf_token %}
-        <div class='row mb-2'>
-            <div class='col'>
-                <select name="pno" id="pno" class='form-control me-2'>
-                    <option value="">اختر صنف</option>
-                    {% for x in products %}
-                    <option value="{{ x.pno }}" data-name="{{ x.itemname }}" data-company="{{ x.companyproduct }}">{{ x.pno }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class='col'>
-                <input type="text" name="name" id="name" class="form-control me-2" required>
-            </div>
-            <div class='col'>
-                <input type="text" name="company" id="company" class="form-control me-2" required>
+
+        <!-- Product Selection Section -->
+        <div class="product-select-section mb-4">
+            <h5 class="mb-3"><i class="fas fa-box-open me-2"></i>بيانات المنتج</h5>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="pno" class="form-label">رقم المنتج</label>
+                    <select name="pno" id="pno" class="form-select" required>
+                        <option value="" selected disabled>اختر رقم المنتج</option>
+                        {% for x in products %}
+                        <option value="{{ x.pno }}" data-name="{{ x.itemname }}" data-company="{{ x.companyproduct }}">
+                            {{ x.pno }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="name" class="form-label">اسم المنتج</label>
+                    <input type="text" name="name" id="name" class="form-control" placeholder="سيتم تعبئته تلقائياً" readonly>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="company" class="form-label">الشركة المصنعة</label>
+                    <input type="text" name="company" id="company" class="form-control" placeholder="سيتم تعبئته تلقائياً" readonly>
+                </div>
             </div>
         </div>
-        <div id="keyValueContainer">
-            <div class="key-value-pair d-flex mb-3">
-                <input type="text" name="key" class="form-control me-2" placeholder="Key" required>
-                <input type="text" name="value" class="form-control me-2" placeholder="Value" required>
-                <button type="button" class="remove-btn btn" id="removeKey">Remove</button>
+
+        <!-- Key-Value Pairs Section -->
+        <div class="mb-4">
+            <h5 class="mb-3"><i class="fas fa-list-ul me-2"></i>المواصفات التفصيلية</h5>
+            <p class="text-muted mb-3">أضف المواصفات الرئيسية للمنتج (مثل: الأبعاد، المواد، الخصائص، etc.)</p>
+
+            <div id="keyValueContainer">
+                <div class="key-value-pair d-flex align-items-center gap-2">
+                    <input type="text" name="key" class="form-control" placeholder="المفتاح (مثال: الوزن)" required>
+                    <input type="text" name="value" class="form-control" placeholder="القيمة (مثال: 2 كجم)" required>
+                    <button type="button" id="removeKey" class="remove-btn" title="إزالة">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </div>
+
+            <button type="button" class="btn btn-add text-white mt-3" id="addKey">
+                <i class="fas fa-plus-circle me-2"></i>إضافة مواصفة جديدة
+            </button>
         </div>
-        <button type="button" class="btn btn-primary mb-3" id="addKey">Add Key-Value Pair</button>
-        <br><br>
-        <button type="submit" class="btn btn-success">Submit</button>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-submit text-white">
+                <i class="fas fa-save me-2"></i>حفظ البيانات
+            </button>
+        </div>
     </form>
 </div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/helper_functions.js' %}"></script>
+<script src="{% static 'js/add-json-description-mainitem.js' %}"></script>
 
 </body>
 </html>

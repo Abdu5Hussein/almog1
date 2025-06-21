@@ -9,7 +9,10 @@
       rel="stylesheet"
       href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
     />
+    <!-- Bootstrap JS (optional) -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script src="{% static 'js/countries-table.js' %}"></script>
     <style>
       table {
         width: 100%;
@@ -97,39 +100,5 @@
         </form>
       </div>
     </div>
-
-    <!-- Bootstrap JS (optional) -->
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
-    <script>
-
-      // Handle row click to pre-fill the form for editing
-      document.querySelectorAll("table tbody tr").forEach((row) => {
-        row.addEventListener("click", () => {
-          document.getElementById("countryId").value = row.cells[0].innerText;
-          document.getElementById("inputName").value = row.cells[1].innerText;
-        });
-      });
-
-      // Form validation
-      (function () {
-        "use strict";
-
-        const forms = document.querySelectorAll(".needs-validation");
-
-        Array.from(forms).forEach((form) => {
-          form.addEventListener(
-            "submit",
-            (event) => {
-              if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-              }
-              form.classList.add("was-validated");
-            },
-            false
-          );
-        });
-      })();
-    </script>
   </body>
 </html>

@@ -573,5 +573,29 @@ document.addEventListener("DOMContentLoaded", function () {
             localStorage.setItem('refresh_sell_items', 'false');
         }
     });
+    document.getElementById("print-btn").addEventListener("click", () => {
+        const data = {
+            label: "specific_buy_invoice",
+            invoice_no: document.getElementById("invoice-autoid").value,
+        };
 
+        customFetch(`/api/print-dynamic-paper`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()  // <-- IMPORTANT for Django
+            },
+            body: JSON.stringify(data),
+        })
+            .then(response => response.text())  // <-- handle HTML or plain text
+            .then(html => {
+                const printWindow = window.open("", "_blank");
+                printWindow.document.open();
+                printWindow.document.write(html);
+                printWindow.document.close();
+            })
+            .catch((error) => {
+                console.error("Error fetching data:", error);
+            });
+    });
 });

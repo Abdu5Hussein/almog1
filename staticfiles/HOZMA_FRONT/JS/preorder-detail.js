@@ -49,8 +49,8 @@ async function fetchPreOrderDetails() {
                min="0"
                onchange="highlightDifference('${item.pno}', ${orderedQty})">
     </td>
-    <td>${item.dinar_unit_price}</td>
-    <td>${item.dinar_total_price}</td>
+<td>${Number(item.dinar_unit_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
+<td>${Number(item.dinar_total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
     <td>
         ${item.quantity_proccessed ? 
             '<span class="badge bg-success">نعم</span>' : 

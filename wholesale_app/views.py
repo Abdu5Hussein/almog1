@@ -321,4 +321,10 @@ def uploadimages(request):
 def hozmaclient(request):
     return render(request, 'CarPartsTemplates/hozmaclient.html')
 
+@login_required
+def hozmaReport(request):
+    return render(request, 'CarPartsTemplates/hozmaReport.html')
 
+@login_required
+def Hozmadriver(request):
+    return render(request, 'CarPartsTemplates/driver_dashboard.html')

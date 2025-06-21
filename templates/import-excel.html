@@ -1,10 +1,20 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Import Excel to Tabulator</title>
+    <title>استيراد المنتجات من ملف إكسل</title>
+    <!-- Bootstrap Bundle JS -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Tabulator JS -->
+    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+
+    <!-- XLSX Library for Excel Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script src="{% static 'js/import-excel.js' %}"></script>
 
     <!-- Bootstrap 5 CSS -->
     <link
@@ -17,134 +27,98 @@
       href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css"
       rel="stylesheet"
     />
-    <script src="{% static 'js/helper_functions.js' %}"></script>
 
     <style>
+      body {
+        background-color: #f8f9fa;
+      }
+      .card {
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .btn-action {
+        min-width: 100px;
+      }
       #tabulator-table {
         margin-top: 20px;
-        border: 1px solid #ccc;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: white;
+      }
+      .template-link {
+        color: #0d6efd;
+        cursor: pointer;
+      }
+      .template-link:hover {
+        text-decoration: underline;
+      }
+      .step-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .step-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        margin-left: 10px;
       }
     </style>
   </head>
   <body class="container py-4">
-    <!-- Buttons -->
-    <div class="d-flex justify-content-start mb-3">
-      <form id="uploadForm" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input
-          type="file"
-          id="fileInput"
-          class="form-control m-2"
-          style="max-width: 300px"
-        />
+    <div class="card p-4 mb-4">
+      <h2 class="text-center mb-4">استيراد المنتجات من ملف إكسل</h2>
 
-        <button id="uploadBtn" class="btn btn-primary me-2">
-          Upload Excel
-        </button>
-        <button id="importBtn" class="btn btn-success me-2">Import</button>
-        <button id="closeBtn" class="btn btn-danger">Close</button>
-      </form>
+      <div class="step-container mb-3">
+        <h5><span class="step-number">1</span> تنزيل الملف النموذج</h5>
+        <p class="text-muted">قم بتنزيل الملف النموذج لمعرفة الهيكل المطلوب للبيانات</p>
+        <p id="download-template" class="template-link" data-file-url="{% static 'files/import_products_template.xlsx' %}">
+          <i class="bi bi-download"></i> تنزيل الملف النموذج
+        </p>
+      </div>
+
+      <div class="step-container mb-3">
+        <h5><span class="step-number">2</span> تحميل ملف الإكسل</h5>
+        <p class="text-muted">اختر ملف الإكسل الذي تريد استيراد بيانات المنتجات منه</p>
+        <form id="uploadForm" enctype="multipart/form-data" class="mb-3">
+          {% csrf_token %}
+          <div class="input-group mb-3">
+            <input
+              type="file"
+              id="fileInput"
+              class="form-control"
+              accept=".xlsx, .xls"
+            />
+            <button id="uploadBtn" class="btn btn-primary" type="button">
+              تحميل الملف
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div id="table-section" style="display: none;">
+        <div class="step-container mb-3">
+          <h5><span class="step-number">3</span> معاينة البيانات</h5>
+          <p class="text-muted">راجع البيانات قبل الاستيراد</p>
+          <div class="d-flex justify-content-start gap-2 mb-3">
+            <button id="importBtn" class="btn btn-success btn-action">
+              استيراد البيانات
+            </button>
+            <button id="closeBtn" class="btn btn-outline-secondary btn-action">
+              إغلاق
+            </button>
+          </div>
+          <div id="tabulator-table"></div>
+        </div>
+      </div>
+
+      <div id="import-response" class="alert" style="display: none;"></div>
     </div>
-
-    <!-- Tabulator Table -->
-    <div id="tabulator-table"></div>
-
-    <!-- Bootstrap Bundle JS -->
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
-
-    <!-- Tabulator JS -->
-    <script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
-
-    <!-- XLSX Library for Excel Parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-    <script>
-
-      const table = new Tabulator("#tabulator-table", {
-        height: "400px",
-        layout: "fitColumns",
-        placeholder: "No Data Available",
-      });
-
-      document
-        .getElementById("uploadBtn")
-        .addEventListener("click", (event) => {
-          event.preventDefault();
-          const fileInput = document.getElementById("fileInput");
-          const file = fileInput.files[0];
-
-          if (!file) {
-            alert("Please select an Excel file.");
-            return;
-          }
-
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: "array" });
-            const sheetName = workbook.SheetNames[0];
-            const sheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(sheet);
-
-            // Update Tabulator
-            if (jsonData.length > 0) {
-              const headers = Object.keys(jsonData[0]);
-              table.setColumns(
-                headers.map((header) => ({ title: header, field: header }))
-              );
-              table.setData(jsonData);
-            } else {
-              alert("No data found in the Excel file.");
-            }
-          };
-          reader.readAsArrayBuffer(file);
-        });
-
-      document
-        .getElementById("importBtn")
-        .addEventListener("click", (event) => {
-          event.preventDefault();
-          const data = table.getData();
-
-          if (data.length === 0) {
-            alert("No data to import.");
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append("csrfmiddlewaretoken", "{{ csrf_token }}"); // Add CSRF token
-          formData.append("data", JSON.stringify(data)); // Add the data to be imported
-
-          console.log("Sending data to the server:", formData);
-
-          customFetch("/import-tabulator-data/", {
-            method: "POST",
-            body: formData, // Send the data using FormData
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-              }
-              return response.json();
-            })
-            .then((result) => {
-              console.log("Response from server:", result);
-              if (result.status === "success") {
-                alert(result.message);
-              } else {
-                alert("Error: " + result.message);
-              }
-            })
-            .catch((error) => {
-              console.error("Error:", error);
-              alert("An error occurred while importing data.");
-            });
-        });
-
-      document.getElementById("closeBtn").addEventListener("click", () => {
-        table.clearData();
-        alert("Table cleared.");
-      });
-    </script>
   </body>
 </html>

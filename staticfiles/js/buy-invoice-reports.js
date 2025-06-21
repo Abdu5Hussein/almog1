@@ -1,10 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-
+    const urlParams = new URLSearchParams(window.location.search);
     /*const contextData = {
       data: JSON.parse("{{ data|escapejs }}"),
     };
-    
+
     console.log(contextData.data);*/
     // Fetch client ID from the URL query string
 
@@ -287,7 +287,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Apply debounce to applyFilters with a 300ms delay
     //const debouncedApplyFilters = debounce(() => applyFilters(1), 390);
-    fetchDataFromServer({ page: 1, size: 100 });
+    applyFilters();
 
     function showLoader() {
         const loader = document.getElementById("loader-element");
@@ -434,6 +434,7 @@ document.addEventListener("DOMContentLoaded", function () {
             fromdate: getInputValue("from-date"),
             todate: getInputValue("to-date"),
             invoice_no: getInputValue("invoice-autoid"),
+            local: urlParams.get("local") || false,
             page: parseInt(pageno, 10) || 1,
             size: pagesize || 20,
         };
@@ -576,4 +577,28 @@ document.addEventListener("DOMContentLoaded", function () {
         // Set the formatted value with "دل"
         document.getElementById("dinar-net").value = formatted_net_amount + " دل";
     }
+    document.getElementById("print-btn").addEventListener("click", () => {
+        const data = {
+            label: "today_buy_invoice",
+        };
+
+        customFetch(`/api/print-dynamic-paper`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()  // <-- IMPORTANT for Django
+            },
+            body: JSON.stringify(data),
+        })
+            .then(response => response.text())  // <-- handle HTML or plain text
+            .then(html => {
+                const printWindow = window.open("", "_blank");
+                printWindow.document.open();
+                printWindow.document.write(html);
+                printWindow.document.close();
+            })
+            .catch((error) => {
+                console.error("Error fetching data:", error);
+            });
+    });
 });

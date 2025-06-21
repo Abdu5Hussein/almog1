@@ -121,17 +121,19 @@
               <td>${order.invoice_no}</td>
               <td>${formatDate(order.invoice_date)}</td>
               <td>${order.source || 'غير متوفر'}</td>
-              <td>${parseFloat(order.net_amount).toFixed(2)} دينار</td>
+<td>${Number(order.net_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })} دينار</td>
+               <td>
+              <span class="badge ${order.send === true ? 'bg-info' : 'bg-danger'}">
+  ${order.send === true ? 'تم الإرسال' : 'لم يتم الإرسال'}
+</span>
+
+              </td>
               <td>
                 <span class="badge ${order.confirmed ? 'bg-success' : 'bg-warning'}">
                   ${order.confirmed ? 'تم التأكيد' : 'قيد الانتظار'}
                 </span>
               </td>
-              <td>
-                <span class="badge ${order.send ? 'bg-info' : 'bg-danger'}">
-                  ${order.send ? 'تم الإرسال' : 'لم يتم الإرسال'}
-                </span>
-              </td>
+             
                         <td class="action-buttons">
   <!-- View in Modal -->
   <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewOrderDetails('${order.invoice_no}')">
@@ -140,7 +142,7 @@
 
   <!-- Navigate to Details Page -->
   <a href="/hozma/preorders-buy/${order.invoice_no}" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();">
-    <i class="bi bi-list-ul"></i> التفاصيل
+    <i class="bi bi-list-ul"></i> تعديل 
   </a>
 </td>
 
@@ -194,8 +196,11 @@
         document.getElementById('modalCustomer').textContent = order.source || 'غير متوفر';
         document.getElementById('modalDate').textContent = order.invoice_date ? new Date(order.invoice_date).toLocaleDateString() : 'غير متوفر';
         document.getElementById('modalNotes').textContent = order.notes || 'لا توجد ملاحظات';
-        document.getElementById('modalAmount').textContent = order.net_amount ? parseFloat(order.net_amount).toFixed(2) : '0.00';
-        
+        document.getElementById('modalAmount').textContent = order.net_amount
+        document.getElementById('modalAmount').textContent = order.net_amount
+        ? Number(order.net_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })
+        : '0.00';
+                    
         document.getElementById('modalStatus').innerHTML = order.confirmed ?
           '<span class="status-badge status-confirmed">تم التأكيد</span>' :
           '<span class="status-badge status-pending">قيد الانتظار</span>';
@@ -219,14 +224,19 @@
             <td>${item.name || '--'}</td>
             <td>${item.company || '--'}</td>
             <td>${item.confirmed_quantity != null ? item.confirmed_quantity : (item.Asked_quantity || '0')}</td>
-            <td>${item.cost_unit_price ? parseFloat(item.cost_unit_price).toFixed(2) : '0.00'} دينار</td>
-            <td>${item.cost_total_price ? parseFloat(item.cost_total_price).toFixed(2) : '0.00'} دينار</td>
+<td>${item.cost_unit_price ? Number(item.cost_unit_price).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'} دينار</td>
+<td>${item.cost_total_price ? Number(item.cost_total_price).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'} دينار</td>
+
           `;
           itemsBody.appendChild(row);
         });
         
-        document.getElementById('modalTotalAmount').textContent = totalAmount.toFixed(2);
-        
+        document.getElementById('modalTotalAmount').textContent =
+        totalAmount.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+              
         // Update button states based on order status
         const confirmBtn = document.getElementById('confirmBtn');
         const markAsSentBtn = document.getElementById('markAsSentBtn');
@@ -238,8 +248,8 @@
           
         markAsSentBtn.disabled = order.send;
         markAsSentBtn.innerHTML = order.send ? 
-          '<i class="bi bi-send-check-fill"></i> تم الإرسال' : 
-          '<i class="bi bi-send-check"></i> تم الإرسال';
+        '<i class="bi bi-send-check-fill"></i> تم الإرسال' : 
+        '<i class="bi bi-send"></i> إرسال';
 
         const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
         modal.show();
@@ -347,3 +357,87 @@
         bsAlert.close();
       }, 5000);
     }
+    async function downloadPackingList() {
+      if (!currentOrder) return;
+      
+      try {
+        const btn = document.getElementById('downloadPackingListBtn');
+        btn.innerHTML = '<i class="bi bi-hourglass"></i> جاري التحميل...';
+        btn.disabled = true;
+    
+        const response = await customFetch('/hozma/api/download-excel/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            invoice_no: currentOrder.invoice_no
+          })
+        });
+    
+        if (!response.ok) {
+          throw new Error("فشل في إنشاء الملف");
+        }
+    
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `قائمة_تعبئة_${currentOrder.invoice_no}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    
+      } catch (error) {
+        console.error('خطأ في تحميل القائمة:', error);
+        showAlert('فشل في تحميل القائمة: ' + error.message, 'danger');
+      } finally {
+        const btn = document.getElementById('downloadPackingListBtn');
+        btn.innerHTML = '<i class="bi bi-file-earmark-excel"></i> تنزيل قائمة التعبئة';
+        btn.disabled = false;
+      }
+    }
+
+    async function downloadInvoice() {
+      if (!currentOrder) return;
+      
+      try {
+        const btn = document.getElementById('downloadInvoiceBtn');
+        btn.innerHTML = '<i class="bi bi-hourglass"></i> جاري التحميل...';
+        btn.disabled = true;
+    
+        const response = await customFetch('/hozma/api/dowmload_excel_for_preorder/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            invoice_no: currentOrder.invoice_no
+          })
+        });
+    
+        if (!response.ok) {
+          throw new Error("فشل في إنشاء الفاتورة");
+        }
+    
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `فاتورة_${currentOrder.invoice_no}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    
+      } catch (error) {
+        console.error('خطأ في تحميل الفاتورة:', error);
+        showAlert('فشل في تحميل الفاتورة: ' + error.message, 'danger');
+      } finally {
+        const btn = document.getElementById('downloadInvoiceBtn');
+        btn.innerHTML = '<i class="bi bi-file-earmark-excel"></i> تنزيل الفاتورة';
+        btn.disabled = false;
+      }
+    }
+

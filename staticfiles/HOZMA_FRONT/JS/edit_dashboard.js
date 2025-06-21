@@ -1,6 +1,6 @@
 let map;
 let marker;
-let defaultPosition = [24.7136, 46.6753]; // Default to Riyadh
+let defaultPosition = [32.8872, 13.1913]; // Default to Tripoli, Libya
 
 function initMap() {
     // Initialize map
@@ -49,31 +49,39 @@ fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.la
 
 
 function locateMe() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const pos = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                
-                map.setView([pos.lat, pos.lng], 15);
-                marker.setLatLng([pos.lat, pos.lng]);
-                updateGeoLocation({lat: pos.lat, lng: pos.lng});
-            },
-            () => {
-                showToast("تعذر الحصول على موقعك الحالي", "error");
-            }
-        );
-    } else {
+    if (!navigator.geolocation) {
         showToast("المتصفح لا يدعم تحديد الموقع", "error");
+        return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            map.setView([lat, lng], 15);
+            marker.setLatLng([lat, lng]);
+            updateGeoLocation({ lat, lng });
+        },
+        (error) => {
+            console.error("Geolocation error:", error);
+            showToast("تعذر الحصول على موقعك الحالي", "error");
+
+            // Optional fallback to Tripoli
+            const fallbackLat = 32.8872;
+            const fallbackLng = 13.1913;
+            map.setView([fallbackLat, fallbackLng], 12);
+            marker.setLatLng([fallbackLat, fallbackLng]);
+            updateGeoLocation({ lat: fallbackLat, lng: fallbackLng });
+        }
+    );
 }
 
+
 function loadProfileData() {
-    const customerId = JSON.parse(localStorage.getItem("session_data@user_id")).replace(/^c-/, '');
+    const customerId = JSON.parse(localStorage.getItem("session_data@client_id")).replace(/^c-/, '');
     
-    customFetch(`http://45.13.59.226/api/clients/${customerId}/`)
+    customFetch(`/hozma/api/clients/${customerId}/`)
         .then(response => response.json())
         .then(data => {
             if (!data || !data.clients || data.clients.length === 0) {
@@ -101,20 +109,20 @@ function loadProfileData() {
 function populateForm(clientData) {
     document.getElementById('name').value = clientData.name || '';
     document.getElementById('email').value = clientData.email || '';
-    document.getElementById('phone').value = clientData.phone || '';
+   
     document.getElementById('mobile').value = clientData.mobile || '';
     document.getElementById('website').value = clientData.website || '';
     document.getElementById('address').value = clientData.address || '';
 }
 
 function updateProfile() {
-    const customerId = JSON.parse(localStorage.getItem("session_data@user_id")).replace(/^c-/, '');
+    const customerId = JSON.parse(localStorage.getItem("session_data@client_id")).replace(/^c-/, '');
     
     // Prepare form data
     const formData = {
         name: document.getElementById('name').value,
         email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
+
         mobile: document.getElementById('mobile').value,
         website: document.getElementById('website').value,
         address: document.getElementById('address').value,

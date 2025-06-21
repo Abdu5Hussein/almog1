@@ -15,7 +15,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
     />
+    <!-- Bootstrap Bundle (includes Popper.js) -->
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script src="{% static 'js/home_page_for_car_parts_shop.js' %}"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -329,59 +332,5 @@
       </div>
     </div>
 
-    <!-- Bootstrap Bundle (includes Popper.js) -->
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
-
-    <script>
-      const menuToggle = document.getElementById("sidebar-toggler");
-      const sidebar = document.getElementById("sidebar");
-      menuToggle.addEventListener("click", function() {
-        sidebar.classList.toggle("show");
-      });
-
-      document.querySelectorAll(".toggle-submenu").forEach((item) => {
-        item.addEventListener("click", (event) => {
-          event.preventDefault();
-          const submenu = item.nextElementSibling;
-          document.querySelectorAll(".sub-menu").forEach((sub) => {
-            if (sub !== submenu) {
-              sub.style.display = "none";
-            }
-          });
-          submenu.style.display =
-            submenu.style.display === "block" ? "none" : "block";
-        });
-      });
-
-      document.getElementById("logout-btn").addEventListener("click", function (){
-        logoutFunction();
-      });
-
-      function logoutFunction(){
-          const access_token = localStorage.getItem("session_data@access_token").replace(/"/g, '');
-          const refresh_token = localStorage.getItem("session_data@refresh_token").replace(/"/g, '');
-          const data = {
-              "refresh": refresh_token,
-              "access": access_token,
-          };
-          customFetch(`/api/user/logout`, {
-              method: "POST",
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${access_token}`,
-              },
-              body: JSON.stringify(data),
-          })
-          .then((response) => response.json())
-          .then((result) => {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = "/login";
-          })
-          .catch((error) => {
-              console.error("Error:", error);
-          });
-      }
-    </script>
   </body>
 </html>

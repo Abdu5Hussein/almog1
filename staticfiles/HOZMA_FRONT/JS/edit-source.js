@@ -35,16 +35,17 @@ async function loadSources() {
                     <td>${source.name || 'غير متوفر'}</td>
                     <td>${source.email || 'غير متوفر'}</td>
                     <td>${source.phone || 'غير متوفر'}</td>
+                     <td>
+                        <a href="/hozma/products/add/${source.clientid}/" class="btn btn-add">
+                            <i class="fas fa-plus me-1"></i> إضافة
+                        </a>
+                    </td>
                     <td>
                         <button class="btn btn-edit" onclick="fetchSourceDetails(${source.clientid})">
                             <i class="fas fa-edit me-1"></i> تعديل
                         </button>
                     </td>
-                    <td>
-                        <a href="/hozma/products/add/${source.clientid}/" class="btn btn-add">
-                            <i class="fas fa-plus me-1"></i> إضافة
-                        </a>
-                    </td>
+                   
                 </tr>
             `;
             tableBody.append(row);

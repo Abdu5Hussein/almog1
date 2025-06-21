@@ -108,6 +108,17 @@ class ReturnPermissionItemsSerializer(serializers.ModelSerializer):
         model = models.return_permission_items
         fields = "__all__"  # Include all fields
 
+class buy_ReturnPermissionSerializer(serializers.ModelSerializer):
+    source_name = serializers.CharField(source="source.name", read_only=True)
+
+    class Meta:
+        model = models.buy_return_permission
+        fields = "__all__"  # Include all fields
+
+class buy_ReturnPermissionItemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.buy_return_permission_items
+        fields = "__all__"  # Include all fields
 
 class BuyInvoiceSerializer(serializers.ModelSerializer):
     invoice_date = serializers.SerializerMethodField()
@@ -155,6 +166,11 @@ class ClientSerializer(serializers.ModelSerializer):
 class TransactionsHistoryTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.TransactionsHistoryTable
+        fields = '__all__'
+
+class TransactionsHistoryTableSerializerForSuppliers(serializers.ModelSerializer):
+    class Meta:
+        model = models.TransactionsHistoryTableForSuppliers
         fields = '__all__'
 
 class BuyInvoiceItemsTableSerializer(serializers.ModelSerializer):

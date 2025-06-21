@@ -1,15 +1,72 @@
-const clientId = JSON.parse(localStorage.getItem("session_data@user_id"));
+const clientId = JSON.parse(localStorage.getItem("session_data@client_id"));
 const PLACEHOLDER_IMG = "{% static 'images/parts/default-part.jpg' %}";
 
+const formatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+// Track navigation state
+let navigationStack = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadClientInvoices();
-  
-  // Handle back to list button
+  const invoiceNo = getInvoiceNoFromURL();
+
+  if (window.location.pathname.includes('/orders/') && invoiceNo) {
+    // You are deep-linked to a detail view
+    navigationStack.push('list');
+    navigationStack.push('detail');
+
+    // Push state for list and detail manually
+    history.replaceState({ view: 'list' }, '', '/hozma/orders/');
+    history.pushState({ view: 'detail' }, '', `/hozma/orders/${invoiceNo}`);
+
+    await loadInvoiceDetails(invoiceNo);
+  } else {
+    navigationStack.push('list');
+    history.replaceState({ view: 'list' }, '', '/hozma/orders/');
+    await loadClientInvoices();
+  }
+
+  // Handle browser back/forward buttons
+  window.addEventListener('popstate', (event) => {
+    const view = event.state?.view;
+
+    if (view === 'list') {
+      // Show list view
+      navigationStack = ['list']; // reset
+      showInvoiceListView();
+    } else if (view === 'detail') {
+      navigationStack = ['list', 'detail'];
+      showInvoiceDetailView();
+    } else {
+      // Unknown or initial state, go back
+      window.history.back();
+    }
+  });
+
+  // Back to list button logic
   document.getElementById('back-to-list-btn').addEventListener('click', () => {
-    document.getElementById('invoice-list-container').style.display = 'block';
-    document.getElementById('invoice-detail-container').style.display = 'none';
+    history.back(); // Triggers popstate
   });
 });
+
+function getInvoiceNoFromURL() {
+  const pathParts = window.location.pathname.split('/');
+  return pathParts[pathParts.length - 1];
+}
+
+function showInvoiceListView() {
+  document.getElementById('invoice-list-container').style.display = 'block';
+  document.getElementById('invoice-detail-container').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showInvoiceDetailView() {
+  document.getElementById('invoice-list-container').style.display = 'none';
+  document.getElementById('invoice-detail-container').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 async function loadClientInvoices() {
   try {
@@ -38,14 +95,22 @@ async function loadClientInvoices() {
 function renderInvoiceList(invoices) {
   if (!invoices || invoices.length === 0) {
     document.getElementById('invoice-list-container').innerHTML = `
-      <div class="alert alert-info">
-        <i class="bi bi-info-circle-fill me-2"></i>
-        لا توجد فواتير مسجلة لحسابك.
+      <div class="alert alert-info text-center py-5" style="border-radius: 1rem;">
+        <i class="bi bi-info-circle-fill fs-3 mb-3 d-block text-primary"></i>
+        <h5 class="mb-3">لا توجد فواتير مسجلة لحسابك</h5>
+        <p class="mb-3">ابدأ التسوق الآن واحصل على قطع الغيار التي تحتاجها لسيارتك.</p>
+        <a href="/hozma/products/" class="btn btn-primary px-4">
+          <i class="bi bi-cart-plus me-1"></i> الذهاب إلى المتجر
+        </a>
       </div>
     `;
     return;
   }
   
+
+  // Sort invoices from newest to oldest by date_time
+  invoices.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
+
   let html = `
     <div class="invoice-card">
       <div class="invoice-card-header">
@@ -58,19 +123,22 @@ function renderInvoiceList(invoices) {
               <tr>
                 <th>رقم الفاتورة</th>
                 <th>التاريخ</th>
-                <th>المجموع</th>
+                <th>المبلغ</th>
                 <th>الحالة</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
   `;
-  
+
   invoices.forEach(invoice => {
-    const statusBadge = invoice.shop_confrim ? 
-      '<span class="badge bg-success badge-order-status">مكتمل</span>' : 
-      '<span class="badge bg-warning badge-order-status">قيد المعالجة</span>';
-    
+    const statusBadge = (invoice.invoice_status === "لم تشتري")
+    ? '<span class="badge bg-warning badge-order-status">قيد المعالجة</span>'
+    : (invoice.invoice_status === "تم شراءهن المورد")
+      ? '<span class="badge bg-success badge-order-status">تمت المعالجة</span>'
+      : `<span class="badge bg-secondary badge-order-status">${invoice.invoice_status}</span>`;
+  
+
     html += `
       <tr class="invoice-list-item" data-invoice-no="${invoice.invoice_no}">
         <td>#${invoice.invoice_no}</td>
@@ -85,7 +153,7 @@ function renderInvoiceList(invoices) {
       </tr>
     `;
   });
-  
+
   html += `
             </tbody>
           </table>
@@ -93,24 +161,33 @@ function renderInvoiceList(invoices) {
       </div>
     </div>
   `;
-  
+
   document.getElementById('invoice-list-container').innerHTML = html;
-  
+
   // Add event listeners to view buttons
   document.querySelectorAll('.view-invoice-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      loadInvoiceDetails(btn.dataset.invoiceNo);
+      const invoiceNo = btn.dataset.invoiceNo;
+      navigationStack.push('detail');
+      history.pushState({ view: 'detail' }, '', `/hozma/invoice/${invoiceNo}`);
+      loadInvoiceDetails(invoiceNo);
     });
   });
+}
   
   // Add event listeners to entire row
   document.querySelectorAll('.invoice-list-item').forEach(row => {
     row.addEventListener('click', () => {
-      loadInvoiceDetails(row.dataset.invoiceNo);
+      const invoiceNo = row.dataset.invoiceNo;
+      // Update navigation stack and history
+      navigationStack.push('detail');
+      history.pushState({ view: 'detail' }, '', `/hozma/invoice/${invoiceNo}`);
+      loadInvoiceDetails(invoiceNo);
+
     });
   });
-}
+
 
 async function loadInvoiceDetails(invoiceNo) {
   try {
@@ -127,11 +204,7 @@ async function loadInvoiceDetails(invoiceNo) {
     fillInvoice(data);
     
     // Show detail view
-    document.getElementById('invoice-list-container').style.display = 'none';
-    document.getElementById('invoice-detail-container').style.display = 'block';
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showInvoiceDetailView();
   } catch (err) {
     console.error('Error fetching invoice details:', err);
     alert('حدث خطأ أثناء جلب تفاصيل الفاتورة. يرجى المحاولة مرة أخرى.');
@@ -183,6 +256,7 @@ const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
       `;
     }
 
+
     tbody.insertAdjacentHTML('beforeend', `
       <tr>
         <td>
@@ -195,9 +269,9 @@ const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
             </div>
           </div>
         </td>
-        <td>${unit.toFixed(2)} د.ل</td>
+        <td>${formatter.format(unit)} د.ل</td>
         ${quantityHtml}
-        <td>${total.toFixed(2)} د.ل</td>
+        <td>${formatter.format(total)} د.ل</td>
       </tr>
     `);
   }
@@ -211,19 +285,19 @@ const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
   tbody.insertAdjacentHTML('beforeend', `
     <tr class="summary-row">
       <td colspan="3" class="text-end">المجموع الجزئي:</td>
-      <td>${parseFloat(subtotals).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(subtotals))} د.ل</td>
     </tr>
     <tr class="summary-row">
       <td colspan="3" class="text-end">رسوم الشحن:</td>
-      <td>${parseFloat(shipping).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(shipping))} د.ل</td>
     </tr>
     <tr class="summary-row">
       <td colspan="3" class="text-end">الخصم:</td>
-      <td>${parseFloat(discount).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(discount))} د.ل</td>
     </tr>
     <tr class="summary-row summary-row-total">
       <td colspan="3" class="text-end">المجموع الكلي:</td>
-      <td>${parseFloat(total).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(total))} د.ل</td>
     </tr>
   `);
 
@@ -278,7 +352,7 @@ const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
 
 async function getProductImageURL(pno, placeholder, baseURL) {
   try {
-    const response = await fetch(`/api/products/${pno}/get-images`);
+    const response = await fetch(`/hozma/api/products/${pno}/get-images`);
     const images = await response.json();
     if (images.length > 0 && images[0].image_obj) {
       return `${baseURL}${images[0].image_obj}`;
@@ -351,7 +425,7 @@ function printInvoice() {
           <div>
             <strong>${item.name}</strong><br>
             <small>رقم القطعة: ${item.pno}</small><br>
-            <small>المنشأ: ${item.company}</small>
+            <small>الشركة: ${item.company}</small>
           </div>
         </td>
         <td>${item.price}</td>

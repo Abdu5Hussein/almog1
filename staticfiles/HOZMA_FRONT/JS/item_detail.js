@@ -41,7 +41,7 @@ async function loadProductImage() {
     try {
         console.log(`Fetching image for product number: ${pno}`);
 
-        const response = await customFetch(`${baseUrl}/api/products/${pno}/get-images`);
+        const response = await customFetch(`/hozma/api/products/${pno}/get-images`);
         console.log('Raw response from API:', response);
 
         // Check if the response is valid JSON and handle it

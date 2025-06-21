@@ -314,57 +314,65 @@ try {
 }
 }
 
-
-
 function downloadFailedItemsReport(failedItems) {
   if (!failedItems || failedItems.length === 0) {
     showResponse('لا توجد عناصر فاشلة لتحميلها', 'info');
     return;
   }
 
-  // Get all original headers from the first failed item
-  const originalHeaders = failedItems[0].originalRow ? 
-    Object.keys(failedItems[0].originalRow) : 
-    [];
+  // Define all headers exactly as specified, in the correct order
+  const allHeaders = [
+    'رقم الخاص',
+    'رقم الخاص المورد',
+    'اسم الصنف',
+    'رقم الشركه',
+    'اسم الشركه',
+    'الرقم الاصلي',
+    'الرقم الاصلي المكافي',
+    'الكمية',
+    'سعر البيع',
+    'التخفيض',
+    'ملاحظات',
+    'الفئة',
+    'نوع التخفيض',
+    'فئة الصنف'
+  ];
 
-  // Create report data with all original columns plus error info
+  // Prepare the data with all headers
   const reportData = failedItems.map(item => {
     const rowData = {};
     
-    // First add all original headers (even if empty)
-    originalHeaders.forEach(header => {
-      rowData[header] = item.originalRow ? 
-        (item.originalRow[header] || '') : 
-        '';
+    // Initialize all headers with empty values first
+    allHeaders.forEach(header => {
+      rowData[header] = '';
     });
-    
-    // Then add our error information columns
-    return {
-      ...rowData,
-      'حالة العملية': item.success ? 'نجاح' : 'فشل',
-      'رسالة الخطأ': item.message || 'لا توجد رسالة خطأ',
-      'PNO المستخدم': item.pno || 'N/A'
-    };
+
+    // Fill in available data from originalRow if it exists
+    if (item.originalRow) {
+      allHeaders.forEach(header => {
+        if (item.originalRow[header] !== undefined) {
+          rowData[header] = item.originalRow[header];
+        }
+      });
+    }
+
+    // Add error information columns
+    rowData['حالة العملية'] = item.success ? 'نجاح' : 'فشل';
+    rowData['رسالة الخطأ'] = item.message || 'لا توجد رسالة خطأ';
+    rowData['PNO المستخدم'] = item.pno || 'N/A';
+
+    return rowData;
   });
 
-  // Create worksheet with all columns in correct order
-  const ws = XLSX.utils.json_to_sheet(reportData);
-  
-  // Reorder columns to put original headers first
-  const newHeaders = [
-    ...originalHeaders,
-    'حالة العملية',
-    'رسالة الخطأ', 
-    'PNO المستخدم'
-  ];
-  
-  // Reconstruct worksheet with correct column order
-  const newWs = XLSX.utils.json_to_sheet(reportData, { header: newHeaders });
-  
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, newWs, "العناصر الفاشلة");
+  // Create worksheet with all headers
+  const ws = XLSX.utils.json_to_sheet(reportData, {
+    header: [...allHeaders, 'حالة العملية', 'رسالة الخطأ', 'PNO المستخدم']
+  });
 
-  // Download file
+  // Create and download workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "العناصر الفاشلة");
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   XLSX.writeFile(wb, `العناصر_الفاشلة_${timestamp}.xlsx`);
 

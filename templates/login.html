@@ -7,7 +7,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login Page</title>
-    <!-- Bootstrap CSS -->
+     <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/login.js' %}"></script>
+    <script src="{% static 'js/helper_functions.js' %}"></script>
+    <!-- CSS -->
     <link
       rel="stylesheet"
       href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
@@ -53,7 +58,7 @@
                     required
                   />
                 </div>
-                <div class="mb-4 position-relative">
+                <div class="mb-2 position-relative">
                   <label for="password" class="form-label">Password</label>
                   <div class="input-group">
                     <input
@@ -74,6 +79,14 @@
                     </button>
                   </div>
                 </div>
+                <div class="mb-4">
+                  <label for="role">Role:</label>
+                  <select id="role" name="role" class="form-control">
+                    <option value="employee">Employee</option>
+                    <option value="client">Client</option>
+                  </select>
+                </div>
+
 
                 <button type="submit" class="btn btn-primary w-100">
                   Login
@@ -85,93 +98,5 @@
       </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.min.js' %}"></script>
-
-    <script>
-
-document.addEventListener("DOMContentLoaded", () => {
-  /* -------------------------------------------------
-   * 1. Elements
-   * -------------------------------------------------*/
-  const loginForm       = document.getElementById("login-form");
-  const passwordInput   = document.getElementById("password");
-  const togglePassword  = document.getElementById("togglePassword");
-  const eyeIcon         = document.getElementById("eyeIcon");
-
-  /* -------------------------------------------------
-   * 2. Submit handler
-   * -------------------------------------------------*/
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const csrfToken = document.querySelector("[name='csrfmiddlewaretoken']")?.value || "";
-    const payload   = {
-      username : document.getElementById("username").value.trim(),
-      password : passwordInput.value,
-      role     : "employee"
-    };
-
-    try {
-      const res   = await fetch("http://45.13.59.226/process-login", {
-        method  : "POST",
-        headers : {
-          "Content-Type" : "application/json",
-          "Accept"       : "application/json",
-          "X-CSRFToken"  : csrfToken,
-        },
-        body : JSON.stringify(payload)
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        /* ---------- 2-A. Save response values ---------- */
-        localStorage.setItem("session_data@EMPusername",   JSON.stringify(result.username));
-        localStorage.setItem("session_data@EMPname",       JSON.stringify(result.name));
-        localStorage.setItem("session_data@EMProle",       JSON.stringify(result.role));
-        localStorage.setItem("session_data@EMPuser_id",    JSON.stringify(result.user_id));
-        localStorage.setItem("session_data@emp_id",        JSON.stringify(result.emp_id));
-        localStorage.setItem("session_data@employee_type", JSON.stringify(result.employee_type));
-        localStorage.setItem("session_data@access_token",  JSON.stringify(result.access_token));
-        localStorage.setItem("session_data@refresh_token", JSON.stringify(result.refresh_token));
-
-        /* ---------- 2-B. Redirect ---------- */
-        window.location.href = result.redirect_url || "/login";
-  
-      } else {
-        showError(result.message || "Login failed. Please try again.");
-      }
-    } catch {
-      showError("An error occurred. Please check your internet connection.");
-    }
-  });
-
-  /* -------------------------------------------------
-   * 3. Password visibility toggle
-   * -------------------------------------------------*/
-  togglePassword.addEventListener("click", () => {
-    const hidden = passwordInput.type === "password";
-    passwordInput.type = hidden ? "text" : "password";
-    eyeIcon.classList.toggle("bi-eye",        !hidden);
-    eyeIcon.classList.toggle("bi-eye-slash",   hidden);
-  });
-
-  /* -------------------------------------------------
-   * 4. Helper – flash error message
-   * -------------------------------------------------*/
-  function showError(msg) {
-    const box = document.createElement("div");
-    box.className = "alert alert-danger mb-2";
-    box.textContent = msg;
-    (document.querySelector(".card-body") || document.body).prepend(box);
-    setTimeout(() => box.remove(), 5_000);
-  }
-});
-
-
-      </script>
-      
 </body>
 </html>

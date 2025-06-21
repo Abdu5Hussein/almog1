@@ -10,40 +10,29 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{% static 'hozma/css/navbar.css' %}">
   <link rel="stylesheet" href="{% static 'hozma/css/itemstyle.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css" rel="stylesheet">
 </head>
 <body>
 <!-- templates/partials/_navbar.html -->
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0A1523; border-bottom: 2px solid #FF6B00;">  <div class="container  px-0 ">
-      <a class="navbar-brand fw-bold" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية" style="font-size: 1.5rem; color: #FFD700; letter-spacing: 0.5px;">
-          <i class="bi bi-gear-fill me-1"></i>حزمة
-      </a>
+  <a class="navbar-brand" href="http://45.13.59.226/hozma/products/" aria-label="الرئيسية">
+    <img src="{% static 'images/log_hozma.png' %}" alt="حزمة" style="height: 40px;">
+</a>  
       <button class="navbar-toggler py-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="تبديل التنقل" style="border-color: #FF6B00;">
           <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
           <ul class="navbar-nav ms-auto align-items-lg-center">
               <li class="nav-item mx-1">
-                  <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/products/" aria-current="page">
+                  <a class="nav-link nav-link-auto py-1 px-2" href="/hozma/products/" aria-current="page">
                       <i class="bi bi-speedometer2 me-1"></i> الرئيسية
                   </a>
               </li>
-              <li class="nav-item dropdown mx-1">
-                  <a class="nav-link nav-link-auto py-1 px-2 dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <i class="bi bi-layers me-1"></i> الأقسام
-                  </a>
-                  <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown" style="background-color: #1A2A40; border: 1px solid #FF6B00;">
-                      <li><a class="dropdown-item py-2" href="/hozma/engine-parts"><i class="bi bi-gear-wide me-2"></i>قطع المحرك</a></li>
-                      <li><a class="dropdown-item py-2" href="/hozma/brake-system"><i class="bi bi-disc me-2"></i>نظام الفرامل</a></li>
-                      <li><a class="dropdown-item py-2" href="/hozma/electrical"><i class="bi bi-lightning-charge me-2"></i>الأنظمة الكهربائية</a></li>
-                      <li><a class="dropdown-item py-2" href="/hozma/suspension"><i class="bi bi-sliders me-2"></i>نظام التعليق</a></li>
-                      <li><hr class="dropdown-divider my-1" style="border-color: #FF6B00;"></li>
-                      <li><a class="dropdown-item py-2" href="/hozma/all-categories"><i class="bi bi-grid me-2"></i>جميع الأقسام</a></li>
-                  </ul>
-              </li>
+              
               <li class="nav-item mx-1">
-                  <a class="nav-link nav-link-auto py-1 px-2" href="http://45.13.59.226/hozma/hozmabrands/">
-                      <i class="bi bi-tags me-1"></i> الماركات
+                  <a class="nav-link nav-link-auto py-1 px-2" href="/hozma/hozmabrands/">
+                      <i class="bi bi-tags me-1"></i> الشركات
                   </a>
               </li>
               <li class="nav-item mx-1">
@@ -59,11 +48,35 @@
                   </a>
               </li>
               <li class="nav-item position-relative mx-1">
-                <a id="navbarCartIcon" class="nav-link nav-link-auto py-1 px-2" href="/hozma/hozmaCart/" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة">
-                    <i class="bi bi-cart3" aria-hidden="true"></i>
-                    <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.6rem;" aria-live="polite" aria-atomic="true">0</span>
+                <a id="navbarCartIcon" class="nav-link nav-link-auto py-1 px-2 position-relative" href="/hozma/hozmaCart/" title="السلة" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-label="عرض السلة">
+                  <i class="bi bi-cart3 fs-5" aria-hidden="true"></i> <!-- Smaller cart -->
+                  <span id="cartBadge"
+                    class="position-absolute start-100 translate-middle badge rounded-pill bg-warning text-dark text-center d-none"
+                    style="
+                      top: 16%;
+                      font-size: 0.75rem;
+                      padding: 0.4rem 0.6rem;
+                      min-width: 2.2rem;
+                      line-height: 1.2;
+                      white-space: nowrap;
+                    "
+                    aria-live="polite" aria-atomic="true">
+                    0
+                  </span>
                 </a>
               </li>
+              
+              
+              
+              <!-- Logout Button -->
+<!-- Logout Button -->
+<li class="nav-item ms-2">
+  <button onclick="signOutClient()" class="btn btn-outline-light fw-bold py-1 px-3" style="border-radius: 20px; min-width: 100px; font-size: 0.85rem;">
+    <i class="bi bi-box-arrow-right me-1"></i> تسجيل الخروج
+  </button>
+</li>
+
+
             
               <!-- Account Button -->
               <li class="nav-item ms-2">
@@ -150,49 +163,8 @@
 
   <div class="filters-section mb-4">
     <!-- Brand Selection -->
-    <div class="brand-selector mb-4">
-      <input type="hidden" id="category" value="">
-      
-      <div class="d-flex justify-content-center flex-wrap gap-3">
-        <div class="brand-logo active" data-value="" onclick="changeItemMain('')">
-          <div class="logo-container">
-            <img src="{% static 'images/ALL-icon.png' %}" alt="الكل" class="brand-image">
-          </div>
-          <span class="brand-name">الكل</span>
-        </div>
-        <div class="brand-logo" data-value="VW" onclick="changeItemMain('كوري')">
-          <div class="logo-container">
-            <img src="{% static 'images/Korean-flag.png' %}" alt="الكوري" class="brand-image">
-          </div>
-          <span class="brand-name">كوري</span>
-        </div>
-      
-        <div class="brand-logo" data-value="car" onclick="changeItemMain('أمريكي')">
-          <div class="logo-container">
-            <img src="{% static 'images/USA-flag.png' %}" alt="الامريكي" class="brand-image">
-          </div>
-          <span class="brand-name">امريكي</span>
-        </div>
-        <div class="brand-logo" data-value="ياباني" onclick="changeItemMain('ياباني')">
-          <div class="logo-container">
-            <img src="{% static 'images/japan-flag.png' %}" alt="ياباني" class="brand-image">
-          </div>
-          <span class="brand-name">ياباني</span>
-        </div>
-        <div class="brand-logo" data-value="الزيوت" onclick="changeItemMain('الزيوت')">
-          <div class="logo-container">
-            <img src="{% static 'images/oil-icon.png' %}" alt="الزيوت" class="brand-image">
-          </div>
-          <span class="brand-name">الزيوت</span>
-        </div>
-        <div class="brand-logo" data-value="الكماليات" onclick="changeItemMain('الكماليات')">
-          <div class="logo-container">
-            <img src="{% static 'images/accsosries-icon.png' %}" alt="الكماليات" class="brand-image">
-          </div>
-          <span class="brand-name">الكماليات</span>
-        </div>
-      </div>
-    </div>
+    
+    
   
 
    <!-- =========  FILTERS SECTION  ========= -->
@@ -219,11 +191,33 @@
         </div>
       </div>
 
+        <!-- Catogary item  Filter ------------------------------------------------->
+        <div class="col-lg-1-5 col-md-4 col-sm-6">
+          <div class="filter-card shadow-sm rounded-3">
+            <label for="companynoFilter"
+                   class="form-label small fw-bold text-muted mb-1">
+              فئة الصنف
+            </label>
+        
+            <div class="input-group border rounded-3">
+              <span class="input-group-text bg-white border-0">
+                <i class="fas fa-tags text-primary"></i>   <!-- أيقونة مناسبة للفئات -->
+              </span>
+        
+              <select id="companynoFilter"
+                      class="form-select border-0 shadow-none"
+                      onchange="applyFilters()">
+                <option value="">اختر فئة الصنف...</option>
+                <!-- سيتم إدراج الخيارات هنا برمجيًا -->
+              </select>
+            </div>
+          </div>
+        </div>
       <!-- OEM Filter ------------------------------------------------------------>
-      <div class="col-lg-2 col-md-4 col-sm-6">
+      <div class="col-lg-3 col-md-4 col-sm-6">
         <div class="filter-card shadow-sm rounded-3">
           <label for="oemFilter" class="form-label small fw-bold text-muted mb-1">
-            رقم OEM
+            رقم  OEM أو برقم الشركة 
           </label>
           <div class="input-group border rounded-3">
             <span class="input-group-text bg-white border-0">
@@ -231,33 +225,19 @@
             </span>
             <input id="oemFilter"
                    class="form-control border-0 shadow-none"
-                   placeholder="ابحث برقم OEM..."
+                   placeholder="أو برقم الشركة، ابحث باستخدام رقم OEM..."
+
+
                    type="text"
                    oninput="applyFilters()">
           </div>
         </div>
       </div>
 
-      <!-- Company Number Filter ------------------------------------------------->
-      <div class="col-lg-2 col-md-4 col-sm-6">
-        <div class="filter-card shadow-sm rounded-3">
-          <label for="companynoFilter" class="form-label small fw-bold text-muted mb-1">
-            رقم الشركة
-          </label>
-          <div class="input-group border rounded-3">
-            <span class="input-group-text bg-white border-0">
-              <i class="fas fa-building text-primary"></i>
-            </span>
-            <input id="companynoFilter"
-                   class="form-control border-0 shadow-none"
-                   placeholder="ابحث برقم الشركة..."
-                   type="text"
-                   oninput="applyFilters()">
-          </div>
-        </div>
-      </div>
+    
 
       <!-- Part Number Filter — Narrow ------------------------------------------->
+      
       <div class="col-lg-1-5 col-md-4 col-sm-6">
         <div class="filter-card shadow-sm rounded-3 ">
           <label for="pnoFilter" class="form-label small fw-bold text-muted mb-1">
@@ -277,24 +257,7 @@
       </div>
 
       <!-- Company Product Filter — Select --------------------------------------->
-      <div class="col-lg-1-5 col-md-4 col-sm-6">
-        <div class="filter-card shadow-sm rounded-3">
-          <label for="companyproductFilter" class="form-label small fw-bold text-muted mb-1">
-            اسم الشركة
-          </label>
-          <div class="input-group border rounded-3">
-            <span class="input-group-text bg-white border-0">
-              <i class="fas fa-box-open text-primary"></i>
-            </span>
-            <select id="companyproductFilter"
-                    class="form-select border-0 shadow-none"
-                    onchange="applyFilters()">
-              <option value="">اختر اسم الشركة...</option>
-              <!-- Options will be added here dynamically -->
-            </select>
-          </div>
-        </div>
-      </div>
+ 
       
 
       <!-- Availability Filter --------------------------------------------------->
@@ -309,29 +272,14 @@
             <option value="">الكل</option>
             <option value="availability:available">متوفر (10+)</option>
             <option value="availability:limited">كمية محدودة (1-10)</option>
-            <option value="availability:unavailable">غير متوفر (0)</option>
+            <option value="availability:not_available">غير متوفر (0)</option>
             <option value="discount:available">تخفيض</option>
           </select>
         </div>
       </div>
       <script>
     
-  document.addEventListener('DOMContentLoaded', () => {
-    customFetch('http://45.13.59.226/hozma/api/company-products/')
-      .then(response => response.json())
-      .then(data => {
-        const select = document.getElementById('companyproductFilter');
-        data.forEach(product => {
-          const option = document.createElement('option');
-          option.value = product;
-          option.textContent = product;  // You can replace this with Arabic translation if needed
-          select.appendChild(option);
-        });
-      })
-      .catch(error => {
-        console.error('Error fetching company products:', error);
-      });
-  });
+  
       </script>
       
       <!-- Action Buttons -------------------------------------------------------->
@@ -412,7 +360,7 @@
             <th>الشركة</th>
             <th class="d-none d-md-table-cell">المخزون</th>
             <th>السعر</th>
-            <th>الكمية</th>
+            <th class="text-center align-middle">الكمية</th>
           </tr>
         </thead>
         <tbody id="productList">
@@ -525,18 +473,17 @@
       <div class="col-lg-2 col-md-4 mb-4">
         <h5 class="fw-bold mb-3">روابط سريعة</h5>
         <ul class="list-unstyled">
-          <li class="mb-2"><a href="#" class="text-white-50">الرئيسية</a></li>
-          <li class="mb-2"><a href="#" class="text-white-50">من نحن</a></li>
-          <li class="mb-2"><a href="#" class="text-white-50">المنتجات</a></li>
-          <li class="mb-2"><a href="#" class="text-white-50">العروض</a></li>
-          <li><a href="#" class="text-white-50">اتصل بنا</a></li>
+       
+          <li class="mb-2"><a href="/hozma/products/" class="text-white-50">المنتجات</a></li>
+          
+          <li><a href="/hozma/contact/" class="text-white-50">اتصل بنا</a></li>
         </ul>
       </div>
       <div class="col-lg-3 col-md-4 mb-4">
         <h5 class="fw-bold mb-3">خدمة العملاء</h5>
         <ul class="list-unstyled">
           <li class="mb-2"><a href="/hozma/hozmaDashbord/" class="text-white-50">حسابي</a></li>
-          <li class="mb-2"><a href="/hozma/#" class="text-white-50">تتبع الطلب</a></li>
+
           <li class="mb-2"><a href="/hozma/hozmareturn-policy/" class="text-white-50">سياسة الإرجاع</a></li>
           <li class="mb-2"><a href="/hozma/hozmafaq/" class="text-white-50">الأسئلة الشائعة</a></li>
           <li><a href="/hozma/hozmaterms-conditions/" class="text-white-50">الشروط والأحكام</a></li>
@@ -559,12 +506,46 @@
         <p class="mb-0">&copy; 2025 حزمة. جميع الحقوق محفوظة.</p>
       </div>
       <div class="col-md-6 text-center text-md-end">
-        <img src="{% static 'images/USA-flag.png' %}" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
+        <img src="https://via.placeholder.com/200x50" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
       </div>
     </div>
   </div>
 </footer>
+<script>
+  async function signOutClient() {
+      const sessionData = JSON.parse(localStorage.getItem("session_data@username"));
+      const role = JSON.parse(localStorage.getItem("session_data@role"));
+      const payload = { username: sessionData, role: role };
+    
+      const res = await fetch("/mobile/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+    
+      if (res.ok) {
+       window.location.href = "/login";
+      } else {
+        const err = await res.json();
+        console.error("Logout error:", err);
+        alert("حدث خطأ أثناء تسجيل الخروج. حاول مرة أخرى.");
+      }
+    }
   
+  
+      // Detect if the page was restored from the browser cache
+      window.addEventListener('pageshow', function (event) {
+          if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+              // Force full reload if page is coming from cache (back/forward)
+              window.location.reload(true);
+          }
+      });
+  
+  
+    </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
@@ -574,6 +555,8 @@
   <script src="{% static 'hozma/js/cart.js' %}"></script>
   <script src="{% static 'hozma/js/barandproduct.js' %}"></script>
   <script src="{% static 'hozma/js/itemmain.js' %}"></script>
+  <script src="{% static 'HOZMA_FRONT/JS/item_page.js' %}"></script>
+
   
 </body>
 

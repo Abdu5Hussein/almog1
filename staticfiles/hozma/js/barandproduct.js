@@ -2,10 +2,14 @@ let currentPage = 1;
 let lastPage = 1;
 let isLoading = false;
 let currentFilters = {};
-let itemsPerPage = 10;
+let itemsPerPage = 12;
 let datl = {};
 let pageCache = {}; 
-let maxPrefetchedPage = 0;   // highest page we’ve ever prefetched
+let prefetchQueue = []; 
+let isNavigating = false; // Prevents rapid clicks
+let maxPrefetchedPage = 0; // { pageNum: { data, last_page, total_rows } }
+let loadingPages = new Set(); // Pages currently being fetched
+let lastVisiblePage = 1;
 // *** simple in-memory cache ***
 const ITEMMAIN_CONST = (() => {
     const m = window.location.pathname.match(/\/hozma\/brand\/([^/]+)/);
@@ -23,14 +27,14 @@ async function fetchFilteredData(page = 1) {
 
     const filters = {
         pno: currentFilters.pno || '',
-        companyno: currentFilters.companyno || '',
-        oem: currentFilters.oem || '',
+        oem_combined: currentFilters.oem_combined || '',
+        item_type: currentFilters.item_type || '',
+
         itemname: currentFilters.itemname || '',
         companyproduct: currentFilters.companyproduct || '',
         availability: currentFilters.availability || '',
         category: currentFilters.category || '',
         discount: currentFilters.discount || '',
-        itemmain: currentFilters.itemmain|| '',  // constant value
         
         page: page,
         size: itemsPerPage,
@@ -70,102 +74,115 @@ async function fetchFilteredData(page = 1) {
         };
     }
 }
+function prefetchNextPages() {
+  // Don’t prefetch beyond known limits
+  if (!lastPage || lastVisiblePage >= lastPage) return;
 
-// Prefetch next pages (up to four pages ahead)
-function prefetchNextPages(distance = 5) {
-    // Don’t compute until we know the true last page
-    if (!lastPage) return;
+  // Prefetch 3 pages ahead (adjust based on your needs)
+  const pagesToPrefetch = [lastVisiblePage + 1, lastVisiblePage + 2, lastVisiblePage + 3];
 
-    const start = maxPrefetchedPage + 1;
-    const end   = Math.min(start + distance - 1, lastPage);
-
-    for (let p = start; p <= end; p++) {
-        if (!pageCache[p]) {
-            fetchFilteredData(p).catch(err => console.error('Prefetch error:', err));
-        }
-    }
-
-    // Remember how far ahead we’ve gone
-    maxPrefetchedPage = Math.max(maxPrefetchedPage, end);
+  pagesToPrefetch.forEach((page) => {
+      if (page <= lastPage && !pageCache[page] && !loadingPages.has(page)) {
+          loadingPages.add(page);
+          fetchFilteredData(page)
+              .then((data) => {
+                  pageCache[page] = data;
+              })
+              .finally(() => loadingPages.delete(page));
+      }
+  });
 }
 // Display items in the table
 async function displayItems(items) {
-    const productList = document.getElementById('productList');
-    productList.innerHTML = '';
-  
-    if (items.length === 0) {
-      document.getElementById('noResults').style.display = 'block';
-      document.getElementById('loading-spinner').style.display = 'none';
-      return;
-    }
-  
-    document.getElementById('noResults').style.display = 'none';
-  
-    for (const item of items) {
-      const row = document.createElement('tr');
-  
-      const stock = parseInt(item.showed) || 0;
-      const cartItem = cart.find(ci => ci.pno === item.pno);
-      const cartQuantity = cartItem ? cartItem.quantity : 0;
-  
-      /* Price/discount logic */
-      const discount = item.discount ? parseFloat(item.discount) : 0;
-      const finalPrice = parseFloat(item.buyprice || 0);
-      const originalPrice = discount ? finalPrice / (1 - discount) : finalPrice;
-  
-      const priceCellContent = discount
-        ? `
-          <span class="text-decoration-line-through text-muted me-1 d-none d-md-inline">
-            ${originalPrice.toFixed(2)} د.ل
-          </span>
-          <span class="fw-bold text-danger">
-            ${finalPrice.toFixed(2)} د.ل
-          </span>
-          <span class="badge bg-danger ms-1 d-none d-md-inline-block">
-            خصم ${(discount * 100).toFixed(0)}%
-          </span>`
-        : `${finalPrice.toFixed(2)} د.ل`;
-  
-      row.innerHTML = `
-        <td class="clickable-cell d-none d-md-table-cell" data-pno="${item.pno}" data-label="رقم القطعة">${item.pno ?? '-'}</td>
-        <td class="clickable-cell" data-pno="${item.pno}" data-label="اسم القطعة">${item.itemname ?? '-'}</td>
-        <td data-label="الشركة">${item.companyproduct ?? '-'}</td>
-        <td class="d-none d-md-table-cell" data-label="المخزون">
-          ${stock > 10
-            ? `<span class="badge bg-success">متوفر</span>`
-            : stock > 0
-              ? `<span class="badge bg-warning text-dark">كمية محدودة</span>`
-              : `<span class="badge bg-danger">غير متوفر</span>`}
-        </td>
-        <td data-label="السعر">${priceCellContent}</td>
-      
-        <td data-label="الكمية">
-          <div class="quantity-control">
-            <button class="btn btn-sm btn-outline-secondary quantity-btn"
-                    onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
-            <input type="number" class="form-control form-control-sm quantity-input"
-                   id="qty-${item.pno}" value="${cartQuantity}" min="0"
-                   onchange="updateQuantity('${item.pno}', this.value)">
-            <button class="btn btn-sm btn-outline-secondary quantity-btn"
-                    onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">+</button>
-          </div>
-        </td>
-      `;
-  
-      /* Allow pno & name cells to open the image dialog */
-      row.querySelectorAll('.clickable-cell').forEach(cell => {
-        cell.style.cursor = 'pointer';
-        cell.addEventListener('click', e => {
-          if (!e.target.classList.contains('quantity-btn') &&
-              !e.target.classList.contains('quantity-input')) {
-                showItemDetail(item.pno);
-          }
-        });
-      });
-  
-      productList.appendChild(row);
-    }
+  const productList = document.getElementById('productList');
+  productList.innerHTML = '';
+
+  if (items.length === 0) {
+    document.getElementById('noResults').style.display = 'block';
+    document.getElementById('loading-spinner').style.display = 'none';
+    return;
   }
+
+  document.getElementById('noResults').style.display = 'none';
+
+  for (const item of items) {
+    const row = document.createElement('tr');
+
+    const stock = parseInt(item.showed) || 0;
+    const cartItem = cart.find(ci => ci.pno === item.pno);
+    const cartQuantity = cartItem ? cartItem.quantity : 0;
+
+    /* Price/discount logic */
+    const discount = item.discount ? parseFloat(item.discount) : 0;
+    const finalPrice = parseFloat(item.buyprice || 0);
+    const originalPrice = discount ? finalPrice / (1 - discount) : finalPrice;
+
+    const priceCellContent = discount
+      ? `
+        <span class="text-decoration-line-through text-muted me-1 d-none d-md-inline">
+          ${originalPrice.toFixed(2)} د.ل
+        </span>
+        <span class="fw-bold text-danger">
+          ${finalPrice.toFixed(2)} د.ل
+        </span>
+        <span class="badge bg-danger ms-1 d-none d-md-inline-block">
+          خصم ${(discount * 100).toFixed(0)}%
+        </span>`
+      : `${finalPrice.toFixed(2)} د.ل`;
+
+    row.innerHTML = `
+      <td class="clickable-cell d-none d-md-table-cell" data-pno="${item.pno}" data-label="رقم القطعة">${item.pno ?? '-'}</td>
+<td data-label="اسم القطعة">
+${item.itemname ?? '-'}
+<i class="fas fa-circle-question text-primary ms-2 faq-icon"
+   style="cursor: pointer;"
+   title="عرض التفاصيل"
+   onclick="showItemDetail('${item.pno}')"></i>
+</td>
+      <td data-label="الشركة">${item.companyproduct ?? '-'}</td>
+      <td class="d-none d-md-table-cell" data-label="المخزون">
+        ${stock > 10
+          ? `<span class="badge bg-success">متوفر</span>`
+          : stock > 0
+            ? `<span class="badge bg-warning text-dark">كمية محدودة</span>`
+            : `<span class="badge bg-danger">غير متوفر</span>`}
+      </td>
+      <td data-label="السعر">${priceCellContent}</td>
+    
+      <td data-label="الكمية">
+<div class="quantity-control">
+  <button class="btn btn-sm btn-outline-secondary quantity-btn"
+          onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
+  <input type="number" class="form-control form-control-sm quantity-input"
+         id="qty-${item.pno}" value="${cartQuantity}" min="0" readonly>
+<button class="btn btn-sm btn-outline-secondary quantity-btn"
+        id="increment-btn-${item.pno}"
+        onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})"
+        ${cartQuantity >= item.showed ? 'disabled' : ''}>
+  +
+</button>
+</div>
+</td>
+
+    `;
+
+    /* Allow pno & name cells to open the image dialog */
+    row.querySelectorAll('.clickable-cell').forEach(cell => {
+      cell.style.cursor = 'pointer';
+      cell.addEventListener('click', e => {
+        if (!e.target.classList.contains('quantity-btn') &&
+            !e.target.classList.contains('quantity-input')) {
+              showItemDetail(item.pno);
+        }
+      });
+    });
+
+    productList.appendChild(row);
+  }
+}
+
+  
+  
   
 let currentImageModal = null;
 /**
@@ -232,23 +249,30 @@ async function showItemDetail(pno) {
   /* توليد الـ HTML من البيانات */
   function buildItemHtml(item, images) {
     const firstImgTag =
-      images?.length
-        ? `<img src="${baseUrl}${images[0].image_obj}" class="img-fluid rounded" style="max-height: 60vh;">`
-        : `<div class="product-image-placeholder py-5 text-center bg-light rounded">
-             <i class="fas fa-car-parts fa-4x opacity-50"></i>
-           </div>`;
-  
-    const otherImgs =
-      images?.slice(1).map(imgObj => `
-        <div class="mb-3">
-          <img src="${baseUrl}${imgObj.image_obj}" class="img-fluid rounded mb-2" style="max-height: 60vh;">
-          <div class="text-center">
-            <a href="${baseUrl}${imgObj.image_obj}" target="_blank" class="btn btn-sm btn-outline-primary">
-              <i class="bi bi-arrows-angle-expand"></i> فتح الصورة في نافذة جديدة
-            </a>
-          </div>
+    images?.length
+      ? `<a href="${baseUrl}${images[0].image_obj}" target="_blank">
+           <img src="${baseUrl}${images[0].image_obj}"
+                class="img-fluid rounded product-image"
+                alt="الصورة الرئيسية للقطعة">
+         </a>`
+      : `<div class="product-image-placeholder py-5 text-center bg-light rounded">
+           <i class="fas fa-car-parts fa-4x opacity-50"></i>
+         </div>`;
+
+  const otherImgs =
+    images?.slice(1).map(imgObj => `
+      <div class="mb-3">
+        <img src="${baseUrl}${imgObj.image_obj}"
+             class="img-fluid rounded mb-2 product-image"
+             alt="صورة إضافية للقطعة">
+        <div class="text-center">
+          <a href="${baseUrl}${imgObj.image_obj}" target="_blank"
+             class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-arrows-angle-expand"></i> فتح الصورة في نافذة جديدة
+          </a>
         </div>
-      `).join("") || "";
+      </div>
+    `).join("") || "";
   
     return `
   <div class="container">
@@ -256,28 +280,12 @@ async function showItemDetail(pno) {
       <!-- الصور + التفاصيل -->
       <div class="col-lg-8">
         <div class="product-container">
-          <div class="row">
-            <div class="col-md-6">
-              ${firstImgTag}
-            </div>
-            <div class="col-md-6">
-              <div class="detail-card">
-                <h3><i class="fas fa-info-circle technical-icon"></i> معلومات أساسية</h3>
-                <div class="detail-item"><span class="detail-label">رقم القطعة:</span><span class="detail-value">${item.pno}</span></div>
-                <div class="detail-item"><span class="detail-label">الشركة المصنعة:</span><span class="detail-value">${item.companyproduct}</span></div>
-                <div class="detail-item">
-                  <span class="detail-label">تصنيف السيارة:</span>
-                  <ul class="detail-value list-unstyled mb-0">
-                    <li><strong>النوع:</strong> ${item.itemmain}</li>
-                    <li><strong>الموديل:</strong> ${item.itemsubmain}</li>
-                    <li><strong>سنة الصنع:</strong> ${item.itemthird}</li>
-                  </ul>
-                </div>
-                <div class="detail-item"><span class="detail-label">البلد المنتج:</span><span class="detail-value">${item.itemsize}</span></div>
-                <div class="detail-item"><span class="detail-label">رقم المحرك:</span><span class="detail-value">${item.engine_no}</span></div>
-              </div>
-            </div>
-          </div>
+<div class="product-image-wrapper mb-4 text-center">
+  ${firstImgTag}
+</div>
+
+
+
   
           <div class="specs-card mt-4">
             <h3><i class="fas fa-file-alt technical-icon"></i> وصف المنتج</h3>
@@ -296,7 +304,21 @@ async function showItemDetail(pno) {
   
       <!-- السعر والطلب -->
       <div class="col-lg-4">
-        
+      <div class="detail-card">
+  <h3><i class="fas fa-info-circle technical-icon"></i> معلومات أساسية</h3>
+  <div class="detail-item"><span class="detail-label">رقم القطعة:</span><span class="detail-value">${item.pno}</span></div>
+  <div class="detail-item"><span class="detail-label">الشركة المصنعة:</span><span class="detail-value">${item.companyproduct}</span></div>
+  <div class="detail-item">
+    <span class="detail-label">تصنيف السيارة:</span>
+    <ul class="detail-value list-unstyled mb-0">
+      <li><strong>النوع:</strong> ${item.itemmain}</li>
+      <li><strong>الموديل:</strong> ${item.itemsubmain}</li>
+      <li><strong>سنة الصنع:</strong> ${item.itemthird}</li>
+    </ul>
+  </div>
+  <div class="detail-item"><span class="detail-label">البلد المنتج:</span><span class="detail-value">${item.itemsize}</span></div>
+  <div class="detail-item"><span class="detail-label">رقم المحرك:</span><span class="detail-value">${item.engine_no}</span></div>
+</div>  
   
         <div class="specs-card mt-4">
           <h3><i class="fas fa-headset technical-icon"></i> هل تحتاج مساعدة؟</h3>
@@ -386,58 +408,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Apply filters from input fields
 function applyFilters() {
-    console.debug("Applying filters...");
+  console.debug("Applying filters...");
 
-    const availabilityRaw = document.getElementById('availabilityFilter').value;
-    let availability = '';
-    let discount = '';
+  const availabilityRaw = document.getElementById('availabilityFilter').value;
+  let availability = '';
+  let discount = '';
 
-    if (availabilityRaw.includes(':')) {
-        const [key, value] = availabilityRaw.split(':');
-        if (key === 'availability') {
-            availability = value;
-        } else if (key === 'discount') {
-            discount = value;
-        }
-    }
+  if (availabilityRaw.includes(':')) {
+      const [key, value] = availabilityRaw.split(':');
+      if (key === 'availability') {
+          availability = value;
+      } else if (key === 'discount') {
+          discount = value;
+      }
+  }
 
-    
-        currentFilters = {
-            pno:             document.getElementById('pnoFilter').value.trim(),
-            companyno:       document.getElementById('companynoFilter').value.trim(),
-            oem:             document.getElementById('oemFilter').value.trim(),
-            itemname:        document.getElementById('itemnameFilter').value.trim(),
-            companyproduct:  document.getElementById('companyproductFilter').value.trim(),
-            availability,
-            discount,
-            category:        document.getElementById('category') ? document.getElementById('category').value : '',
-            
-            /* NEW —— constant */
-            itemmain:        ITEMMAIN_CONST,
-       
-    };
+  currentFilters = {
+      pno: document.getElementById('pnoFilter').value.trim(),
+      oem_combined: document.getElementById('oemFilter').value.trim(),
+      item_type: document.getElementById('companynoFilter').value.trim(),
+      itemname: document.getElementById('itemnameFilter').value.trim(),
+      companyproduct: ITEMMAIN_CONST,
+      availability: availability,
+      discount: discount,
+      category: document.getElementById('category') ? document.getElementById('category').value : '',
+    // Always use the value from URL
+  };
 
-    console.debug("Current filters:", currentFilters);
+  console.debug("Current filters:", currentFilters);
 
-    currentPage = 1;
-    document.getElementById('pageInput').value = 1;
-    document.getElementById('productList').innerHTML = "";
-    document.getElementById('loading-spinner').style.display = 'block';
+  currentPage = 1;
+  document.getElementById('pageInput').value = 1;
+  document.getElementById('productList').innerHTML = "";
+  document.getElementById('loading-spinner').style.display = 'block';
 
-    pageCache = {}; // Clear cache
-    loadMoreItems();
+  pageCache = {}; // Clear cache
+  loadMoreItems();
 }
-
 
 // Reset all filters
 function resetFilters() {
     console.debug("Resetting filters...");
 
     document.getElementById('pnoFilter').value = '';
-    document.getElementById('companynoFilter').value = '';
+    
     document.getElementById('oemFilter').value = '';
     document.getElementById('itemnameFilter').value = '';
-    document.getElementById('companyproductFilter').value = '';
+
     document.getElementById('availabilityFilter').value = '';
 
     // Reset category
@@ -451,29 +468,20 @@ function resetFilters() {
 
 // Load more items with pagination
 async function loadMoreItems() {
-    if (isLoading) return;
-    isLoading = true;
-  
-    console.debug("Loading items for page:", currentPage);
-  
-    const { data, last_page, total_rows } = await fetchFilteredData(currentPage);
-    lastPage = last_page || 1;
-  
-    await displayItems(data);
-    
-    updatePaginationInfo(total_rows);
-  
-    /* ----- NEW: always prefetch the next 5 pages ----- */
-    prefetchNextPages(5);
-  
-    document.getElementById('loading-spinner').style.display = 'none';
-    isLoading = false;
-    
-    // Scroll to top of the table after loading new items
-    const tableContainer = document.querySelector('.scroll-table-container');
-    if (tableContainer) {
-        tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  if (isLoading) return;
+  isLoading = true;
+
+  const { data, last_page, total_rows } = await fetchFilteredData(currentPage);
+  lastPage = last_page || 1;
+
+  // Cache the result
+  pageCache[currentPage] = { data, last_page, total_rows };
+
+  await displayItems(data);
+  updatePaginationInfo(total_rows);
+
+  isLoading = false;
+  document.getElementById('loading-spinner').style.display = 'none';
 }
 
 // Update pagination information
@@ -515,12 +523,36 @@ function prevPage() {
         changePage();
     }
 }
+async function nextPage() {
+  if (currentPage >= lastPage) return;
 
-function nextPage() {
-    if (currentPage < lastPage) {
-        document.getElementById('pageInput').value = currentPage + 1;
-        changePage();
-    }
+  const nextPageNum = currentPage + 1;
+
+  // If cached, render instantly and scroll up
+  if (pageCache[nextPageNum]) {
+      currentPage = nextPageNum;
+      displayItems(pageCache[nextPageNum].data);
+      updatePaginationInfo(pageCache[nextPageNum].total_rows);
+      smoothScrollToTop(); // 👈 Added back (but smooth)
+  } 
+  // If not cached, load with spinner, then scroll
+  else {
+      document.getElementById('loading-spinner').style.display = 'block';
+      await loadMoreItems();
+      smoothScrollToTop(); // 👈 Scroll after loading
+  }
+
+  lastVisiblePage = currentPage;
+  prefetchNextPages();
+}
+function smoothScrollToTop() {
+  const tableContainer = document.querySelector('.scroll-table-container');
+  if (tableContainer) {
+      tableContainer.scrollTo({
+          top: 0,
+          behavior: 'smooth' // Smooth animation
+      });
+  }
 }
 
 // Change items per page
@@ -566,15 +598,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Add click event for apply filters button
-   
 
-    // Add click event for reset filters button
-    document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
-    // Pagination controls
-    document.getElementById('prevPageBtn').addEventListener('click', prevPage);
-    document.getElementById('nextPageBtn').addEventListener('click', nextPage);
+
+
     document.getElementById('pageInput').addEventListener('change', changePage);
     document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
 
@@ -589,9 +616,6 @@ window.onload = function () {
 
 // Additional event bindings (duplicate entries kept as in original)
 
-document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
-document.getElementById('prevPageBtn').addEventListener('click', prevPage);
-document.getElementById('nextPageBtn').addEventListener('click', nextPage);
 document.getElementById('pageInput').addEventListener('change', changePage);
 document.getElementById('itemsPerPage').addEventListener('change', changeItemsPerPage);
 applyFilters();

@@ -92,88 +92,92 @@ function prefetchNextPages() {
 }
 // Display items in the table
 async function displayItems(items) {
-    const productList = document.getElementById('productList');
-    productList.innerHTML = '';
-  
-    if (items.length === 0) {
-      document.getElementById('noResults').style.display = 'block';
-      document.getElementById('loading-spinner').style.display = 'none';
-      return;
-    }
-  
-    document.getElementById('noResults').style.display = 'none';
-  
-    for (const item of items) {
-      const row = document.createElement('tr');
-  
-      const stock = parseInt(item.showed) || 0;
-      const cartItem = cart.find(ci => ci.pno === item.pno);
-      const cartQuantity = cartItem ? cartItem.quantity : 0;
-  
-      /* Price/discount logic */
-      const discount = item.discount ? parseFloat(item.discount) : 0;
-      const finalPrice = parseFloat(item.buyprice || 0);
-      const originalPrice = discount ? finalPrice / (1 - discount) : finalPrice;
-  
-      const priceCellContent = discount
-        ? `
-          <span class="text-decoration-line-through text-muted me-1 d-none d-md-inline">
-            ${originalPrice.toFixed(2)} د.ل
-          </span>
-          <span class="fw-bold text-danger">
-            ${finalPrice.toFixed(2)} د.ل
-          </span>
-          <span class="badge bg-danger ms-1 d-none d-md-inline-block">
-            خصم ${(discount * 100).toFixed(0)}%
-          </span>`
-        : `${finalPrice.toFixed(2)} د.ل`;
-  
-      row.innerHTML = `
-        <td class="clickable-cell d-none d-md-table-cell" data-pno="${item.pno}" data-label="رقم القطعة">${item.pno ?? '-'}</td>
+  const productList = document.getElementById('productList');
+  productList.innerHTML = '';
+
+  if (items.length === 0) {
+    document.getElementById('noResults').style.display = 'block';
+    document.getElementById('loading-spinner').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('noResults').style.display = 'none';
+
+  for (const item of items) {
+    const row = document.createElement('tr');
+
+    const stock = parseInt(item.showed) || 0;
+    const cartItem = cart.find(ci => ci.pno === item.pno);
+    const cartQuantity = cartItem ? cartItem.quantity : 0;
+
+    /* Price/discount logic */
+    const discount = item.discount ? parseFloat(item.discount) : 0;
+    const finalPrice = parseFloat(item.buyprice || 0);
+    const originalPrice = discount ? finalPrice / (1 - discount) : finalPrice;
+
+    const priceCellContent = discount
+      ? `
+        <span class="text-decoration-line-through text-muted me-1 d-none d-md-inline">
+          ${originalPrice.toFixed(2)} د.ل
+        </span>
+        <span class="fw-bold text-danger">
+          ${finalPrice.toFixed(2)} د.ل
+        </span>
+        <span class="badge bg-danger ms-1 d-none d-md-inline-block">
+          خصم ${(discount * 100).toFixed(0)}%
+        </span>`
+      : `${finalPrice.toFixed(2)} د.ل`;
+
+    row.innerHTML = `
+      <td class="clickable-cell d-none d-md-table-cell" data-pno="${item.pno}" data-label="رقم القطعة">${item.pno ?? '-'}</td>
 <td data-label="اسم القطعة">
-  ${item.itemname ?? '-'}
-  <i class="fas fa-circle-question text-primary ms-2 faq-icon"
-     style="cursor: pointer;"
-     title="عرض التفاصيل"
-     onclick="showItemDetail('${item.pno}')"></i>
+${item.itemname ?? '-'}
+<i class="fas fa-circle-question text-primary ms-2 faq-icon"
+   style="cursor: pointer;"
+   title="عرض التفاصيل"
+   onclick="showItemDetail('${item.pno}')"></i>
 </td>
-        <td data-label="الشركة">${item.companyproduct ?? '-'}</td>
-        <td class="d-none d-md-table-cell" data-label="المخزون">
-          ${stock > 10
-            ? `<span class="badge bg-success">متوفر</span>`
-            : stock > 0
-              ? `<span class="badge bg-warning text-dark">كمية محدودة</span>`
-              : `<span class="badge bg-danger">غير متوفر</span>`}
-        </td>
-        <td data-label="السعر">${priceCellContent}</td>
-      
-        <td data-label="الكمية">
-  <div class="quantity-control">
-    <button class="btn btn-sm btn-outline-secondary quantity-btn"
-            onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
-    <input type="number" class="form-control form-control-sm quantity-input"
-           id="qty-${item.pno}" value="${cartQuantity}" min="0" readonly>
-    <button class="btn btn-sm btn-outline-secondary quantity-btn"
-            onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">+</button>
-  </div>
+      <td data-label="الشركة">${item.companyproduct ?? '-'}</td>
+      <td class="d-none d-md-table-cell" data-label="المخزون">
+        ${stock > 10
+          ? `<span class="badge bg-success">متوفر</span>`
+          : stock > 0
+            ? `<span class="badge bg-warning text-dark">كمية محدودة</span>`
+            : `<span class="badge bg-danger">غير متوفر</span>`}
+      </td>
+      <td data-label="السعر">${priceCellContent}</td>
+    
+      <td data-label="الكمية">
+<div class="quantity-control">
+  <button class="btn btn-sm btn-outline-secondary quantity-btn"
+          onclick="decrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})">-</button>
+  <input type="number" class="form-control form-control-sm quantity-input"
+         id="qty-${item.pno}" value="${cartQuantity}" min="0" readonly>
+<button class="btn btn-sm btn-outline-secondary quantity-btn"
+        id="increment-btn-${item.pno}"
+        onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})"
+        ${cartQuantity >= item.showed ? 'disabled' : ''}>
+  +
+</button>
+</div>
 </td>
 
-      `;
-  
-      /* Allow pno & name cells to open the image dialog */
-      row.querySelectorAll('.clickable-cell').forEach(cell => {
-        cell.style.cursor = 'pointer';
-        cell.addEventListener('click', e => {
-          if (!e.target.classList.contains('quantity-btn') &&
-              !e.target.classList.contains('quantity-input')) {
-                showItemDetail(item.pno);
-          }
-        });
+    `;
+
+    /* Allow pno & name cells to open the image dialog */
+    row.querySelectorAll('.clickable-cell').forEach(cell => {
+      cell.style.cursor = 'pointer';
+      cell.addEventListener('click', e => {
+        if (!e.target.classList.contains('quantity-btn') &&
+            !e.target.classList.contains('quantity-input')) {
+              showItemDetail(item.pno);
+        }
       });
-  
-      productList.appendChild(row);
-    }
+    });
+
+    productList.appendChild(row);
   }
+}
 
   
   
@@ -601,6 +605,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initial load
     applyFilters();
+        setTimeout(() => prefetchNextPages(), 500); // Prefetch page 2 after a short delay
+
 });
 
 window.onload = function () {

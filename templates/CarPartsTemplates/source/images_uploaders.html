@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Image Upload Manager</title>
+    <title>رفع الصور</title>
     <style>
        :root {
             --primary-color: #3498db;
@@ -419,6 +419,10 @@
     .add-image-btn:hover {
         background-color: #27ae60;
     }
+    .items-table td, .items-table th {
+    white-space: nowrap;
+}
+
     </style>
 </head>
 <body>
@@ -426,8 +430,9 @@
         <h2>مدير تحميل الصور</h2>
         
         <div class="tab-container">
-            <div class="tab active" id="uploadTab">تحميل الصور</div>
             <div class="tab" id="itemsTab">معرض الصور</div>
+
+            <div class="tab active" id="uploadTab">تحميل الصور</div>
         </div>
         
         <div id="uploadSection">
@@ -481,8 +486,7 @@
                 <input type="text" class="filter-input" id="pnoFilter" placeholder="رقم الجزء (PNO)">
                 <input type="text" class="filter-input" id="oemFilter" placeholder="رقم OEM">
                 <input type="text" class="filter-input" id="itemNameFilter" placeholder="اسم العنصر">
-                <input type="text" class="filter-input" id="categoryFilter" placeholder="الفئة">
-                
+                <select class="filter-input" id="categoryFilter"></select>                
                 <!-- New Select Input for Has Image -->
                 <select class="filter-input" id="hasImageFilter">
                     <option value="">هل يحتوي على صورة؟</option>
@@ -494,9 +498,13 @@
             </div>
             
             <div class="pagination">
+                <button class="page-btn" id="firstPage">الأولى</button>
                 <button class="page-btn" id="prevPage" disabled>السابق</button>
                 <span id="pageInfo">الصفحة 1</span>
+                <input type="number" id="pageNumberInput" min="1" value="1" style="width: 50px;">
+                <button class="page-btn" id="goToPageBtn">انتقل</button>
                 <button class="page-btn" id="nextPage">التالي</button>
+                <button class="page-btn" id="lastPage">الأخيرة</button>
             </div>
             <div class="table-responsive">
                 <table class="items-table">
@@ -524,26 +532,39 @@
     </div>
     <script>
 
-         // Tab switching functionality
-        const uploadTab = document.getElementById('uploadTab');
-        const itemsTab = document.getElementById('itemsTab');
-        const uploadSection = document.getElementById('uploadSection');
-        const itemsSection = document.getElementById('itemsSection');
+    // Tab switching functionality
+const uploadTab = document.getElementById('uploadTab');
+const itemsTab = document.getElementById('itemsTab');
+const uploadSection = document.getElementById('uploadSection');
+const itemsSection = document.getElementById('itemsSection');
 
-        uploadTab.addEventListener('click', () => {
-            uploadTab.classList.add('active');
-            itemsTab.classList.remove('active');
-            uploadSection.style.display = 'block';
-            itemsSection.style.display = 'none';
-        });
+// Function to handle showing the upload section
+const showUploadSection = () => {
+    uploadTab.classList.add('active');
+    itemsTab.classList.remove('active');
+    uploadSection.style.display = 'block';
+    itemsSection.style.display = 'none';
+};
 
-        itemsTab.addEventListener('click', () => {
-            itemsTab.classList.add('active');
-            uploadTab.classList.remove('active');
-            itemsSection.style.display = 'block';
-            uploadSection.style.display = 'none';
-            fetchItems();
-        });
+// Function to handle showing the items section
+const showItemsSection = () => {
+    itemsTab.classList.add('active');
+    uploadTab.classList.remove('active');
+    itemsSection.style.display = 'block';
+    uploadSection.style.display = 'none';
+    fetchItems(); // Fetch items when this tab is activated
+};
+
+// Add event listeners for tab clicks
+uploadTab.addEventListener('click', showUploadSection);
+itemsTab.addEventListener('click', showItemsSection);
+
+// --- MODIFICATION STARTS HERE ---
+
+// When the DOM content is fully loaded, show the items section by default
+document.addEventListener('DOMContentLoaded', () => {
+    showItemsSection(); // Call the function to show the items section and fetch data
+});
         document.addEventListener('DOMContentLoaded', () => {
             /* ----------  DOM refs ---------- */
           
@@ -769,6 +790,8 @@ const firstPageBtn     = document.getElementById('firstPage');
 const lastPageBtn      = document.getElementById('lastPage');
 const pageInfo         = document.getElementById('pageInfo');
 const hasImageFilter   = document.getElementById('hasImageFilter');
+const pageNumberInput = document.getElementById('pageNumberInput');
+const goToPageBtn = document.getElementById('goToPageBtn');
 
 let currentPage = 1;
 let pageSize    = 12;
@@ -801,7 +824,7 @@ async function fetchOnePage(pageNumber) {
     oem_combined:  oemFilter.value,
     has_image:     hasImageFilter.value, // new filter for images
     itemname:      itemNameFilter.value,
-    category:      categoryFilter.value,
+    item_type:      categoryFilter.value,
     page:          pageNumber,
     size:          pageSize
   };
@@ -830,7 +853,8 @@ async function renderPageFromData(apiRes) {
   totalItems = apiRes.total_rows;
   pageSize   = apiRes.page_size;
   totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
+  pageNumberInput.value = currentPage;
+  pageNumberInput.max = totalPages;
   pageInfo.textContent = `الصفحة ${currentPage} من ${totalPages}`;
   prevPageBtn.disabled = currentPage === 1;
   nextPageBtn.disabled = currentPage === totalPages;
@@ -880,7 +904,7 @@ async function renderPageFromData(apiRes) {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${item.pno}</td>
-      <td>${item.oem_combined}</td>
+      <td style="direction: ltr;">${item.oem_combined}</td>
       <td>${item.itemname}</td>
       <td>${item.category}</td>
       <td>
@@ -913,6 +937,27 @@ async function renderPageFromData(apiRes) {
   // As soon as page is rendered, prefetch page+1
   prefetchNextPage();
 }
+
+// Add this event listener with the others
+goToPageBtn.addEventListener("click", () => {
+    const pageNum = parseInt(pageNumberInput.value);
+    if (pageNum >= 1 && pageNum <= totalPages) {
+        goToPage(pageNum);
+    } else {
+        alert(`الرجاء إدخال رقم صفحة بين 1 و ${totalPages}`);
+    }
+});
+
+pageNumberInput.addEventListener("keypress", (e) => {
+    if (e.key === 'Enter') {
+        const pageNum = parseInt(pageNumberInput.value);
+        if (pageNum >= 1 && pageNum <= totalPages) {
+            goToPage(pageNum);
+        } else {
+            alert(`الرجاء إدخال رقم صفحة بين 1 و ${totalPages}`);
+        }
+    }
+});
 
 // ----------------------------------------------------------
 // If there’s a “next” page (currentPage +1), start fetching it.
@@ -1009,8 +1054,21 @@ function addImageToItem(pno) {
 // ----------------------------------------------------------
 // Event listeners
 // ----------------------------------------------------------
+
+
+pnoFilter.addEventListener("input", fetchItems);
+oemFilter.addEventListener("input", fetchItems);
+itemNameFilter.addEventListener("input", fetchItems);
+categoryFilter.addEventListener("input", fetchItems);
+hasImageFilter.addEventListener("change", fetchItems); // Use 'change' for select elements
+
+// Existing applyFilter button (can now serve as a manual trigger or be removed if instant search is preferred)
 applyFilter.addEventListener("click", () => {
-  fetchItems();
+    // No need for debounce here as it's a direct click
+    clearTimeout(filterDebounceTimer); // Clear any pending debounced calls
+    Object.keys(pageCache).forEach(k => delete pageCache[k]);
+    currentPage = 1;
+    goToPage(1);
 });
 
 prevPageBtn.addEventListener("click", () => {
@@ -1033,8 +1091,49 @@ lastPageBtn.addEventListener("click", () => {
   if (currentPage !== totalPages) goToPage(totalPages);
 });
 
-// Initial load: fetch page 1 and immediately prefetch page 2
-fetchItems();
+// ... (Your existing JavaScript code) ...
+
+// Add this new function to fetch categories and populate the select
+async function populateCategoryFilter() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    try {
+        const resp = await fetch('/hozma/api/item-categories/', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+        });
+
+        if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
+        }
+
+        const responseData = await resp.json();
+        const categories = responseData.categories || []; // Access the categories array from the response object
+
+        // Clear existing options
+        categoryFilter.innerHTML = '<option value="">جميع الفئات</option>';
+
+        // Add categories to the dropdown
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            categoryFilter.appendChild(option);
+        });
+
+    } catch (err) {
+        console.error('Error fetching categories:', err);
+        categoryFilter.innerHTML = '<option value="">خطأ في تحميل الفئات</option>';
+    }
+}
+
+// Call this function when the page loads, perhaps right after your initial fetchItems()
+document.addEventListener('DOMContentLoaded', () => {
+    populateCategoryFilter();
+    fetchItems(); // Initial load of items
+});
+
+// ... (Rest of your existing JavaScript code) ...
 
     
 </script>

@@ -44,7 +44,7 @@ def check_unsent_messages():
 
             # Get the total amount from OrderBuyinvoicetable
             total_amount = float(getattr(record, 'amount', 0))
-            
+            total = float(getattr(record, 'buy_net_amount', 0))
             # Prepare Arabic invoice data
             invoice_data = {
                 'company_name': 'شركة مارين لاستيراد قطع غيار السيارات و زيوتها',
@@ -54,11 +54,15 @@ def check_unsent_messages():
                 'customer_name': getattr(record.source_obj, 'name', ''),
                 'customer_info': getattr(record.source_obj, 'address', ''),
                 'items': [],
+                'hoz_total': total,
+                'commission':  getattr(record.source_obj, 'commission', ''),  # Assuming no commission in this case
                 'total': total_amount,
                 'total_in_words': '',
                 'notes': [
                      '💻 زر موقعنا الإلكتروني الآن واستمتع بالعروض الحصرية: [www.hozma.com]',
-    '📞 لمزيد من التفاصيل، يمكنك الاتصال بنا على الرقم: 123-456-7890.'
+                     '📞 لمزيد من التفاصيل، يمكنك الاتصال بنا على الرقم: 123-456-7890.'
+                     'فاتورة اصدرت تلقائيا من نظام حزمة',
+
                 ]
             }
 
@@ -81,115 +85,235 @@ def check_unsent_messages():
                     'sub_cat': getattr(item, 'sub_cat', '')
                 })
 
-            # Create Excel file with Arabic formatting
+            # Create Excel file with the exact styling from create_excel_invoice
             excel_buffer = BytesIO()
             workbook = xlsxwriter.Workbook(excel_buffer)
             worksheet = workbook.add_worksheet('فاتورة')
-            
-            # Arabic formatting styles
-            arabic_header_format = workbook.add_format({
-                'bold': True,
-                'font_size': 16,
-                'align': 'center',
-                'valign': 'vcenter',
-                'font_name': 'Arial'  # Use a font that supports Arabic
-            })
-            
-            arabic_company_format = workbook.add_format({
+
+            # Page setup for A4
+            worksheet.set_paper(9)  # A4 paper
+            worksheet.set_portrait()
+            worksheet.set_margins(left=0.5, right=0.5, top=0.5, bottom=0.5)
+            worksheet.set_print_scale(90)
+            worksheet.hide_gridlines(2)
+            worksheet.fit_to_pages(1, 1)
+
+            rtl_format = {'reading_order': 2}
+
+            # Company Name - Larger, bold, and center-aligned with bottom border
+            company_format = workbook.add_format({
+                **rtl_format,
                 'bold': True,
                 'font_size': 18,
                 'align': 'center',
                 'valign': 'vcenter',
-                'font_name': 'Arial'
+                'font_name': 'Arial',
+                'bottom': 3,
+                'font_color': '#003366'
             })
-            
-            arabic_info_format = workbook.add_format({
-                'font_size': 14,
-                'align': 'right',
-                'font_name': 'Arial'
-            })
-            
-            arabic_table_header_format = workbook.add_format({
+
+            # Invoice header info format - bold, medium size, right-aligned
+            header_label_format = workbook.add_format({
+                **rtl_format,
                 'bold': True,
                 'font_size': 12,
-                'bg_color': '#DDDDDD',
+                'align': 'right',
+                'font_name': 'Arial',
+                'valign': 'vcenter'
+            })
+
+            header_value_format = workbook.add_format({
+                **rtl_format,
+                'font_size': 12,
+                'align': 'right',
+                'font_name': 'Arial',
+                'valign': 'vcenter'
+            })
+
+            # Address and customer info format
+            customer_info_format = workbook.add_format({
+                **rtl_format,
+                'font_size': 11,
+                'align': 'right',
+                'font_name': 'Arial',
+                'text_wrap': True,
+                'valign': 'top'
+            })
+
+            # Table header format - bold with background and border
+            table_header_format = workbook.add_format({
+                **rtl_format,
+                'bold': True,
+                'font_size': 12,
+                'bg_color': '#4F81BD',
+                'font_color': 'white',
                 'border': 1,
                 'align': 'center',
-                'font_name': 'Arial'
+                'valign': 'vcenter',
+                'font_name': 'Arial',
+                'text_wrap': True
             })
-            
-            arabic_cell_format = workbook.add_format({
-                'font_size': 12,
-                'border': 1,
-                'align': 'center',
-                'font_name': 'Arial'
-            })
-            
-            arabic_right_align_format = workbook.add_format({
-                'font_size': 12,
+
+            # Item cell format (Right aligned)
+            item_cell_right = workbook.add_format({
+                **rtl_format,
+                'font_size': 11,
                 'border': 1,
                 'align': 'right',
-                'font_name': 'Arial'
+                'valign': 'vcenter',
+                'font_name': 'Arial',
+                'text_wrap': True
             })
-            
-            arabic_currency_format = workbook.add_format({
-                'font_size': 12,
+
+            # Item name format - larger, bold, right aligned
+            item_name_format = workbook.add_format({
+                **rtl_format,
+                'bold': True,
+                'font_size': 13,
                 'border': 1,
-                'align': 'center',
+                'align': 'right',
+                'valign': 'vcenter',
+                'font_name': 'Arial',
+                'text_wrap': True,
+                'font_color': '#2F5496'
+            })
+
+            # Currency format (Right aligned)
+            currency_format = workbook.add_format({
+                **rtl_format,
+                'font_size': 11,
+                'border': 1,
+                'align': 'right',
                 'num_format': '#,##0.00 "د.ل"',
                 'font_name': 'Arial'
             })
-            
-            # Write company header (bigger font)
-            worksheet.merge_range('A1:F1', invoice_data['company_name'], arabic_company_format)
-            
-            # Write invoice info (bigger cells for invoice number)
-            worksheet.merge_range('A3:B3', f'فاتورة شراء رقم : {invoice_data["invoice_no"]}', arabic_info_format)
-            worksheet.write('C3', f'التاريخ : {invoice_data["date"]}', arabic_info_format)
-            worksheet.write('D3', invoice_data['payment_type'], arabic_info_format)
-            
-            # Write customer info (bigger cells for customer name)
-            worksheet.merge_range('A4:B4', f'اسم المورد : {invoice_data["customer_name"]}', arabic_info_format)
-            worksheet.write('C4', invoice_data['customer_info'], arabic_info_format)
-            
-            # Write table headers
-            headers = ['رقم الصنف', 'بيان الصنف', 'الكمية المطلوبة', 'الكمية المؤكدة', 'سعر الوحدة', 'التصنيف']
-            for col, header in enumerate(headers):
-                worksheet.write(5, col, header, arabic_table_header_format)
-            
-            # Write items
+
+            # Total row format - bold, larger font, right aligned with border
+            total_format = workbook.add_format({
+                **rtl_format,
+                'bold': True,
+                'font_size': 13,
+                'border': 1,
+                'align': 'right',
+                'font_name': 'Arial',
+                'font_color': '#000000'
+            })
+
+            # Total amount value format - bold, larger font, center aligned
+            total_value_format = workbook.add_format({
+                **rtl_format,
+                'bold': True,
+                'font_size': 13,
+                'border': 1,
+                'align': 'center',
+                'font_name': 'Arial',
+                'num_format': '#,##0.00 "د.ل"',
+                'font_color': '#000000'
+            })
+
+            # Amount in words format - italic, right aligned
+            amount_words_format = workbook.add_format({
+                **rtl_format,
+                'italic': True,
+                'font_size': 11,
+                'align': 'right',
+                'font_name': 'Arial',
+                'text_wrap': True,
+                'font_color': '#666666'
+            })
+
+            # Notes format
+            notes_format = workbook.add_format({
+                **rtl_format,
+                'font_size': 11,
+                'align': 'right',
+                'font_name': 'Arial',
+                'text_wrap': True,
+                'valign': 'top'
+            })
+
+            # Signature format
+            signature_format = workbook.add_format({
+                **rtl_format,
+                'bold': True,
+                'font_size': 12,
+                'align': 'center',
+                'font_name': 'Arial',
+                'bottom': 1
+            })
+
+            # Write Company Name (Merged across B-G to center it better)
+            worksheet.merge_range('B1:G1', invoice_data['company_name'], company_format)
+            worksheet.set_row(0, 30)
+
+            # Invoice details - shifted one column to the right (B instead of A)
+            worksheet.merge_range('B2:C2', f'فاتورة شراء رقم:{invoice_data["invoice_no"]}', header_value_format)
+            worksheet.merge_range('E2:F2', f'التاريخ:{invoice_data["date"]}', header_value_format)
+            worksheet.merge_range('B3:C3', f'نوع الدفع:{invoice_data["payment_type"]}', header_value_format)
+            worksheet.merge_range('E3:F3', f'اسم المورد:{invoice_data["customer_name"]}', header_value_format)
+            worksheet.merge_range('E4:G4', f'عنوان المورد:{invoice_data["customer_info"]}', customer_info_format)
+
+            # Spacing rows
+            worksheet.set_row(3, 35)
+            worksheet.set_row(4, 30)
+
+            # Table headers starting at row 5 (index 5) - shifted one column to the right
+            headers = ['السعر', 'الكمية', 'بيان الصنف', 'رقم الصنف']  # Reversed order
+            col_widths = [20, 15, 50, 15]
+
+            start_col = 4  # Column E
+            for i, (header, width) in enumerate(zip(headers, col_widths)):
+                col_idx = start_col - i
+                worksheet.write(5, col_idx, header, table_header_format)
+                worksheet.set_column(col_idx, col_idx, width)
+
+            # Write items starting at row 6 - shifted one column to the right
             row = 6
             for item in invoice_data['items']:
-                worksheet.write(row, 0, item['pno'], arabic_cell_format)
-                worksheet.write(row, 1, f"{item['name']} / {item['company'] if item['company'] else ''}", arabic_right_align_format)
-                worksheet.write(row, 2, item['Asked_quantity'], arabic_cell_format)
-                worksheet.write(row, 3, item['Confirmed_quantity'] if item['Confirmed_quantity'] else '-', arabic_cell_format)
-                worksheet.write(row, 4, item['dinar_unit_price'], arabic_currency_format)
-                worksheet.write(row, 5, f"{item['main_cat']} / {item['sub_cat']}", arabic_cell_format)
+                worksheet.write(row, 4, item['dinar_unit_price'], currency_format)  # السعر
+                worksheet.write(row, 3, item['Asked_quantity'], item_cell_right)    # الكمية
+                worksheet.write(row, 2, f"{item['name']} / {item['company'] or ''}", item_name_format)  # بيان الصنف
+                worksheet.write(row, 1, item['pno'], item_cell_right)     # column E
+                worksheet.set_row(row, 25)
                 row += 1
-            
-            # Write total amount in Libyan Dinar
-            worksheet.write(row, 3, 'المبلغ الإجمالي:', arabic_table_header_format)
-            worksheet.write(row, 4, invoice_data['total'], arabic_currency_format)
+
+            # Total rows - one under the other, right-aligned
+            worksheet.write(row, 4, 'المبلغ الإجمالي:', total_format)
+            worksheet.write(row, 3, invoice_data['hoz_total'], total_value_format)
+            worksheet.set_row(row, 25)
+            row += 1
+
+            worksheet.write(row, 4, 'الخصم:', total_format)
+            worksheet.write(row, 3, invoice_data['commission'], total_value_format)
+            worksheet.set_row(row, 25)
+            row += 1
+
+            worksheet.write(row, 4, 'الصافي:', total_format)
+            worksheet.write(row, 3, invoice_data['total'], total_value_format)
+            worksheet.set_row(row, 25)
+            row += 1
+
+            # Empty row for spacing
+            worksheet.set_row(row, 10)
+            row += 1
+
+            # Total amount in words - shifted one column to the right
+            worksheet.merge_range(row, 1, row, 6, f'المبلغ بالحروف: {invoice_data["total_in_words"]}', amount_words_format)
+            worksheet.set_row(row, 25)
             row += 2
-            
-            # Write total in words (Libyan Dinar)
-            worksheet.merge_range(f'A{row+1}:F{row+1}', f'فقط {invoice_data["total_in_words"]}', arabic_info_format)
-            row += 2
-            
-            # Write notes
+
+            # Notes - shifted one column to the right
             for note in invoice_data['notes']:
-                worksheet.write(row, 0, note, arabic_right_align_format)
+                worksheet.merge_range(row, 1, row, 6, note, notes_format)
+                worksheet.set_row(row, 20)
                 row += 1
-            
-            # Adjust column widths (larger for Arabic text)
-            worksheet.set_column('A:A', 15)  # Wider for item numbers
-            worksheet.set_column('B:B', 40)  # Much wider for Arabic descriptions
-            worksheet.set_column('C:C', 20)  # Quantity columns wider
-            worksheet.set_column('D:D', 20)
-            worksheet.set_column('E:E', 20)  # Price column
-            worksheet.set_column('F:F', 25)  # Category column
-            
+
+            # Signature lines - shifted one column to the right
+            row += 2
+            worksheet.merge_range(row, 1, row, 3, 'توقيع المورد:', signature_format)  # columns B-D
+            worksheet.merge_range(row, 4, row, 6, 'توقيع المستلم:', signature_format)  # columns E-G
+            worksheet.set_row(row, 35)
+
             workbook.close()
             excel_buffer.seek(0)
 

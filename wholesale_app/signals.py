@@ -10,6 +10,7 @@ from django.utils import timezone
 from almogOil import models as almogOil_models
 import logging
 from decimal import Decimal
+from almogOil.api_views import create_transactions_history_record
 
 @receiver(post_save, sender=PreOrderItemsTable)
 def check_and_confirm_preorder(sender, instance, **kwargs):
@@ -90,4 +91,15 @@ def check_and_confirm_preorder(sender, instance, **kwargs):
         preorder.invoice_status = "تم شراءهن المورد"
         preorder.amount = total_amount
         preorder.net_amount = net_Total
+        sell_invoice.net_amount = net_Total
+        sell_invoice.amount = total_amount
         preorder.save()
+        sell_invoice.save()
+        transaction = f" {sell_invoice.invoice_no}فاتورة  بيع- رقم" ,
+        details = f"تأكيد فاتورة بيع من اجل حزمة رقم {sell_invoice.invoice_no} من العميل {client.name}، بتاريخ {timezone.now().date()}، الكمية الإجمالية المؤكدة: {item.confirm_quantity }"
+        create_transactions_history_record("client", client, "debit", sell_invoice.amount, transaction, details)
+
+@receiver(post_save, sender=SellinvoiceTable)
+def update_preorder_status_on_delivery(sender, instance, **kwargs):
+    if instance.invoice_status == "سلمت":
+        PreOrderTable.objects.filter(invoice_no=instance.invoice_no).update(invoice_status="جاري التوصيل")

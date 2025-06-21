@@ -1,7 +1,118 @@
-{% extends 'CarPartsTemplates/hozmabase.html' %} <!-- إذا كنت تستخدم نظام القوالب -->
+{% extends 'CarPartsTemplates/hozmabase.html' %}
 
 {% block content %}
-<div class="col-lg-9">
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card primary hover-scale">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">إجمالي العملاء</h5>
+                        <h2 class="card-value" id="totalClients">0</h2>
+                        <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 0%</span> عن الشهر الماضي</p>
+                    </div>
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card success hover-scale">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">العملاء النشطين</h5>
+                        <h2 class="card-value" id="activeClients">0</h2>
+                        <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 0%</span> عن الشهر الماضي</p>
+                    </div>
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card warning hover-scale">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">عملاء الجملة</h5>
+                        <h2 class="card-value" id="wholesaleClients">0</h2>
+                        <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 0%</span> عن الشهر الماضي</p>
+                    </div>
+                    <i class="fas fa-store-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card info hover-scale">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">العملاء المميزين</h5>
+                        <h2 class="card-value" id="vipClients">0</h2>
+                        <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 0%</span> عن الشهر الماضي</p>
+                    </div>
+                    <i class="fas fa-crown"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerDetailsModalLabel">تفاصيل العميل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="customerDetailsBody">
+                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCustomerModalLabel">إضافة عميل جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCustomerForm">
+                    <div class="mb-3">
+                        <label for="customerName" class="form-label">اسم العميل</label>
+                        <input type="text" class="form-control" id="customerName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerEmail" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="customerEmail">
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerMobile" class="form-label">رقم الجوال</label>
+                        <input type="text" class="form-control" id="customerMobile" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerType" class="form-label">نوع العميل</label>
+                        <select class="form-select" id="customerType">
+                            <option value="تجزئة">تجزئة</option>
+                            <option value="جملة">جملة</option>
+                            <option value="مميز">مميز</option>
+                            <option value="مورد">مورد</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">حفظ العميل</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
     <div class="card mb-4 hover-scale">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">إدارة العملاء</h5>
@@ -27,28 +138,30 @@
                 <div class="col-md-6">
                     <div class="d-flex justify-content-end">
                         <div class="dropdown me-2">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-filter me-1"></i>تصفية حسب
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="#" data-filter="all">الكل</a></li>
-                                <li><a class="dropdown-item" href="#" data-filter="active">العملاء النشطين</a></li>
-                                <li><a class="dropdown-item" href="#" data-filter="inactive">العملاء غير النشطين</a></li>
-                                <li><a class="dropdown-item" href="#" data-filter="vip">العملاء المميزين</a></li>
-                                <li><a class="dropdown-item" href="#" data-filter="wholesale">عملاء الجملة</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="all">الكل</a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="online">العملاء النشطين</a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="offline">العملاء غير النشطين</a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="vip">العملاء المميزين</a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="wholesale">عملاء الجملة</a></li>
                             </ul>
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-sort me-1"></i>ترتيب حسب
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="#" data-sort="recent">الأحدث</a></li>
-                                <li><a class="dropdown-item" href="#" data-sort="oldest">الأقدم</a></li>
-                                <li><a class="dropdown-item" href="#" data-sort="name-asc">الاسم (أ-ي)</a></li>
-                                <li><a class="dropdown-item" href="#" data-sort="name-desc">الاسم (ي-أ)</a></li>
-                                <li><a class="dropdown-item" href="#" data-sort="orders-asc">عدد الطلبات (قليل-كثير)</a></li>
-                                <li><a class="dropdown-item" href="#" data-sort="orders-desc">عدد الطلبات (كثير-قليل)</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="recent">الأحدث</a></li>
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="oldest">الأقدم</a></li>
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="name-asc">الاسم (أ-ي)</a></li>
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="name-desc">الاسم (ي-أ)</a></li>
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="orders-asc">عدد الطلبات (قليل-كثير)</a></li>
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="orders-desc">عدد الطلبات (كثير-قليل)</a></li>
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="amount-asc">إجمالي المشتريات (قليل-كثير)</a></li>
+                                <li><a class="dropdown-item sort-option" href="#" data-sort="amount-desc">إجمالي المشتريات (كثير-قليل)</a></li>
                             </ul>
                         </div>
                     </div>
@@ -70,424 +183,491 @@
                             <th>الإجراءات</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- سيتم ملء هذا الجدول بالبيانات من قاعدة البيانات -->
-                        <tr>
-                            <td>1</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="/static/HOZMA_FRONT/images/placeholder.png" class="rounded-circle me-3" width="40" height="40" alt="صورة العميل">
-                                    <div>
-                                        <h6 class="mb-0">أحمد محمد</h6>
-                                        <small class="text-muted">ID: CUS-1001</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <small><i class="fas fa-phone me-1"></i> 0501234567</small><br>
-                                    <small><i class="fas fa-envelope me-1"></i> ahmed@example.com</small>
-                                </div>
-                            </td>
-                            <td>15</td>
-                            <td>5,250 ر.س</td>
-                            <td><span class="badge bg-success">نشط</span></td>
-                            <td><span class="badge bg-info">تجزئة</span></td>
-                            <td>2023-10-15</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="عرض التفاصيل">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="تعديل">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="حذف">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="/static/HOZMA_FRONT/images/placeholder.png" class="rounded-circle me-3" width="40" height="40" alt="صورة العميل">
-                                    <div>
-                                        <h6 class="mb-0">شركة الوفاق لقطع الغيار</h6>
-                                        <small class="text-muted">ID: CUS-1002</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <small><i class="fas fa-phone me-1"></i> 0507654321</small><br>
-                                    <small><i class="fas fa-envelope me-1"></i> info@alwafaq.com</small>
-                                </div>
-                            </td>
-                            <td>42</td>
-                            <td>28,750 ر.س</td>
-                            <td><span class="badge bg-success">نشط</span></td>
-                            <td><span class="badge bg-warning text-dark">جملة</span></td>
-                            <td>2023-10-12</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="/static/HOZMA_FRONT/images/placeholder.png" class="rounded-circle me-3" width="40" height="40" alt="صورة العميل">
-                                    <div>
-                                        <h6 class="mb-0">خالد عبدالله</h6>
-                                        <small class="text-muted">ID: CUS-1003</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <small><i class="fas fa-phone me-1"></i> 0501122334</small><br>
-                                    <small><i class="fas fa-envelope me-1"></i> khalid@example.com</small>
-                                </div>
-                            </td>
-                            <td>3</td>
-                            <td>1,200 ر.س</td>
-                            <td><span class="badge bg-secondary">غير نشط</span></td>
-                            <td><span class="badge bg-info">تجزئة</span></td>
-                            <td>2023-08-22</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="/static/HOZMA_FRONT/images/placeholder.png" class="rounded-circle me-3" width="40" height="40" alt="صورة العميل">
-                                    <div>
-                                        <h6 class="mb-0">محمد علي</h6>
-                                        <small class="text-muted">ID: CUS-1004</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <small><i class="fas fa-phone me-1"></i> 0505566778</small><br>
-                                    <small><i class="fas fa-envelope me-1"></i> mohammed@example.com</small>
-                                </div>
-                            </td>
-                            <td>8</td>
-                            <td>3,800 ر.س</td>
-                            <td><span class="badge bg-success">نشط</span></td>
-                            <td><span class="badge bg-primary">مميز</span></td>
-                            <td>2023-10-14</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="customersTableBody">
+                        </tbody>
                 </table>
             </div>
 
             <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1">السابق</a>
-                    </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">التالي</a>
-                    </li>
-                </ul>
+                <ul class="pagination justify-content-center" id="paginationContainer">
+                    </ul>
             </nav>
         </div>
     </div>
 
-    <!-- Customer Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card primary hover-scale">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">إجمالي العملاء</h5>
-                            <h2 class="card-value">1,248</h2>
-                            <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 12.5%</span> عن الشهر الماضي</p>
-                        </div>
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card success hover-scale">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">العملاء النشطين</h5>
-                            <h2 class="card-value">856</h2>
-                            <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 8.3%</span> عن الشهر الماضي</p>
-                        </div>
-                        <i class="fas fa-user-check"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card warning hover-scale">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">عملاء الجملة</h5>
-                            <h2 class="card-value">42</h2>
-                            <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 5.2%</span> عن الشهر الماضي</p>
-                        </div>
-                        <i class="fas fa-store-alt"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card info hover-scale">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title">العملاء المميزين</h5>
-                            <h2 class="card-value">78</h2>
-                            <p class="mb-0"><span class="text-success"><i class="fas fa-arrow-up me-1"></i> 3.7%</span> عن الشهر الماضي</p>
-                        </div>
-                        <i class="fas fa-crown"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
-    <!-- Customer Details Modal -->
-    <div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">تفاصيل العميل</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Global Variables
+    let currentPage = 1;
+    let pageSize = 10;
+    let currentFilter = 'all';
+    let currentSort = 'recent';
+    let searchQuery = '';
+    
+    // DOM Elements
+    const customersTableBody = document.getElementById('customersTableBody');
+    const paginationContainer = document.getElementById('paginationContainer');
+    const customerSearch = document.getElementById('customerSearch');
+    const searchCustomerBtn = document.getElementById('searchCustomerBtn');
+    
+    // Statistics Elements
+    const totalClientsElement = document.getElementById('totalClients');
+    const activeClientsElement = document.getElementById('activeClients');
+    const wholesaleClientsElement = document.getElementById('wholesaleClients');
+    const vipClientsElement = document.getElementById('vipClients');
+    const addCustomerForm = document.getElementById('addCustomerForm');
+
+    // Initialize Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Initial Load
+    fetchCustomers();
+    
+    // Event Listeners for Search
+    searchCustomerBtn.addEventListener('click', function() {
+        searchQuery = customerSearch.value.trim();
+        currentPage = 1;
+        fetchCustomers();
+    });
+    
+    customerSearch.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchQuery = customerSearch.value.trim();
+            currentPage = 1;
+            fetchCustomers();
+        }
+    });
+    
+    // Event Listeners for Filter and Sort
+    document.querySelectorAll('.filter-option').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentFilter = this.getAttribute('data-filter');
+            currentPage = 1;
+            fetchCustomers();
+        });
+    });
+    
+    document.querySelectorAll('.sort-option').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentSort = this.getAttribute('data-sort');
+            fetchCustomers();
+        });
+    });
+
+    // Handle Add Customer Form Submission
+    addCustomerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const clientName = document.getElementById('customerName').value;
+        const clientEmail = document.getElementById('customerEmail').value;
+        const clientMobile = document.getElementById('customerMobile').value;
+        const clientType = document.getElementById('customerType').value;
+
+        const newCustomerData = {
+            name: clientName,
+            email: clientEmail,
+            mobile: clientMobile,
+            type: clientType,
+            is_online: true, // Assuming new clients are active by default
+            total_orders: 0,
+            total_amount: 0,
+            last_activity: new Date().toISOString()
+        };
+
+        fetch('/hozma/api/clients/add/', { // Assuming an API endpoint for adding clients
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(newCustomerData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Failed to add customer') });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Customer added successfully:', data);
+            alert('تم إضافة العميل بنجاح!');
+            const addCustomerModal = bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'));
+            addCustomerModal.hide();
+            addCustomerForm.reset();
+            fetchCustomers(); // Refresh the table
+        })
+        .catch(error => {
+            console.error('Error adding customer:', error);
+            alert('حدث خطأ أثناء إضافة العميل: ' + error.message);
+        });
+    });
+
+    // Fetch Customer Data from API
+    function fetchCustomers() {
+        const apiUrl = '/hozma/api/clients/filter/';
+        
+        let requestData = {
+            page: currentPage,
+            page_size: pageSize
+        };
+        
+        // Add Filter
+        if (currentFilter === 'online') {
+            requestData.is_online = true;
+        } else if (currentFilter === 'offline') {
+            requestData.is_online = false;
+        } else if (currentFilter === 'vip') {
+            requestData.is_vip = true; // Assuming API supports an is_vip filter
+        } else if (currentFilter === 'wholesale') {
+            requestData.type = 'جملة'; // Assuming type 'جملة' for wholesale
+        }
+        
+        // Add Sort
+        if (currentSort === 'recent') {
+            requestData.sort_by = '-last_activity'; // Django REST Framework style for descending
+        } else if (currentSort === 'oldest') {
+            requestData.sort_by = 'last_activity';
+        } else if (currentSort === 'name-asc') {
+            requestData.sort_by = 'name';
+        } else if (currentSort === 'name-desc') {
+            requestData.sort_by = '-name';
+        } else if (currentSort === 'orders-asc') {
+            requestData.sort_by = 'total_orders';
+        } else if (currentSort === 'orders-desc') {
+            requestData.sort_by = '-total_orders';
+        } else if (currentSort === 'amount-asc') {
+            requestData.sort_by = 'total_amount_asc';
+        } else if (currentSort === 'amount-desc') {
+            requestData.sort_by = '-total_amount_desc';
+        }
+        
+        // Add Search
+        if (searchQuery) {
+            requestData.search = searchQuery;
+        }
+        
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Failed to fetch customers') });
+            }
+            return response.json();
+        })
+        .then(data => {
+            updateCustomersTable(data.results);
+            updatePagination(data.total_clients, data.total_pages);
+            updateStats(data.total_clients, data.active_clients, data.wholesale_clients, data.vip_clients); // Pass actual stats if available
+        })
+        .catch(error => {
+            console.error('Error fetching customers:', error);
+            customersTableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">خطأ في تحميل البيانات: ${error.message}</td></tr>`;
+            updatePagination(0, 0); // Clear pagination on error
+            updateStats(0, 0, 0, 0); // Reset stats on error
+        });
+    }
+    
+    // Update Customers Table
+    function updateCustomersTable(customers) {
+        customersTableBody.innerHTML = '';
+        
+        if (customers.length === 0) {
+            customersTableBody.innerHTML = '<tr><td colspan="9" class="text-center">لا توجد بيانات لعرضها.</td></tr>';
+            return;
+        }
+
+        customers.forEach((customer, index) => {
+            const row = document.createElement('tr');
+            const rowNumber = (currentPage - 1) * pageSize + index + 1;
+            
+            const clientPhoto = customer.client_photo_url || '/static/HOZMA_FRONT/images/placeholder.png';
+            const clientName = customer.name || 'غير معروف';
+            const clientEmail = customer.email || 'لا يوجد';
+            const clientMobile = customer.mobile || 'لا يوجد';
+            const clientType = customer.type || 'تجزئة';
+            const isOnline = customer.is_online;
+            const totalOrders = customer.total_orders || 0;
+            const totalAmount = customer.total_amount ? parseFloat(customer.total_amount).toFixed(2) + ' د.ل' : '0 د.ل';
+            const lastActivity = customer.last_activity ? formatDate(customer.last_activity) : 'لا يوجد';
+            
+            row.innerHTML = `
+                <td>${rowNumber}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="${clientPhoto}" class="rounded-circle me-3" width="40" height="40" alt="صورة العميل">
+                        <div>
+                            <h6 class="mb-0">${clientName}</h6>
+                            <small class="text-muted">ID: ${customer.id || 'N/A'}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <small><i class="fas fa-phone me-1"></i> ${clientMobile}</small><br>
+                        <small><i class="fas fa-envelope me-1"></i> ${clientEmail}</small>
+                    </div>
+                </td>
+                <td>${totalOrders}</td>
+                <td>${totalAmount}</td>
+                <td><span class="badge ${isOnline ? 'bg-success' : 'bg-secondary'}">${isOnline ? 'نشط' : 'غير نشط'}</span></td>
+                <td><span class="badge ${getTypeBadgeClass(clientType)}">${clientType}</span></td>
+                <td>${lastActivity}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary view-details" data-client-id="${customer.id}" data-bs-toggle="tooltip" title="عرض التفاصيل">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary edit-client" data-client-id="${customer.id}" data-bs-toggle="tooltip" title="تعديل">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-client" data-client-id="${customer.id}" data-bs-toggle="tooltip" title="حذف">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            customersTableBody.appendChild(row);
+        });
+        
+        // Re-initialize tooltips for newly added elements
+        tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    }
+    
+    // Update Pagination
+    function updatePagination(totalClients, totalPages) {
+        paginationContainer.innerHTML = '';
+        
+        if (totalPages <= 1) {
+            return; // No pagination needed if only one or no pages
+        }
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" tabindex="-1">السابق</a>`;
+        prevLi.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                fetchCustomers();
+            }
+        });
+        paginationContainer.appendChild(prevLi);
+        
+        // Page numbers
+        // Logic to show a limited number of page buttons around the current page
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+
+        if (currentPage <= 3) {
+            endPage = Math.min(totalPages, 5);
+        } else if (currentPage + 2 >= totalPages) {
+            startPage = Math.max(1, totalPages - 4);
+        }
+
+        if (startPage > 1) {
+            const firstPageLi = document.createElement('li');
+            firstPageLi.className = 'page-item';
+            firstPageLi.innerHTML = `<a class="page-link" href="#">1</a>`;
+            firstPageLi.addEventListener('click', function(e) {
+                e.preventDefault();
+                currentPage = 1;
+                fetchCustomers();
+            });
+            paginationContainer.appendChild(firstPageLi);
+            if (startPage > 2) {
+                const ellipsisLi = document.createElement('li');
+                ellipsisLi.className = 'page-item disabled';
+                ellipsisLi.innerHTML = `<span class="page-link">...</span>`;
+                paginationContainer.appendChild(ellipsisLi);
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageLi = document.createElement('li');
+            pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            pageLi.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            pageLi.addEventListener('click', function(e) {
+                e.preventDefault();
+                currentPage = i;
+                fetchCustomers();
+            });
+            paginationContainer.appendChild(pageLi);
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsisLi = document.createElement('li');
+                ellipsisLi.className = 'page-item disabled';
+                ellipsisLi.innerHTML = `<span class="page-link">...</span>`;
+                paginationContainer.appendChild(ellipsisLi);
+            }
+            const lastPageLi = document.createElement('li');
+            lastPageLi.className = 'page-item';
+            lastPageLi.innerHTML = `<a class="page-link" href="#">${totalPages}</a>`;
+            lastPageLi.addEventListener('click', function(e) {
+                e.preventDefault();
+                currentPage = totalPages;
+                fetchCustomers();
+            });
+            paginationContainer.appendChild(lastPageLi);
+        }
+        
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#">التالي</a>`;
+        nextLi.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                fetchCustomers();
+            }
+        });
+        paginationContainer.appendChild(nextLi);
+    }
+    
+    // Update Statistics
+    function updateStats(totalClients, activeClients, wholesaleClients, vipClients) {
+        totalClientsElement.textContent = totalClients;
+        activeClientsElement.textContent = activeClients !== undefined ? activeClients : '0';
+        wholesaleClientsElement.textContent = wholesaleClients !== undefined ? wholesaleClients : '0';
+        vipClientsElement.textContent = vipClients !== undefined ? vipClients : '0';
+
+        // You might want to calculate percentages or fetch them from the API as well
+        // For demonstration, leaving them as 0% for now.
+    }
+    
+    // Helper Functions
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    
+    function getTypeBadgeClass(type) {
+        switch(type.toLowerCase()) {
+            case 'جملة': return 'bg-warning text-dark';
+            case 'مميز': return 'bg-primary';
+            case 'مورد': return 'bg-info';
+            default: return 'bg-secondary'; // Default for 'تجزئة' or unknown
+        }
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Event Handlers for Table Actions (View, Edit, Delete)
+    // These functions would typically interact with other modals or pages
+    function showClientDetails(clientId) {
+        // Fetch client details from API and populate the modal
+        fetch(`/hozma/api/clients/${clientId}/details/`) // Assuming a details API endpoint
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.message || 'Failed to fetch client details') });
+                }
+                return response.json();
+            })
+            .then(client => {
+                const modalBody = document.getElementById('customerDetailsBody');
+                modalBody.innerHTML = `
                     <div class="row">
                         <div class="col-md-4 text-center">
-                            <img src="/static/HOZMA_FRONT/images/placeholder.png" class="img-thumbnail mb-3" width="150" alt="صورة العميل">
-                            <h4>أحمد محمد</h4>
-                            <p class="text-muted">ID: CUS-1001</p>
-                            <div class="mb-3">
-                                <span class="badge bg-success me-1">نشط</span>
-                                <span class="badge bg-info">تجزئة</span>
-                            </div>
-                            <div class="d-flex justify-content-center">
-                                <button class="btn btn-sm btn-outline-primary me-2">
-                                    <i class="fas fa-envelope"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-success me-2">
-                                    <i class="fas fa-phone"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </div>
+                            <img src="${client.client_photo_url || '/static/HOZMA_FRONT/images/placeholder.png'}" class="rounded-circle mb-3" width="100" height="100" alt="صورة العميل">
+                            <h5>${client.name}</h5>
+                            <p class="text-muted">ID: ${client.id}</p>
                         </div>
                         <div class="col-md-8">
-                            <div class="card mb-3">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">معلومات أساسية</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>البريد الإلكتروني:</strong> ahmed@example.com</p>
-                                            <p><strong>الهاتف:</strong> 0501234567</p>
-                                            <p><strong>الجوال:</strong> 0501234567</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <p><strong>تاريخ التسجيل:</strong> 15/03/2022</p>
-                                            <p><strong>آخر زيارة:</strong> 15/10/2023</p>
-                                            <p><strong>آخر عملية:</strong> 15/10/2023</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <p><strong>البريد الإلكتروني:</strong> ${client.email || 'لا يوجد'}</p>
+                            <p><strong>رقم الجوال:</strong> ${client.mobile || 'لا يوجد'}</p>
+                            <p><strong>العنوان:</strong> ${client.address || 'لا يوجد'}</p>
+                            <p><strong>تاريخ التسجيل:</strong> ${client.registration_date ? formatDate(client.registration_date) : 'لا يوجد'}</p>
+                            <p><strong>عدد الطلبات الكلي:</strong> ${client.total_orders || 0}</p>
+                            <p><strong>إجمالي المشتريات:</strong> ${client.total_amount ? parseFloat(client.total_amount).toFixed(2) + ' د.ل' : '0 د.ل'}</p>
+                            <p><strong>الحالة:</strong> <span class="badge ${client.is_online ? 'bg-success' : 'bg-secondary'}">${client.is_online ? 'نشط' : 'غير نشط'}</span></p>
+                            <p><strong>النوع:</strong> <span class="badge ${getTypeBadgeClass(client.type)}">${client.type || 'تجزئة'}</span></p>
+                            <p><strong>آخر عملية:</strong> ${client.last_activity ? formatDate(client.last_activity) : 'لا يوجد'}</p>
                             </div>
-                            <div class="card mb-3">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">العنوان</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p><strong>المدينة:</strong> الرياض</p>
-                                    <p><strong>الحي:</strong> النخيل</p>
-                                    <p><strong>الشارع:</strong> شارع الملك فهد</p>
-                                    <p><strong>الرمز البريدي:</strong> 12345</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">إحصائيات المشتريات</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>عدد الطلبات:</span>
-                                        <strong>15</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>إجمالي المشتريات:</span>
-                                        <strong>5,250 ر.س</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>متوسط قيمة الطلب:</span>
-                                        <strong>350 ر.س</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span>آخر عملية:</span>
-                                        <strong>15/10/2023</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">تفضيلات الشراء</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <h6 class="small">فئات مفضلة:</h6>
-                                        <div>
-                                            <span class="badge bg-light text-dark me-1">قطع محرك</span>
-                                            <span class="badge bg-light text-dark me-1">إطارات</span>
-                                            <span class="badge bg-light text-dark">زيت محرك</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h6 class="small">العلامات التجارية المفضلة:</h6>
-                                        <div>
-                                            <span class="badge bg-light text-dark me-1">تويوتا</span>
-                                            <span class="badge bg-light text-dark">نيسان</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
-                    <button type="button" class="btn btn-primary">حفظ التغييرات</button>
-                </div>
-            </div>
-        </div>
-    </div>
+                `;
+                const customerDetailsModal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+                customerDetailsModal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching client details:', error);
+                alert('حدث خطأ أثناء جلب تفاصيل العميل: ' + error.message);
+            });
+    }
+    
+    function editClient(clientId) {
+        // In a real application, you'd likely fetch the client data,
+        // populate an edit form, and then show the modal.
+        console.log('Edit client:', clientId);
+        // Example: Fetch client data and then populate a modal for editing
+        // fetch(`/hozma/api/clients/${clientId}/`)
+        // .then(response => response.json())
+        // .then(clientData => {
+        //     // Populate form fields with clientData
+        //     // $('#editCustomerModal').modal('show');
+        // })
+        // .catch(error => console.error('Error fetching client for edit:', error));
+        alert('وظيفة التعديل ليست مفعلة بعد.');
+    }
+    
+    function deleteClient(clientId) {
+        if (confirm('هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع عن هذا الإجراء.')) {
+            fetch(`/hozma/api/clients/${clientId}/`, { // Assuming a DELETE endpoint for individual clients
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('تم حذف العميل بنجاح.');
+                    fetchCustomers(); // Reload data after successful deletion
+                } else {
+                    return response.json().then(err => { throw new Error(err.message || 'Failed to delete customer') });
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting client:', error);
+                alert('حدث خطأ أثناء حذف العميل: ' + error.message);
+            });
+        }
+    }
 
-    <!-- Add Customer Modal -->
-    <div class="modal fade" id="addCustomerModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">إضافة عميل جديد</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addCustomerForm">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="customerName" class="form-label">اسم العميل</label>
-                                    <input type="text" class="form-control" id="customerName" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="customerEmail" class="form-label">البريد الإلكتروني</label>
-                                    <input type="email" class="form-control" id="customerEmail">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="customerPhone" class="form-label">رقم الجوال</label>
-                                    <input type="tel" class="form-control" id="customerPhone" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="customerType" class="form-label">نوع العميل</label>
-                                    <select class="form-select" id="customerType">
-                                        <option value="retail">تجزئة</option>
-                                        <option value="wholesale">جملة</option>
-                                        <option value="vip">مميز</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="customerStatus" class="form-label">الحالة</label>
-                                    <select class="form-select" id="customerStatus">
-                                        <option value="active">نشط</option>
-                                        <option value="inactive">غير نشط</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="customerDiscount" class="form-label">خصم خاص (%)</label>
-                                    <input type="number" class="form-control" id="customerDiscount" min="0" max="100" value="0">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="customerCity" class="form-label">المدينة</label>
-                                    <input type="text" class="form-control" id="customerCity">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="customerDistrict" class="form-label">الحي</label>
-                                    <input type="text" class="form-control" id="customerDistrict">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="customerAddress" class="form-label">العنوان التفصيلي</label>
-                            <textarea class="form-control" id="customerAddress" rows="2"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="customerNotes" class="form-label">ملاحظات</label>
-                            <textarea class="form-control" id="customerNotes" rows="2"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-primary" form="addCustomerForm">حفظ العميل</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    // Export Customers functionality (Example - would need server-side implementation)
+    document.getElementById('exportCustomersBtn').addEventListener('click', function() {
+        alert('وظيفة تصدير البيانات قيد التنفيذ.');
+        // In a real application, you would send a request to your backend
+        // to generate and provide a downloadable file (e.g., CSV, Excel).
+        // Example: window.location.href = '/hozma/api/clients/export/?format=csv';
+    });
+});
+</script>
 {% endblock %}

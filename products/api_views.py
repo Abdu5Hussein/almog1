@@ -998,3 +998,64 @@ def upload_and_assign_images(request):
         return Response({'error': f'حدث خطأ غير متوقع: {str(general_error)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(response_data, status=status.HTTP_200_OK)
+
+@extend_schema(
+description="""edit prices for product api.""",
+tags=["price","Products"],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def modify_price(request):
+    try:
+        data = request.data
+        product_id = data.get("product_id")
+        price_type = data.get("priceType")
+        value = data.get("value")
+        is_percentage = data.get("isPercentage")
+        operation = data.get("operation")
+
+        if not all([product_id, price_type, operation]) or value is None:
+            return Response({"error": "Missing required data"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            value = Decimal(str(value))
+        except:
+            return Response({"error": "Invalid value format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            item = models.Mainitem.objects.get(pno=product_id)
+        except models.Mainitem.DoesNotExist:
+            return Response({"error": "المنتج غير موجود"}, status=status.HTTP_404_NOT_FOUND)
+
+        if price_type not in ["orgprice", "orderprice", "costprice", "buyprice"]:
+            return Response({"error": "نوع السعر غير صالح"}, status=status.HTTP_400_BAD_REQUEST)
+
+        current_price = getattr(item, price_type) or Decimal("0.0")
+
+        if is_percentage:
+            if operation == "+":
+                new_price = current_price + (current_price * value / 100)
+            elif operation == "-":
+                new_price = current_price - (current_price * value / 100)
+            else:
+                return Response({"error": "عملية غير صالحة"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if operation == "+":
+                new_price = current_price + value
+            elif operation == "-":
+                new_price = current_price - value
+            elif operation == "=":
+                new_price = value
+            else:
+                return Response({"error": "عملية غير صالحة"}, status=status.HTTP_400_BAD_REQUEST)
+
+        setattr(item, price_type, new_price)
+        item.save()
+
+        return Response({
+            "message": f"تم تحديث {price_type} بنجاح إلى {new_price:.2f}"
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

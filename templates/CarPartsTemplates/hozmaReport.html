@@ -1,0 +1,735 @@
+{% extends 'CarPartsTemplates/hozmabase.html' %}
+
+
+{% block title %}تقارير متجر قطع غيار السيارات{% endblock %}
+
+{% block content %}
+<div class="row">
+    {# ================= Filters Section ================= #}
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">تصفية التقارير</h5>
+            </div>
+            <div class="card-body">
+                <form id="report-filter-form">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="report-type" class="form-label">نوع التقرير</label>
+                            <select class="form-select" id="report-type">
+                                <option value="daily">يومي</option>
+                                <option value="weekly" selected>أسبوعي</option>
+                                <option value="monthly">شهري</option>
+                                <option value="custom">مخصص</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="date-range" class="form-label">الفترة الزمنية</label>
+                            <select class="form-select" id="date-range">
+                                <option value="this_week">هذا الأسبوع</option>
+                                <option value="last_week">الأسبوع الماضي</option>
+                                <option value="this_month">هذا الشهر</option>
+                                <option value="last_month">الشهر الماضي</option>
+                                <option value="last_30_days">آخر 30 يوم</option>
+                                <option value="last_90_days">آخر 90 يوم</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3 custom-date" style="display: none;">
+                            <label for="start-date" class="form-label">من تاريخ</label>
+                            <input type="date" class="form-control" id="start-date">
+                        </div>
+                        <div class="col-md-3 mb-3 custom-date" style="display: none;">
+                            <label for="end-date" class="form-label">إلى تاريخ</label>
+                            <input type="date" class="form-control" id="end-date">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="category-filter" class="form-label">تصنيف المنتجات</label>
+                            <select class="form-select" id="category-filter">
+                                <option value="all">الكل</option>
+                                <option value="engine">قطع المحرك</option>
+                                <option value="brakes">أنظمة الفرامل</option>
+                                <option value="electrical">الأنظمة الكهربائية</option>
+                                <option value="suspension">نظام التعليق</option>
+                                <option value="exterior">قطع خارجية</option>
+                                <option value="interior">قطع داخلية</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i>تصفية
+                    </button>
+                    <button type="button" class="btn btn-success ms-2" id="export-report">
+                        <i class="fas fa-file-excel me-1"></i>تصدير إلى Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# ================= Summary Cards ================= #}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card primary hover-scale">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="card-title">إجمالي المبيعات</div>
+                        <div class="card-value">24,500 ر.س</div>
+                        <div class="mt-2 text-success small">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            <span>12% عن الأسبوع الماضي</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card success hover-scale">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="card-title">عدد الطلبات</div>
+                        <div class="card-value">147</div>
+                        <div class="mt-2 text-success small">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            <span>8% عن الأسبوع الماضي</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-cart card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card info hover-scale">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="card-title">متوسط سلة المشتريات</div>
+                        <div class="card-value">166.66 ر.س</div>
+                        <div class="mt-2 text-danger small">
+                            <i class="fas fa-arrow-down me-1"></i>
+                            <span>3% عن الأسبوع الماضي</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-basket card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card warning hover-scale">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="card-title">العملاء الجدد</div>
+                        <div class="card-value">32</div>
+                        <div class="mt-2 text-success small">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            <span>15% عن الأسبوع الماضي</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-plus card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ================= Sales Charts ================= #}
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">مبيعات قطع الغيار خلال الأسبوع</h5>
+                <div class="dropdown d-inline">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                            id="salesChartDropdown" data-bs-toggle="dropdown">
+                        حسب القيمة
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#">حسب القيمة</a></li>
+                        <li><a class="dropdown-item" href="#">حسب الكمية</a></li>
+                        <li><a class="dropdown-item" href="#">حسب عدد الطلبات</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">توزيع المبيعات حسب التصنيف</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie">
+                    <canvas id="categoryPieChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                    <span class="me-2">
+                        <i class="fas fa-circle text-primary"></i> قطع المحرك
+                    </span>
+                    <span class="me-2">
+                        <i class="fas fa-circle text-success"></i> أنظمة الفرامل
+                    </span>
+                    <span class="me-2">
+                        <i class="fas fa-circle text-info"></i> الأنظمة الكهربائية
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ================= Top Products ================= #}
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">أفضل المنتجات مبيعاً</h5>
+                <div class="dropdown d-inline">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                            id="topProductsDropdown" data-bs-toggle="dropdown">
+                        حسب القيمة
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#">حسب القيمة</a></li>
+                        <li><a class="dropdown-item" href="#">حسب الكمية</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>المنتج</th>
+                                <th>التصنيف</th>
+                                <th>الكمية</th>
+                                <th>القيمة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>شمعة احتراق</span>
+                                    </div>
+                                </td>
+                                <td>قطع المحرك</td>
+                                <td>45</td>
+                                <td>4,725 ر.س</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>بطانة فرامل</span>
+                                    </div>
+                                </td>
+                                <td>أنظمة الفرامل</td>
+                                <td>32</td>
+                                <td>3,840 ر.س</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>حساس حرارة</span>
+                                    </div>
+                                </td>
+                                <td>الأنظمة الكهربائية</td>
+                                <td>28</td>
+                                <td>3,360 ر.س</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>فلتر هواء</span>
+                                    </div>
+                                </td>
+                                <td>قطع المحرك</td>
+                                <td>25</td>
+                                <td>2,750 ر.س</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>مصباح أمامي</span>
+                                    </div>
+                                </td>
+                                <td>الأنظمة الكهربائية</td>
+                                <td>22</td>
+                                <td>2,640 ر.س</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ================= Order Status ================= #}
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">حالة الطلبات</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="inventory-status">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <h5>87</h5>
+                            <p class="text-muted">طلبات مكتملة</p>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 65%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="inventory-status">
+                            <i class="fas fa-truck text-primary"></i>
+                            <h5>32</h5>
+                            <p class="text-muted">طلبات قيد التوصيل</p>
+                            <div class="progress">
+                                <div class="progress-bar bg-primary" style="width: 24%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="inventory-status">
+                            <i class="fas fa-clock text-warning"></i>
+                            <h5>18</h5>
+                            <p class="text-muted">طلبات قيد المعالجة</p>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: 13%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="inventory-status">
+                            <i class="fas fa-times-circle text-danger"></i>
+                            <h5>10</h5>
+                            <p class="text-muted">طلبات ملغاة</p>
+                            <div class="progress">
+                                <div class="progress-bar bg-danger" style="width: 8%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ================= Inventory Status ================= #}
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">حالة المخزون</h5>
+                <button class="btn btn-sm btn-outline-primary">عرض الكل</button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>المنتج</th>
+                                <th>التصنيف</th>
+                                <th>المخزون المتاح</th>
+                                <th>مبيعات الشهر</th>
+                                <th>حالة المخزون</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>شمعة احتراق</td>
+                                <td>قطع المحرك</td>
+                                <td>45</td>
+                                <td>120</td>
+                                <td>
+                                    <span class="badge bg-success">كافي</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">طلب شراء</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>بطانة فرامل</td>
+                                <td>أنظمة الفرامل</td>
+                                <td>12</td>
+                                <td>85</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark">تحذير</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">طلب شراء</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>حساس حرارة</td>
+                                <td>الأنظمة الكهربائية</td>
+                                <td>5</td>
+                                <td>62</td>
+                                <td>
+                                    <span class="badge bg-danger">ناقص</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">طلب شراء</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>فلتر هواء</td>
+                                <td>قطع المحرك</td>
+                                <td>28</td>
+                                <td>75</td>
+                                <td>
+                                    <span class="badge bg-success">كافي</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">طلب شراء</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>مصباح أمامي</td>
+                                <td>الأنظمة الكهربائية</td>
+                                <td>8</td>
+                                <td>53</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark">تحذير</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">طلب شراء</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ================= Customer Metrics ================= #}
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">مقاييس العملاء</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card stats-card primary">
+                            <div class="card-body">
+                                <div class="card-title">العملاء الجدد</div>
+                                <div class="card-value">32</div>
+                                <div class="mt-2 text-success small">
+                                    <i class="fas fa-arrow-up me-1"></i>
+                                    <span>15% عن الأسبوع الماضي</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card stats-card success">
+                            <div class="card-body">
+                                <div class="card-title">العملاء النشطين</div>
+                                <div class="card-value">89</div>
+                                <div class="mt-2 text-success small">
+                                    <i class="fas fa-arrow-up me-1"></i>
+                                    <span>7% عن الأسبوع الماضي</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card stats-card info">
+                            <div class="card-body">
+                                <div class="card-title">متوسط القيمة للعميل</div>
+                                <div class="card-value">275.28 ر.س</div>
+                                <div class="mt-2 text-danger small">
+                                    <i class="fas fa-arrow-down me-1"></i>
+                                    <span>5% عن الأسبوع الماضي</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card stats-card warning">
+                            <div class="card-body">
+                                <div class="card-title">معدل العودة</div>
+                                <div class="card-value">42%</div>
+                                <div class="mt-2 text-success small">
+                                    <i class="fas fa-arrow-up me-1"></i>
+                                    <span>3% عن الأسبوع الماضي</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ================= Top Customers ================= #}
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">أفضل العملاء</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>العميل</th>
+                                <th>عدد الطلبات</th>
+                                <th>إجمالي المشتريات</th>
+                                <th>آخر طلب</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>أحمد محمد</span>
+                                    </div>
+                                </td>
+                                <td>8</td>
+                                <td>3,245 ر.س</td>
+                                <td>2023-06-12</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>خالد عبدالله</span>
+                                    </div>
+                                </td>
+                                <td>6</td>
+                                <td>2,870 ر.س</td>
+                                <td>2023-06-10</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>سامي علي</span>
+                                    </div>
+                                </td>
+                                <td>5</td>
+                                <td>2,540 ر.س</td>
+                                <td>2023-06-08</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>ماجد إبراهيم</span>
+                                    </div>
+                                </td>
+                                <td>5</td>
+                                <td>2,320 ر.س</td>
+                                <td>2023-06-05</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="" 
+                                             class="rounded-circle me-2" width="40" height="40">
+                                        <span>ناصر سعد</span>
+                                    </div>
+                                </td>
+                                <td>4</td>
+                                <td>2,150 ر.س</td>
+                                <td>2023-06-03</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Show/hide custom date range fields
+    document.getElementById('report-type').addEventListener('change', function() {
+        const customDateFields = document.querySelectorAll('.custom-date');
+        if (this.value === 'custom') {
+            customDateFields.forEach(field => field.style.display = 'block');
+        } else {
+            customDateFields.forEach(field => field.style.display = 'none');
+        }
+    });
+
+    // Sales Chart
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
+            datasets: [{
+                label: 'إجمالي المبيعات',
+                data: [3200, 2800, 3500, 4200, 3900, 4500, 3800],
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 12
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw + ' ر.س';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value + ' ر.س';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Pie Chart
+    const categoryCtx = document.getElementById('categoryPieChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['قطع المحرك', 'أنظمة الفرامل', 'الأنظمة الكهربائية', 'نظام التعليق', 'قطع خارجية', 'قطع داخلية'],
+            datasets: [{
+                data: [35, 25, 20, 10, 5, 5],
+                backgroundColor: [
+                    'rgba(78, 115, 223, 0.8)',
+                    'rgba(28, 200, 138, 0.8)',
+                    'rgba(54, 185, 204, 0.8)',
+                    'rgba(246, 194, 62, 0.8)',
+                    'rgba(231, 74, 59, 0.8)',
+                    'rgba(108, 117, 125, 0.8)'
+                ],
+                hoverBackgroundColor: [
+                    'rgba(78, 115, 223, 1)',
+                    'rgba(28, 200, 138, 1)',
+                    'rgba(54, 185, 204, 1)',
+                    'rgba(246, 194, 62, 1)',
+                    'rgba(231, 74, 59, 1)',
+                    'rgba(108, 117, 125, 1)'
+                ],
+                hoverBorderColor: 'rgba(234, 236, 244, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    bodyFont: {
+                        size: 12
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.raw + '%';
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+
+    // Export to Excel button
+    document.getElementById('export-report').addEventListener('click', function() {
+        // In a real app, this would trigger a server-side export
+        alert('سيتم تصدير التقرير إلى ملف Excel. في التطبيق الحقيقي، هذا سيتصل بالخادم لإنشاء الملف.');
+    });
+</script>
+{% endblock %}

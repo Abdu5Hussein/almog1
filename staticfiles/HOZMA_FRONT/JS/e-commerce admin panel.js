@@ -564,8 +564,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 document.addEventListener('DOMContentLoaded', function () {
     try {
-        const username = localStorage.getItem("session_data@EMPname");
-        const email = localStorage.getItem("session_data@EMPusername"); // optional if you store it
+        const username = localStorage.getItem("session_data@name");
+        const email = localStorage.getItem("session_data@username"); // optional if you store it
 
         const nameElement = document.getElementById('userNamePlaceholder');
         const emailElement = document.getElementById('userEmailPlaceholder');
@@ -640,3 +640,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Error logging out:", error);
       });
   }
+
+
+function loadInvoiceSummary() {
+    fetch('/hozma/api/invoice-status-summary/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('unconfirmed-badge').textContent = data.unconfirmed_invoices;
+            document.getElementById('unsent-badge').textContent = data.unsent_invoices;
+        })
+        .catch(error => console.error('Error fetching invoice summary:', error));
+}
+
+document.addEventListener('DOMContentLoaded', loadInvoiceSummary);

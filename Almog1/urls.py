@@ -38,12 +38,17 @@ from django.shortcuts import redirect
 router = DefaultRouter()
 router.register(r'permissions', api_views.ReturnPermissionViewSet, basename='return-permission')
 router.register(r'permission-items', api_views.ReturnPermissionItemsViewSet, basename='return-permission-items')
+
+router.register(r'api/buy-permissions', api_views.Buy_ReturnPermissionViewSet, basename='buy-return-permission')
+router.register(r'api/buy-permission-items', api_views.BuyReturnPermissionItemsViewSet, basename='buy-return-permission-items')
+
 router.register(r'engines', api_views.EnginesTableViewSet)
 router.register(r'api/employees-api', api_views.EmployeesTableViewSet)
 router.register(r'api/balance-editions-api', api_views.BalanceEditionsTableViewSet)
 router.register(r'api/attendance-api', api_views.AttendanceTableViewSet)
 router.register(r'api/mainitem_copy-api', api_views.mainitem_copy_ViewSet)
 router.register(r'api/sources-api', api_views.SourcesViewSet)
+router.register(r'api/sources/transacions', api_views.TransactionsHistoryTableForSuppliersViewSet)
 
 urlpatterns = [
     path('hozma/', include('wholesale_app.urls')),
@@ -118,6 +123,7 @@ urlpatterns = [
     path('get-subsections/', api_temp.get_subsections, name='get_subsections'),
     path('account-statements', views.account_statement, name='account-statements'),
     path('get-account-statement', api_temp.get_account_statement, name='get_account_statement'),
+    path('suppliers/get-account-statement', api_temp.get_account_statement_for_sources, name='get_account_statement_for_sources'),
     path('storage-reports', views.StorageReports, name='storage-reports'),
     path('api/get-last-reciept-no', api_temp.get_last_reciept_no, name='last-reciept-no'),
     path('sections-and-subsections', views.SectionAndSubSection, name='sections-and-subsections'),
@@ -219,11 +225,16 @@ urlpatterns = [
     path('send-notification/', views.notify_user, name='send_firebase_notification'),
     path('notifications/', views.notifications_page, name='notifications_page'),
     path('sell-invoice/return-items-page/', views.return_items_view, name='return-items-view'),
+    path('buy-invoice/return-items-page/', views.return_items_view, name='buy-return-items-view'),
+
     path('sell-invoice/<int:id>/<int:permission>/return-items/', views.return_items_add_items, name='return-items'),
+    path('buy-invoice/<int:id>/<int:permission>/return-items/', views.return_items_add_items, name='buy-return-items'),
     path('update-delivery-availability/', api_views.update_delivery_availability, name='update-delivery-availability'),
+    path('buy-invoice/return-items-report/', views.return_items_report_view, name='buy-return-report'),
     path('sell-invoice/return-items-report/', views.return_items_report_view, name='return-report'),
     path('',include(router.urls)),
     path('engines-page/', views.engines_view, name='engines-view'),  # Render the engine management page
+    path('buy-invoice/<int:id>/returned-items',api_views.get_invoice_returned_items,name="get-buy-invoice-returned-items"),
     path('sell-invoice/<int:id>/returned-items',api_views.get_invoice_returned_items,name="get-invoice-returned-items"),
     path('clients/payment-requests',views.request_payment_view,name="request_payment"),
     path('assign-orders/', api_views.assign_orders, name='assign_orders'),
@@ -303,6 +314,8 @@ urlpatterns = [
     path('users/<int:user_id>/delete/', api_views.delete_user, name='delete_user'),
     path('users/<int:user_id>/change-password/', api_views.change_user_password, name='change_user_password'),
     path('print/dynamic-paper', views.dynamic_print_paper_template, name='dynamic-paper'),
+    path('api/print-dynamic-paper', api_views.print_api, name='print_api'),
+    path('api/modify-price/', products_api_views.modify_price, name='modify_price'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

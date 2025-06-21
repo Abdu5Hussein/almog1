@@ -200,8 +200,8 @@
             <th>التاريخ</th>
             <th>المصدر</th>
             <th>المبلغ الصافي</th>
-            <th>الحالة</th>
             <th>حالة الإرسال</th>
+            <th>حالة شراء الفاتورة</th>
             <th>الإجراءات</th>
           </tr>
         </thead>
@@ -280,15 +280,22 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="bi bi-x-circle"></i> إغلاق
+          <button type="button" class="btn btn-info" onclick="markAsSent()" id="markAsSentBtn">
+            <i class="bi bi-send-check"></i> إرسال 
           </button>
           <button type="button" class="btn btn-success" onclick="confirmOrder()" id="confirmBtn">
             <i class="bi bi-check-circle"></i> تأكيد الطلب
           </button>
-          <button type="button" class="btn btn-info" onclick="markAsSent()" id="markAsSentBtn">
-            <i class="bi bi-send-check"></i> تم الإرسال
+          <button type="button" class="btn btn-primary" onclick="downloadPackingList()" id="downloadPackingListBtn">
+            <i class="bi bi-file-earmark-excel"></i> تنزيل قائمة الجرد
           </button>
+          <button type="button" class="btn btn-warning" onclick="downloadInvoice()" id="downloadInvoiceBtn">
+            <i class="bi bi-receipt"></i> تنزيل الفاتورة
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> إغلاق
+          </button>
+      
         </div>
       </div>
     </div>

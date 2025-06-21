@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+    localStorage.setItem('refresh_buy_items', 'false');
     const today = new Date();
     const formattedDate = today.toISOString().split("T")[0]; // Format date as YYYY-MM-DD
     document.getElementById("invoice-date").value = formattedDate;
@@ -255,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         return parseFloat(sum);
     }
-    document.getElementById("createButton").addEventListener("click", function (event) {
+    document.getElementById("createButton").addEventListener("click", async function (event) {
         form = document.getElementById("firstForm");
         tempcheck = document.getElementById("temp-flag");
         const source = getSelectedText("source");
@@ -297,10 +298,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 rate: rate,
                 temp: temp,
             };
-            createNewRecord();
-            if (createNewRecord() === false) {
-                console.log("Failed to create new record");
-                return; // Exit if record creation failed
+            const flag = await createNewRecord();  // Wait for the async function to complete
+            if (!flag) {
+                console.log("Error occurred in creating invoice, flag: " + flag);
+                return;
             }
 
             // Make a POST request to the server
@@ -499,8 +500,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return csrfInput ? csrfInput.value : "";
     }
     // Main function to create a new record
-    function createNewRecord() {
-        // Collecting form data
+    async function createNewRecord() {
         const data = {
             csrfmiddlewaretoken: getCSRFToken() || null,
             invoice_autoid: getInputValue("invoice-autoid") || null,
@@ -515,39 +515,43 @@ document.addEventListener("DOMContentLoaded", function () {
             reminder: getInputValue("reminder") || null,
             temp_flag: getInputValue("temp-flag") || 0,
             multi_source_flag: getInputValue("multi-source-flag") || 0,
+            local: urlParams.get("local") || false,
         };
 
         console.log("Data to be sent:", data);
 
-        // Sending the data to the API
-        customFetch("api/create-buy-invoice-record", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCSRFToken(), // Ensure CSRF token is included
-            },
-            body: JSON.stringify(data),
-        })
-            .then((response) => {
-                if (response.ok) {
-                    document.getElementById("createButton").disabled = true; // Disable the button if successful
-                    document.getElementById("cost-btn").disabled = false;
-                    document.getElementById("source-btn").disabled = false;
-                    document.getElementById("pay-btn").disabled = false;
-                    document.getElementById("save-btn").disabled = false;
-                    document.getElementById("excell-btn").disabled = false;
-                    document.getElementById("addProductsButton").style.display = "block";
-                    return true; // Return true if the response is successful
-                } else {
-                    alert("Error creating record.");
-                    return false; // Return false if there's an error
-                }
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-                return false; // Return false in case of any network error
+        try {
+            const response = await customFetch("api/create-buy-invoice-record", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken(),
+                },
+                body: JSON.stringify(data),
             });
+
+            if (response.ok) {
+                document.getElementById("createButton").disabled = true;
+                document.getElementById("cost-btn").disabled = false;
+                document.getElementById("source-btn").disabled = false;
+                document.getElementById("pay-btn").disabled = false;
+                document.getElementById("save-btn").disabled = false;
+                document.getElementById("excell-btn").disabled = false;
+                document.getElementById("addProductsButton").style.display = "block";
+                return true;
+            } else {
+                const errorText = await response.text();
+                console.error("Server error response:", errorText);
+                alert("Error creating record: " + errorText);
+                return false;
+            }
+        } catch (error) {
+            console.error("Network or logic error:", error);
+            alert("Network or unexpected error occurred.");
+            return false;
+        }
     }
+
     document.getElementById("cost-btn").addEventListener("click", function (event) {
         form = document.getElementById("firstForm");
 
@@ -693,4 +697,29 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Error:", error);
             });
     }
+    document.getElementById("print-btn").addEventListener("click", () => {
+        const data = {
+            label: "specific_buy_invoice",
+            invoice_no: document.getElementById("invoice-autoid").value,
+        };
+
+        customFetch(`/api/print-dynamic-paper`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()  // <-- IMPORTANT for Django
+            },
+            body: JSON.stringify(data),
+        })
+            .then(response => response.text())  // <-- handle HTML or plain text
+            .then(html => {
+                const printWindow = window.open("", "_blank");
+                printWindow.document.open();
+                printWindow.document.write(html);
+                printWindow.document.close();
+            })
+            .catch((error) => {
+                console.error("Error fetching data:", error);
+            });
+    });
 });

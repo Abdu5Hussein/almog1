@@ -36,8 +36,41 @@
   <script src="{% static 'hozma/js/navbar.js' %}"></script>
 
   <script src="{% static 'hozma/js/cart.js' %}"></script>
-
+  <script>
+    // Detect if the page was restored from the browser cache
+    window.addEventListener('pageshow', function (event) {
+    if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+        // Force full reload if page is coming from cache (back/forward)
+        window.location.reload(true);
+    }
+});
+async function signOutClient() {
+    const sessionData = JSON.parse(localStorage.getItem("session_data@username"));
+    const role = JSON.parse(localStorage.getItem("session_data@role"));
+    const payload = { username: sessionData, role: role };
   
+    const res = await fetch("/mobile/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+  
+    if (res.ok) {
+     window.location.href = "/login";
+    } else {
+      const err = await res.json();
+      console.error("Logout error:", err);
+      alert("حدث خطأ أثناء تسجيل الخروج. حاول مرة أخرى.");
+    }
+  }
+
+</script>
+
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,8 +1,9 @@
 from decimal import Decimal
+import requests
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.core.paginator import Paginator
-
+from django.middleware.csrf import get_token
 from django.contrib.auth import authenticate, login
 from rest_framework import status
 from django.contrib.contenttypes.models import ContentType
@@ -20,7 +21,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db.models import F, Q, Sum, IntegerField
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.urls import reverse
@@ -79,13 +80,14 @@ from django.contrib.auth.models import User
 
 
 EMPLOYEE_REDIRECTS = {
-    'driver':        'driver-dashboard',
+    'driver':        'wholesale_app:Hozmadriver',
     'Shop_employee': 'home',
     'Hozma_employee':'wholesale_app:Admin_Dashboard',
-    'admin':         'admin-dashboard',
-    'manager':       'manager-dashboard',
+    'admin':         'home',
+    'manager':       'home',
     'accountant':    'accountant-dashboard',
 }
+CLIENT_REDIRECT = "wholesale_app:item_filter_page"  # or whatever your client view name is
 
 """ Log Out,Login And Authentication Api's"""
 @extend_schema(
@@ -156,10 +158,10 @@ def sign_in(request):
             return Response({"detail": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
         # ---- 1. Parse & validate -------------------------------------------------
-        body      = json.loads(request.body or '{}')
-        username  = body.get("username")
-        password  = body.get("password")
-        role      = body.get("role")             # sent from the client
+        body = json.loads(request.body or '{}')
+        username = body.get("username")
+        password = body.get("password")
+        role = body.get("role")  # sent from the client
 
         if not all([username, password, role]):
             return Response(
@@ -167,65 +169,73 @@ def sign_in(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ---- 2. Pull the domain-specific user object ----------------------------
-        user = None           # <– EmployeesTable row
-        user_id=None
-        if role == "employee":
-            try:
-                user = models.EmployeesTable.objects.get(phone=username)
-                user_id = f"{user.employee_id}"
-
-            except models.EmployeesTable.DoesNotExist:
-                return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        # ---- 3. Authenticate against Django’s auth_user -------------------------
+        # ---- 2. Authenticate against Django’s auth_user -------------------------
         auth_user = authenticate(request, username=username, password=password)
         if auth_user is None:
             return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ---- 4. Create session + JWT --------------------------------------------
-        login(request, auth_user)
-                              # Django session
+        # ---- 3. Domain-specific user retrieval and session setup -----------------
+        user = None
+        user_id = None
+        redirect_url = None
+        employee_type = None
+
+        if role == "employee":
+            try:
+                user = models.EmployeesTable.objects.get(phone=username)
+                user_id = f"{user.employee_id}"
+                employee_type = getattr(user, "type", None)
+                redirect_url = reverse(EMPLOYEE_REDIRECTS.get(employee_type, 'default-dashboard'))
+            except models.EmployeesTable.DoesNotExist:
+                return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        elif role == "client":
+            try:
+                user = models.AllClientsTable.objects.get(phone=username)
+                user_id = f"{user.clientid}"
+                redirect_url = reverse(CLIENT_REDIRECT)
+            except models.AllClientsTable.DoesNotExist:
+                return Response({"error": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        else:
+            return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ---- 4. Create session + JWT ---------------------------------------------
+        login(request, auth_user)  # Django session
+
         request.session["username"] = user.username
         request.session["name"] = user.name
         request.session["role"] = role
         request.session["user_id"] = user_id
         request.session["is_authenticated"] = True
         request.session.set_expiry(3600)  # 1 hour
-               # 1 h
 
-        refresh       = RefreshToken.for_user(auth_user)
-        access_token  = str(refresh.access_token)
+        refresh = RefreshToken.for_user(auth_user)
+        access_token = str(refresh.access_token)
 
-        # ---- 5. Work out where this user should land ----------------------------
-        employee_type = getattr(user, "type", None)      # CharField on EmployeesTable
-        # fall back to a safe default if missing / unmapped
-        redirect_url  = reverse(EMPLOYEE_REDIRECTS.get(employee_type, 'default-dashboard'))
-
-        # ---- 6. Return either JSON + redirect URL ­­­­­­or a real 302 -----------
-        # 👉 OPTION A – API style (recommended for SPA / mobile apps)
-        response = Response({
+        # ---- 5. Return API response ----------------------------------------------
+        response_data = {
             "message": "Signed in successfully",
             "role": role,
-            "employee_type": employee_type,
             "redirect_url": redirect_url,
             "access_token": access_token,
             "refresh_token": str(refresh),
-            "emp_id": user_id,
             "user_id": auth_user.id,
             "username": user.username,
             "name": user.name,
-        })
-        # cookies:
+        }
+
+        if role == "employee":
+            response_data["employee_type"] = employee_type
+            response_data["emp_id"] = user_id
+        elif role == "client":
+            response_data["client_id"] = user_id
+
+        response = Response(response_data)
         response.set_cookie('access_token', access_token, httponly=True, max_age=7*60*60, path='/')
         response.set_cookie('refresh_token', str(refresh), httponly=True, max_age=7*24*60*60, path='/')
-        return response
 
-        # 👉 OPTION B – server-side redirect (uncomment if you truly want 302)
-        #
-        # redirect_response       = redirect(redirect_url)   # 302 Found
-        # redirect_response.cookies = response.cookies       # copy JWT cookies
-        # return redirect_response
+        return response
 
     except Exception as exc:
         return Response({"error": f"Unexpected error: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -1923,6 +1933,45 @@ class ReturnPermissionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
+@authentication_classes([CookieAuthentication])
+class Buy_ReturnPermissionViewSet(viewsets.ModelViewSet):
+    queryset = models.buy_return_permission.objects.all()
+    serializer_class = serializers.buy_ReturnPermissionSerializer
+    lookup_field = 'autoid'
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Convert and validate foreign keys
+        client_id = data.get("client")
+        invoice_id = data.get("invoice")
+        if not client_id or not invoice_id or not data.get("payment"):
+            return Response({"error": "Client, invoice, payment and employee fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not models.AllSourcesTable.objects.filter(clientid=client_id).exists():
+            return Response({"error": "Client not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not models.Buyinvoicetable.objects.filter(invoice_no=invoice_id).exists():
+            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch related objects
+        client = models.AllSourcesTable.objects.get(clientid=client_id)
+        invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_id)
+
+        # Create the return permission
+        return_permission_instance = models.buy_return_permission.objects.create(
+            source=client,
+            employee=data.get("employee"),
+            invoice_obj=invoice,
+            invoice_no=invoice.invoice_no,
+            payment=data.get("payment", ""),  # Default to empty if not provided
+        )
+
+        # Serialize and return the created object
+        serializer = self.get_serializer(return_permission_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 @extend_schema_view(
     list=extend_schema(
         summary="List return permission items",
@@ -2007,6 +2056,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         if returned_quantity > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
             return Response({"error": "Returned quantity greater than available"}, status=status.HTTP_400_BAD_REQUEST)
 
+
         try:
             with transaction.atomic():  # Start transaction
 
@@ -2016,7 +2066,7 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
                     company_no=invoice_item.company_no,
                     company=invoice_item.company,
                     item_name=invoice_item.name,
-                    org_quantity=invoice.quantity,
+                    org_quantity=invoice_item.quantity,
                     returned_quantity=returned_quantity or invoice.quantity,
                     price=invoice_item.dinar_unit_price,
                     invoice_obj=invoice,
@@ -2103,6 +2153,191 @@ class ReturnPermissionItemsViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(returned_item_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List buy return permission items",
+        description="Retrieve all buy return permission item records.",
+        tags=["Buy Return Permission Items"],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve buy return permission item",
+        description="Retrieve a specific buy return permission item by ID.",
+        tags=["Buy Return Permission Items"],
+    ),
+    create=extend_schema(
+        summary="Create buy return permission item",
+        description="""
+Create a returned item under a buy return permission. This endpoint handles:
+
+- Validating the invoice and the related product line (`autoid`)
+- Ensuring the returned quantity does not exceed the available stock
+- Saving the returned item record
+- Updating the related permission's total and quantity
+- Adjusting the `BuyInvoiceItemsTable` current quantity
+- Updating stock value in `Mainitem`
+- Logging product movement in `ProductsMovementHistory`
+
+### Required Fields:
+- `invoice_no`: Buy invoice number from which the return is made
+- `permission`: ID of the buy return permission header
+- `autoid`: The item ID in `BuyInvoiceItemsTable`
+- `returned_quantity`: The quantity of the item being returned
+        """,
+        tags=["Buy Return Permission Items"],
+        request=serializers.buy_ReturnPermissionItemsSerializer,
+        responses={201: serializers.buy_ReturnPermissionItemsSerializer},
+    ),
+    update=extend_schema(
+        summary="Update a buy return permission item",
+        tags=["Buy Return Permission Items"],
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a buy return permission item",
+        tags=["Buy Return Permission Items"],
+    ),
+    destroy=extend_schema(
+        summary="Delete a buy return permission item",
+        tags=["Buy Return Permission Items"],
+    ),
+)
+
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
+@authentication_classes([CookieAuthentication])
+class BuyReturnPermissionItemsViewSet(viewsets.ModelViewSet):
+    queryset = models.buy_return_permission_items.objects.all()
+    serializer_class = serializers.buy_ReturnPermissionItemsSerializer
+    lookup_field = 'autoid'
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        invoice_id = data.get("invoice_no")
+        pno = data.get("pno")
+        item_autoid = data.get("autoid")
+        permission_id = data.get("permission")
+        return_reason = data.get("return_reason", "")
+        returned_quantity = int(data.get("returned_quantity", 0))
+
+        # Check required relationships
+        try:
+            invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_id)
+        except models.Buyinvoicetable.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            invoice_item = models.BuyInvoiceItemsTable.objects.get(autoid=item_autoid)
+        except models.BuyInvoiceItemsTable.DoesNotExist:
+            return Response({"error": "Invoice item not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            permission_obj = models.buy_return_permission.objects.get(autoid=permission_id)
+        except models.buy_return_permission.DoesNotExist:
+            return Response({"error": "Permission not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if returned_quantity > (invoice_item.current_quantity_after_return if invoice_item.current_quantity_after_return is not None else invoice_item.quantity):
+            return Response({"error": "Returned quantity greater than available"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        try:
+            with transaction.atomic():  # Start transaction
+
+                # Create return permission item
+                returned_item_instance = models.buy_return_permission_items.objects.create(
+                    pno=invoice_item.pno,
+                    company_no=invoice_item.company_no,
+                    company=invoice_item.company,
+                    item_name=invoice_item.name,
+                    org_quantity=invoice_item.quantity,
+                    returned_quantity=returned_quantity or invoice.quantity,
+                    price=invoice_item.dinar_unit_price,
+                    invoice_obj=invoice,
+                    invoice_no=invoice.invoice_no,
+                    permission_obj=permission_obj,
+                    return_reason=return_reason,
+                )
+
+                # Update return permission totals
+                permission_obj.amount += returned_item_instance.total
+                permission_obj.quantity += returned_quantity
+                permission_obj.save()
+
+                # Update invoice item quantities
+                if invoice_item.current_quantity_after_return:
+                    invoice_item.current_quantity_after_return -= returned_quantity
+                else:
+                    invoice_item.current_quantity_after_return = invoice_item.quantity - returned_quantity
+                invoice_item.save()
+
+                # Update Mainitem stock
+                try:
+                    mainitem = models.Mainitem.objects.get(pno=pno or invoice_item.pno)
+                    mainitem.itemvalue += returned_quantity
+                    mainitem.save()
+                except models.Mainitem.DoesNotExist:
+                    raise ValueError("Product not found in products")
+                except models.Mainitem.MultipleObjectsReturned:
+                    raise ValueError("Multiple products found for same PNO")
+
+                # Add to TransactionsHistoryTable
+                last_balance = models.TransactionsHistoryTable.objects.filter(client_object=invoice.client_obj).order_by("-registration_date").first()
+                last_balance_amount = last_balance.current_balance if last_balance else 0
+
+                models.TransactionsHistoryTableForSuppliers.objects.create(
+                    credit=0.0,
+                    debt=Decimal(returned_item_instance.total),
+                    transaction=f"ترجيع بضائع المورد - ر.خ : {invoice_item.pno}",
+                    details=f"ترجيع بضائع - فاتورة شراء رقم {invoice_item.invoice_no}",
+                    registration_date=timezone.now(),
+                    current_balance=round(last_balance_amount + Decimal(returned_item_instance.total), 2),
+                    source_object_id=invoice.source_obj.pk
+                )
+                client_object = models.AllSourcesTable.objects.get(clientid=invoice.source_obj)
+                # Storage transaction if payment is cash
+                if permission_obj.payment == "نقدي":
+                    models.StorageTransactionsTable.objects.create(
+                        reciept_no=f"ف.ش : {invoice_item.invoice_no}",
+                        transaction_date=timezone.now(),
+                        amount=Decimal(returned_item_instance.total),
+                        issued_for="اذن ترجيع",
+                        note=f" ترجيع بضائع المورد - ر.خ : {invoice_item.pno}",
+                        account_type="مورد",
+                        transaction=f" ترجيع بضائع - ر.خ : {invoice_item.pno}",
+                        place="حزمة",
+                        section="ترجيع",
+                        subsection="ترجيع",
+                        person=client_object.name or "",
+                        payment="نقدا",
+                        daily_status=False,
+                    )
+
+                # Add to product movement history
+                models.ProductsMovementHistory.objects.create(
+                    itemno=mainitem.itemno,
+                    itemname=mainitem.itemname,
+                    maintype=mainitem.itemmain,
+                    currentbalance=mainitem.itemvalue,
+                    date=timezone.now(),
+                    clientname=client_object.name or "",
+                    description="ترجيع صنف من فاتورة بيع",
+                    clientbalance=returned_quantity,
+                    pno_instance=mainitem,
+                    pno=mainitem.pno,
+                )
+
+        except ValueError as ve:
+            return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except AllClientsTable.DoesNotExist:
+            return Response({"error": "Client not found in client table"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "Unexpected error", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(returned_item_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
 @extend_schema(
 description="""get a sell invoice returned items by invoice no.""",
 tags=["Return Permission"],
@@ -2111,9 +2346,16 @@ tags=["Return Permission"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_invoice_returned_items(request,id):
-    returned_items = models.return_permission_items.objects.filter(invoice_no=id)
-    invoice = SellinvoiceTable.objects.get(invoice_no=id)
-    serializer = serializers.ReturnPermissionItemsSerializer(returned_items,many=True)
+    is_buy = request.GET.get("buy_return")
+    if is_buy:
+        returned_items = models.buy_return_permission_items.objects.filter(invoice_no=id)
+        invoice = models.Buyinvoicetable.objects.get(invoice_no=id)
+        serializer = serializers.buy_ReturnPermissionItemsSerializer(returned_items,many=True)
+    else:
+        returned_items = models.return_permission_items.objects.filter(invoice_no=id)
+        invoice = models.SellinvoiceTable.objects.get(invoice_no=id)
+        serializer = serializers.ReturnPermissionItemsSerializer(returned_items,many=True)
+
     return Response({
         'data':serializer.data,
         'invoice_total':invoice.amount,
@@ -2125,17 +2367,21 @@ def get_invoice_returned_items(request,id):
 description="""filter return permissions.""",
 tags=["Return Permission"],
 )
-@api_view(["GET"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def filter_return_reqs(request):
     try:
         filters = request.data  # DRF automatically parses the JSON body
         query_filter = Q()  # Initialize an empty Q object for combining filters
+        is_buy = request.GET.get("buy_return")  # Returns "external"
 
         # Apply client-name filter if provided
-        if 'client' in filters:
+        if 'client' in filters and not is_buy:
             query_filter &= Q(client__clientid__icontains=filters['client'])
+
+        if 'client' in filters and is_buy:
+            query_filter &= Q(source__clientid__icontains=filters['client'])
 
         # Apply payment filter if provided
         if 'payment' in filters:
@@ -2154,8 +2400,12 @@ def filter_return_reqs(request):
                 return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Query the model with the combined filters
-        queryset = models.return_permission.objects.filter(query_filter)
-        serializer = serializers.ReturnPermissionSerializer(queryset,many=True)
+        if is_buy:
+            queryset = models.buy_return_permission.objects.filter(query_filter)
+            serializer = serializers.buy_ReturnPermissionSerializer(queryset,many=True)
+        else:
+            queryset = models.return_permission.objects.filter(query_filter)
+            serializer = serializers.ReturnPermissionSerializer(queryset,many=True)
 
         # If no matching records, return an empty list
         if not queryset.exists():
@@ -2458,8 +2708,8 @@ class SourcesViewSet(viewsets.ModelViewSet):
             # Calculate balance for each source object
             for idx, source_obj in enumerate(page):
                 try:
-                    client = AllClientsTable.objects.get(clientid=source_obj.client_id)
-                    balance = calculate_balance_for_instance(client)
+                    #client = models.AllSourcesTable.objects.get(name=name)
+                    balance = calculate_balance_for_instance(source_obj)
                 except AllClientsTable.DoesNotExist:
                     balance = None
                 data[idx]['balance'] = str(balance) if balance is not None else 0
@@ -2477,8 +2727,8 @@ class SourcesViewSet(viewsets.ModelViewSet):
         data = serializer.data
         for idx, source_obj in enumerate(queryset):
             try:
-                client = AllClientsTable.objects.get(clientid=source_obj.client_id)
-                balance = calculate_balance_for_instance(client)
+                #client = models.AllSourcesTable.objects.get(name=name)
+                balance = calculate_balance_for_instance(source_obj)
             except AllClientsTable.DoesNotExist:
                 balance = None
             data[idx]['balance'] = str(balance) if balance is not None else None
@@ -2908,7 +3158,7 @@ def mobile_sign_out(request):
     We:
     - read the username (and/or user_id) from the session or request data,
     - set is_online=False,
-    - call Django’s logout(), 
+    - call Django’s logout(),
     - clear any cookies if desired.
     """
     try:
@@ -3123,6 +3373,11 @@ from django.db.models import Sum
 from django.utils.timezone import make_aware
 from datetime import datetime
 
+from decimal import Decimal
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Sum
+from . import models  # Make sure models are correctly imported
+
 def calculate_balance_for_instance(instance):
     """
     Calculates the balance for any instance (employee, customer, vendor, etc.)
@@ -3131,20 +3386,33 @@ def calculate_balance_for_instance(instance):
     if not instance or not hasattr(instance, 'pk'):
         raise ValueError("A valid model instance is required.")
 
-    content_type = ContentType.objects.get_for_model(instance.__class__)
+    model_class_name = instance.__class__.__name__
 
-    balance_data = models.TransactionsHistoryTable.objects.filter(
-        client_object=instance
-    ).aggregate(
-        total_debt=Sum('debt'),
-        total_credit=Sum('credit')
-    )
+    if model_class_name == "AllClientsTable":
+        balance_data = models.TransactionsHistoryTable.objects.filter(
+            client_object=instance
+        ).aggregate(
+            total_debt=Sum('debt'),
+            total_credit=Sum('credit')
+        )
+
+    elif model_class_name == "AllSourcesTable":
+        balance_data = models.TransactionsHistoryTableForSuppliers.objects.filter(
+            source_object=instance
+        ).aggregate(
+            total_debt=Sum('debt'),
+            total_credit=Sum('credit')
+        )
+
+    else:
+        raise ValueError(f"Balance calculation for model '{model_class_name}' is not supported.")
 
     total_debt = balance_data.get('total_debt') or 0
     total_credit = balance_data.get('total_credit') or 0
     balance = round(total_credit - total_debt, 2)
 
     return Decimal(balance)
+
 
 def update_employee_balance(employee, amount, operation, description=None):
     if not operation or operation not in ["credit", "debit"]:
@@ -3838,3 +4106,358 @@ def upload_contract_image(request, employee_id):
         serializer.save()
         return Response({"message": "Contract image uploaded successfully"}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@permission_classes([IsAuthenticated,DjangoModelPermissions])
+@authentication_classes([CookieAuthentication])
+class TransactionsHistoryTableForSuppliersViewSet(viewsets.ModelViewSet):
+    queryset = models.TransactionsHistoryTableForSuppliers.objects.all()
+    serializer_class = serializers.TransactionsHistoryTableSerializerForSuppliers
+
+def create_transactions_history_record(client_or_source, obj, type, amount, transaction, details):
+    # Validate inputs
+    if type not in ["credit", "debit"]:
+        return Response({"error": "Type must be either 'credit' or 'debit'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if client_or_source not in ["client", "source"]:
+        return Response({"error": "client_or_source must be either 'client' or 'source'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not isinstance(amount, (int, float, Decimal)):
+        return Response({"error": "Amount must be a number."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not obj or not hasattr(obj, 'pk'):
+        return Response({"error": f"A valid model instance is required. object {obj} is not valid"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        amount = Decimal(amount)
+        last_balance_amount = calculate_balance_for_instance(obj)
+
+        if type == "credit":
+            new_balance = round(last_balance_amount + amount, 2)
+            credit = amount
+            debt = Decimal(0)
+        else:  # "debit"
+            new_balance = round(last_balance_amount - amount, 2)
+            credit = Decimal(0)
+            debt = amount
+
+        if client_or_source == "client":
+            models.TransactionsHistoryTable.objects.create(
+                credit=credit,
+                debt=debt,
+                transaction=transaction,
+                details=details,
+                registration_date=timezone.now(),
+                current_balance=new_balance,
+                client_object=obj
+            )
+        elif client_or_source == "source":
+            models.TransactionsHistoryTableForSuppliers.objects.create(
+                credit=credit,
+                debt=debt,
+                transaction=transaction,
+                details=details,
+                registration_date=timezone.now(),
+                current_balance=new_balance,
+                source_object=obj
+            )
+        else:
+            return Response({"error": "Invalid client_or_source type. Must be 'client' or 'source'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return True
+
+    except Exception as e:
+        return Response({"error": f"Error in transaction saving: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def post_to_print_server(payload, request):
+    """Handles posting the payload to the external print server."""
+    try:
+        csrf_token = get_token(request)
+        response = requests.post(
+            "http://45.13.59.226/print/dynamic-paper",
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrf_token,
+            },
+            cookies=request.COOKIES
+        )
+        return HttpResponse(response.text, status=response.status_code, content_type="text/html")
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+def filter_fields(data, field_map, date_fields=None):
+    """Maps serializer data keys to printable Arabic keys and formats date fields."""
+    result = []
+    for item in data:
+        if date_fields:
+            for df in date_fields:
+                try:
+                    item[df] = datetime.fromisoformat(item[df]).strftime("%Y-%m-%d %H:%M")
+                except Exception:
+                    pass
+        filtered = {
+            field_map[k]: (float(item[k]) if isinstance(item[k], Decimal) else item[k])
+            for k in field_map if k in item
+        }
+        result.append(filtered)
+    return result
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # Replace with your CookieAuthentication
+def print_api(request):
+    label = request.data.get("label")
+    by_employee = request.session.get("name", "Unknown User") if request.user.is_authenticated else "Unknown User"
+    today = timezone.now().date()
+
+    if label == "today_sell_invoice":
+        invoices = models.SellinvoiceTable.objects.filter(date_time__date=today)
+        serializer = sell_invoice_serializers.SellInvoiceSerializer(invoices, many=True)
+
+        PRINTABLE_FIELDS = {
+            "invoice_no": "رقم الفاتورة",
+            "date_time": "تاريخ الفاتورة",
+            "client_name": "اسم الزبون",
+            "amount": "المبلغ",
+            "discount": "الخصم",
+            "net_amount": "الصافي",
+        }
+
+        filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS, date_fields=["date_time"])
+        total = sum(inv.amount for inv in invoices) or 0
+
+        payload = {
+            "report_title": "فواتير بيع - اليوم",
+            "by_employee": by_employee,
+            "company_name": "شركة مارين لاستيراد قطع غيار السيارات و زيوتها",
+            "document_number": "#",
+            "text_statement": "",
+            "report_sections": [{
+                "title": "فواتير بيع - اليوم",
+                "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                "rows": [list(d.values()) for d in filtered_data],
+                "totals": [{"total": float(total), "total_label": "إجمالي"}],
+            }],
+        }
+        return post_to_print_server(payload, request)
+
+    elif label == "specific_sell_invoice":
+        invoice_no = request.data.get("invoice_no")
+        if not invoice_no:
+            return Response({"error": "invoice_no is required"}, status=400)
+
+        try:
+            invoice = models.SellinvoiceTable.objects.get(invoice_no=invoice_no)
+            items = models.SellInvoiceItemsTable.objects.filter(invoice_instance=invoice)
+            serializer = sell_invoice_serializers.SellInvoiceItemsSerializer(items, many=True)
+
+            PRINTABLE_FIELDS = {
+                "pno": "ر. خ",
+                "name": "اسم الصنف",
+                "dinar_unit_price": "سعر القطعة",
+                "quantity": "الكمية",
+                "dinar_total_price": "الاجمالي",
+            }
+
+            filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS)
+            total = sum(item.dinar_total_price or 0 for item in items)
+
+            payload = {
+                "report_title": f"فاتورة بيع - {invoice_no}",
+                "by_employee": by_employee,
+                "company_name": "شركة مارين لاستيراد قطع غيار السيارات و زيوتها",
+                "document_number": str(invoice_no),
+                "text_statement": f"""
+                العميل: {invoice.client_name or "غير محدد"}،
+                التاريخ: {invoice.date_time.strftime('%d/%m/%Y') if invoice.date_time else "غير متوفر"}،
+                الحالة: {invoice.invoice_status or "غير محددة"}،
+                الملاحظات: {invoice.notes or "لا توجد ملاحظات"}.
+                """,
+                "report_sections": [{
+                    "title": f"فاتورة بيع - {invoice_no}",
+                    "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                    "rows": [list(d.values()) for d in filtered_data],
+                    "totals": [{"total": float(total), "total_label": "إجمالي"}],
+                }],
+            }
+            return post_to_print_server(payload, request)
+        except models.SellinvoiceTable.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=404)
+
+    elif label == "today_buy_invoice":
+        invoices = models.Buyinvoicetable.objects.filter(invoice_date__date=today)
+        serializer = serializers.BuyInvoiceSerializer(invoices, many=True)
+
+        PRINTABLE_FIELDS = {
+            "invoice_no": "رقم الفاتورة",
+            "invoice_date": "تاريخ الفاتورة",
+            "source": "المصدر",
+            "amount": "المبلغ",
+            "discount": "الخصم",
+            "expenses": "المصاريف",
+            "net_amount": "الصافي",
+            "paid_amount": "المدفوع",
+            "currency": "العملة",
+        }
+
+        filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS, date_fields=["invoice_date"])
+        total = sum(inv.amount or 0 for inv in invoices)
+
+        payload = {
+            "report_title": "فواتير بيع - اليوم",
+            "by_employee": by_employee,
+            "company_name": "شركة مارين لاستيراد قطع غيار السيارات و زيوتها",
+            "document_number": "#",
+            "text_statement": f"عدد الفواتير: {len(filtered_data)}",
+            "report_sections": [{
+                "title": "فواتير بيع - اليوم",
+                "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                "rows": [list(d.values()) for d in filtered_data],
+                "totals": [{"total": float(total), "total_label": "إجمالي"}],
+            }],
+        }
+        return post_to_print_server(payload, request)
+
+    elif label == "specific_buy_invoice":
+        invoice_no = request.data.get("invoice_no")
+        if not invoice_no:
+            return Response({"error": "invoice_no is required"}, status=400)
+
+        try:
+            invoice = models.Buyinvoicetable.objects.get(invoice_no=invoice_no)
+            items = models.BuyInvoiceItemsTable.objects.filter(invoice_no=invoice)
+            serializer = serializers.BuyInvoiceItemsTableSerializer(items, many=True)
+
+            PRINTABLE_FIELDS = {
+                "pno": "ر. خ",
+                "name": "اسم الصنف",
+                "dinar_unit_price": "سعر القطعة",
+                "quantity": "الكمية",
+                "dinar_total_price": "الاجمالي",
+            }
+
+            filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS)
+            total = sum(item.dinar_total_price or 0 for item in items)
+
+            payload = {
+                "report_title": f"فاتورة بيع - {invoice_no}",
+                "by_employee": by_employee,
+                "company_name": "شركة مارين لاستيراد قطع غيار السيارات و زيوتها",
+                "document_number": str(invoice_no),
+                "text_statement": f"""
+                المصدر: {invoice.source or "غير معروف"},
+                التاريخ: {invoice.invoice_date.strftime('%d/%m/%Y') if invoice.invoice_date else "غير متوفر"},
+                العملة: {invoice.currency or "غير محددة"}.
+                """,
+                "report_sections": [{
+                    "title": f"محتويات فاتورة بيع - {invoice_no}",
+                    "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                    "rows": [list(d.values()) for d in filtered_data],
+                    "totals": [{"total": float(total), "total_label": "الإجمالي"}],
+                }],
+            }
+            return post_to_print_server(payload, request)
+
+
+        except models.Buyinvoicetable.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=404)
+
+    elif label == "specific_return_permission":
+        invoice_no = request.data.get("invoice_no")
+        if not invoice_no:
+            return Response({"error": "invoice_no is required"}, status=400)
+
+        try:
+            invoice = models.return_permission.objects.get(autoid=invoice_no)
+            items = models.return_permission_items.objects.filter(permission_obj=invoice)
+            serializer = serializers.ReturnPermissionItemsSerializer(items, many=True)
+
+            PRINTABLE_FIELDS = {
+                "pno": "ر. خ",
+                "item_name": "اسم الصنف",
+                "dinar_unit_price": "سعر القطعة",
+                "org_quantity": "الكمية الاصلية",
+                "returned_quantity": "الكميةالمرجعة",
+                "price": "سعر القطعة",
+                "total": "الاجمالي",
+                "return_reason":"السبب",
+                "invoice_no":"فاتورة البيع",
+            }
+
+            filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS)
+            total = sum(item.total or 0 for item in items)
+
+            payload = {
+                "report_title": f"فاتورة ترجيع - {invoice_no}",
+                "by_employee": by_employee,
+                "company_name": "شركة مارين لاستيراد قطع غيار السيارات و زيوتها",
+                "document_number": str(invoice_no),
+                "text_statement": f"""
+                فاتورة البيع: {invoice.invoice_no or "غير معروف"},
+                التاريخ: {invoice.date.strftime('%d/%m/%Y') if invoice.date else "غير متوفر"},
+                """,
+                "report_sections": [{
+                    "title": f"محتويات فاتورة ترجيع - {invoice_no}",
+                    "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                    "rows": [list(d.values()) for d in filtered_data],
+                    "totals": [{"total": float(total), "total_label": "الإجمالي"}],
+                }],
+            }
+            return post_to_print_server(payload, request)
+
+
+        except models.return_permission.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=404)
+
+    elif label == "today_return_permission":
+        invoices = models.return_permission.objects.filter(date=today)
+        serializer = serializers.ReturnPermissionSerializer(invoices, many=True)
+
+        buy_invoices = models.buy_return_permission.objects.filter(date=today)
+        buy_serializer = serializers.buy_ReturnPermissionSerializer(buy_invoices, many=True)
+
+
+        PRINTABLE_FIELDS = {
+            "autoid": "رقم الترجيع",
+            "invoice_no": "رقم الفاتورة",
+            "date": "تاريخ الفاتورة",
+            "quantity": "الكمية",
+            "amount": "الاجمالي",
+            "payment": "الدفع",
+        }
+
+        filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS, date_fields=["date_time"])
+        buy_filtered_data = filter_fields(buy_serializer.data, PRINTABLE_FIELDS, date_fields=["date_time"])
+        total = sum(inv.amount or 0 for inv in invoices)
+        buy_total = sum(inv.amount or 0 for inv in buy_invoices)
+
+        payload = {
+            "report_title": "فواتير ترجيع - اليوم",
+            "by_employee": by_employee,
+            "company_name": "شركة مارين لاستيراد قطع غيار السيارات و زيوتها",
+            "document_number": "#",
+            "text_statement": f"عدد الفواتير: {len(filtered_data)+len(buy_filtered_data)}",
+            "report_sections": [
+                {
+                    "title": "فواتير ترجيع بيع - اليوم",
+                    "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                    "rows": [list(d.values()) for d in filtered_data],
+                    "totals": [{"total": float(total), "total_label": "إجمالي"}],
+                },
+                {
+                    "title": "فواتير ترجيع شراء - اليوم",
+                    "headers": list(buy_filtered_data[0].keys()) if buy_filtered_data else [],
+                    "rows": [list(d.values()) for d in buy_filtered_data],
+                    "totals": [{"total": float(buy_total), "total_label": "إجمالي"}],
+                }
+            ],
+        }
+        return post_to_print_server(payload, request)
+
+    return Response({"error": "Invalid label"}, status=400)
+
+

@@ -176,6 +176,11 @@ body {
   background-color: #fff;
   box-shadow: none;
 }
+.btn-clicked {
+  transform: scale(0.95);
+  opacity: 0.8;
+  transition: all 0.1s ease;
+}
 
 .filter-card .btn {
   background-color: #ffffff;

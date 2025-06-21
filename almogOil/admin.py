@@ -53,9 +53,9 @@ app_models = apps.get_app_config('almogOil').get_models()
 
 # List of models to exclude (Django built-in auth models)
 excluded_models = {
-    'AuthGroup', 'AuthGroupPermissions', 'AuthPermission', 'AuthUser',
+    'AuthGroup', 'AuthGroupPermissions',  
     'AuthUserGroups', 'AuthUserUserPermissions', 'DjangoAdminLog',
-    'DjangoContentType', 'DjangoMigrations', 'DjangoSession'
+     'DjangoMigrations', 'DjangoSession'
 }
 
 # Register each model dynamically, except Django's built-in ones

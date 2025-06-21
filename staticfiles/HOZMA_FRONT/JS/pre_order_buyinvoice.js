@@ -248,7 +248,7 @@ customFetch(`fetch-buyinvoices?page=${page}&size=${size}`, {
    updatePagination(data.last_page, data.page_no);
    console.timeEnd("PaginationTime");
 
-   document.getElementById("dinar-total").value = data.total_amount + " دل ";
+   document.getElementById("dinar-total").value = Number(data.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) + " د.ل";
    updateCalc();
 
 
@@ -546,8 +546,11 @@ if (target.classList.contains("page-link") &&
      });
    }
    function updateCalc(){
-     const total_dinar = document.getElementById("dinar-total").value;
-     const dinar_paid = parseFloat(document.getElementById("dinar-paid").value); // Assuming dinar_paid is another input field
+    const total_dinar_str = document.getElementById("dinar-total").value;
+    const total_dinar = parseFloat(total_dinar_str.replace(/[٬, د.ل\s]/g, '')); // Remove commas, Arabic letters, and spaces
+    
+    const dinar_paid = parseFloat(document.getElementById("dinar-paid").value);
+     // Assuming dinar_paid is another input field
      const number = total_dinar.replace(/[^\d.]/g, '');
      const total_amount = parseFloat(number);
 
@@ -561,5 +564,5 @@ if (target.classList.contains("page-link") &&
      }).format(net_amount);
 
      // Set the formatted value with "دل"
-     document.getElementById("dinar-net").value = formatted_net_amount + " دل";
-   }
+     document.getElementById("dinar-net").value = Number(formatted_net_amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) + " د.ل";
+    }

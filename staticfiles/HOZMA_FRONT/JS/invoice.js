@@ -1,4 +1,4 @@
-const clientId = JSON.parse(localStorage.getItem("session_data@user_id"));
+const clientId = JSON.parse(localStorage.getItem("session_data@client_id"));
 /* =============== helpers =============== */
 const PLACEHOLDER_IMG = "{% static 'images/parts/default-part.jpg' %}";
 
@@ -7,7 +7,10 @@ const getInvoiceNoFromUrl = () => {
   return window.location.pathname.split('/').find(seg => /^\d+$/.test(seg)) || null;
 };
 
-
+const formatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 /* =============== main =============== */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -86,9 +89,9 @@ async function fillInvoice(data) {
             </div>
           </div>
         </td>
-        <td>${unit.toFixed(2)} د.ل</td>
+        <td>${formatter.format(unit)} د.ل</td>
         ${quantityHtml}
-        <td>${total.toFixed(2)} د.ل</td>
+        <td>${formatter.format(total)} د.ل</td>
       </tr>
     `);
   }
@@ -102,19 +105,19 @@ async function fillInvoice(data) {
   tbody.insertAdjacentHTML('beforeend', `
     <tr class="summary-row">
       <td colspan="3" class="text-end">المجموع الجزئي:</td>
-      <td>${parseFloat(subtotals).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(subtotals))} د.ل</td>
     </tr>
     <tr class="summary-row">
       <td colspan="3" class="text-end">رسوم الشحن:</td>
-      <td>${parseFloat(shipping).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(shipping))} د.ل</td>
     </tr>
     <tr class="summary-row">
       <td colspan="3" class="text-end">الخصم:</td>
-      <td>${parseFloat(discount).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(discount))} د.ل</td>
     </tr>
     <tr class="summary-row summary-row-total">
       <td colspan="3" class="text-end">المجموع الكلي:</td>
-      <td>${parseFloat(total).toFixed(2)} د.ل</td>
+      <td>${formatter.format(parseFloat(total))} د.ل</td>
     </tr>
   `);
 
@@ -169,7 +172,7 @@ async function fillInvoice(data) {
 
 async function getProductImageURL(pno, placeholder, baseURL) {
   try {
-    const response = await fetch(`/api/products/${pno}/get-images`);
+    const response = await fetch(`/hozma/api/products/${pno}/get-images`);
     const images = await response.json();
     if (images.length > 0 && images[0].image_obj) {
       return `${baseURL}${images[0].image_obj}`;

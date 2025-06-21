@@ -580,7 +580,7 @@ def OemNumbers(req):
         company_name = req.session.get('oem_company_name')
         company_no = req.session.get('oem_company_no')
         fileid = req.session.get('oem_file_id')
-        oemstring = models.Mainitem.objects.get(fileid=fileid, replaceno=company_no).oem_numbers
+        oemstring = models.Mainitem.objects.get(fileid=fileid).oem_numbers
         oem_numbers = oemstring.split(';') if oemstring else []
 
         context = {
@@ -644,148 +644,152 @@ def OemNumbers(req):
 
         return redirect('/oem/')
 
+def get_next_mainitem_pno():
+    try:
+        # Get the object with the highest pno
+        last_item = models.Mainitem.objects.order_by('-pno').first()
 
+        if last_item and isinstance(last_item.pno, int):
+            return last_item.pno + 1
+        else:
+            return 1  # Start from 1 if no items exist or pno is not valid
+    except Exception as e:
+        # Optional: log or handle error appropriately
+        return 1  # Default fallback
+
+def generate_pno_sequence(start=1):
+    """
+    Generator to yield incrementing pno values starting from `start`.
+    """
+    current = start
+    while True:
+        yield current
+        current += 1
 
 logger = logging.getLogger(__name__)
+
+from decimal import Decimal, InvalidOperation
 
 @csrf_exempt
 def process_excel_and_import(request):
     if request.method == "POST":
-        # Debug: Log the start of the POST request
         logger.debug("Received POST request at /import-tabulator-data/")
 
-        # Handle file upload
-        if request.FILES.get("fileInput"):
-            excel_file = request.FILES["fileInput"]
-            try:
-                logger.debug(f"Processing file: {excel_file.name}")
-                # Read the Excel file into a DataFrame
-                data = pd.read_excel(excel_file, engine='openpyxl')
-
-                logger.debug(f"Excel data read: {data.head()}")  # Log the first few rows of the data
-
-                # Process the Excel data and insert into database
-                records = []
-                for index, row in data.iterrows():
-                    try:
-                        logger.debug(f"Processing row {index}: {row.to_dict()}")
-                        records.append(models.Mainitem(
-                            itemno=row.get("ItemNo", None),
-                            itemmain=row.get("ItemMain", None),
-                            itemsubmain=row.get("ItemSubMain", None),
-                            itemname=row.get("ItemName", "failed"),
-                            itemthird=row.get("ItemThird", None),
-                            itemsize=row.get("ItemSize", None),
-                            companyproduct=row.get("CompanyProduct", None),
-                            dateproduct=row.get("DateProduct", None),
-                            levelproduct=row.get("LevelProduct", None),
-                            itemvalue=row.get("ItemValue", None),
-                            itemtemp=row.get("ItemTemp", None),
-                            itemplace=row.get("ItemPlace", None),
-                            orderlastdate=row.get("OrderLastDate", None),
-                            ordersource=row.get("OrderSource", None),
-                            orderbillno=row.get("OrderBillNo", None),
-                            buylastdate=row.get("BuyLastDate", None),
-                            buysource=row.get("BuySource", None),
-                            buybillno=row.get("BuyBillNo", None),
-                            orgprice=row.get("OrgPrice", None),
-                            orderprice=row.get("OrderPrice", None),
-                            costprice=row.get("CostPrice", None),
-                            buyprice=row.get("BuyPrice", None),
-                            memo=row.get("Memo", None),
-                            orderstop=row.get("OrderStop", None),
-                            buystop=row.get("BuyStop", None),
-                            itemtrans=row.get("ItemTrans", None),
-                            itemvalueb=row.get("ItemValueB", None),
-                            replaceno=row.get("ReplaceNo", None),
-                            itemtype=row.get("ItemType", None),
-                            barcodeno=row.get("BarcodeNo", None),
-                            eitemname=row.get("EItemName", None),
-                            currtype=row.get("CurrType", None),
-                            lessprice=row.get("LessPrice", None),
-                            pno=row.get("PNo", None),
-                            currvalue=row.get("CurrValue", None),
-                            resvalue=row.get("resValue", None),
-                            itemperbox=row.get("ItemPerBox", None),
-                            cstate=row.get("CSTate", None),
-                        ))
-                    except Exception as row_error:
-                        logger.error(f"Error processing row {index}: {row_error}")
-                        continue
-
-                # Bulk create records in the database
-                models.Mainitem.objects.bulk_create(records)
-                logger.debug(f"Successfully inserted {len(records)} records into the database.")
-
-                return JsonResponse({"status": "success", "message": "Excel data imported successfully."},status=200)
-
-            except Exception as e:
-                logger.error(f"Error processing file: {e}")
-                return JsonResponse({"status": "error", "message": f"Error: {str(e)}"})
-
-        # Handle imported data (Tabulator data)
         if request.POST.get("data"):
             data = json.loads(request.POST["data"])
-            #print(f"tabulator data {data}")
             try:
                 logger.debug(f"Received Tabulator data: {data}")
                 records = []
-                for item in data:
+                results = []
+
+                start_pno = get_next_mainitem_pno()
+                pno_gen = generate_pno_sequence(start=start_pno)
+
+                for idx, item in enumerate(data, start=1):
                     try:
-                        records.append(models.Mainitem(
-                        itemno=item.get("ItemNo", None),
-                        itemmain=item.get("ItemMain", None),
-                        itemsubmain=item.get("ItemSubMain", None),
-                        itemname=item.get("ItemName", "failed"),
-                        itemthird=item.get("ItemThird", None),
-                        itemsize=item.get("ItemSize", None),
-                        companyproduct=item.get("CompanyProduct", None),
-                        dateproduct=item.get("DateProduct", None),
-                        levelproduct=item.get("LevelProduct", None),
-                        itemvalue=item.get("ItemValue", 0),
-                        itemtemp=item.get("ItemTemp", 0),
-                        itemplace=item.get("ItemPlace", None),
-                        orderlastdate=item.get("OrderLastDate", None),
-                        ordersource=item.get("OrderSource", None),
-                        orderbillno=item.get("OrderBillNo", None),
-                        buylastdate=item.get("BuyLastDate", None),
-                        buysource=item.get("BuySource", None),
-                        buybillno=item.get("BuyBillNo", None),
-                        orgprice=item.get("OrgPrice", 0),
-                        orderprice=item.get("OrderPrice", 0),
-                        costprice=item.get("CostPrice", 0),
-                        buyprice=item.get("BuyPrice", 0),
-                        memo=item.get("Memo", None),
-                        orderstop=item.get("OrderStop", None),
-                        buystop=item.get("BuyStop", None),
-                        itemtrans=item.get("ItemTrans", None),
-                        itemvalueb=item.get("ItemValueB", 0),
-                        replaceno=item.get("ReplaceNo", None),
-                        itemtype=item.get("ItemType", None),
-                        barcodeno=item.get("BarcodeNo", None),
-                        eitemname=item.get("EItemName", None),
-                        currtype=item.get("CurrType", None),
-                        lessprice=item.get("LessPrice", 0),
-                        pno=item.get("PNo", None),
-                        currvalue=item.get("CurrValue", None),
-                        resvalue=item.get("ResValue", 0),
-                        itemperbox=item.get("ItemPerBox", None),
-                        cstate=item.get("CSTate", None)
-                    ))
+                        # Helper to safely convert to Decimal
+                        def safe_decimal(value, field_name):
+                            if value is None or value == "":
+                                return Decimal('0')
+                            try:
+                                return Decimal(str(value))
+                            except (InvalidOperation, ValueError) as dec_err:
+                                raise ValueError(f"Invalid decimal for field '{field_name}': {value}")
+
+                        next_pno = next(pno_gen)
+
+                        main_item = models.Mainitem(
+                            itemno=item.get("الرقم الاصلي", None),
+                            itemmain=item.get("البيان الرئيسي", None),
+                            itemsubmain=item.get("البيان الفرعي", None),
+                            itemname=item.get("اسم الصنف", "failed"),
+                            itemthird=item.get("الموديل", None),
+                            itemsize=item.get("بلد الصنع", None),
+                            companyproduct=item.get("اسم الشركة", None),
+                            dateproduct=item.get("DateProduct", None),
+                            levelproduct=item.get("LevelProduct", None),
+                            itemvalue=safe_decimal(item.get("الرصيد", 0), "الرصيد"),
+                            itemtemp=safe_decimal(item.get("الرصيد الاحتياطي", 0), "الرصيد الاحتياطي"),
+                            itemplace=item.get("المخزن", None),
+                            orderlastdate=item.get("OrderLastDate", None),
+                            ordersource=item.get("OrderSource", None),
+                            orderbillno=item.get("OrderBillNo", None),
+                            buylastdate=item.get("BuyLastDate", None),
+                            buysource=item.get("BuySource", None),
+                            buybillno=item.get("BuyBillNo", None),
+                            orgprice=safe_decimal(item.get("سعر التوريد", 0), "سعر التوريد"),
+                            orderprice=safe_decimal(item.get("سعر الشراء", 0), "سعر الشراء"),
+                            costprice=safe_decimal(item.get("سعر التكلفة", 0), "سعر التكلفة"),
+                            buyprice=safe_decimal(item.get("سعر البيع", 0), "سعر البيع"),
+                            memo=item.get("ملاحظات", None),
+                            orderstop=item.get("OrderStop", None),
+                            buystop=item.get("BuyStop", None),
+                            itemtrans=item.get("ItemTrans", None),
+                            itemvalueb=safe_decimal(item.get("الرصيد المؤقت", 0), "الرصيد المؤقت"),
+                            replaceno=item.get("رقم الشركة", None),
+                            itemtype=item.get("ItemType", None),
+                            barcodeno=item.get("BarcodeNo", None),
+                            eitemname=item.get("الاسم بالانجليزي", None),
+                            currtype=item.get("CurrType", None),
+                            lessprice=safe_decimal(item.get("اقل سعر للبيع", 0), "اقل سعر للبيع"),
+                            pno=next_pno,
+                            currvalue=item.get("CurrValue", None),
+                            resvalue=safe_decimal(item.get("الرصيد المحجوز", 0), "الرصيد المحجوز"),
+                            itemperbox=item.get("عدد القطع", None),
+                            cstate=item.get("CSTate", None)
+                        )
+
+                        records.append(main_item)
+                        results.append({
+                            "الرقم الخاص": next_pno,
+                            "اسم الصنف": main_item.itemname,
+                            "اسم الشركة": main_item.companyproduct,
+                            "رقم الشركة": main_item.replaceno,
+                            "الرصيد": main_item.itemvalue,
+                            "سعر البيع": main_item.buyprice,
+                            "سعر التوريد": main_item.orgprice,
+                            "سعر التكلفة": main_item.costprice,
+                            "سعر الشراء": main_item.orderprice,
+                            "اقل سعر للبيع": main_item.lessprice,
+                            "حالة الصنف": "تمت اضافة الصنف بنجاح",
+                            "status": "success"
+                        })
 
                     except Exception as item_error:
-                        logger.error(f"Error processing item {item}: {item_error}")
+                        err_msg = f"Error processing item at index {idx} with pno {next_pno if 'next_pno' in locals() else 'N/A'}: {item_error}"
+                        logger.error(err_msg)
+                        results.append({
+                            "pno": next_pno if 'next_pno' in locals() else None,
+                            "itemname": item.get("اسم الصنف", "unknown"),
+                            "status": "error",
+                            "error": str(item_error),
+                            "index": idx
+                        })
                         continue
 
                 models.Mainitem.objects.bulk_create(records)
                 logger.debug(f"Successfully inserted {len(records)} records from Tabulator data.")
-                return JsonResponse({"status": "success", "message": "Tabulator data imported successfully."})
+                return JsonResponse({
+                    "status": "success",
+                    "message": "تم رفع الاصناف بنجاح, يمكنك مراجعة تفاصيل كل صنف من الجدول ...",
+                    "results": results
+                })
 
             except Exception as e:
                 logger.error(f"Error processing imported data: {e}")
-                return JsonResponse({"status": "error", "message": f"Error: {str(e)}"})
+                return JsonResponse({
+                    "status": "error",
+                    "message": f"Error processing data: {str(e)}",
+                    "results": []
+                })
 
-        return JsonResponse({"status": "error", "message": "Invalid request or missing file."})
+        return JsonResponse({
+            "status": "error",
+            "message": "Invalid request or missing data field.",
+            "results": []
+        })
+
+
 
 #until here
 
@@ -1158,8 +1162,12 @@ def ClientsReports(req):
 @login_required
 @permission_required('almogOil.template_price_modifications', raise_exception=True)
 def EditPrices(req):
-    users = []  # Fetch users or relevant data from your new model if needed
-    context = {'users': users}
+    company = models.Companytable.objects.all()
+    mainType = models.Maintypetable.objects.all()
+    context = {
+        'company': company,
+        'mainType': mainType,
+    }
     return render(req, 'edit-prices.html', context)
 
 @login_required
@@ -1180,26 +1188,38 @@ def EmployeesDetailsView(req):
 @login_required
 @permission_required('almogOil.category_storage', raise_exception=True)
 def account_statement(request):
-    client_id = request.GET.get('id')
-    if not client_id:
-        raise Http404("Missing client ID")
+    client_id = request.GET.get('client')
+    supplier_id = request.GET.get('supplier')
+    if not client_id and not supplier_id:
+        raise Http404("Missing client/supplier ID")
 
     client = None
     content_type = None
-
-    try:
-        client = models.AllClientsTable.objects.get(clientid=client_id)
-        content_type = ContentType.objects.get_for_model(models.AllClientsTable)
-    except models.AllClientsTable.DoesNotExist:
+    if client_id:
         try:
-            client = models.EmployeesTable.objects.get(employee_id=client_id)
-            content_type = ContentType.objects.get_for_model(models.EmployeesTable)
-        except models.EmployeesTable.DoesNotExist:
+            client = models.AllClientsTable.objects.get(clientid=client_id)
+            records = models.TransactionsHistoryTable.objects.filter(
+                    client_object_id=client_id
+                )
+        except models.AllClientsTable.DoesNotExist:
+            try:
+                client = models.EmployeesTable.objects.get(employee_id=client_id)
+                content_type = ContentType.objects.get_for_model(models.EmployeesTable)
+                records = models.TransactionsHistoryTable.objects.filter(
+                    client_object_id=client_id
+                )
+            except models.EmployeesTable.DoesNotExist:
+                raise Http404("Client not found")
+    elif supplier_id:
+        try:
+            client = models.AllSourcesTable.objects.get(clientid=supplier_id)
+            records = models.TransactionsHistoryTableForSuppliers.objects.filter(
+                    source_object_id=supplier_id
+                )
+        except models.AllSourcesTable.DoesNotExist:
             raise Http404("Client not found")
 
-    records = models.TransactionsHistoryTable.objects.filter(
-        client_object_id=client_id
-    )
+
 
     context = {
         'records': records,
@@ -2157,18 +2177,38 @@ def notifications_page(request):
 @login_required
 @permission_required('almogOil.template_return_permission_entry', raise_exception=True)
 def return_items_view(request):
-    clients = models.AllClientsTable.objects.all().values('clientid','name')
-    invoices = models.SellinvoiceTable.objects.all().values('invoice_no','client_id','client_name')
+    buy = request.GET.get("buy_return")
+    if buy:
+        clients = models.AllSourcesTable.objects.all().values('clientid','name')
+        invoices = models.Buyinvoicetable.objects.all().values('invoice_no','source_obj_id','source')
+        renamed_invoices = [
+            {
+                'invoice_no': invoice['invoice_no'],
+                'client': invoice['source_obj_id'],
+                'client_name': invoice['source'],
+            }
+            for invoice in invoices
+        ]
+        invoices = renamed_invoices
+    else:
+        clients = models.AllClientsTable.objects.all().values('clientid','name')
+        invoices = models.SellinvoiceTable.objects.all().values('invoice_no','client_id','client_name')
     context = {
         'clients':clients,
         'invoices':invoices,
     }
     return render(request, 'return-permission-add.html',context)
 
+
 @login_required
 @permission_required('almogOil.template_return_reports', raise_exception=True)
 def return_items_report_view(request):
-    clients = models.AllClientsTable.objects.all().values('clientid','name')
+    buy = request.GET.get("buy_return")
+    if buy:
+        clients = models.AllSourcesTable.objects.all().values('clientid','name')
+    else:
+        clients = models.AllClientsTable.objects.all().values('clientid','name')
+
     context = {
         'clients':clients,
     }
@@ -2190,12 +2230,21 @@ def engines_view(request):
 @login_required
 @permission_required('almogOil.template_return_permission_entry', raise_exception=True)
 def return_items_add_items(request, id, permission):
-    try:
-        invoice_items = models.SellInvoiceItemsTable.objects.filter(invoice_no=id)
-        serializer = sell_invoice_serializers.SellInvoiceItemsSerializer(invoice_items, many=True)
-        invoice_items_data = json.dumps(serializer.data) # Store serialized data
-    except models.SellInvoiceItemsTable.DoesNotExist:
-        invoice_items_data = {}  # Return an empty list if no records are found
+    is_buy_return = request.GET.get("buy_return")
+    if is_buy_return:
+        try:
+            invoice_items = models.BuyInvoiceItemsTable.objects.filter(invoice_no=id)
+            serializer = serializers.BuyInvoiceItemsTableSerializer(invoice_items, many=True)
+            invoice_items_data = json.dumps(serializer.data) # Store serialized data
+        except models.BuyInvoiceItemsTable.DoesNotExist:
+            invoice_items_data = {}  # Return an empty list if no records are found
+    else:
+        try:
+            invoice_items = models.SellInvoiceItemsTable.objects.filter(invoice_no=id)
+            serializer = sell_invoice_serializers.SellInvoiceItemsSerializer(invoice_items, many=True)
+            invoice_items_data = json.dumps(serializer.data) # Store serialized data
+        except models.SellInvoiceItemsTable.DoesNotExist:
+            invoice_items_data = {}  # Return an empty list if no records are found
 
     context = {
         "invoice_items": invoice_items_data,
@@ -2671,7 +2720,15 @@ def dynamic_print_paper_template(request):
         context['day_name'] = arabic_day
         context['report_date'] = today.strftime('%d/%m/%Y')
         context['time'] = localtime(timezone.now()).strftime('%H:%M:%S')
-        context['by_employee'] = request.session.get('name', 'Unknown User') if request.user.is_authenticated else 'Unknown User'
+        if request.user.is_authenticated:
+            context['by_employee'] = (
+                request.session.get('name') or
+                request.user.get_full_name() or
+                request.user.username or
+                context.get("by_employee", "Unknown")
+            )
+        else:
+            context['by_employee'] = context.get("by_employee", "Unknown")
         return render(request, 'paper-show-dynamic-print.html', context)
     else:
         return render(request, 'paper-input-dynamic-print.html')

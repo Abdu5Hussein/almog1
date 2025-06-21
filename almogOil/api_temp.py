@@ -1,11 +1,12 @@
 import json
+from almogOil.api_views import create_transactions_history_record
 import hashlib
 import logging
 from decimal import Decimal
 from datetime import datetime, timedelta
 from django.utils.dateparse import parse_date
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F, Q, Sum, IntegerField
 from django.db.models.functions import Cast
 from django.utils.timezone import now, make_aware
@@ -95,7 +96,7 @@ def get_subsections(request):
     return Response(serializer.data)
 
 def get_next_buyinvoice_no():
-    last_invoice = Buyinvoicetable.objects.last()
+    last_invoice = Buyinvoicetable.objects.order_by('-invoice_no').first()
     return (last_invoice.invoice_no if last_invoice else 0) + 1
 
 @extend_schema(
@@ -125,27 +126,31 @@ def create_buy_invoice(request):
 
         next_id_no = get_next_buyinvoice_no()
 
-        # Create the invoice
-        invoice = Buyinvoicetable.objects.create(
-            invoice_no=next_id_no,
-            original_no=org_invoice_id,
-            source=source.name,
-            invoice_date=invoice_date,
-            arrive_date=arrive_date,
-            order_no=order_no,
-            amount=0,
-            discount=0,
-            expenses=0,
-            net_amount=0,
-            account_amount=0,
-            currency=currency,
-            exchange_rate=currency_rate,
-            ready_date=ready_date,
-            remind_before=reminder,
-            temp_flag=temp_flag,
-            multi_source_flag=multi_source_flag,
-        )
-
+        try:
+            # Create the invoice
+            invoice = Buyinvoicetable.objects.create(
+                invoice_no=next_id_no,
+                original_no=org_invoice_id,
+                source=source.name,
+                invoice_date=invoice_date,
+                arrive_date=arrive_date,
+                order_no=order_no,
+                amount=0,
+                discount=0,
+                expenses=0,
+                net_amount=0,
+                account_amount=0,
+                currency=currency,
+                exchange_rate=currency_rate,
+                ready_date=ready_date,
+                remind_before=reminder,
+                temp_flag=temp_flag,
+                multi_source_flag=multi_source_flag,
+                local= str(data.get("local", "")).lower() == "true"
+            )
+        except IntegrityError as e:
+            if 'UNIQUE KEY constraint' in str(e):
+                return Response({"success": False, "error": str(e),"invoice_no":f"{next_id_no}"}, status=400)
         # Serialize and return the response
         serializer = BuyInvoiceSerializer(invoice)
         return Response({"success": True, "message": "Invoice created successfully.", "id": serializer.data['invoice_no']}, status=201)
@@ -845,8 +850,8 @@ def create_client_record(request):
         data = request.data  # DRF will parse the JSON data automatically
 
         # Validate required fields
-        if not data.get('phone') or not data.get('password'):
-            return Response({'status': 'error', 'message': 'Phone number and Password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not data.get('phone'):
+            return Response({'status': 'error', 'message': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if phone number already exists
         existing_phones = User.objects.values_list('username', flat=True)
@@ -1340,6 +1345,42 @@ def get_account_statement(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@extend_schema(
+description="""get account statement for a client by client id """,
+tags=["Clients","Transactions History"],
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_account_statement_for_sources(request):
+    source_id = request.GET.get('id')
+    if not source_id:
+        return Response({'error': 'source ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    source = None
+    content_type = None
+
+    try:
+        # Try getting client from AllClientsTable
+        source = models.AllSourcesTable.objects.get(clientid=source_id)
+        content_type = ContentType.objects.get_for_model(models.AllClientsTable)
+    except models.AllClientsTable.DoesNotExist:
+        raise Http404("source not found")
+
+    try:
+        # Get all transactions related to the client using GenericForeignKey
+        items = models.TransactionsHistoryTableForSuppliers.objects.filter(
+            source_object=source_id
+        )
+
+        # Serialize the results
+        serializer = serializers.TransactionsHistoryTableSerializerForSuppliers(items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @extend_schema(
 description="""get a specific buy invoice's items """,
@@ -1922,7 +1963,6 @@ tags=["Buy Invoice","Buy Invoice Items"],
 @permission_classes([IsAuthenticated])
 def BuyInvoiceItemCreateView(request):
     try:
-        # Parse JSON data
         data = request.data
 
         # Validate required fields
@@ -1938,22 +1978,24 @@ def BuyInvoiceItemCreateView(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Retrieve related invoice
+        # Retrieve the related invoice
         try:
             invoice = Buyinvoicetable.objects.get(invoice_no=data.get("invoice_id"))
-            invoice.amount += Decimal(safe_float(data.get("orderprice")) * safe_float(data.get("itemvalue")))
+            quantity = Decimal(str(safe_float(data.get("itemvalue"))))
+            order_price = Decimal(str(safe_float(data.get("orderprice"))))
+            invoice.amount += order_price * quantity
             invoice.save()
         except Buyinvoicetable.DoesNotExist:
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Get related product
+        # Retrieve product and subcategory
         try:
             product = Mainitem.objects.get(pno=data.get("pno"))
             submain = product.itemsubmain if product.itemsubmain else None
         except Mainitem.DoesNotExist:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create new BuyInvoiceItemsTable entry
+        # Create BuyInvoiceItemsTable entry
         item = BuyInvoiceItemsTable.objects.create(
             invoice_no=invoice,
             invoice_no2=data.get("invoice_id"),
@@ -1967,7 +2009,7 @@ def BuyInvoiceItemCreateView(request):
             quantity=safe_int(data.get("itemvalue")),
             currency=data.get("currency"),
             exchange_rate=safe_float(data.get("rate")),
-            date=data.get("date"),
+            date=data.get("date") or timezone.now(),
             place=data.get("itemplace"),
             buysource=data.get("source"),
             org_unit_price=safe_float(data.get("orgprice")),
@@ -1985,21 +2027,24 @@ def BuyInvoiceItemCreateView(request):
 
         confirm_message = "not confirmed"
 
-        # If item is confirmed (not temporary), update Mainitem and create movement record
-        if data.get("isTemp") == 0:
+        # Confirm and update Mainitem if not temporary
+        if str(data.get("isTemp")) == "0":
             try:
-                main = Mainitem.objects.get(replaceno=data.get("replaceno"))
+                value = data.get("replaceno") or data.get("pno")
+                main = Mainitem.objects.get(Q(replaceno=value) | Q(pno=value))
+                item_value = safe_int(data.get("itemvalue"))
+
                 main.orgprice = safe_float(data.get("orgprice"))
                 main.lessprice = safe_float(data.get("lessprice"))
-                main.itemvalue += safe_int(data.get("itemvalue"))
-                main.itemtemp -= safe_int(data.get("itemvalue"))
+                main.itemvalue += item_value
+                main.itemtemp = max(0, main.itemtemp - item_value)
                 main.itemplace = data.get("itemplace")
                 main.buyprice = safe_float(data.get("buyprice"))
                 main.save()
 
                 confirm_message = "confirmed"
 
-                movement_Record = models.ProductsMovementHistory.objects.create(
+                models.ProductsMovementHistory.objects.create(
                     itemno=main.itemno,
                     itemname=main.itemname,
                     maintype=main.itemmain,
@@ -2008,15 +2053,31 @@ def BuyInvoiceItemCreateView(request):
                     clientname="فاتورة شراء",
                     billno=data.get("invoice_id"),
                     description="فاتورة شراء",
-                    clientbalance=safe_int(data.get("itemvalue")),
+                    clientbalance=item_value,
                     pno_instance=main,
                     pno=main.pno
                 )
+
             except Mainitem.DoesNotExist:
                 return Response({"error": "Mainitem not found for confirmation"}, status=status.HTTP_404_NOT_FOUND)
 
+        obj = invoice.source_obj or models.AllSourcesTable.objects.get(name=invoice.source)
+        # Log transaction
+        txn_result = create_transactions_history_record(
+            "source", obj, "credit", invoice.amount,
+            f"فاتورة شراء رقم {invoice.invoice_no}", f"فاتورة شراء للصنف برقم خاص {item.pno}"
+        )
+
+        if isinstance(txn_result, Response):  # Check if transaction returned an error Response
+            return txn_result
+
         return Response(
-            {"message": "Item created successfully", "item_id": item.autoid, "confirm_status": confirm_message},
+            {
+                "message": "Item created successfully",
+                "item_id": item.autoid,
+                "confirm_status": confirm_message,
+                "invoice_total": str(invoice.amount)
+            },
             status=status.HTTP_201_CREATED
         )
 
@@ -2024,6 +2085,7 @@ def BuyInvoiceItemCreateView(request):
         return Response({"error": "Invalid JSON data"}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @extend_schema(
 description="""fetch all buy invoices""",
@@ -2077,6 +2139,10 @@ def filter_buyinvoices(request):
 
         if filters.get('source'):
             filters_q &= Q(source__icontains=filters['source'])
+
+        if filters.get('local'):
+            local_value = str(filters.get('local', '')).lower()
+            filters_q &= Q(local=local_value == 'true')
 
         # Apply date range filter on `orderlastdate`
         fromdate = filters.get('fromdate', '').strip()

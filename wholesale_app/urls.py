@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/products/<int:id>/get-images',api_views.get_product_images,name="product-get-images"),
+    path('delete-all-images/', HozmaApi_views.delete_all_images, name='delete_all_images'),
     #path('api/preorders/', api_views.show_all_preorders, name='show_all_preorders'),
     path('api/confirm-or-update-preorder-items/', HozmaApi_views.confirm_or_update_preorder_items, name='confirm_or_update_preorder_items'),
     path('api/mainitems/create/', HozmaApi_views.create_mainitem, name='create_mainitem'),
@@ -77,8 +78,11 @@ urlpatterns = [
     #path('api/oems/', HozmaApi_views.create_oem_entry, name='create-oem-entry'),
     path('Item_Dashboard/', views.Item_Dashboard, name='Item_Dashboard'),
      path('faq/edit/', views.faq_edit, name='faq_edit'),
+    path('api/companies/', HozmaApi_views.get_company_list),
     path('orders/', views.order_view, name='order_view'),
     path('contact/', views.contact, name='contact'),
+    path('api/invoice-status-summary/', HozmaApi_views.get_invoice_status_summary),
+    path('api/clients/<int:id>/', HozmaApi_views.get_all_clients1, name='get_all_clients1'),
     path('HOZMAlogin',api_views.Hozma_Login, name='login'),
     path('images/upload/', views.uploadimages, name='upload_images'),
     path('api/return-policy/', HozmaApi_views.return_policy_api_view, name='return_policy_api'),
@@ -89,13 +93,26 @@ urlpatterns = [
     path('api/item-categories/', HozmaApi_views.get_item_categories_with_counts, name='item-categories-with-counts'),
     path('api/send-whatsapp-contact/', HozmaApi_views.send_whatsapp_message, name='send-whatsapp'),
     path('api/oemtable/', HozmaApi_views.get_oem_table_data, name='get_oem_table_data'),
+    path('api/clients/filter/', HozmaApi_views.filter_clients, name='filter-clients'),
     path('api/client-preorders/', HozmaApi_views.get_client_preorders, name='client-preorders'),
      path('api/preorder/<int:invoice_no>/', HozmaApi_views.get_preorder_with_items_and_client, name='preorder-detail'),
     path('api/item/<str:pno>/details/', HozmaApi_views.item_detail_api, name='item_detail_api'),
     path('api/oemtable/search/', HozmaApi_views.cached_oemtable_list, name='cached-oemtable-list'),
     path('api/company-products/', HozmaApi_views.unique_company_products, name='unique-company-products'),
+    path('api/products/<int:id>/get-images',HozmaApi_views.get_product_images,name="product-get-images"),
+    path('hozmareport/', views.hozmaReport, name='hozma_report'),
+    path('api/invoice-items/<str:invoice_no>/', HozmaApi_views.get_invoice_items, name='get_invoice_items'),
+    path('api/employees/drivers/', HozmaApi_views.list_drivers, name='list-drivers'),  # GET
+    path('api/preorders/unassigned/', HozmaApi_views.list_unassigned_preorders, name='unassigned-preorders'),  # GET
+    path('api/assign-preorder/', HozmaApi_views.assign_preorder, name='assign-preorder'),
+    path('api/my-assigned-orders/', HozmaApi_views.my_assigned_orders, name='my-assigned-orders'),
+    path('api/download-excel/', HozmaApi_views.create_supplier_packing_list_api, name='download_excel'),
+    path('api/dowmload_excel_for_preorder/', HozmaApi_views.download_invoice, name='download_excel_for_preorder'),
+    path('api/preorder/create-with-item/', HozmaApi_views.create_preorder_with_item, name='create_pre_order_with_item'),
+    path('drivers/',views.Hozmadriver, name='Hozmadriver'),
+    #path('api/reports/dashboard/', HozmaApi_views.dashboard_report_api, name='dashboard-reports'),
     path('check-preorder-related/<int:buy_invoice_id>/', HozmaApi_views.get_related_preorders, name='check-preorder-related')
-   
+
     
 ]
 

@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fetch client ID from the URL query string
     const urlParams = new URLSearchParams(window.location.search);
-    const clientid = urlParams.get("id"); // Retrieve the client ID from the URL (e.g., ?id=123)
+    const clientid = urlParams.get("client") || urlParams.get("supplier"); // Retrieve the client ID from the URL (e.g., ?id=123)
 
     let childWindows = [];
     function openWindow(url, width = 600, height = 700) {
@@ -152,6 +152,17 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         };
     }
+    function getLastRowColumnValue(columnName) {
+        const rowData = table.getData(); // Fetch all row data from Tabulator
+
+        if (Array.isArray(rowData) && rowData.length > 0) {
+            const lastRow = rowData[rowData.length - 1];
+            return lastRow[columnName] !== undefined ? lastRow[columnName] : null;
+        } else {
+            console.error(`No data available or rowData is not an array for column: ${columnName}`);
+            return null;
+        }
+    }
     // Function to calculate the sum of a column in Tabulator
     function calculateColumnSum(columnName) {
         let sum = 0;
@@ -186,18 +197,24 @@ document.addEventListener("DOMContentLoaded", function () {
     function refreshShowInputs() {
         const creditSum = calculateColumnSum("credit");
         const debtSum = calculateColumnSum("debt"); // Corrected from "dept"
-        const balanceSum = calculateColumnSum("current_balance");
+        const balanceSum = getLastRowColumnValue("current_balance");
         const realBalance = creditSum - debtSum;
 
         // Update input fields with calculated sums
         updateShowInput("#credit-sum", creditSum);
         updateShowInput("#debt-sum", debtSum);
-        updateShowInput("#balance-sum", balanceSum);
+        updateShowInput("#balance-sum", parseFloat(balanceSum));
         updateShowInput("#real-balance", realBalance);
     }
     // Function to fetch data from the API
     function fetchData(clientid) {
-        const url = `get-account-statement?id=${clientid}`;
+        let url = ""; // Initialize URL variable
+        if (urlParams.get("client")) {
+            url = `/get-account-statement?id=${clientid}`;
+        }
+        if (urlParams.get("supplier")) {
+            url = `/suppliers/get-account-statement?id=${clientid}`;
+        }
 
         customFetch(url, {
             method: 'GET',

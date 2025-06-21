@@ -564,13 +564,13 @@
                         <a class="nav-link active" href="/hozma/Admin-Dashboard/"><i class="fas fa-tachometer-alt me-1"></i>لوحة التحكم</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/hozma/preorders-buy/"><i class="fas fa-shopping-cart me-1"></i>الطلبات</a>
+                        <a class="nav-link" href="/hozma/preorder-dashboard/"><i class="fas fa-shopping-cart me-1"></i>الطلبات</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/hozma/hozmaclient/"><i class="fas fa-users me-1"></i>العملاء</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-chart-bar me-1"></i>التقارير</a>
+                        <a class="nav-link" href="/hozma/hozmareport/"><i class="fas fa-chart-bar me-1"></i>التقارير</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
@@ -626,13 +626,20 @@
                         <a href="/hozma/Handle-source/" class="list-group-item list-group-item-action">
                             <i class="fas fa-database me-1"></i>لوحة تحكم المصادر
                         </a>
+                        <a href="/hozma/preorders-buy/" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-cart-plus me-1"></i> طلبات الشراء المبدئية
+                            </span>
+                            <span>
+                                <span class="badge bg-warning text-dark me-1" id="unconfirmed-badge">0</span>
+                                <span class="badge bg-success" id="unsent-badge">0</span>
+                            </span>
+                        </a>
                         <a href="/hozma/preorder-dashboard/" class="list-group-item list-group-item-action">
                             <i class="fas fa-shopping-bag me-1"></i>الطلبات الجديدة
                             <span class="badge bg-danger rounded-pill" id="new-orders-count1">5</span>
                         </a>
-                        <a href="/hozma/preorders-buy/" class="list-group-item list-group-item-action">
-                            <i class="fas fa-cart-plus me-1"></i>طلبات الشراء المبدئية
-                        </a>
+                   
                         <a href="#" class="list-group-item list-group-item-action">
                             <i class="fas fa-users-cog me-1"></i>إدارة المستخدمين
                         </a>

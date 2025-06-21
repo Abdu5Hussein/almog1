@@ -65,13 +65,14 @@ console.error("رقم الطلب غير صالح.");
                        data-item-no="${item.pno}"
                        data-original="${item.Asked_quantity}">
               </td>
-              <td>${parseFloat(item.cost_unit_price || 0).toFixed(2)}</td>
-              <td>${itemTotal.toFixed(2)}</td>
+<td>${Number(item.cost_unit_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+<td>${itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+
             `;
             itemsBody.appendChild(row);
           });
 
-          document.getElementById('orderTotal').textContent = totalAmount.toFixed(2);
+          document.getElementById('orderTotal').textContent = totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' دينار';
         } else {
           alert("لم يتم العثور على الطلب.");
         }
@@ -290,7 +291,7 @@ try {
         <td>${order.invoice_no}</td>
         <td>${order.client_name}</td>
         <td>${order.client_rate} (${order.client_category || 'غير محدد'})</td>
-        <td>${parseFloat(order.amount || 0).toFixed(2)}</td>
+<td>${Number(order.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
         <td>${order.payment_status}</td>
         <td>${order.invoice_status}</td>
         <td>${order.date_time ? new Date(order.date_time).toLocaleDateString('en-GB') : 'غير محدد'}</td>

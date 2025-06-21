@@ -7,17 +7,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>بيانات الاصناف</title>
 
-    <!-- Bootstrap CSS -->
-    <link
-      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
-      rel="stylesheet"
-    />
-
-    <!-- Bootstrap JS -->
+    <!-- JS -->
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{% static 'js/products-details.js' %}" defer></script>
     <script src="{% static 'js/helper_functions.js' %}"></script>
+    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
+    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
+    <script src="{% static 'dselect/choices.min.js' %}"></script>
+
+    <!-- CSS -->
+    <link
+      href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="{% static 'dselect/choices.min.css' %}" />
     <link rel="stylesheet" href="{% static 'CSS/login.css' %}" />
     <link
@@ -55,23 +59,23 @@
         background-size: 12px !important;
         line-height: none;
         opacity: .75;
-    }
+      }
 
-    .choices__inner{
-      min-height: 30px !important;
-      max-height: 30px !important;
-      /*overflow-y: auto !important;*/
-      overflow-x: clip !important;
-    }
-    .choices__inner input[type="search"]{
-      width: 90% !important;
-      min-width: 90% !important;
-    }
+      .choices__inner{
+        min-height: 30px !important;
+        max-height: 30px !important;
+        /*overflow-y: auto !important;*/
+        overflow-x: clip !important;
+      }
+      .choices__inner input[type="search"]{
+        width: 90% !important;
+        min-width: 90% !important;
+      }
 
-    .choices__item {
-      height: 30px;
-      width: 65px;
-    }
+      .choices__item {
+        height: 30px;
+        width: 65px;
+      }
 
       /*//////////////*/
       .dropdown {
@@ -1161,14 +1165,7 @@
         </form>
       </div>
     </div>
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
 
-    <!-- Use jQuery -->
 
-    <script src="{% static 'tabulator/tabulator.min.js' %}"></script>
-    <script src="{% static 'sheetjs/xlsx.full.min.js' %}"></script>
-    <script src="{% static 'dselect/choices.min.js' %}"></script>
-    <script>
-    </script>
   </body>
 </html>

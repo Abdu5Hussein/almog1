@@ -1,3 +1,7 @@
+
+{% extends 'CarPartsTemplates/hozmabase.html' %}
+
+{% block content %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -675,5 +679,6 @@
     <script src="{% static 'js/helper_functions.js' %}"></script>
     <script src="{% static 'HOZMA_FRONT/JS/preorder-dashboard.js' %}"></script>
     </script>
+    {% endblock %}
 </body>
 </html>

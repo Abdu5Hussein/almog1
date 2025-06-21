@@ -104,7 +104,7 @@ function updateCartUI() {
           
           <div>
             <h6 class="mb-0">${item.name}</h6>
-            <small class="text-muted">| ${item.price.toFixed(2)} د.ل</small>
+<small class="text-muted">| ${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ل</small>
           </div>
         </div>
         
@@ -132,7 +132,7 @@ function updateCartUI() {
   
   cartContainer.innerHTML = html;
   document.getElementById('cartItemsCount').textContent = cart.length;
-  document.getElementById('cartTotalAmount').textContent = totalAmount.toFixed(2) + ' د.أ';
+  document.getElementById('cartTotalAmount').textContent = totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
 
   // 3) After inserting all items, trigger image fetches
   for (const item of cart) {
@@ -144,7 +144,7 @@ function updateCartUI() {
 async function fetchAndUpdateCartItemImage(pno) {
   try {
     // 1) Fetch your list of images for this product
-    const rawResponse = await fetch(`/api/products/${pno}/get-images`);
+    const rawResponse = await fetch(`/hozma/api/products/${pno}/get-images`);
     if (!rawResponse.ok) {
       console.error(`Network error fetching images for ${pno}:`, rawResponse.status, rawResponse.statusText);
       return;
@@ -460,14 +460,22 @@ function updateCartPageUI() {
         <i class="bi bi-cart-x auto-cart-empty-icon"></i>
         <h5>سلة التسوق فارغة</h5>
         <p class="text-muted">لم تقم بإضافة أي قطع غيار بعد</p>
-        <a href="/products" class="btn btn-outline-primary mt-2">
+        <a href="/hozma/products" class="btn btn-outline-primary mt-2">
           <i class="bi bi-arrow-left"></i> متابعة التسوق
         </a>
       </div>
     `;
-    document.getElementById('summaryItemsCount').textContent = '0';
-    document.getElementById('summarySubtotal').textContent = '0.00 د.أ';
-    document.getElementById('summaryTotalAmount').textContent = '0.00 د.أ';
+    document.getElementById('summaryItemsCount').textContent = (0).toLocaleString();
+
+    document.getElementById('summarySubtotal').textContent = (0).toLocaleString(undefined, {
+      minimumFractionDigits: 2
+    }) + ' د.ل';
+    
+    document.getElementById('summaryTotalAmount').textContent = (0).toLocaleString(undefined, {
+      minimumFractionDigits: 2
+    }) + ' د.ل';
+    
+
     return;
   }
 
@@ -567,9 +575,14 @@ function updateCartPageUI() {
   });
 
   cartContainer.innerHTML = html;
-  document.getElementById('summaryItemsCount').textContent = totalItems;
-  document.getElementById('summarySubtotal').textContent = totalAmount.toFixed(2) + ' د.ل';
-  document.getElementById('summaryTotalAmount').textContent = totalAmount.toFixed(2) + ' د.ل';
+  document.getElementById('summaryItemsCount').textContent = totalItems.toLocaleString();
+
+  document.getElementById('summarySubtotal').textContent =
+    totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' د.ل';
+  
+  document.getElementById('summaryTotalAmount').textContent =
+    totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' د.ل';
+  
 }
 
 
@@ -581,7 +594,7 @@ async function fetchAndUpdateCartItemImage1(pno) {
   }
 
   try {
-    const rawResponse = await fetch(`/api/products/${pno}/get-images`);
+    const rawResponse = await fetch(`/hozma/api/products/${pno}/get-images`);
     if (!rawResponse.ok) {
       console.error(`Network error fetching images for ${pno}:`, rawResponse.status, rawResponse.statusText);
       imagesMap[pno] = null;
@@ -612,123 +625,107 @@ async function fetchAndUpdateCartItemImage1(pno) {
 
 
 async function checkout() {
-  let cart = JSON.parse(localStorage.getItem('product_cart')) || [];
-  console.log("Loaded cart:", cart);
+  // Show loading alert
+  Swal.fire({
+    title: 'جاري المعالجة',
+    html: 'الرجاء الانتظار أثناء معالجة طلبك...',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  const cart = JSON.parse(localStorage.getItem('product_cart')) || [];
 
   if (cart.length === 0) {
-    alert('سلة التسوق فارغة. الرجاء إضافة قطع غيار قبل الدفع.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'سلة التسوق فارغة',
+      text: 'الرجاء إضافة قطع غيار قبل الدفع.',
+      confirmButtonText: 'حسناً',
+      confirmButtonColor: '#3085d6'
+    });
     return;
   }
 
-  const clientId = JSON.parse(localStorage.getItem("session_data@user_id"));
-  console.log("Client ID:", clientId);
+  const clientId = JSON.parse(localStorage.getItem("session_data@client_id"));
 
   if (!clientId) {
-    alert("رقم العميل غير موجود. الرجاء تسجيل الدخول.");
+    Swal.fire({
+      icon: 'error',
+      title: 'غير مسجل دخول',
+      text: 'الرجاء تسجيل الدخول للمتابعة.',
+      confirmButtonText: 'حسناً',
+      confirmButtonColor: '#3085d6'
+    });
     return;
   }
 
-  const data = {
+  // Prepare data to match required JSON format
+  const invoicePayload = {
     client: clientId,
-    client_rate: "",
-    client_category: "",
-    client_limit: "",
-    client_balance: "",
-    invoice_date: "",
-    invoice_status: "لم تحضر",
     payment_status: "اجل",
     mobile: true,
-    for_who: ""
-  };
-  console.log("Invoice data to send:", data);
-
-  let invoiceNo;
-
-  try {
-    const response = await customFetch('http://45.13.59.226/hozma/preorder/create/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-      credentials: 'include'
-    });
-  
-    if (response) {
-      const result = await response.json();
-  
-      if (response.ok && result.invoice_no) {
-        console.log("Invoice record created successfully:", result);
-        invoiceNo = result.invoice_no;
-      } else {
-        console.error("Failed to create invoice record:", result);
-        alert(result.message || "فشل في إنشاء سجل الفاتورة.");
-        return;
-      }
-    } else {
-      console.error("No response from server.");
-      alert("حدث خطأ في الاتصال بالخادم. الرجاء المحاولة لاحقًا.");
-    }
-  } catch (error) {
-    console.error("Error while creating invoice record:", error);
-    alert("حدث خطأ أثناء إنشاء سجل الفاتورة. الرجاء المحاولة لاحقًا.");
-  }
-
-  console.log("Invoice number:", invoiceNo);
-  window.invoiceAutoId = invoiceNo;
-
-  // Send each item one by one
-  for (let item of cart) {
-    const itemData = {
+    for_who: "",
+    items: cart.map(item => ({
       pno: item.pno,
       fileid: item.fileid,
-      invoice_id: invoiceNo,
       itemvalue: item.quantity,
-      sellprice: parseFloat(item.price).toFixed(2)
-    };
+      sellprice: parseFloat(item.price).toFixed(2),
+      available: item.stock || 0
+    }))
+  };
 
-    console.log("Sending item data:", itemData);
+  try {
+    const response = await customFetch('/hozma/api/preorder/create-with-item/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(invoicePayload),
+      credentials: 'include'
+    });
 
-    try {
-      const itemResponse = await customFetch('http://45.13.59.226/hozma/api/full_Sell_invoice_create_item/', {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(itemData),
-        credentials: 'include'
+    const result = await response.json();
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: 'error',
+        title: 'فشل في إتمام الطلب',
+        html: result.error || result.message || 'حدث خطأ أثناء إنشاء الفاتورة. الرجاء المحاولة لاحقًا.',
+        confirmButtonText: 'حسناً',
+        confirmButtonColor: '#3085d6'
       });
-    
-      if (itemResponse) {
-        const itemResult = await itemResponse.json();
-        console.log("Server response for item:", itemResult);
-    
-        if (!itemResponse.ok) {
-          console.error("Failed to add item:", itemResult);
-          alert(`فشل في إضافة عنصر ${itemData.pno} إلى الفاتورة.`);
-          return;
-        }
-      } else {
-        console.error("No response from server.");
-        alert("حدث خطأ في الاتصال بالخادم. الرجاء المحاولة لاحقًا.");
-      }
-    } catch (error) {
-      console.error("Error while adding item:", error);
-      alert(`حدث خطأ أثناء إضافة عنصر ${itemData.pno}. الرجاء المحاولة لاحقًا.`);
+      return;
     }
-  }  
+    // Success
+    const invoiceNo = result.invoice_no;
+    localStorage.removeItem('product_cart');
+    localStorage.setItem('current_invoice_no', invoiceNo);
 
-  // Clear cart
-  // Clear cart
-localStorage.removeItem('product_cart');
+    Swal.fire({
+      icon: 'success',
+      title: 'تمت العملية بنجاح',
+      html: `تم إنشاء الفاتورة رقم <strong>${invoiceNo}</strong> بنجاح.<br>سيتم توجيهك إلى صفحة الفاتورة الآن.`,
+      showConfirmButton: true,
+      confirmButtonText: 'حسناً',
+      confirmButtonColor: '#3085d6',
+      timer: 5000,
+      timerProgressBar: true,
+      willClose: () => {
+        window.location.href = `/hozma/invoice/${invoiceNo}`;
+      }
+    }).then(() => {
+      window.location.href = `/hozma/invoice/${invoiceNo}`;
+    });
 
-// Store the invoice number for the invoice page to fetch
-localStorage.setItem('current_invoice_no', invoiceNo);
-
-// Redirect to the invoice page with the invoice number in the URL
-window.location.href = `/hozma/invoice/${invoiceNo}`;
-
-
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'خطأ غير متوقع',
+      text: 'حدث خطأ أثناء معالجة الطلب. الرجاء المحاولة لاحقًا.',
+      confirmButtonText: 'حسناً',
+      confirmButtonColor: '#3085d6'
+    });
+  }
 }
 
 
@@ -807,24 +804,68 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // TEST - Simulate a cart update
 function incrementAndAddToCart(pno, fileid, itemno, itemname, price, stock) {
-  // First increment the quantity
-  incrementQuantity(pno);
+  if (stock <= 0) {
+    alert('هذا المنتج غير متوفر حالياً.');
+    return;
+  }
 
-  // Then get the new value after increment
   const qtyInput = document.getElementById(`qty-${pno}`);
-  const newQty = parseInt(qtyInput.value, 10) || 1;
+  const incrementBtn = document.getElementById(`increment-btn-${pno}`);
+  let currentQty = parseInt(qtyInput.value, 10) || 0;
 
-  // Add to cart with the updated quantity
-  addToCartWithQuantity(pno, fileid, itemno, itemname, price, '', newQty, stock);
+  if (currentQty >= stock) {
+    alert('وصلت إلى الحد الأقصى للكمية المتاحة.');
+    incrementBtn.disabled = true;
+    return;
+  }
+
+  currentQty++;
+  qtyInput.value = currentQty;
+
+  addToCartWithQuantity(pno, fileid, itemno, itemname, price, '', currentQty, stock);
+
+  if (currentQty >= stock) {
+    incrementBtn.disabled = true;
+  }
 }
+
 function decrementAndAddToCart(pno, fileid, itemno, itemname, price, stock) {
-  // First increment the quantity
-  decrementQuantity(pno);
+  if (stock <= 0) return;
 
-  // Then get the new value after increment
   const qtyInput = document.getElementById(`qty-${pno}`);
-  const newQty = parseInt(qtyInput.value, 10) || 1;
+  const incrementBtn = document.getElementById(`increment-btn-${pno}`);
 
-  // Add to cart with the updated quantity
-  addToCartWithQuantity(pno, fileid, itemno, itemname, price, '', newQty, stock);
+  let currentQty = parseInt(qtyInput.value, 10) || 0;
+
+  if (currentQty <= 0) return;
+
+  currentQty--;
+  qtyInput.value = currentQty;
+  if (currentQty <= stock - 1) {
+    incrementBtn.disabled = false;
+  }
+
+  addToCartWithQuantity(pno, fileid, itemno, itemname, price, '', currentQty, stock);
+
+  if (currentQty <= stock - 1) {
+    incrementBtn.disabled = false;
+  }
+  
 }
+
+
+function updateCartBadge(count) {
+  const cartBadge = document.getElementById('cartBadge');
+
+  if (count > 0) {
+    cartBadge.textContent = count;
+    cartBadge.classList.remove('d-none');
+  } else {
+    cartBadge.classList.add('d-none');
+  }
+}
+
+// Example: Call this function whenever the cart count changes
+updateCartBadge(0);     // Hides the badge
+updateCartBadge(5);     // Shows the badge with "5"
+updateCartBadge(9999);  // Shows the badge with "9999"
