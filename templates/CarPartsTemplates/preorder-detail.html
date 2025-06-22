@@ -195,6 +195,7 @@
                             <th><i class="fas fa-tag me-2"></i>اسم المنتج</th>
                             <th><i class="fas fa-boxes me-2"></i>الكمية المطلوبة</th>
                             <th><i class="fas fa-check-circle me-2"></i>الكمية المؤكدة</th>
+                            <th><i class="fas fa-check-circle me-2"></i>الكميةالمؤكدة من السائق</th>
                             <th><i class="fas fa-money-bill-wave me-2"></i>سعر الوحدة</th>
                             <th><i class="fas fa-money-check-alt me-2"></i>السعر الإجمالي</th>
                             <th><i class="fas fa-cogs me-2"></i>تمت المعالجة؟</th>
@@ -216,7 +217,11 @@
                 </table>
             </div>
             
-            
+            <div class="text-center mt-4">
+                <button class="btn btn-success" onclick="sendPrintRequest(invoiceNo)">
+                    <i class="fas fa-print me-2"></i> طباعة الفاتورة
+                </button>
+            </div>
         </div>
     </div>
 

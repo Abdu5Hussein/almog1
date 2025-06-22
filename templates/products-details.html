@@ -1026,78 +1026,79 @@
 
             <!-- Fifth column -->
             <div class="col-md-2">
-              <div class="input-group mb-1">
-                <div class="width-55">
-                  <label for="origin-price" class="form-label"
-                    >*سعر التوريد</label
-                  >
-                </div>
-                <input
-                  type="number"
-                  class="form-control small-input"
-                  id="origin-price"
-                  min="0"
-                  placeholder="0"
+              <div style="{% if not perms.almogOil.hozma_Products %}display:none;{% endif %} margin-bottom:60px;">
+                <div class="input-group mb-1">
+                  <div class="width-55">
+                    <label for="origin-price" class="form-label"
+                      >*سعر التوريد</label
+                    >
+                  </div>
+                  <input
+                    type="number"
+                    class="form-control small-input"
+                    id="origin-price"
+                    min="0"
+                    placeholder="0"
 
-                />
-              </div>
-              <div class="input-group mb-1">
-                <div class="width-55">
-                  <label for="buy-price" class="form-label">سعر الشراء</label>
+                  />
                 </div>
-                <input
-                  type="number"
-                  min="0"
-                  class="form-control small-input"
-                  id="buy-price"
-                  placeholder="0"
+                <div class="input-group mb-1">
+                  <div class="width-55">
+                    <label for="buy-price" class="form-label">سعر الشراء</label>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    class="form-control small-input"
+                    id="buy-price"
+                    placeholder="0"
 
-                />
-              </div>
-              <div class="input-group mb-1">
-                <div class="width-55">
-                  <label for="expenses-price" class="form-label"
-                    >سعر التكلفة</label
-                  >
+                  />
                 </div>
-                <input
-                  type="number"
-                  class="form-control small-input"
-                  id="expenses-price"
-                  min="0"
-                  placeholder="0"
+                <div class="input-group mb-1">
+                  <div class="width-55">
+                    <label for="expenses-price" class="form-label"
+                      >سعر التكلفة</label
+                    >
+                  </div>
+                  <input
+                    type="number"
+                    class="form-control small-input"
+                    id="expenses-price"
+                    min="0"
+                    placeholder="0"
 
-                />
-              </div>
-              <div class="input-group mb-1">
-                <div class="width-55">
-                  <label for="sell-price" class="form-label">سعر البيع</label>
+                  />
                 </div>
-                <input
-                  type="number"
-                  class="form-control small-input"
-                  id="sell-price"
-                  min="0"
-                  placeholder="0"
+                <div class="input-group mb-1">
+                  <div class="width-55">
+                    <label for="sell-price" class="form-label">سعر البيع</label>
+                  </div>
+                  <input
+                    type="number"
+                    class="form-control small-input"
+                    id="sell-price"
+                    min="0"
+                    placeholder="0"
 
-                />
-              </div>
-              <div class="input-group mb-1">
-                <div class="width-55">
-                  <label for="less-price" class="form-label"
-                    >أقل سعر للبيع</label
-                  >
+                  />
                 </div>
-                <input
-                  type="number"
-                  min="0"
-                  class="form-control small-input"
-                  id="less-price"
-                  placeholder="0"
+                <div class="input-group mb-1">
+                  <div class="width-55">
+                    <label for="less-price" class="form-label"
+                      >أقل سعر للبيع</label
+                    >
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    class="form-control small-input"
+                    id="less-price"
+                    placeholder="0"
 
-                />
+                  />
+                </div>
               </div>
-              <div style="height: 60px"></div>
               <div class="input-group mb-1">
                 <label for="pno" class="form-label">رقم خاص</label>
                 <input

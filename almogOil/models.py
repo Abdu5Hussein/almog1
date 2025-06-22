@@ -647,11 +647,16 @@ class AuthUser(models.Model):
 
             ('hozma_Dashboard', 'لوحة تحكم حزمة'),
             ('hozma_Products', 'اصناف حزمة'),
+            ('item_images', 'صور الاصناف'),
+            ('hozma_reports', 'تقارير حزمة'),
             ('hozma_Clients', 'عملاء حزمة'),
             ('hozma_Suppliers', 'موردين حزمة'),
             ('hozma_SellInvoices', 'فواتير بيع حزمة'),
             ('hozma_BuyInvoices', 'فواتير شراء حزمة'),
             ('hozma_Settings', 'اعدادات حزمة'),
+            ('hozma_driver', 'سائق حزمة'),
+            ('client_permissions', 'صلاحيات العملاء'),
+
         ]
 
 class AuthUserGroups(models.Model):
@@ -1372,6 +1377,7 @@ class PreOrderTable(models.Model):
     )
     delivery_start_time = models.DateTimeField(null=True, blank=True)
     delivery_end_time = models.DateTimeField(null=True, blank=True)
+    delvery_confirmed = models.BooleanField(default=False)
     class Meta:
         db_table = 'PreOrderTable'
 

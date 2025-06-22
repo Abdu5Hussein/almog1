@@ -15,7 +15,7 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User , Group
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.core.cache import cache
@@ -887,7 +887,10 @@ def create_client_record(request):
             )
 
             # Create User instance
+            
             user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=data.get('password'))
+            client_group = Group.objects.get(name='client')
+            user.groups.add(client_group)
             user.save()
 
             return Response({'status': 'success', 'message': 'Record created successfully!'})

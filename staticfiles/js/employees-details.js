@@ -57,9 +57,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
         loadEmployeeData();
-    });
+
 
     // Add
     document.getElementById('add-btn').addEventListener('click', async function () {

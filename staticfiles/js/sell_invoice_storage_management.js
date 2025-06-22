@@ -244,6 +244,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById("invoice-no").value;
         openWindow("/assign-orders-page/" + id + "/");
     })
+    const delivery_btn2 = document.getElementById("deliver_to_driverـhozma");
+    delivery_btn2.addEventListener("click", function () {
+        const id = document.getElementById("invoice-no").value;
+        openWindow("/hozma/delevery-mangment/" + id + "/");
+    })
     //let windows = {}; // Object to keep track of opened windows
 
     // Function to open a new window or focus an existing one

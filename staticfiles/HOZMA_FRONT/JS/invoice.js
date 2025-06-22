@@ -57,7 +57,7 @@ async function fillInvoice(data) {
     const originalQty = parseFloat(item.quantity || 0);
     const confirmQty = item.confirm_quantity ? parseFloat(item.confirm_quantity) : null;
     const qty = confirmQty !== null ? confirmQty : originalQty;
-    const total = unit * qty;
+    const total = item.dinar_total_price ;
     subtotal += total;
 
     // Get image
@@ -65,17 +65,35 @@ async function fillInvoice(data) {
 
     // Conditional quantity display
     let quantityHtml = `<td>${qty}</td>`;
-    if (confirmQty !== null && confirmQty !== originalQty) {
-      quantityHtml = `
-        <td>
-          <div>
-            <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
-            <span class="fw-bold text-dark">${confirmQty}</span><br>
-            <span class="badge bg-warning text-dark mt-1">تم تعديل الكمية</span>
-          </div>
-        </td>
-      `;
-    }
+
+// Check if Confirm Qty is different from Original
+if (confirmQty !== null && confirmQty !== originalQty) {
+  let htmlContent = `
+    <div>
+      <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
+      <span class="fw-bold text-dark">${confirmQty}</span><br>
+      <span class="badge bg-warning text-dark mt-1">تم تعديل الكمية من المتجر</span>
+    </div>
+  `;
+
+  // Check if Confirmed Delivery Qty exists and is different from Confirm Qty
+  if (item.confirmed_delevery_quantity !== null &&
+      item.confirmed_delevery_quantity !== undefined &&
+      item.confirmed_delevery_quantity !== confirmQty) {
+
+    htmlContent = `
+      <div>
+        <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
+        <span class="text-muted text-decoration-line-through small">${confirmQty}</span><br>
+        <span class="fw-bold text-dark">${item.confirmed_delevery_quantity}</span><br>
+        <span class="badge bg-info text-dark mt-1">تم تعديل الكمية من العميل</span>
+      </div>
+    `;
+  }
+
+  quantityHtml = `<td>${htmlContent}</td>`;
+}
+
 
     tbody.insertAdjacentHTML('beforeend', `
       <tr>
@@ -85,7 +103,9 @@ async function fillInvoice(data) {
             <div>
               <div class="fw-bold">${item.name}</div>
               <div class="text-muted small">رقم القطعة: ${item.pno}</div>
-              <div class="text-muted small">منشأ: ${item.company}</div>
+              <div class="text-muted small">الشركة: ${item.company}</div>
+              <div class="text-muted small">الشركة: ${item.oem_numbers}</div>
+
             </div>
           </div>
         </td>
@@ -245,7 +265,7 @@ try {
                 <div>
                     <strong>${item.name}</strong><br>
                     <small>رقم القطعة: ${item.pno}</small><br>
-                    <small>المنشأ: ${item.company}</small>
+                    <small>الشركة: ${item.company}</small>
                 </div>
             </td>
             <td>${item.price}</td>

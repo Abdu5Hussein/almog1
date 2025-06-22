@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from rest_framework import status
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from django.contrib import messages
@@ -16,6 +16,8 @@ from django.db.models import F, Q, Sum, IntegerField
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.http import HttpResponseForbidden
+
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .forms import ReturnPolicyForm ,TermsAndConditionsForm
@@ -54,14 +56,23 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password, check_password
 from products import serializers as products_serializers
-
-
-
+from functools import wraps
+from django.http import Http404
+from django.contrib.auth.decorators import user_passes_test
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_spectacular.utils import extend_schema_view,extend_schema,OpenApiParameter, OpenApiResponse, OpenApiExample, OpenApiTypes, OpenApiSchemaBase
 
 
 
+def permission_required_404(perm):
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.has_perm(perm):
+                raise Http404("Page not found")
+            return view_func(request, *args, **kwargs)
+        return _wrapped_view
+    return decorator
 # for hozma
 @login_required
 def hozmalogin(request):
@@ -76,31 +87,40 @@ def hozmalogin(request):
         return redirect('item-for-inqury-page')
     else:
         return render(request, 'CarPartsTemplates/hozmalogin.html')
-@login_required   
+@login_required 
+@permission_required_404('almogOil.client_permissions')  
 def item_filter_page(request):
     return render(request, 'CarPartsTemplates/items_page.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def CarParts_page(request):
     return render(request, 'CarPartsTemplates/Brands.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def CarPartsHome_page(request):
     return render(request, 'CarPartsTemplates/index.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def Dashbord_page(request):
     return render(request, 'CarPartsTemplates/Dashboard.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def Cart_page(request):
     return render(request, 'CarPartsTemplates/Cart.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def my_account(request):
     return render(request, 'CarPartsTemplates/my_account.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def track_order(request):
     return render(request, 'CarPartsTemplates/track_order.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def contact(request):
     return render(request, 'CarPartsTemplates/contact.html')
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def return_policy(request):
 
      # Get the active return policy or create a default one if none exists
@@ -123,10 +143,12 @@ def return_policy(request):
     return render(request, 'CarPartsTemplates/return_policy.html', {'policy': policy})
 
 @login_required
+@permission_required('almogOil.hozma_Settings', raise_exception=True)
 def edit_return_policy(request):
     return render(request, 'CarPartsTemplates/edit_return_policy.html')
 
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def faq(request):
     categories = almogOil_models.FAQ.CATEGORY_CHOICES                     # [(value, label), ...]
     
@@ -142,6 +164,7 @@ def faq(request):
     }
     return render(request, 'CarPartsTemplates/faq.html', context)
 @login_required
+@permission_required('almogOil.hozma_Settings', raise_exception=True)
 def faq_delete(request, faq_id):
     faq = get_object_or_404(almogOil_models.FAQ, id=faq_id)
     faq.delete()
@@ -157,6 +180,7 @@ ICON_MAP = {                # إذا أردت أيقونات لكل تصنيف
     'payments': 'credit-card',
 }
 @login_required
+@permission_required('almogOil.hozma_Settings', raise_exception=True)
 def faq_edit(request):
     if request.method == 'POST':
         qid      = request.POST.get('id') or None
@@ -187,6 +211,7 @@ def faq_edit(request):
     }
     return render(request, 'CarPartsTemplates/faq_edit.html', context)
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def terms_conditions(request):
     terms = almogOil_models.TermsAndConditions.objects.filter(is_active=True).first()
     
@@ -210,18 +235,22 @@ def terms_conditions(request):
 
 
 @login_required
+@permission_required('almogOil.hozma_Settings', raise_exception=True)
 def edit_terms_and_conditions(request):
     return render(request, "CarPartsTemplates/edit_terms_and_conditions.html")
 @login_required
+@permission_required('almogOil.hozma_SellInvoices', raise_exception=True)
 def dashboard(request):
     return render(request, 'CarPartsTemplates/preorder-dashboard.html') 
 @login_required
 def order_view(request):
     return render(request, 'CarPartsTemplates/order.html') 
 @login_required
+@permission_required('almogOil.hozma_SellInvoices', raise_exception=True)
 def preorder_detail(request, invoice_no):
     return render(request, 'CarPartsTemplates/preorder-detail.html', {'invoice_no': invoice_no})  # This will render the PreOrder details page
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def invoice(request, invoice_no):
     context = {
         'invoice_no': invoice_no
@@ -240,11 +269,13 @@ def Buyinvoice_management(request):
     }
     return render(request,"buy-invoice-reports.html",context)
 @login_required
+@permission_required('almogOil.hozma_BuyInvoices', raise_exception=True)
 def preorder_buy_detail(request, invoice_no):
   return render(request, 'CarPartsTemplates/show_preordersBuyDetails.html', {'invoice_no': invoice_no})  # This will render the PreOrder details page
 
 
 @login_required
+@permission_required('almogOil.hozma_BuyInvoices', raise_exception=True)
 def preorders_buy_page(request):
     return render(request, 'CarPartsTemplates/show_preordersBuy.html')
 
@@ -269,6 +300,7 @@ class MainitemViewSet(viewsets.ModelViewSet):
 
 
 @login_required
+@permission_required('almogOil.hozma_Products', raise_exception=True)
 def mainitem_create_page(request, clientid):
     return render(request, 'CarPartsTemplates/source/mainitem_create.html')         
 
@@ -302,22 +334,28 @@ def source_register_view(request):
 
 
 @login_required
+@permission_required('almogOil.hozma_Suppliers', raise_exception=True)
 def source_dashboard(request):
     return render(request, 'CarPartsTemplates/source/edit-source.html')
+
 @login_required
+@permission_required_404('almogOil.client_permissions')
 def edit_dashboard(request):
     return render(request, 'CarPartsTemplates/edit_dashboard.html')
 
 @login_required
+@permission_required('almogOil.hozma_Settings', raise_exception=True)
 def Settings(request):
     return render(request, 'CarPartsTemplates/Settings.html')
 
 @login_required
+@permission_required('almogOil.item_images', raise_exception=True)
 def uploadimages(request):
     return render(request, 'CarPartsTemplates/source/images_uploaders.html')
 
 
 @login_required
+@permission_required('almogOil.hozma_Clients', raise_exception=True)
 def hozmaclient(request):
     return render(request, 'CarPartsTemplates/hozmaclient.html')
 
@@ -326,5 +364,13 @@ def hozmaReport(request):
     return render(request, 'CarPartsTemplates/hozmaReport.html')
 
 @login_required
+@permission_required('almogOil.hozma_driver', raise_exception=True)
 def Hozmadriver(request):
     return render(request, 'CarPartsTemplates/driver_dashboard.html')
+
+
+@login_required
+@permission_required('almogOil.hozma_driver', raise_exception=True)
+def HozmaAsgindriver(request, invoice_no):
+   
+    return render(request, 'CarPartsTemplates/delevery_mangment.html')

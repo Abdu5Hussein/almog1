@@ -393,7 +393,7 @@ const HEADER_MAP = {
   'رقم الخاص'        : 'pno',
   'رقم الخاص المورد'  : 'source_pno',
   'اسم الصنف'        : 'itemname',
-  'رقم الشركه'       : 'eitemname',
+  'رقم الشركه'       : 'replaceno',
   'اسم الشركه'       : 'companyproduct',
   'الرقم الاصلي'     : 'oem_number',
   'الرقم الاصلي المكافي':'extrenal_oem',

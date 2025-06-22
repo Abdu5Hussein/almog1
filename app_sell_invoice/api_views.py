@@ -579,7 +579,7 @@ def deliver_sell_invoice(request):
 
         invoice.save()
         if status == "سلمت":
-            almogOil_models.PreOrderItemsTable.objects.filter(invoice_no=invoice_id).update(invoice_status="جاري التوصيل")
+            almogOil_models.PreOrderTable.objects.filter(invoice_no=invoice_id).update(invoice_status="جاري التوصيل")
         # Send notification to the user associated with this invoice.
         user_id = invoice.client_obj.clientid  # Make sure this field exists on your model.
         room_group_name = f'user_{user_id}'

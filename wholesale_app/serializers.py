@@ -1,3 +1,4 @@
+from time import localtime
 from rest_framework import serializers
 from almogOil import models as almogOil_models
 from django.db import models
@@ -201,3 +202,28 @@ class DeleveryPreOrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.PreOrderItemsTable
         fields = ['name', 'confirm_quantity', 'item_no', 'pno', 'company', 'confirmed_delevery_quantity', 'dinar_unit_price']       
+
+
+class PREORDERPRINTSerializer(serializers.ModelSerializer):
+    invoice_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = almogOil_models.PreOrderTable
+        fields = "__all__"
+
+    def get_invoice_date(self, obj):
+        return obj.invoice_date.strftime("%Y-%m-%d") if obj.invoice_date else None   # Ensure "YYYY-MM-DD" format
+
+    def get_delivered_date(self, obj):
+        if obj.delivered_date:
+            return localtime(obj.delivered_date).strftime('%Y-%m-%d %H:%M')
+        return None
+
+
+class EmployeesTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.EmployeesTable
+        fields = [
+            'employee_id', 'name', 'phone', 'is_available', 
+            'has_active_order', 'type', 'employee_image'
+        ]

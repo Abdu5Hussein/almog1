@@ -6,7 +6,7 @@ document.getElementById('invoice-no').textContent = invoiceNo;
 // Fetch the PreOrder and its items using customFetch
 async function fetchPreOrderDetails() {
     try {
-        const response = await customFetch(`http://45.13.59.226/hozma/api/preorders/?invoice_no=${invoiceNo}`);
+        const response = await customFetch(`/hozma/api/preorders/?invoice_no=${invoiceNo}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -48,6 +48,11 @@ async function fetchPreOrderDetails() {
                value="${confirmQty}" 
                min="0"
                onchange="highlightDifference('${item.pno}', ${orderedQty})">
+    </td>
+       <td>
+        ${item.confirmed_delevery_quantity !== null && item.confirmed_delevery_quantity !== undefined
+            ? item.confirmed_delevery_quantity
+            : '<span class="text-muted">غير متوفر</span>'}
     </td>
 <td>${Number(item.dinar_unit_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
 <td>${Number(item.dinar_total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
@@ -95,3 +100,35 @@ function highlightDifference(itemNo, originalQty) {
 }
 
 
+async function sendPrintRequest(invoiceNo) {
+    try {
+        const payload = {
+            label: "specific_sell_invoice",
+            invoice_no: invoiceNo
+        };
+
+        const response = await fetch('/hozma/api/print', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Add CSRF token if needed
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to send print request. Status: ${response.status}`);
+        }
+
+        const resultHtml = await response.text();  // Get HTML as text
+
+        // Open a new window and write the HTML content
+        const printWindow = window.open('', '_blank');
+        printWindow.document.open();
+        printWindow.document.write(resultHtml);
+        printWindow.document.close();
+
+    } catch (error) {
+        console.error("Error sending print request:", error);
+    }
+}

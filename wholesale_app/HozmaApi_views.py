@@ -72,7 +72,7 @@ import hashlib
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from dateutil.relativedelta import relativedelta
-from almogOil.api_views import create_transactions_history_record
+from almogOil.api_views import create_transactions_history_record, filter_fields, post_to_print_server
 
 CACHE_TTL = 60 * 5   # 5 دقائق
 
@@ -3616,3 +3616,335 @@ def get_invoice_items(request, invoice_no):
     
     serializer = wholesale_serializers.DeleveryPreOrderItemSerializer(items, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)    
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])  # Replace with your CookieAuthentication
+def print_api_preorder(request):
+    label = request.data.get("label")
+    by_employee = request.session.get("name", "Unknown User") if request.user.is_authenticated else "Unknown User"
+    today = timezone.now().date()
+
+    if label == "today_sell_invoice":
+        invoices = almogOil_models.PreOrderTable.objects.filter(date_time__date=today)
+        serializer = wholesale_serializers.PREORDERPRINTSerializer(invoices, many=True)
+
+        PRINTABLE_FIELDS = {
+            "invoice_no": "رقم الفاتورة",
+            "date_time": "تاريخ الفاتورة",
+            "client_name": "اسم الزبون",
+            "amount": "المبلغ",
+            "discount": "الخصم",
+            "net_amount": "الصافي",
+        }
+
+        filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS, date_fields=["date_time"])
+        total = sum(inv.amount for inv in invoices) or 0
+
+        payload = {
+            "report_title": "فواتير بيع - اليوم",
+            "by_employee": by_employee,
+            "company_name": "شركة مارين لاستيراد قطع غيار السيارات و زيوتها",
+            "document_number": "#",
+            "text_statement": "",
+            "report_sections": [{
+                "title": "فواتير بيع - اليوم",
+                "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                "rows": [list(d.values()) for d in filtered_data],
+                "totals": [{"total": float(total), "total_label": "إجمالي"}],
+            }],
+        }
+        return post_to_print_server(payload, request)
+
+    elif label == "specific_sell_invoice":
+        invoice_no = request.data.get("invoice_no")
+        if not invoice_no:
+            return Response({"error": "invoice_no is required"}, status=400)
+
+        try:
+            invoice = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
+            items = almogOil_models.PreOrderItemsTable.objects.filter(invoice_instance=invoice)
+            serializer = wholesale_serializers.PreOrderItemsTableSerializer(items, many=True)
+
+            PRINTABLE_FIELDS = {
+                "pno": "ر. خ",
+                "name": "اسم الصنف",
+                "dinar_unit_price": "سعر القطعة",
+                "quantity": "الكمية",
+                "dinar_total_price": "الاجمالي",
+            }
+
+            filtered_data = filter_fields(serializer.data, PRINTABLE_FIELDS)
+            total = sum(item.dinar_total_price or 0 for item in items)
+
+            payload = {
+                "report_title": f"فاتورة بيع - {invoice_no}",
+                "by_employee": by_employee,
+                "company_name": "منصة حزمة",
+                "document_number": str(invoice_no),
+                "text_statement": f"""
+                العميل: {invoice.client_name or "غير محدد"}،
+                التاريخ: {invoice.date_time.strftime('%d/%m/%Y') if invoice.date_time else "غير متوفر"}،
+                الحالة: {invoice.invoice_status or "غير محددة"}،
+               
+                """,
+                "report_sections": [{
+                    "title": f"فاتورة بيع - {invoice_no}",
+                    "headers": list(filtered_data[0].keys()) if filtered_data else [],
+                    "rows": [list(d.values()) for d in filtered_data],
+                    "totals": [{"total": float(total), "total_label": "إجمالي"}],
+                }],
+            }
+            return post_to_print_server(payload, request)
+        except almogOil_models.PreOrderTable.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=404)
+
+    
+
+    return Response({"error": "Invalid label"}, status=400)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def available_drivers(request, invoice_no):
+    """Get available drivers for a specific order"""
+    # First verify the order exists
+    order = get_object_or_404(almogOil_models.PreOrderTable, invoice_no=invoice_no)
+    
+    # Get available drivers
+    drivers = almogOil_models.EmployeesTable.objects.filter(
+        type='driver',
+        
+        has_active_order=False
+    )
+    
+    return Response({
+        'order':  wholesale_serializers.PreOrderTableSerializer(order).data,
+        'available_drivers':  wholesale_serializers.EmployeesTableSerializer(drivers, many=True).data
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def assign_driver(request, invoice_no):
+    """Assign a driver to a specific order"""
+    order = get_object_or_404(almogOil_models.PreOrderTable, invoice_no=invoice_no)
+    driver_id = request.data.get('driver_id')
+    
+    if not driver_id:
+        return Response(
+            {"error": "Driver ID is required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    driver = get_object_or_404(almogOil_models.EmployeesTable, pk=driver_id)
+    
+    # Update order with driver assignment
+    order.assigned_employee = driver
+    order.delivery_status = 'assigned'
+    order.delivery_start_time = timezone.now()
+    order.invoice_status = 'في الطريق'
+
+    order.save()
+    
+    # Update driver status
+    driver.has_active_order = True
+    driver.is_available = False  # Assuming you want to mark the driver as unavailable
+    driver.save()
+    
+    return Response({
+        "message": f"Order {order.invoice_no} assigned to {driver.name}",
+        "order": wholesale_serializers.PreOrderTableSerializer(order).data,
+        "driver": wholesale_serializers.EmployeesTableSerializer(driver).data
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_items(request):
+    """Update delivered quantities for order items"""
+    try:
+        invoice_no = request.data.get('invoice_no')
+        items = request.data.get('items', [])
+        
+        # Validate all items belong to this order and employee
+        order = almogOil_models.PreOrderTable.objects.get(
+            invoice_no=invoice_no,
+            
+        )
+        
+        # Update quantities
+        for item_data in items:
+            almogOil_models.PreOrderItemsTable.objects.filter(
+                pno=item_data['item_id'],
+                invoice_instance=order
+            ).update(
+                confirmed_delevery_quantity=item_data['delivered_quantity']
+            )
+        
+        return Response({'status': 'success'})
+    
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def confirm_delivery(request, order_id):
+    """Mark an order as delivered with complete quantity handling"""
+    try:
+        # Get employee and order
+        employee = almogOil_models.EmployeesTable.objects.get(phone=request.user)
+        order = almogOil_models.PreOrderTable.objects.get(
+            autoid=order_id,
+            assigned_employee=employee
+        )
+
+        # Get all items for this order
+        items = almogOil_models.PreOrderItemsTable.objects.filter(
+            invoice_instance=order
+        )
+
+        # Track if any quantities were reduced
+        reduced_items = []
+        
+        # First pass: Update quantities and check for reductions
+        for item in items:
+            if item.confirmed_delevery_quantity is None:
+                item.confirmed_delevery_quantity = item.confirm_quantity
+                item.save()
+            elif item.confirmed_delevery_quantity < item.confirm_quantity:
+                reduced_items.append(item)
+                
+        # If any quantities were reduced, process updates
+        if reduced_items:
+            # 1. Send WhatsApp notification
+            message_body = "تم تغيير الكميات في الفاتورة:\n"
+            for item in reduced_items:
+                quantity_diff = item.confirm_quantity - item.confirmed_delevery_quantity
+                reduction_amount = quantity_diff * item.dinar_unit_price
+                message_body += (f"- {item.name}: تم تخفيض {quantity_diff} وحدة "
+                               f"(قيمة التخفيض: {reduction_amount} دينار)\n")
+            
+            send_whatsapp_message_via_green_api("218942434823", message_body)
+
+            # 2. Update SellInvoice and SellInvoiceItems
+            try:
+                sell_invoice = almogOil_models.SellinvoiceTable.objects.get(
+                    invoice_no=order.invoice_no
+                )
+                
+                # Initialize with current totals
+                total_amount = sell_invoice.amount
+                net_amount = sell_invoice.net_amount
+                
+                for item in reduced_items:
+                    # Update SellInvoiceItems
+                    sell_item = almogOil_models.SellInvoiceItemsTable.objects.get(
+                        invoice_instance=sell_invoice,
+                        pno=item.pno
+                    )
+                    
+                    # Calculate the quantity difference and reduction amount
+                    quantity_diff = item.confirm_quantity - item.confirmed_delevery_quantity
+                    reduction_amount = quantity_diff * item.dinar_unit_price
+                    
+                    # Update the sell invoice item
+                    sell_item.quantity = item.confirmed_delevery_quantity
+                    sell_item.dinar_total_price = item.dinar_unit_price * item.confirmed_delevery_quantity
+                    sell_item.save()
+                    
+                    # Adjust totals by subtracting the reduction amount
+                    total_amount -= reduction_amount
+                    net_amount -= reduction_amount
+                
+                # Update SellInvoice totals
+                sell_invoice.amount = total_amount
+                sell_invoice.net_amount = net_amount
+                sell_invoice.save()
+                
+            except Exception as e:
+                print(f"Error updating sell invoice: {str(e)}")
+
+            # 3. Update PreOrder and PreOrderItems
+            try:
+                # Recalculate PreOrder totals
+                total_amount = order.amount
+                net_amount = order.net_amount
+                
+                for item in reduced_items:
+                    # Calculate the quantity difference and reduction amount
+                    quantity_diff = item.confirm_quantity - item.confirmed_delevery_quantity
+                    reduction_amount = quantity_diff * item.dinar_unit_price
+                    
+                    # Update the preorder item's total price
+                    item.dinar_total_price = item.dinar_unit_price * item.confirmed_delevery_quantity
+                    item.save()
+                    
+                    # Adjust totals by subtracting the reduction amount
+                    total_amount -= reduction_amount
+                    net_amount -= reduction_amount
+                
+                # Update PreOrder totals
+                order.amount = total_amount
+                order.net_amount = net_amount
+                order.save()
+                item.save()
+                
+            except Exception as e:
+                print(f"Error updating preorder: {str(e)}")
+
+        # Final order status update
+        order.delivery_status = 'delivered'
+        order.delivery_end_time = timezone.now()
+        order.delvery_confirmed = True
+        order.invoice_status = 'تم التوصيل'
+        order.assigned_employee = None
+        order.save()
+        
+        # Update employee status
+        employee.has_active_order = False
+        employee.is_available = True
+        employee.save()
+
+        return Response({
+            'status': 'success',
+            'message': 'Order delivered successfully',
+            'reduced_items': len(reduced_items),
+            'total_reduction': (sell_invoice.amount - total_amount) if reduced_items else 0
+        })
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_delivery_status(request, order_id):
+    """Update delivery status (e.g., to 'in_progress')"""
+    try:
+        employee = almogOil_models.EmployeesTable.objects.get(phone=request.user.username)
+        
+        order = almogOil_models.PreOrderTable.objects.get(
+            autoid=order_id,
+            assigned_employee=employee
+        )
+        
+        status = request.data.get('status')
+        if status in ['assigned', 'in_progress', 'delivered', 'cancelled']:
+            order.delivery_status = status
+            
+            if status == 'in_progress' and not order.delivery_start_time:
+                order.delivery_start_time = timezone.now()
+            
+            order.save()
+        
+        return Response({'status': 'success'})
+    
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )

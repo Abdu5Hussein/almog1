@@ -132,12 +132,27 @@ function renderInvoiceList(invoices) {
   `;
 
   invoices.forEach(invoice => {
-    const statusBadge = (invoice.invoice_status === "لم تشتري")
-    ? '<span class="badge bg-warning badge-order-status">قيد المعالجة</span>'
-    : (invoice.invoice_status === "تم شراءهن المورد")
-      ? '<span class="badge bg-success badge-order-status">تمت المعالجة</span>'
-      : `<span class="badge bg-secondary badge-order-status">${invoice.invoice_status}</span>`;
-  
+    let statusBadge = '';
+
+    switch (invoice.invoice_status) {
+        case "لم تشتري":
+            statusBadge = '<span class="badge bg-warning text-dark badge-order-status"><i class="bi bi-hourglass-split me-1"></i>قيد المعالجة</span>';
+            break;
+        case "تم شراءهن المورد":
+            statusBadge = '<span class="badge bg-success badge-order-status"><i class="bi bi-check2-circle me-1"></i>تمت المعالجة</span>';
+            break;
+        case "جاري التوصيل":
+            statusBadge = '<span class="badge bg-primary badge-order-status"><i class="bi bi-box-seam me-1"></i>جاري التوصيل</span>';
+            break;
+        case "في الطريق":
+            statusBadge = '<span class="badge bg-info text-dark badge-order-status"><i class="bi bi-truck me-1"></i>في الطريق</span>';
+            break;
+        case "تم التوصيل":
+            statusBadge = '<span class="badge bg-success badge-order-status"><i class="bi bi-check-lg me-1"></i>تم التوصيل</span>';
+            break;
+        default:
+            statusBadge = `<span class="badge bg-secondary badge-order-status"><i class="bi bi-question-circle me-1"></i>${invoice.invoice_status}</span>`;
+    }
 
     html += `
       <tr class="invoice-list-item" data-invoice-no="${invoice.invoice_no}">
