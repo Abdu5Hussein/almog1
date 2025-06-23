@@ -39,13 +39,30 @@ async function fillInvoice(data) {
 
   /* —— 1. status badge —— */
   const badge = document.getElementById('order-status-badge');
-  const statusMap = {
-    false: { label: 'قيد المعالجة', class: 'bg-warning' },
-    true: { label: 'مكتمل', class: 'bg-success' }
-  };
-  const mapping = statusMap[data.shop_confrim] || { label: 'غير معروف', class: 'bg-secondary' };
-  badge.textContent = mapping.label;
-  badge.className = `badge badge-order-status ${mapping.class}`;
+  let statusBadge = '';
+  
+  switch (data.invoice_status) {
+    case "لم تشتري":
+      statusBadge = '<span class="badge bg-warning text-dark badge-order-status"><i class="bi bi-hourglass-split me-1"></i>قيد المعالجة</span>';
+      break;
+    case "تم شراءهن المورد":
+      statusBadge = '<span class="badge bg-success badge-order-status"><i class="bi bi-check2-circle me-1"></i>تمت المعالجة</span>';
+      break;
+    case "جاري التوصيل":
+      statusBadge = '<span class="badge bg-primary badge-order-status"><i class="bi bi-box-seam me-1"></i>جاري التوصيل</span>';
+      break;
+    case "في الطريق":
+      statusBadge = '<span class="badge bg-info text-dark badge-order-status"><i class="bi bi-truck me-1"></i>في الطريق</span>';
+      break;
+    case "تم التوصيل":
+      statusBadge = '<span class="badge bg-success badge-order-status"><i class="bi bi-check-lg me-1"></i>تم التوصيل</span>';
+      break;
+    default:
+      statusBadge = `<span class="badge bg-secondary badge-order-status"><i class="bi bi-question-circle me-1"></i>${data.invoice_status}</span>`;
+      break;
+  }
+  
+  badge.innerHTML = statusBadge;
 
   /* —— 2. items table —— */
   const tbody = document.getElementById('invoice-items-tbody');
@@ -66,33 +83,40 @@ async function fillInvoice(data) {
     // Conditional quantity display
     let quantityHtml = `<td>${qty}</td>`;
 
-// Check if Confirm Qty is different from Original
-if (confirmQty !== null && confirmQty !== originalQty) {
-  let htmlContent = `
-    <div>
-      <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
-      <span class="fw-bold text-dark">${confirmQty}</span><br>
-      <span class="badge bg-warning text-dark mt-1">تم تعديل الكمية من المتجر</span>
-    </div>
-  `;
-
-  // Check if Confirmed Delivery Qty exists and is different from Confirm Qty
-  if (item.confirmed_delevery_quantity !== null &&
+    // Modified by shop
+    if (confirmQty !== null && confirmQty !== originalQty) {
+      quantityHtml = `
+        <td>
+          <div>
+            <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
+            <span class="fw-bold text-dark">${confirmQty}</span><br>
+            <span class="badge bg-warning text-dark mt-1">تم تعديل الكمية من المتجر</span>
+          </div>
+        </td>
+      `;
+    }
+    
+    // Modified by client after shop
+    if (
+      item.confirmed_delevery_quantity !== null &&
       item.confirmed_delevery_quantity !== undefined &&
-      item.confirmed_delevery_quantity !== confirmQty) {
+      item.confirmed_delevery_quantity !== confirmQty
+    ) {
+      quantityHtml = `
+        <td>
+          <div>
+            ${confirmQty !== originalQty
+              ? `<span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
+                 <span class="text-muted text-decoration-line-through small">${confirmQty}</span><br>`
+              : `<span class="text-muted text-decoration-line-through small">${originalQty}</span><br>`}
+            <span class="fw-bold text-dark">${item.confirmed_delevery_quantity}</span><br>
+            <span class="badge bg-info text-dark mt-1">تم تعديل الكمية من العميل</span>
+          </div>
+        </td>
+      `;
+    }
+    
 
-    htmlContent = `
-      <div>
-        <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
-        <span class="text-muted text-decoration-line-through small">${confirmQty}</span><br>
-        <span class="fw-bold text-dark">${item.confirmed_delevery_quantity}</span><br>
-        <span class="badge bg-info text-dark mt-1">تم تعديل الكمية من العميل</span>
-      </div>
-    `;
-  }
-
-  quantityHtml = `<td>${htmlContent}</td>`;
-}
 
 
     tbody.insertAdjacentHTML('beforeend', `
@@ -121,6 +145,8 @@ if (confirmQty !== null && confirmQty !== originalQty) {
   const discount = data.client.discount || 0;
   const total = data.net_amount || 0;
   const subtotals = data.amount || 0;
+  const discountPercent = (parseFloat(discount) * 100).toFixed(0) + '%';
+
 
   tbody.insertAdjacentHTML('beforeend', `
     <tr class="summary-row">
@@ -133,7 +159,7 @@ if (confirmQty !== null && confirmQty !== originalQty) {
     </tr>
     <tr class="summary-row">
       <td colspan="3" class="text-end">الخصم:</td>
-      <td>${formatter.format(parseFloat(discount))} د.ل</td>
+      <td>${discountPercent} </td>
     </tr>
     <tr class="summary-row summary-row-total">
       <td colspan="3" class="text-end">المجموع الكلي:</td>
@@ -237,19 +263,60 @@ try {
     const itemRows = document.querySelectorAll('#invoice-items-tbody tr:not(.summary-row)');
     
     itemRows.forEach(row => {
-        try {
-            const name = row.querySelector('td div div.fw-bold')?.textContent || 'N/A';
-            const pno = row.querySelector('td div div.small:nth-of-type(1)')?.textContent.replace('رقم القطعة:', '').trim() || 'N/A';
-            const company = row.querySelector('td div div.small:nth-of-type(2)')?.textContent.replace('منشأ:', '').trim() || 'N/A';
-            const price = row.querySelector('td:nth-child(2)')?.textContent.trim() || '0.00 د.ل';
-            const qty = row.querySelector('td:nth-child(3)')?.textContent.trim() || '0';
-            const total = row.querySelector('td:nth-child(4)')?.textContent.trim() || '0.00 د.ل';
-            
-            items.push({ name, pno, company, price, qty, total });
-        } catch (e) {
-            console.error('Error processing item row:', e);
-        }
-    });
+      try {
+          const name = row.querySelector('td div div.fw-bold')?.textContent || 'N/A';
+          const pno = row.querySelector('td div div.small:nth-of-type(1)')?.textContent.replace('رقم القطعة:', '').trim() || 'N/A';
+          const company = row.querySelector('td div div.small:nth-of-type(2)')?.textContent.replace('منشأ:', '').trim() || 'N/A';
+          const price = row.querySelector('td:nth-child(2)')?.textContent.trim() || '0.00 د.ل';
+  
+          const qtyCell = row.querySelector('td:nth-child(3)');
+          const originalQtyText = qtyCell?.getAttribute('data-original-qty') || '';
+          const confirmQtyText = qtyCell?.textContent.trim() || '0';
+          const clientDeliveryQtyText = qtyCell?.getAttribute('data-client-delivery-qty') || null;
+  
+          const originalQty = parseInt(originalQtyText, 10) || 0;
+          const confirmQty = parseInt(confirmQtyText, 10) || 0;
+          const clientDeliveryQty = clientDeliveryQtyText !== null ? parseInt(clientDeliveryQtyText, 10) : null;
+  
+          let qtyDisplay = '';
+  
+          if (
+              clientDeliveryQty !== null &&
+              clientDeliveryQty !== undefined &&
+              clientDeliveryQty !== confirmQty
+          ) {
+              qtyDisplay = `
+                  <div>
+                      ${
+                        confirmQty !== originalQty
+                          ? `<span style="text-decoration:line-through; color:gray;">${originalQty}</span><br>
+                             <span style="text-decoration:line-through; color:gray;">${confirmQty}</span><br>`
+                          : `<span style="text-decoration:line-through; color:gray;">${originalQty}</span><br>`
+                      }
+                      <strong>${clientDeliveryQty}</strong><br>
+                      <span style="background:#17a2b8; color:#000; padding:2px 4px; border-radius:4px; font-size:0.75rem;">تم تعديل الكمية من العميل</span>
+                  </div>
+              `;
+            } else if (confirmQty !== originalQty) {
+              qtyDisplay = `
+                  <div>
+                      <span style="text-decoration:line-through; color:gray;">${originalQty}</span><br>
+                      <strong>${confirmQty}</strong><br>
+                      <span style="background:#ffc107; color:#000; padding:2px 4px; border-radius:4px; font-size:0.75rem;">تم تعديل الكمية من المتجر</span>
+                  </div>
+              `;
+          }
+           else {
+              qtyDisplay = confirmQty;
+          }
+  
+          const total = row.querySelector('td:nth-child(4)')?.textContent.trim() || '0.00 د.ل';
+  
+          items.push({ name, pno, company, price, qty: qtyDisplay, total });
+      } catch (e) {
+          console.error('Error processing item row:', e);
+      }
+  });
 
     // Get summary data (corrected selectors)
     const summaryRows = document.querySelectorAll('#invoice-items-tbody tr.summary-row');

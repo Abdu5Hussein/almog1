@@ -197,7 +197,7 @@ function renderInvoiceList(invoices) {
       const invoiceNo = row.dataset.invoiceNo;
       // Update navigation stack and history
       navigationStack.push('detail');
-      history.pushState({ view: 'detail' }, '', `/hozma/invoice/${invoiceNo}`);
+      history.pushState({ view: 'detail' }, '', `/hozma/invoice/${invoiceNo}/`);
       loadInvoiceDetails(invoiceNo);
 
     });
@@ -232,13 +232,30 @@ async function fillInvoice(data) {
 
   /* —— 1. status badge —— */
   const badge = document.getElementById('order-status-badge');
-  const statusMap = {
-    false: { label: 'قيد المعالجة', class: 'bg-warning' },
-    true: { label: 'مكتمل', class: 'bg-success' }
-  };
-  const mapping = statusMap[data.shop_confrim] || { label: 'غير معروف', class: 'bg-secondary' };
-  badge.textContent = mapping.label;
-  badge.className = `badge badge-order-status ${mapping.class}`;
+  let statusBadge = '';
+  
+  switch (data.invoice_status) {
+    case "لم تشتري":
+      statusBadge = '<span class="badge bg-warning text-dark badge-order-status"><i class="bi bi-hourglass-split me-1"></i>قيد المعالجة</span>';
+      break;
+    case "تم شراءهن المورد":
+      statusBadge = '<span class="badge bg-success badge-order-status"><i class="bi bi-check2-circle me-1"></i>تمت المعالجة</span>';
+      break;
+    case "جاري التوصيل":
+      statusBadge = '<span class="badge bg-primary badge-order-status"><i class="bi bi-box-seam me-1"></i>جاري التوصيل</span>';
+      break;
+    case "في الطريق":
+      statusBadge = '<span class="badge bg-info text-dark badge-order-status"><i class="bi bi-truck me-1"></i>في الطريق</span>';
+      break;
+    case "تم التوصيل":
+      statusBadge = '<span class="badge bg-success badge-order-status"><i class="bi bi-check-lg me-1"></i>تم التوصيل</span>';
+      break;
+    default:
+      statusBadge = `<span class="badge bg-secondary badge-order-status"><i class="bi bi-question-circle me-1"></i>${data.invoice_status}</span>`;
+      break;
+  }
+  
+  badge.innerHTML = statusBadge;
 
   /* —— 2. items table —— */
   const tbody = document.getElementById('invoice-items-tbody');
@@ -250,26 +267,49 @@ async function fillInvoice(data) {
     const originalQty = parseFloat(item.quantity || 0);
     const confirmQty = item.confirm_quantity ? parseFloat(item.confirm_quantity) : null;
     const qty = confirmQty !== null ? confirmQty : originalQty;
-    const total = unit * qty;
+    const total = item.dinar_total_price ;
     subtotal += total;
 
     // Get image
-// Inside fillInvoice(data):
-const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
+    const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
 
     // Conditional quantity display
     let quantityHtml = `<td>${qty}</td>`;
+
+    // Modified by shop
     if (confirmQty !== null && confirmQty !== originalQty) {
       quantityHtml = `
         <td>
           <div>
             <span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
             <span class="fw-bold text-dark">${confirmQty}</span><br>
-            <span class="badge bg-warning text-dark mt-1">تم تعديل الكمية</span>
+            <span class="badge bg-warning text-dark mt-1">تم تعديل الكمية من المتجر</span>
           </div>
         </td>
       `;
     }
+    
+    // Modified by client after shop
+    if (
+      item.confirmed_delevery_quantity !== null &&
+      item.confirmed_delevery_quantity !== undefined &&
+      item.confirmed_delevery_quantity !== confirmQty
+    ) {
+      quantityHtml = `
+        <td>
+          <div>
+            ${confirmQty !== originalQty
+              ? `<span class="text-muted text-decoration-line-through small">${originalQty}</span><br>
+                 <span class="text-muted text-decoration-line-through small">${confirmQty}</span><br>`
+              : `<span class="text-muted text-decoration-line-through small">${originalQty}</span><br>`}
+            <span class="fw-bold text-dark">${item.confirmed_delevery_quantity}</span><br>
+            <span class="badge bg-info text-dark mt-1">تم تعديل الكمية من العميل</span>
+          </div>
+        </td>
+      `;
+    }
+    
+
 
 
     tbody.insertAdjacentHTML('beforeend', `
@@ -280,7 +320,9 @@ const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
             <div>
               <div class="fw-bold">${item.name}</div>
               <div class="text-muted small">رقم القطعة: ${item.pno}</div>
-              <div class="text-muted small">منشأ: ${item.company}</div>
+              <div class="text-muted small">الشركة: ${item.company}</div>
+              <div class="text-muted small">الشركة: ${item.oem_numbers}</div>
+
             </div>
           </div>
         </td>
@@ -296,6 +338,8 @@ const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
   const discount = data.client.discount || 0;
   const total = data.net_amount || 0;
   const subtotals = data.amount || 0;
+  const discountPercent = (parseFloat(discount) * 100).toFixed(0) + '%';
+
 
   tbody.insertAdjacentHTML('beforeend', `
     <tr class="summary-row">
@@ -308,7 +352,7 @@ const imageURL = await getProductImageURL(item.pno, PLACEHOLDER_IMG, baseURL);
     </tr>
     <tr class="summary-row">
       <td colspan="3" class="text-end">الخصم:</td>
-      <td>${formatter.format(parseFloat(discount))} د.ل</td>
+      <td>${discountPercent} </td>
     </tr>
     <tr class="summary-row summary-row-total">
       <td colspan="3" class="text-end">المجموع الكلي:</td>
@@ -381,245 +425,287 @@ async function getProductImageURL(pno, placeholder, baseURL) {
 
 function printInvoice() {
   try {
-    // Get order number from the page
-    const invoiceNoElem = document.querySelector('#order-summary-list li:nth-child(1)');
-    const invoiceNo = invoiceNoElem ? invoiceNoElem.textContent.split(':')[1].trim() : 'N/A';
+      // Get order number from the page (corrected selector)
+      const invoiceNoElem = document.querySelector('#order-summary-list li:nth-child(1)');
+      const invoiceNo = invoiceNoElem ? invoiceNoElem.textContent.split(':')[1].trim() : 'N/A';
+  
+      // Get order date from the page (corrected selector)
+      const orderDateElem = document.querySelector('#order-summary-list li:nth-child(2)');
+      const orderDate = orderDateElem ? orderDateElem.textContent.split(':')[1].trim() : new Date().toLocaleDateString('ar-LY');
+  
+      // Get client details (corrected selectors)
+      const clientNameElem = document.querySelector('#customer-details-list li:nth-child(1)');
+      const clientName = clientNameElem ? clientNameElem.textContent.split(':')[1].trim() : 'N/A';
+  
+      const phoneElem = document.querySelector('#customer-details-list li:nth-child(3)');
+      const phone = phoneElem ? phoneElem.textContent.split(':')[1].trim() : 'N/A';
+  
+      const addressElem = document.querySelector('#customer-details-list li:nth-child(4)');
+      const address = addressElem ? addressElem.textContent.split(':')[1].trim() : 'N/A';
+  
+      // Get payment method (added this)
+      const paymentMethodElem = document.querySelector('#order-summary-list li:nth-child(3)');
+      const paymentMethod = paymentMethodElem ? paymentMethodElem.textContent.split(':')[1].trim() : 'N/A';
+  
+      // Get order status (added this)
+      const orderStatusElem = document.querySelector('#order-summary-list li:nth-child(5)');
+      const orderStatus = orderStatusElem ? orderStatusElem.textContent.split(':')[1].trim() : 'N/A';
+  
+      // Get items data
+      const items = [];
+      const itemRows = document.querySelectorAll('#invoice-items-tbody tr:not(.summary-row)');
+      
+      itemRows.forEach(row => {
+        try {
+            const name = row.querySelector('td div div.fw-bold')?.textContent || 'N/A';
+            const pno = row.querySelector('td div div.small:nth-of-type(1)')?.textContent.replace('رقم القطعة:', '').trim() || 'N/A';
+            const company = row.querySelector('td div div.small:nth-of-type(2)')?.textContent.replace('منشأ:', '').trim() || 'N/A';
+            const price = row.querySelector('td:nth-child(2)')?.textContent.trim() || '0.00 د.ل';
     
-    // Get order date from the page
-    const orderDateElem = document.querySelector('#order-summary-list li:nth-child(2)');
-    const orderDate = orderDateElem ? orderDateElem.textContent.split(':')[1].trim() : new Date().toLocaleDateString('ar-LY');
+            const qtyCell = row.querySelector('td:nth-child(3)');
+            const originalQtyText = qtyCell?.getAttribute('data-original-qty') || '';
+            const confirmQtyText = qtyCell?.textContent.trim() || '0';
+            const clientDeliveryQtyText = qtyCell?.getAttribute('data-client-delivery-qty') || null;
     
-    // Get client details
-    const clientNameElem = document.querySelector('#customer-details-list li:nth-child(1)');
-    const clientName = clientNameElem ? clientNameElem.textContent.split(':')[1].trim() : 'N/A';
+            const originalQty = parseInt(originalQtyText, 10) || 0;
+            const confirmQty = parseInt(confirmQtyText, 10) || 0;
+            const clientDeliveryQty = clientDeliveryQtyText !== null ? parseInt(clientDeliveryQtyText, 10) : null;
     
-    const phoneElem = document.querySelector('#customer-details-list li:nth-child(3)');
-    const phone = phoneElem ? phoneElem.textContent.split(':')[1].trim() : 'N/A';
+            let qtyDisplay = '';
     
-    const addressElem = document.querySelector('#customer-details-list li:nth-child(4)');
-    const address = addressElem ? addressElem.textContent.split(':')[1].trim() : 'N/A';
+            if (
+                clientDeliveryQty !== null &&
+                clientDeliveryQty !== undefined &&
+                clientDeliveryQty !== confirmQty
+            ) {
+                qtyDisplay = `
+                    <div>
+                        ${
+                          confirmQty !== originalQty
+                            ? `<span style="text-decoration:line-through; color:gray;">${originalQty}</span><br>
+                               <span style="text-decoration:line-through; color:gray;">${confirmQty}</span><br>`
+                            : `<span style="text-decoration:line-through; color:gray;">${originalQty}</span><br>`
+                        }
+                        <strong>${clientDeliveryQty}</strong><br>
+                        <span style="background:#17a2b8; color:#000; padding:2px 4px; border-radius:4px; font-size:0.75rem;">تم تعديل الكمية من العميل</span>
+                    </div>
+                `;
+              } else if (confirmQty !== originalQty) {
+                qtyDisplay = `
+                    <div>
+                        <span style="text-decoration:line-through; color:gray;">${originalQty}</span><br>
+                        <strong>${confirmQty}</strong><br>
+                        <span style="background:#ffc107; color:#000; padding:2px 4px; border-radius:4px; font-size:0.75rem;">تم تعديل الكمية من المتجر</span>
+                    </div>
+                `;
+            }
+             else {
+                qtyDisplay = confirmQty;
+            }
     
-    // Get payment method
-    const paymentMethodElem = document.querySelector('#order-summary-list li:nth-child(3)');
-    const paymentMethod = paymentMethodElem ? paymentMethodElem.textContent.split(':')[1].trim() : 'N/A';
+            const total = row.querySelector('td:nth-child(4)')?.textContent.trim() || '0.00 د.ل';
     
-    // Get order status
-    const orderStatusElem = document.querySelector('#order-summary-list li:nth-child(5)');
-    const orderStatus = orderStatusElem ? orderStatusElem.textContent.split(':')[1].trim() : 'N/A';
-    
-    // Get items data
-    const items = [];
-    const itemRows = document.querySelectorAll('#invoice-items-tbody tr:not(.summary-row)');
-    
-    itemRows.forEach(row => {
-      try {
-        const name = row.querySelector('td div div.fw-bold')?.textContent || 'N/A';
-        const pno = row.querySelector('td div div.small:nth-of-type(1)')?.textContent.replace('رقم القطعة:', '').trim() || 'N/A';
-        const company = row.querySelector('td div div.small:nth-of-type(2)')?.textContent.replace('منشأ:', '').trim() || 'N/A';
-        const price = row.querySelector('td:nth-child(2)')?.textContent.trim() || '0.00 د.ل';
-        const qty = row.querySelector('td:nth-child(3)')?.textContent.trim() || '0';
-        const total = row.querySelector('td:nth-child(4)')?.textContent.trim() || '0.00 د.ل';
-        
-        items.push({ name, pno, company, price, qty, total });
-      } catch (e) {
-        console.error('Error processing item row:', e);
-      }
+            items.push({ name, pno, company, price, qty: qtyDisplay, total });
+        } catch (e) {
+            console.error('Error processing item row:', e);
+        }
     });
-    
-    // Get summary data
-    const summaryRows = document.querySelectorAll('#invoice-items-tbody tr.summary-row');
-    const subtotal = summaryRows[0]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
-    const shipping = summaryRows[1]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
-    const discount = summaryRows[2]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
-    const grandTotal = document.querySelector('#invoice-items-tbody tr.summary-row-total td:last-child')?.textContent.trim() || '0.00 د.ل';
-    
-    // Generate items HTML
-    const itemsHtml = items.map(item => `
-      <tr>
-        <td>
-          <div>
-            <strong>${item.name}</strong><br>
-            <small>رقم القطعة: ${item.pno}</small><br>
-            <small>الشركة: ${item.company}</small>
-          </div>
-        </td>
-        <td>${item.price}</td>
-        <td>${item.qty}</td>
-        <td>${item.total}</td>
-      </tr>
-    `).join('');
-    
-    // Create print window
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('يُرجى السماح بالنوافذ المنبثقة لطباعة الفاتورة');
-      return;
-    }
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html dir="rtl" lang="ar">
-      <head>
-        <meta charset="UTF-8">
-        <title>فاتورة #${invoiceNo}</title>
-        <style>
-          body { 
-            font-family: 'Arial', sans-serif; 
-            padding: 20px; 
-            line-height: 1.6;
-            color: #333;
-          }
-          .invoice-header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            padding-bottom: 10px; 
-            border-bottom: 2px solid #000; 
-          }
-          .invoice-header h1 { 
-            margin: 0; 
-            font-size: 28px;
-            color: #0F1B2E;
-          }
-          .invoice-header p {
-            margin-top: 5px;
-            color: #666;
-          }
-          .invoice-info { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-          }
-          .info-block { 
-            width: 48%; 
-            margin-bottom: 15px;
-          }
-          .info-block p {
-            margin: 5px 0;
-          }
-          table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0; 
-            font-size: 14px;
-          }
-          th, td { 
-            border: 1px solid #ddd; 
-            padding: 10px; 
-            text-align: right; 
-          }
-          th { 
-            background-color: #f5f5f5;
-            font-weight: bold;
-          }
-          .summary-table { 
-            width: 50%; 
-            margin-left: auto; 
-            margin-top: 30px;
-          }
-          .total-row { 
-            font-weight: bold; 
-            font-size: 1.1em; 
-            background-color: #f9f9f9;
-          }
-          .footer {
-            margin-top: 50px;
-            text-align: center;
-            font-style: italic;
-            color: #666;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-          }
-          @media print {
-            body { 
-              padding: 0; 
-              font-size: 12px;
-            }
-            .no-print { 
-              display: none !important; 
-            }
-            .invoice-header {
-              margin-top: 0;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="invoice-header">
-          <h1>فاتورة بيع</h1>
-          <p>متجر حزمة لقطع غيار السيارات</p>
-        </div>
-        
-        <div class="invoice-info">
-          <div class="info-block">
-            <p><strong>رقم الفاتورة:</strong> ${invoiceNo}</p>
-            <p><strong>تاريخ الطلب:</strong> ${orderDate}</p>
-            <p><strong>طريقة الدفع:</strong> ${paymentMethod}</p>
-          </div>
-          <div class="info-block">
-            <p><strong>اسم العميل:</strong> ${clientName}</p>
-            <p><strong>رقم الهاتف:</strong> ${phone}</p>
-            <p><strong>حالة الطلب:</strong> ${orderStatus}</p>
-          </div>
-        </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>القطعة</th>
-              <th>السعر</th>
-              <th>الكمية</th>
-              <th>المجموع</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-          </tbody>
-        </table>
-        
-        <table class="summary-table">
+  
+      // Get summary data (corrected selectors)
+      const summaryRows = document.querySelectorAll('#invoice-items-tbody tr.summary-row');
+      const subtotal = summaryRows[0]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
+      const shipping = summaryRows[1]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
+      const discount = summaryRows[2]?.querySelector('td:last-child')?.textContent.trim() || '0.00 د.ل';
+      const grandTotal = document.querySelector('#invoice-items-tbody tr.summary-row-total td:last-child')?.textContent.trim() || '0.00 د.ل';
+  
+      // Generate items HTML
+      const itemsHtml = items.map(item => `
           <tr>
-            <td><strong>المجموع الجزئي:</strong></td>
-            <td>${subtotal}</td>
+              <td>
+                  <div>
+                      <strong>${item.name}</strong><br>
+                      <small>رقم القطعة: ${item.pno}</small><br>
+                      <small>الشركة: ${item.company}</small>
+                  </div>
+              </td>
+              <td>${item.price}</td>
+              <td>${item.qty}</td>
+              <td>${item.total}</td>
           </tr>
-          <tr>
-            <td><strong>رسوم الشحن:</strong></td>
-            <td>${shipping}</td>
-          </tr>
-          <tr>
-            <td><strong>الخصم:</strong></td>
-            <td>${discount}</td>
-          </tr>
-          <tr class="total-row">
-            <td><strong>المجموع الكلي:</strong></td>
-            <td>${grandTotal}</td>
-          </tr>
-        </table>
-        
-        <div class="footer">
-          <p>شكراً لثقتكم بنا</p>
-          <p>للاستفسار: 0914262604 | البريد الإلكتروني: info@marin.com</p>
-        </div>
-        
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-              setTimeout(function() {
-                window.close();
-              }, 500);
-            }, 200);
-          };
-        <\/script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
+      `).join('');
+  
+      // Create print window
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+          alert('يُرجى السماح بالنوافذ المنبثقة لطباعة الفاتورة');
+          return;
+      }
+      
+      printWindow.document.write(`
+          <!DOCTYPE html>
+          <html dir="rtl" lang="ar">
+          <head>
+              <meta charset="UTF-8">
+              <title>فاتورة #${invoiceNo}</title>
+              <style>
+                  body { 
+                      font-family: 'Arial', sans-serif; 
+                      padding: 20px; 
+                      line-height: 1.6;
+                      color: #333;
+                  }
+                  .invoice-header { 
+                      text-align: center; 
+                      margin-bottom: 30px; 
+                      padding-bottom: 10px; 
+                      border-bottom: 2px solid #000; 
+                  }
+                  .invoice-header h1 { 
+                      margin: 0; 
+                      font-size: 28px;
+                      color: #0F1B2E;
+                  }
+                  .invoice-header p {
+                      margin-top: 5px;
+                      color: #666;
+                  }
+                  .invoice-info { 
+                      display: flex; 
+                      justify-content: space-between; 
+                      margin-bottom: 30px;
+                      flex-wrap: wrap;
+                  }
+                  .info-block { 
+                      width: 48%; 
+                      margin-bottom: 15px;
+                  }
+                  .info-block p {
+                      margin: 5px 0;
+                  }
+                  table { 
+                      width: 100%; 
+                      border-collapse: collapse; 
+                      margin: 20px 0; 
+                      font-size: 14px;
+                  }
+                  th, td { 
+                      border: 1px solid #ddd; 
+                      padding: 10px; 
+                      text-align: right; 
+                  }
+                  th { 
+                      background-color: #f5f5f5;
+                      font-weight: bold;
+                  }
+                  .summary-table { 
+                      width: 50%; 
+                      margin-left: auto; 
+                      margin-top: 30px;
+                  }
+                  .total-row { 
+                      font-weight: bold; 
+                      font-size: 1.1em; 
+                      background-color: #f9f9f9;
+                  }
+                  .footer {
+                      margin-top: 50px;
+                      text-align: center;
+                      font-style: italic;
+                      color: #666;
+                      border-top: 1px solid #eee;
+                      padding-top: 15px;
+                  }
+                  @media print {
+                      body { 
+                          padding: 0; 
+                          font-size: 12px;
+                      }
+                      .no-print { 
+                          display: none !important; 
+                      }
+                      .invoice-header {
+                          margin-top: 0;
+                      }
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="invoice-header">
+                  <h1>فاتورة بيع</h1>
+                  <p>متجر حزمة لقطع غيار السيارات</p>
+              </div>
+              
+              <div class="invoice-info">
+                  <div class="info-block">
+                      <p><strong>رقم الفاتورة:</strong> ${invoiceNo}</p>
+                      <p><strong>تاريخ الطلب:</strong> ${orderDate}</p>
+                      <p><strong>طريقة الدفع:</strong> ${paymentMethod}</p>
+                  </div>
+                  <div class="info-block">
+                      <p><strong>اسم العميل:</strong> ${clientName}</p>
+                      <p><strong>رقم الهاتف:</strong> ${phone}</p>
+                      <p><strong>حالة الطلب:</strong> ${orderStatus}</p>
+                  </div>
+              </div>
+              
+              <table>
+                  <thead>
+                      <tr>
+                          <th>القطعة</th>
+                          <th>السعر</th>
+                          <th>الكمية</th>
+                          <th>المجموع</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      ${itemsHtml}
+                  </tbody>
+              </table>
+              
+              <table class="summary-table">
+                  <tr>
+                      <td><strong>المجموع الجزئي:</strong></td>
+                      <td>${subtotal}</td>
+                  </tr>
+                  <tr>
+                      <td><strong>رسوم الشحن:</strong></td>
+                      <td>${shipping}</td>
+                  </tr>
+                  <tr>
+                      <td><strong>الخصم:</strong></td>
+                      <td>${discount}</td>
+                  </tr>
+                  <tr class="total-row">
+                      <td><strong>المجموع الكلي:</strong></td>
+                      <td>${grandTotal}</td>
+                  </tr>
+              </table>
+              
+              <div class="footer">
+                  <p>شكراً لثقتكم بنا</p>
+                  <p>للاستفسار: 0914262604 | البريد الإلكتروني: info@marin.com</p>
+              </div>
+              
+              <script>
+                  window.onload = function() {
+                      setTimeout(function() {
+                          window.print();
+                          setTimeout(function() {
+                              window.close();
+                          }, 500);
+                      }, 200);
+                  };
+              <\/script>
+          </body>
+          </html>
+      `);
+      printWindow.document.close();
+      
   } catch (error) {
-    console.error('Error in printInvoice:', error);
-    alert('حدث خطأ أثناء محاولة طباعة الفاتورة. يُرجى المحاولة مرة أخرى.');
+      console.error('Error in printInvoice:', error);
+      alert('حدث خطأ أثناء محاولة طباعة الفاتورة. يُرجى المحاولة مرة أخرى.');
   }
-}
+  }
 
 /* helper: format ISO date to Arabic locale */
 function formatDate(iso) {

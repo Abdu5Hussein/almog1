@@ -194,6 +194,8 @@ def sign_in(request):
                 user = models.AllClientsTable.objects.get(phone=username)
                 user_id = f"{user.clientid}"
                 redirect_url = reverse(CLIENT_REDIRECT)
+                user.is_online = True  # Mark client as online
+                user.save()  # Save the online status
             except models.AllClientsTable.DoesNotExist:
                 return Response({"error": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
 

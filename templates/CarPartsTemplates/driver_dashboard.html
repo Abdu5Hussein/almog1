@@ -528,8 +528,9 @@
                 document.getElementById('invoiceNumber').textContent = invoiceNo;
                 const itemsTableBody = document.getElementById('itemsTableBody');
                 itemsTableBody.innerHTML = '';
-
+               
                 currentInvoiceItems.forEach(item => {
+                    const deliveryQty = item.confirmed_delevery_quantity != null ? item.confirmed_delevery_quantity : item.confirm_quantity;
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${item.pno}</td>
@@ -538,7 +539,7 @@
                         <td>
                             <input type="number" class="quantity-input" 
                                    min="0" max="${item.confirm_quantity}" 
-                                   value="${item.confirmed_delevery_quantity || 0}" 
+                                   value="${deliveryQty}" 
                                    onchange="validateQuantity(this, ${item.confirm_quantity})">
                         </td>
                     `;

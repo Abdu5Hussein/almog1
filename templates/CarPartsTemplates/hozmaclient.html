@@ -2,6 +2,7 @@
 
 {% block content %}
 <div class="row mb-4">
+    <!-- Statistics cards remain the same -->
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card stats-card primary hover-scale">
             <div class="card-body">
@@ -60,6 +61,7 @@
     </div>
 </div>
 
+<!-- Customer Details Modal (remains the same) -->
 <div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -76,6 +78,7 @@
     </div>
 </div>
 
+<!-- Add Customer Modal (remains the same) -->
 <div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -113,89 +116,114 @@
     </div>
 </div>
 
-    <div class="card mb-4 hover-scale">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">إدارة العملاء</h5>
-            <div>
-                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
-                    <i class="fas fa-plus me-1"></i>إضافة عميل جديد
-                </button>
-                <button class="btn btn-success btn-sm ms-2" id="exportCustomersBtn">
-                    <i class="fas fa-file-export me-1"></i>تصدير البيانات
-                </button>
+<!-- New Edit Pricing Modal -->
+<div class="modal fade" id="editPricingModal" tabindex="-1" aria-labelledby="editPricingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPricingModalLabel">تعديل أسعار التوصيل والخصم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        </div>
-        <div class="card-body">
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="بحث عن العملاء..." id="customerSearch">
-                        <button class="btn btn-outline-secondary" type="button" id="searchCustomerBtn">
-                            <i class="fas fa-search"></i>
-                        </button>
+            <div class="modal-body">
+                <form id="editPricingForm">
+                    <input type="hidden" id="editClientId">
+                    <div class="mb-3">
+                        <label for="deliveryPrice" class="form-label">سعر التوصيل (د.ل)</label>
+                        <input type="number" step="0.01" class="form-control" id="deliveryPrice" required>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-end">
-                        <div class="dropdown me-2">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-filter me-1"></i>تصفية حسب
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="all">الكل</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="online">العملاء النشطين</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="offline">العملاء غير النشطين</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="vip">العملاء المميزين</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="wholesale">عملاء الجملة</a></li>
-                            </ul>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-sort me-1"></i>ترتيب حسب
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="recent">الأحدث</a></li>
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="oldest">الأقدم</a></li>
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="name-asc">الاسم (أ-ي)</a></li>
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="name-desc">الاسم (ي-أ)</a></li>
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="orders-asc">عدد الطلبات (قليل-كثير)</a></li>
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="orders-desc">عدد الطلبات (كثير-قليل)</a></li>
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="amount-asc">إجمالي المشتريات (قليل-كثير)</a></li>
-                                <li><a class="dropdown-item sort-option" href="#" data-sort="amount-desc">إجمالي المشتريات (كثير-قليل)</a></li>
-                            </ul>
-                        </div>
+                    <div class="mb-3">
+                        <label for="discount" class="form-label">الخصم (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="discount" required>
                     </div>
-                </div>
+                    <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                </form>
             </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover" id="customersTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>العميل</th>
-                            <th>معلومات الاتصال</th>
-                            <th>عدد الطلبات</th>
-                            <th>إجمالي المشتريات</th>
-                            <th>الحالة</th>
-                            <th>النوع</th>
-                            <th>آخر عملية</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="customersTableBody">
-                        </tbody>
-                </table>
-            </div>
-
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center" id="paginationContainer">
-                    </ul>
-            </nav>
         </div>
     </div>
+</div>
 
-    
+<!-- Main content card (remains the same) -->
+<div class="card mb-4 hover-scale">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">إدارة العملاء</h5>
+        <div>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                <i class="fas fa-plus me-1"></i>إضافة عميل جديد
+            </button>
+            <button class="btn btn-success btn-sm ms-2" id="exportCustomersBtn">
+                <i class="fas fa-file-export me-1"></i>تصدير البيانات
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="بحث عن العملاء..." id="customerSearch">
+                    <button class="btn btn-outline-secondary" type="button" id="searchCustomerBtn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end">
+                    <div class="dropdown me-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-filter me-1"></i>تصفية حسب
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="all">الكل</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="online">العملاء النشطين</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="offline">العملاء غير النشطين</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="vip">العملاء المميزين</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="wholesale">عملاء الجملة</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sort me-1"></i>ترتيب حسب
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="recent">الأحدث</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="oldest">الأقدم</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="name-asc">الاسم (أ-ي)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="name-desc">الاسم (ي-أ)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="orders-asc">عدد الطلبات (قليل-كثير)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="orders-desc">عدد الطلبات (كثير-قليل)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="amount-asc">إجمالي المشتريات (قليل-كثير)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="amount-desc">إجمالي المشتريات (كثير-قليل)</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover" id="customersTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>العميل</th>
+                        <th>معلومات الاتصال</th>
+                        <th>عدد الطلبات</th>
+                        <th>إجمالي المشتريات</th>
+                        <th>الحالة</th>
+                        <th>النوع</th>
+                        <th>آخر عملية</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="customersTableBody">
+                    </tbody>
+            </table>
+        </div>
+
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center" id="paginationContainer">
+                </ul>
+        </nav>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -218,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const wholesaleClientsElement = document.getElementById('wholesaleClients');
     const vipClientsElement = document.getElementById('vipClients');
     const addCustomerForm = document.getElementById('addCustomerForm');
+    const editPricingForm = document.getElementById('editPricingForm');
 
     // Initialize Tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -274,13 +303,13 @@ document.addEventListener('DOMContentLoaded', function() {
             email: clientEmail,
             mobile: clientMobile,
             type: clientType,
-            is_online: true, // Assuming new clients are active by default
+            is_online: true,
             total_orders: 0,
             total_amount: 0,
             last_activity: new Date().toISOString()
         };
 
-        fetch('/hozma/api/clients/add/', { // Assuming an API endpoint for adding clients
+        fetch('/hozma/api/clients/add/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -300,11 +329,50 @@ document.addEventListener('DOMContentLoaded', function() {
             const addCustomerModal = bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'));
             addCustomerModal.hide();
             addCustomerForm.reset();
-            fetchCustomers(); // Refresh the table
+            fetchCustomers();
         })
         .catch(error => {
             console.error('Error adding customer:', error);
             alert('حدث خطأ أثناء إضافة العميل: ' + error.message);
+        });
+    });
+
+    // Handle Edit Pricing Form Submission
+    editPricingForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const clientId = document.getElementById('editClientId').value;
+        const deliveryPrice = parseFloat(document.getElementById('deliveryPrice').value);
+        const discount = parseFloat(document.getElementById('discount').value);
+
+        const pricingData = {
+            delivery_price: deliveryPrice,
+            discount: discount
+        };
+
+        fetch(`/hozma/api/clients/${clientId}/update-pricing/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(pricingData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Failed to update pricing') });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Pricing updated successfully:', data);
+            alert('تم تحديث أسعار التوصيل والخصم بنجاح!');
+            const editPricingModal = bootstrap.Modal.getInstance(document.getElementById('editPricingModal'));
+            editPricingModal.hide();
+            fetchCustomers(); // Refresh the table
+        })
+        .catch(error => {
+            console.error('Error updating pricing:', error);
+            alert('حدث خطأ أثناء تحديث الأسعار: ' + error.message);
         });
     });
 
@@ -323,14 +391,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (currentFilter === 'offline') {
             requestData.is_online = false;
         } else if (currentFilter === 'vip') {
-            requestData.is_vip = true; // Assuming API supports an is_vip filter
+            requestData.is_vip = true;
         } else if (currentFilter === 'wholesale') {
-            requestData.type = 'جملة'; // Assuming type 'جملة' for wholesale
+            requestData.type = 'جملة';
         }
         
         // Add Sort
         if (currentSort === 'recent') {
-            requestData.sort_by = '-last_activity'; // Django REST Framework style for descending
+            requestData.sort_by = '-last_activity';
         } else if (currentSort === 'oldest') {
             requestData.sort_by = 'last_activity';
         } else if (currentSort === 'name-asc') {
@@ -369,13 +437,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             updateCustomersTable(data.results);
             updatePagination(data.total_clients, data.total_pages);
-            updateStats(data.total_clients, data.active_clients, data.wholesale_clients, data.vip_clients); // Pass actual stats if available
+            updateStats(data.total_clients, data.online_clients_count, data.wholesale_clients, data.vip_clients);
         })
         .catch(error => {
             console.error('Error fetching customers:', error);
             customersTableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">خطأ في تحميل البيانات: ${error.message}</td></tr>`;
-            updatePagination(0, 0); // Clear pagination on error
-            updateStats(0, 0, 0, 0); // Reset stats on error
+            updatePagination(0, 0);
+            updateStats(0, 0, 0, 0);
         });
     }
     
@@ -391,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
         customers.forEach((customer, index) => {
             const row = document.createElement('tr');
             const rowNumber = (currentPage - 1) * pageSize + index + 1;
-            
+            const clinet = customer.clientid
             const clientPhoto = customer.client_photo_url || '/static/HOZMA_FRONT/images/placeholder.png';
             const clientName = customer.name || 'غير معروف';
             const clientEmail = customer.email || 'لا يوجد';
@@ -409,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <img src="${clientPhoto}" class="rounded-circle me-3" width="40" height="40" alt="صورة العميل">
                         <div>
                             <h6 class="mb-0">${clientName}</h6>
-                            <small class="text-muted">ID: ${customer.id || 'N/A'}</small>
+                            <small class="text-muted">ID: ${clinet}</small>
                         </div>
                     </div>
                 </td>
@@ -425,14 +493,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td><span class="badge ${getTypeBadgeClass(clientType)}">${clientType}</span></td>
                 <td>${lastActivity}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary view-details" data-client-id="${customer.id}" data-bs-toggle="tooltip" title="عرض التفاصيل">
+                    <button class="btn btn-sm btn-outline-primary view-client" data-client-id="${clinet}" data-bs-toggle="tooltip" title="عرض التفاصيل">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary edit-client" data-client-id="${customer.id}" data-bs-toggle="tooltip" title="تعديل">
+                    <button class="btn btn-sm btn-outline-secondary edit-client" data-client-id="${clinet}" data-bs-toggle="tooltip" title="تعديل الأسعار">
                         <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger delete-client" data-client-id="${customer.id}" data-bs-toggle="tooltip" title="حذف">
-                        <i class="fas fa-trash"></i>
                     </button>
                 </td>
             `;
@@ -444,14 +509,55 @@ document.addEventListener('DOMContentLoaded', function() {
         tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
+
+        // Add event listeners to the new buttons
+        document.querySelectorAll('.view-client').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const clientId = this.getAttribute('data-client-id');
+                showClientDetails(clientId);
+            });
+        });
+
+        document.querySelectorAll('.edit-client').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const clientId = this.getAttribute('data-client-id');
+                openEditPricingModal(clientId);
+            });
+        });
+    }
+
+    // Open Edit Pricing Modal
+    function openEditPricingModal(clientId) {
+        // First, fetch the client's current pricing information
+        fetch(`/hozma/api/clients/${clientId}/details/`)
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.message || 'Failed to fetch client details') });
+                }
+                return response.json();
+            })
+            .then(client => {
+                // Populate the form with current values
+                document.getElementById('editClientId').value = clientId;
+                document.getElementById('deliveryPrice').value = client.delivery_price || 0;
+                document.getElementById('discount').value = client.discount || 0;
+                
+                // Show the modal
+                const editPricingModal = new bootstrap.Modal(document.getElementById('editPricingModal'));
+                editPricingModal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching client details:', error);
+                alert('حدث خطأ أثناء جلب تفاصيل العميل: ' + error.message);
+            });
     }
     
-    // Update Pagination
+    // Update Pagination (remains the same)
     function updatePagination(totalClients, totalPages) {
         paginationContainer.innerHTML = '';
         
         if (totalPages <= 1) {
-            return; // No pagination needed if only one or no pages
+            return;
         }
 
         // Previous button
@@ -468,7 +574,6 @@ document.addEventListener('DOMContentLoaded', function() {
         paginationContainer.appendChild(prevLi);
         
         // Page numbers
-        // Logic to show a limited number of page buttons around the current page
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, currentPage + 2);
 
@@ -540,21 +645,18 @@ document.addEventListener('DOMContentLoaded', function() {
         paginationContainer.appendChild(nextLi);
     }
     
-    // Update Statistics
+    // Update Statistics (remains the same)
     function updateStats(totalClients, activeClients, wholesaleClients, vipClients) {
         totalClientsElement.textContent = totalClients;
         activeClientsElement.textContent = activeClients !== undefined ? activeClients : '0';
         wholesaleClientsElement.textContent = wholesaleClients !== undefined ? wholesaleClients : '0';
         vipClientsElement.textContent = vipClients !== undefined ? vipClients : '0';
-
-        // You might want to calculate percentages or fetch them from the API as well
-        // For demonstration, leaving them as 0% for now.
     }
     
-    // Helper Functions
+    // Helper Functions (remain the same)
     function formatDate(dateString) {
         const date = new Date(dateString);
-        return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+        return date.toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
     }
     
     function getTypeBadgeClass(type) {
@@ -562,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'جملة': return 'bg-warning text-dark';
             case 'مميز': return 'bg-primary';
             case 'مورد': return 'bg-info';
-            default: return 'bg-secondary'; // Default for 'تجزئة' or unknown
+            default: return 'bg-secondary';
         }
     }
     
@@ -581,11 +683,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
     
-    // Event Handlers for Table Actions (View, Edit, Delete)
-    // These functions would typically interact with other modals or pages
+    // Show Client Details (remains the same)
     function showClientDetails(clientId) {
-        // Fetch client details from API and populate the modal
-        fetch(`/hozma/api/clients/${clientId}/details/`) // Assuming a details API endpoint
+        fetch(`/hozma/api/clients/${clientId}/details/`)
             .then(response => {
                 if (!response.ok) {
                     return response.json().then(err => { throw new Error(err.message || 'Failed to fetch client details') });
@@ -608,10 +708,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>تاريخ التسجيل:</strong> ${client.registration_date ? formatDate(client.registration_date) : 'لا يوجد'}</p>
                             <p><strong>عدد الطلبات الكلي:</strong> ${client.total_orders || 0}</p>
                             <p><strong>إجمالي المشتريات:</strong> ${client.total_amount ? parseFloat(client.total_amount).toFixed(2) + ' د.ل' : '0 د.ل'}</p>
+                            <p><strong>سعر التوصيل:</strong> ${client.delivery_price ? parseFloat(client.delivery_price).toFixed(2) + ' د.ل' : '0 د.ل'}</p>
+                            <p><strong>الخصم:</strong> ${client.discount ? parseFloat(client.discount).toFixed(2) + '%' : '0%'}</p>
                             <p><strong>الحالة:</strong> <span class="badge ${client.is_online ? 'bg-success' : 'bg-secondary'}">${client.is_online ? 'نشط' : 'غير نشط'}</span></p>
                             <p><strong>النوع:</strong> <span class="badge ${getTypeBadgeClass(client.type)}">${client.type || 'تجزئة'}</span></p>
                             <p><strong>آخر عملية:</strong> ${client.last_activity ? formatDate(client.last_activity) : 'لا يوجد'}</p>
-                            </div>
+                        </div>
                     </div>
                 `;
                 const customerDetailsModal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
@@ -622,51 +724,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('حدث خطأ أثناء جلب تفاصيل العميل: ' + error.message);
             });
     }
-    
-    function editClient(clientId) {
-        // In a real application, you'd likely fetch the client data,
-        // populate an edit form, and then show the modal.
-        console.log('Edit client:', clientId);
-        // Example: Fetch client data and then populate a modal for editing
-        // fetch(`/hozma/api/clients/${clientId}/`)
-        // .then(response => response.json())
-        // .then(clientData => {
-        //     // Populate form fields with clientData
-        //     // $('#editCustomerModal').modal('show');
-        // })
-        // .catch(error => console.error('Error fetching client for edit:', error));
-        alert('وظيفة التعديل ليست مفعلة بعد.');
-    }
-    
-    function deleteClient(clientId) {
-        if (confirm('هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع عن هذا الإجراء.')) {
-            fetch(`/hozma/api/clients/${clientId}/`, { // Assuming a DELETE endpoint for individual clients
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert('تم حذف العميل بنجاح.');
-                    fetchCustomers(); // Reload data after successful deletion
-                } else {
-                    return response.json().then(err => { throw new Error(err.message || 'Failed to delete customer') });
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting client:', error);
-                alert('حدث خطأ أثناء حذف العميل: ' + error.message);
-            });
-        }
-    }
 
-    // Export Customers functionality (Example - would need server-side implementation)
+    // Export Customers functionality
     document.getElementById('exportCustomersBtn').addEventListener('click', function() {
         alert('وظيفة تصدير البيانات قيد التنفيذ.');
-        // In a real application, you would send a request to your backend
-        // to generate and provide a downloadable file (e.g., CSV, Excel).
-        // Example: window.location.href = '/hozma/api/clients/export/?format=csv';
     });
 });
 </script>

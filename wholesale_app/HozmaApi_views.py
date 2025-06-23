@@ -88,6 +88,14 @@ def get_last_PreOrderTable_no():
 
     return next_unique_invoice_no
 
+def get_next_buy_invoice_no():
+    last_buy = almogOil_models.Buyinvoicetable.objects.order_by("-invoice_no").first()
+    last_order_buy = almogOil_models.OrderBuyinvoicetable.objects.order_by("-invoice_no").first()
+
+    last_buy_no = last_buy.invoice_no if last_buy else 0
+    last_order_buy_no = last_order_buy.invoice_no if last_order_buy else 0
+
+    return max(last_buy_no, last_order_buy_no) + 1
 
 
 @extend_schema(
@@ -1394,7 +1402,11 @@ def register_source_user(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+    summary="عرض كل المصادر",
+    description="إرجاع قائمة بجميع المصادر (AllSourcesTable).",
+    tags=["Sources"]
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -1402,7 +1414,14 @@ def show_all_sources(request):
     sources = almogOil_models.AllSourcesTable.objects.all()
     serializer = almogOil_serializers.SourcesSerializer(sources, many=True)
     return Response(serializer.data)
-
+@extend_schema(
+    summary="عرض تفاصيل مصدر معين",
+    description="إرجاع تفاصيل مصدر معين باستخدام رقم العميل (clientid).",
+    tags=["Sources"],
+    parameters=[
+        OpenApiParameter(name="source_id", description="رقم العميل", required=True, type=int)
+    ]
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -1415,6 +1434,20 @@ def show_source_details(request, source_id):
     serializer = almogOil_serializers.SourcesSerializer(source)
     return Response(serializer.data)
 
+@extend_schema(
+    summary="تعديل معلومات المصدر",
+    description="تعديل جزئي أو كامل لمصدر موجود باستخدام `clientid`.",
+    tags=["Sources"],
+    request=almogOil_serializers.SourcesSerializer,
+    responses={
+        200: almogOil_serializers.SourcesSerializer,
+        400: OpenApiResponse(description="بيانات غير صالحة"),
+        404: OpenApiResponse(description="المصدر غير موجود"),
+    },
+    parameters=[
+        OpenApiParameter(name="source_id", description="رقم العميل", required=True, type=int)
+    ]
+)
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -1462,7 +1495,48 @@ def validate_company_name(name):
 
 
 
+@extend_schema(
+    summary="إنشاء منتج رئيسي من مصدر",
+    description="""
+يتم إنشاء منتج جديد بناءً على معلومات المورد ورقم OEM وسعر الشراء والكمية المعروضة.  
+العملية تشمل:
+- التحقق من وجود الشركة
+- حساب السعر بعد الخصم
+- حساب سعر التكلفة بناءً على العمولة
+- التحقق من وجود المنتج أو تحديثه بناءً على `source_pno` أو `pno`
+- مطابقة OEM مع الجداول الحالية أو إنشاء سجل جديد
 
+⚠️ يتم أيضًا تحديث المنتج الحالي إذا كان السعر الجديد أقل.
+""",
+    tags=["Mainitem", "Sources"],
+    request=products_serializers.MainitemSerializer,
+    responses={
+        201: OpenApiResponse(description="تم إنشاء المنتج بنجاح"),
+        200: OpenApiResponse(description="تم تحديث المنتج الحالي أو المنتج موجود مسبقًا"),
+        400: OpenApiResponse(description="طلب غير صالح أو بيانات ناقصة"),
+        500: OpenApiResponse(description="خطأ غير متوقع في الخادم"),
+    },
+    examples=[
+        OpenApiExample(
+            "مثال على الإدخال",
+            value={
+                "oem_number": "123ABC",
+                "external_oem": "456DEF",
+                "companyproduct": "Toyota",
+                "buyprice": "150.0000",
+                "showed": 5,
+                "discount": "0.1",
+                "discount-type": "source",
+                "category_type": "Engine",
+                "pno": "5678",
+                "source_pno": "SRC-7890",
+                "replaceno": "TYT-002",
+                "source": "client123"
+            },
+            request_only=True
+        )
+    ]
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -1701,7 +1775,51 @@ def create_oem_entry(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(
+    summary="فلترة المنتجات الرئيسية (Mainitem)",
+    description="""
+نقطة النهاية هذه تستقبل طلب POST يحتوي على مجموعة من المفاتيح لفلترة بيانات المنتجات، 
+بالإضافة إلى مفاتيح خاصة بالتقسيم (pagination).  
+تقوم بالآتي:
 
+1. بناء Q-object من الفلاتر.
+2. حساب cache_key باستخدام MD5.
+3. في حال وجود نتيجة مخزنة، تُرجع مباشرة.
+4. وإلا، يتم تنفيذ الفلترة والتقسيم والعمليات الحسابية والتخزين المؤقت ثم ترجع النتائج.
+    
+✅ بعض الفلاتر المتاحة:
+- `pno`, `itemname`, `itemno`, `itemmain`, `itemsubmain`, `itemthird`
+- `companyproduct`, `companyno`, `source`, `model`, `country`, `category`
+- `discount`, `availability`, `showed`, `resvalue`, `has_image`
+- `fromdate`, `todate` (بصيغة YYYY-MM-DD)
+""",
+    tags=["Mainitem", "Filtering"],
+    request=None,
+    responses={
+        200: OpenApiResponse(description="نجحت عملية الفلترة"),
+        400: OpenApiResponse(description="طلب غير صالح أو تنسيق تاريخ خاطئ"),
+        405: OpenApiResponse(description="طريقة الطلب غير مسموحة"),
+    },
+    examples=[
+        OpenApiExample(
+            name="مثال لطلب فلترة",
+            value={
+                "pno": "123",
+                "companyproduct": "Toyota",
+                "category": "Engine",
+                "availability": "available",
+                "discount": "available",
+                "page": 1,
+                "size": 20,
+                "fromdate": "2024-01-01",
+                "todate": "2024-12-31",
+                "has_image": "yes"
+            },
+            request_only=True,
+            response_only=False
+        )
+    ]
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -2982,36 +3100,81 @@ def delete_all_images(request):
     almogOil_models.Imagetable.objects.all().delete()
     return Response({'message': 'All images deleted successfully.'}, status=status.HTTP_200_OK)
 
+
+
+@extend_schema(
+    summary="تصفية العملاء مع الفرز والتصفح",
+    description="""
+يقوم هذا الطلب بتصفية العملاء حسب حالة الاتصال (`is_online`) مع دعم للفرز مثل:
+- الترتيب حسب عدد الطلبات أو المبلغ الإجمالي أو الاسم أو الأحدث/الأقدم.
+""",
+    tags=["Clients"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "page": {"type": "integer", "example": 1},
+                "page_size": {"type": "integer", "example": 10},
+                "is_online": {"type": "boolean", "example": True},
+                "sort_by": {
+                    "type": "string",
+                    "example": "total_amount_desc",
+                    "enum": [
+                        "total_amount_desc", "total_amount_asc",
+                        "orders_desc", "orders_asc",
+                        "newest", "oldest",
+                        "name_a_to_z", "name_z_to_a"
+                    ]
+                }
+            }
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="تم جلب العملاء بنجاح مع نتائج مفلترة.")
+    }
+)
 @api_view(['POST'])
 @authentication_classes([CookieAuthentication])
-@permission_classes([IsAuthenticated])  # Or CookieAuthentication if you have a custom one
+@permission_classes([IsAuthenticated])
 def filter_clients(request):
     data = request.data
     page = int(data.get('page', 1))
     page_size = int(data.get('page_size', 10))
-    is_online = data.get('is_online', None)  # true, false or null
-    sort_by = data.get('sort_by', 'name_asc')  # e.g., 'total_amount_desc', 'orders_asc', 'name_z_to_a', etc.
+    is_online = data.get('is_online', None)  # ممكن يكون 'true', 'false', أو None نص
 
-    # Unique cache key based on request payload
+    # تحويل is_online من نص إلى boolean إذا موجود
+    if is_online is not None:
+        if isinstance(is_online, str):
+            if is_online.lower() == 'true':
+                is_online = True
+            elif is_online.lower() == 'false':
+                is_online = False
+            else:
+                is_online = None  # تجاهل الفلتر إذا غير واضح
+
+    sort_by = data.get('sort_by', 'name_asc')
+
+    # إنشاء مفتاح كاش فريد حسب بيانات الطلب
     cache_key = f"filtered_clients_{hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()}"
     cached_data = cache.get(cache_key)
     if cached_data:
         return Response(cached_data)
 
-    # Fetch all clients
+    # جلب كل العملاء
     clients = almogOil_models.AllClientsTable.objects.all()
+    online_count = clients.filter(is_online=True).count()
 
-    # Filter by online status if provided
+    # فلترة حسب حالة الأونلاين إذا محددة
     if is_online is not None:
         clients = clients.filter(is_online=is_online)
 
-    # Annotate clients with total orders and amount
+    # تعليق (annotate) العملاء بعدد الطلبات والمجموع الكلي
     clients = clients.annotate(
         total_orders=Count('preordertable'),
         total_amount=Sum('preordertable__amount')
     )
 
-    # Sorting logic
+    # منطق الترتيب
     if sort_by == 'total_amount_desc':
         clients = clients.order_by('-total_amount')
     elif sort_by == 'total_amount_asc':
@@ -3029,28 +3192,41 @@ def filter_clients(request):
     elif sort_by == 'name_z_to_a':
         clients = clients.order_by('-name')
     else:
-        clients = clients.order_by('name')  # Default
+        clients = clients.order_by('name')
 
+    # تطبيق التقسيم إلى صفحات
     paginator = Paginator(clients, page_size)
     page_obj = paginator.get_page(page)
 
+    # تهيئة السيرياليزر مع تمرير الطلب في context لتمكين روابط الصور
     serializer = wholesale_serializers.ClientInfoSerializer(page_obj, many=True, context={'request': request})
-    
+
     response_data = {
         'total_clients': paginator.count,
         'total_pages': paginator.num_pages,
         'current_page': page,
         'page_size': page_size,
+        'online_clients_count': online_count,  # عدد العملاء أونلاين
         'results': serializer.data
     }
 
-    # Cache for 5 minutes
+    # تخزين النتيجة في الكاش لمدة 5 دقائق
     cache.set(cache_key, response_data, timeout=300)
 
     return Response(response_data)
 
 
-
+@extend_schema(
+    summary="ملخص حالة فواتير الشراء",
+    description="""
+يعيد عدد الفواتير غير المؤكدة وعدد الفواتير التي لم يتم إرسالها بعد.
+""",
+    tags=["Invoices"],
+    responses={
+        200: OpenApiResponse(description="نجح في إرجاع إحصائيات الفواتير."),
+        403: OpenApiResponse(description="غير مصرح لك بالوصول.")
+    }
+)
 @api_view(['GET'])
 @authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])
@@ -3063,7 +3239,18 @@ def get_invoice_status_summary(request):
         'unsent_invoices': unsent_count
     })
 
-
+@extend_schema(
+    summary="عرض صور المنتج",
+    description="يسترجع صور المنتج باستخدام رقم `pno`.",
+    tags=["Products"],
+    parameters=[
+        OpenApiParameter(name='id', description="رقم المنتج (pno)", required=True, type=str)
+    ],
+    responses={
+        200: OpenApiResponse(description="صور المنتج بنجاح"),
+        404: OpenApiResponse(description="لم يتم العثور على المنتج")
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -3078,7 +3265,14 @@ def get_product_images(request, id):
 
     return Response(serializer.data)
 
-
+@extend_schema(
+    summary="جلب قائمة الشركات",
+    description="يرجع قائمة بجميع الشركات مع اسم الشركة وشعارها (أو صورة افتراضية).",
+    tags=["Companies"],
+    responses={
+        200: OpenApiResponse(description="تم إرجاع قائمة الشركات")
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -3110,9 +3304,78 @@ def get_all_clients1(request,id=None):
         clients = almogOil_models.AllClientsTable.objects.all().filter(clientid=id)
         serializer = almogOil_serializers.AllClientsTableSerializer(clients, many=True)
         return Response({'clients': serializer.data})
+    
 @extend_schema(
-    description="Create a new pre-order and immediately add an item to it.",
-    tags=["PreOrder Combined"],
+    summary="إنشاء فاتورة طلب جديدة مع عنصر واحد على الأقل",
+    description="""
+ينشئ هذا الطلب فاتورة طلب جديدة (`PreOrder`) ويضيف عناصر إليها فوراً.
+
+- يتم تحديد العميل إما بالرقم (`clientid`) أو بالاسم.
+- يجب تمرير قائمة `items` مع كل عنصر يحتوي على `pno`, `fileid`, و `itemvalue`.
+
+✅ هذا الطلب يقوم تلقائيًا بخصم الكمية من المخزون ويحدّث فاتورة شراء المورد المرتبطة.
+""",
+    tags=["PreOrder"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "client": {
+                    "type": "string",
+                    "description": "رقم العميل أو اسمه",
+                    "example": "123"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "pno": {"type": "string", "example": "PNO-1001"},
+                            "fileid": {"type": "integer", "example": 457},
+                            "itemvalue": {"type": "integer", "example": 2}
+                        },
+                        "required": ["pno", "fileid", "itemvalue"]
+                    }
+                },
+                "for_who": {
+                    "type": "string",
+                    "description": "منشأ الفاتورة (مثلاً: application)",
+                    "example": "application"
+                },
+                "mobile": {
+                    "type": "string",
+                    "description": "رقم الهاتف المرتبط بالطلب (اختياري)",
+                    "example": "+218912345678"
+                },
+                "payment_status": {
+                    "type": "string",
+                    "description": "حالة الدفع (اختياري)",
+                    "example": "unpaid"
+                }
+            },
+            "required": ["client", "items"]
+        }
+    },
+    responses={
+        201: OpenApiResponse(description="تم إنشاء الفاتورة بنجاح"),
+        400: OpenApiResponse(description="حدث خطأ أثناء التحقق من البيانات"),
+        403: OpenApiResponse(description="غير مصرح لك بالوصول")
+    },
+    examples=[
+        OpenApiExample(
+            name="طلب جديد",
+            value={
+                "client": "123",
+                "items": [
+                    {"pno": "PNO-1001", "fileid": 457, "itemvalue": 3},
+                    {"pno": "PNO-1002", "fileid": 458, "itemvalue": 1}
+                ],
+                "for_who": "application",
+                "payment_status": "unpaid"
+            },
+            request_only=True
+        )
+    ]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -3254,12 +3517,13 @@ def create_preorder_with_item(request):
                 ).first()
 
                 if not buy_invoice:
+                    shared_invoice_no = get_next_buy_invoice_no()
                     buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.create(
                         source=source_name,
                         invoice_date=timezone.now(),
                         amount=0,
                         net_amount=0,
-                        invoice_no=int(timezone.now().timestamp()),
+                        invoice_no=shared_invoice_no,
                         source_obj=product.source
                     )
 
@@ -3334,7 +3598,45 @@ def create_preorder_with_item(request):
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 
+@extend_schema(
+    summary="تحميل قائمة التعبئة للمورد",
+    description="""
+ينشئ ملف Excel يحتوي على بيانات قائمة التعبئة (Packing List) لفاتورة شراء محددة.
 
+- يجب إرسال `invoice_no` كجزء من الطلب.
+- يجب أن تكون الفاتورة مرتبطة بمورد (source_obj).
+- يتم تضمين جميع العناصر المرتبطة بالفاتورة في ملف Excel المولد.
+
+📦 يتم تحميل الملف بصيغة `.xlsx`.
+""",
+    tags=["Supplier Orders"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "invoice_no": {
+                    "type": "string",
+                    "example": "B12345",
+                    "description": "رقم فاتورة الشراء المطلوبة لقائمة التعبئة"
+                }
+            },
+            "required": ["invoice_no"]
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="تم إنشاء ملف Excel لقائمة التعبئة"),
+        400: OpenApiResponse(description="حقل invoice_no مفقود أو غير صالح"),
+        404: OpenApiResponse(description="لم يتم العثور على الفاتورة أو العناصر المرتبطة"),
+        500: OpenApiResponse(description="خطأ غير متوقع أثناء إنشاء الملف")
+    },
+    examples=[
+        OpenApiExample(
+            name="طلب صالح",
+            value={"invoice_no": "B12345"},
+            request_only=True
+        )
+    ]
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -3518,7 +3820,45 @@ def create_supplier_packing_list(invoice_data):
     excel_buffer.seek(0)
     return excel_buffer
 
+@extend_schema(
+    summary="تحميل فاتورة شراء",
+    description="""
+ينشئ ملف Excel يمثل فاتورة شراء معينة بصيغة مفصلة ومنسقة (غالبًا باللغة العربية).
 
+- يجب إرسال `invoice_no` ضمن جسم الطلب لتحديد الفاتورة.
+- يجب أن تحتوي الفاتورة على مصدر محدد (`source_obj`).
+- يتم استخراج كل العناصر التابعة للفاتورة وتنسيقها في ملف Excel.
+
+📥 يتم إرسال الملف للتحميل مباشرة.
+""",
+    tags=["Supplier Orders"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "invoice_no": {
+                    "type": "string",
+                    "example": "INV-2024-0012",
+                    "description": "رقم الفاتورة المراد تحميلها"
+                }
+            },
+            "required": ["invoice_no"]
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="تم إنشاء الفاتورة وتحميلها بنجاح كملف Excel"),
+        400: OpenApiResponse(description="الطلب غير صالح أو رقم الفاتورة مفقود"),
+        404: OpenApiResponse(description="لم يتم العثور على الفاتورة أو العناصر"),
+        500: OpenApiResponse(description="حدث خطأ أثناء إنشاء ملف الفاتورة")
+    },
+    examples=[
+        OpenApiExample(
+            name="مثال طلب صحيح",
+            value={"invoice_no": "INV-2024-0012"},
+            request_only=True
+        )
+    ]
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -3582,6 +3922,7 @@ def assign_preorder(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def my_assigned_orders(request):
     try:
         emp = almogOil_models.EmployeesTable.objects.get(phone=request.user, type='driver')
@@ -3595,6 +3936,7 @@ def my_assigned_orders(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def list_drivers(request):
     drivers = almogOil_models.EmployeesTable.objects.filter(type='driver', active=True)
     data = [{'id': d.employee_id, 'name': d.name} for d in drivers]
@@ -3602,6 +3944,7 @@ def list_drivers(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def list_unassigned_preorders(request):
     preorders = almogOil_models.PreOrderTable.objects.filter(delivery_status='not_assigned')
     data = [{'id': p.autoid, 'invoice_no': p.invoice_no} for p in preorders]
@@ -3617,9 +3960,34 @@ def get_invoice_items(request, invoice_no):
     serializer = wholesale_serializers.DeleveryPreOrderItemSerializer(items, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)    
 
+@extend_schema(
+    summary="طباعة فواتير البيع",
+    description="""
+يطبع فواتير البيع إما لفواتير اليوم أو لفاتورة محددة حسب `label`.
 
+- `label = today_sell_invoice`: طباعة كل فواتير اليوم.
+- `label = specific_sell_invoice`: يتطلب أيضًا `invoice_no`.
+
+يُرسل التقرير إلى خادم الطباعة المخصص.
+""",
+    request=OpenApiTypes.OBJECT,
+    examples=[
+        OpenApiExample(
+            "طباعة فواتير اليوم",
+            value={"label": "today_sell_invoice"},
+            request_only=True
+        ),
+        OpenApiExample(
+            "طباعة فاتورة محددة",
+            value={"label": "specific_sell_invoice", "invoice_no": "12345"},
+            request_only=True
+        )
+    ],
+    responses={200: OpenApiResponse(description="تم إرسال التقرير للطباعة بنجاح")}
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 @authentication_classes([CookieAuthentication])  # Replace with your CookieAuthentication
 def print_api_preorder(request):
     label = request.data.get("label")
@@ -3703,9 +4071,21 @@ def print_api_preorder(request):
     
 
     return Response({"error": "Invalid label"}, status=400)
-
+@extend_schema(
+    summary="عرض السائقين المتاحين",
+    description="يعرض قائمة السائقين المتاحين للتوصيل لفاتورة محددة.",
+    tags=["driver"],
+    parameters=[
+        OpenApiParameter("invoice_no", OpenApiTypes.INT, OpenApiParameter.PATH, required=True, description="رقم الفاتورة")
+    ],
+    responses={
+        200: OpenApiResponse(description="قائمة السائقين المتاحين والفاتورة"),
+        404: OpenApiResponse(description="لم يتم العثور على الفاتورة")
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def available_drivers(request, invoice_no):
     """Get available drivers for a specific order"""
     # First verify the order exists
@@ -3722,9 +4102,28 @@ def available_drivers(request, invoice_no):
         'order':  wholesale_serializers.PreOrderTableSerializer(order).data,
         'available_drivers':  wholesale_serializers.EmployeesTableSerializer(drivers, many=True).data
     })
-
+@extend_schema(
+    summary="تعيين سائق للفاتورة",
+    description="يعين سائق معين لطلب توصيل باستخدام `driver_id`.",
+    tags=["driver"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "driver_id": {"type": "integer", "example": 15}
+            },
+            "required": ["driver_id"]
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="تم تعيين السائق بنجاح"),
+        404: OpenApiResponse(description="السائق أو الفاتورة غير موجودة"),
+        400: OpenApiResponse(description="مدخلات غير صحيحة")
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def assign_driver(request, invoice_no):
     """Assign a driver to a specific order"""
     order = get_object_or_404(almogOil_models.PreOrderTable, invoice_no=invoice_no)
@@ -3757,9 +4156,26 @@ def assign_driver(request, invoice_no):
         "driver": wholesale_serializers.EmployeesTableSerializer(driver).data
     })
 
+@extend_schema(
+    summary="تأكيد تسليم الطلب",
+    description="""
+يؤكد تسليم الطلب ويحدث كميات العناصر. 
+إذا تم تقليل كميات، يتم تحديث كل من SellInvoice و PreOrder، وإرسال إشعار واتساب.
 
+✅ لا حاجة لإرسال بيانات إضافية — يعتمد فقط على `order_id`.
+""",
+    tags=["driver"],
+    parameters=[
+        OpenApiParameter("order_id", OpenApiTypes.INT, OpenApiParameter.PATH, required=True)
+    ],
+    responses={
+        200: OpenApiResponse(description="تم التأكيد بنجاح"),
+        400: OpenApiResponse(description="حدث خطأ أثناء التأكيد")
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_items(request):
     """Update delivered quantities for order items"""
     try:
@@ -3788,9 +4204,37 @@ def update_items(request):
             {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
+@extend_schema(
+    summary="تحديث الكميات المسلمة للعناصر",
+    description="يقوم بتحديث الكمية التي تم تسليمها فعليًا لكل صنف في الفاتورة.",
+    tags=["driver"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "invoice_no": {"type": "string", "example": "INV-2025-123"},
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "item_id": {"type": "string", "example": "PNO123"},
+                            "delivered_quantity": {"type": "integer", "example": 3}
+                        }
+                    }
+                }
+            }
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="تم التحديث بنجاح"),
+        400: OpenApiResponse(description="خطأ في الطلب")
+    }
+)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def confirm_delivery(request, order_id):
     """Mark an order as delivered with complete quantity handling"""
     try:
@@ -3922,6 +4366,7 @@ def confirm_delivery(request, order_id):
         )
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
 def update_delivery_status(request, order_id):
     """Update delivery status (e.g., to 'in_progress')"""
     try:
@@ -3948,3 +4393,31 @@ def update_delivery_status(request, order_id):
             {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def update_client_price_discount(request, clientid):
+    try:
+        client = almogOil_models.AllClientsTable.objects.get(clientid=clientid)
+    except almogOil_models.AllClientsTable.DoesNotExist:
+        return Response({"detail": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = wholesale_serializers.ClientPriceDiscountSerializer(client, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def client_details(request, clientId):
+    try:
+        client = almogOil_models.AllClientsTable.objects.get(clientid=clientId)
+    except almogOil_models.AllClientsTable.DoesNotExist:
+        return Response({'detail': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = wholesale_serializers.ClientDetailsSerializer(client)
+    return Response(serializer.data)

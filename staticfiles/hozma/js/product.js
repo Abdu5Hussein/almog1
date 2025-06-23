@@ -224,8 +224,8 @@ async function showItemDetail(pno) {
     try {
       /* اجلب التفاصيل والصور في وقتٍ واحد */
       const [detailRes, imgRes] = await Promise.all([
-        customFetch(`${baseUrl}/hozma/api/item/${pno}/details/`),              // تفاصيل
-        customFetch(`${baseUrl}/api/products/${pno}/get-images`),   // صور
+        customFetch(`/hozma/api/item/${pno}/details/`),              // تفاصيل
+        customFetch(`/hozma/api/products/${pno}/get-images`),   // صور
       ]);
   
       const item   = await detailRes.json();  // يُتوقَّع أن يُعيد JSON بالمفاتيح الموجودة في دالة Django

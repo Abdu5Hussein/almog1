@@ -136,6 +136,7 @@ class ClientInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.AllClientsTable
         fields = [
+            'clientid',
             'client_photo_url',
             'name',
             'email',
@@ -158,7 +159,8 @@ class ClientInfoSerializer(serializers.ModelSerializer):
         if obj.client_photo and hasattr(obj.client_photo, 'url'):
             return request.build_absolute_uri(obj.client_photo.url)
         return None
-
+    def get_is_online(self, obj):
+        return obj.is_online  # أو أي شرط آخر تريد بناء عليه
 
 
 class driverPreOrderSerializer(serializers.ModelSerializer):
@@ -227,3 +229,42 @@ class EmployeesTableSerializer(serializers.ModelSerializer):
             'employee_id', 'name', 'phone', 'is_available', 
             'has_active_order', 'type', 'employee_image'
         ]
+
+class ClientPriceDiscountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.AllClientsTable
+        fields = ['delivery_price', 'discount']        
+
+class ClientDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.AllClientsTable
+        fields = [
+            'clientid',
+            'name',
+            'address',
+            'email',
+            'website',
+            'phone',
+            'mobile',
+            'last_transaction',
+            'accountcurr',
+            'type',
+            'category',
+            'loan_period',
+            'loan_limit',
+            'loan_day',
+            'subtype',
+            'client_stop',
+            'curr_flag',
+            'last_transaction_details',
+            'last_transaction_amount',
+            'geo_location',
+            'delivery_price',
+            'discount',
+            'is_online',
+            'last_activity',
+            'client_photo',
+            'username',
+            # add or remove any fields you consider important
+        ]
+        read_only_fields = fields  # Make it read-only by default
