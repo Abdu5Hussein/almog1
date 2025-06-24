@@ -110,6 +110,8 @@ urlpatterns = [
     path('api/dowmload_excel_for_preorder/', HozmaApi_views.download_invoice, name='download_excel_for_preorder'),
     path('api/preorder/create-with-item/', HozmaApi_views.create_preorder_with_item, name='create_pre_order_with_item'),
     path('drivers/',views.Hozmadriver, name='Hozmadriver'),
+    path('api/employee/check-availability/', HozmaApi_views.check_employee_availability),
+    path('employee/set-availability/', HozmaApi_views.set_employee_availability, name='set-employee-availability'),
     path('api/clients/<int:clientId>/details/', HozmaApi_views.client_details, name='client-details'),
     path('api/clients/<int:clientid>/update-pricing/', HozmaApi_views.update_client_price_discount, name='update-client-price-discount'),
     path('delevery-mangment/<int:invoice_no>/', views.HozmaAsgindriver, name='delivery_management'),

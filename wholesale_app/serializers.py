@@ -268,3 +268,10 @@ class ClientDetailsSerializer(serializers.ModelSerializer):
             # add or remove any fields you consider important
         ]
         read_only_fields = fields  # Make it read-only by default
+
+
+
+class EmployeeAvailabilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.EmployeesTable
+        fields = ['is_available']       

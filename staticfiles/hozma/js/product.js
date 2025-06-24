@@ -155,7 +155,7 @@ ${item.itemname ?? '-'}
          id="qty-${item.pno}" value="${cartQuantity}" min="0" readonly>
 <button class="btn btn-sm btn-outline-secondary quantity-btn"
         id="increment-btn-${item.pno}"
-        onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', '${item.itemname}', ${finalPrice.toFixed(2)}, ${item.showed})"
+        onclick="incrementAndAddToCart('${item.pno}', '${item.fileid}', '${item.itemno}', decodeURIComponent('${encodeURIComponent(item.itemname)}'), ${finalPrice.toFixed(2)}, ${item.showed})"
         ${cartQuantity >= item.showed ? 'disabled' : ''}>
   +
 </button>

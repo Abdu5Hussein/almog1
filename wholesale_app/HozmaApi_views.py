@@ -4095,7 +4095,8 @@ def available_drivers(request, invoice_no):
     drivers = almogOil_models.EmployeesTable.objects.filter(
         type='driver',
         
-        has_active_order=False
+        
+        is_available = True
     )
     
     return Response({
@@ -4147,7 +4148,7 @@ def assign_driver(request, invoice_no):
     
     # Update driver status
     driver.has_active_order = True
-    driver.is_available = False  # Assuming you want to mark the driver as unavailable
+    driver.is_available = True  # Assuming you want to mark the driver as unavailable
     driver.save()
     
     return Response({
@@ -4279,6 +4280,9 @@ def confirm_delivery(request, order_id):
                     invoice_no=order.invoice_no
                 )
                 
+
+                discount = sell_invoice.client_obj.discount or 0
+                delivery_price = sell_invoice.client_obj.delivery_price or 0
                 # Initialize with current totals
                 total_amount = sell_invoice.amount
                 net_amount = sell_invoice.net_amount
@@ -4301,7 +4305,7 @@ def confirm_delivery(request, order_id):
                     
                     # Adjust totals by subtracting the reduction amount
                     total_amount -= reduction_amount
-                    net_amount -= reduction_amount
+                    net_amount = total_amount - (discount * total_amount) + delivery_price
                 
                 # Update SellInvoice totals
                 sell_invoice.amount = total_amount
@@ -4313,6 +4317,8 @@ def confirm_delivery(request, order_id):
 
             # 3. Update PreOrder and PreOrderItems
             try:
+                discount = order.client.discount or 0
+                delivery_price = order.client.delivery_price or 0
                 # Recalculate PreOrder totals
                 total_amount = order.amount
                 net_amount = order.net_amount
@@ -4328,7 +4334,7 @@ def confirm_delivery(request, order_id):
                     
                     # Adjust totals by subtracting the reduction amount
                     total_amount -= reduction_amount
-                    net_amount -= reduction_amount
+                    net_amount = total_amount - (discount * total_amount) + delivery_price
                 
                 # Update PreOrder totals
                 order.amount = total_amount
@@ -4343,6 +4349,7 @@ def confirm_delivery(request, order_id):
         order.delivery_status = 'delivered'
         order.delivery_end_time = timezone.now()
         order.delvery_confirmed = True
+        order.payment_status = 'تم الدفع'
         order.invoice_status = 'تم التوصيل'
         order.assigned_employee = None
         order.save()
@@ -4364,6 +4371,70 @@ def confirm_delivery(request, order_id):
             {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+@extend_schema(
+    summary="تحديث حالة التوفر للموظف",
+    description="يمكن للموظف تحديث حالته كمتاح أو غير متاح بنفسه.",
+    tags=["driver"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "is_available": {
+                    "type": "boolean",
+                    "example": True,
+                    "description": "تحديد ما إذا كان الموظف متاحًا حالياً أم لا"
+                }
+            },
+            "required": ["is_available"]
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="تم تحديث حالة التوفر بنجاح"),
+        400: OpenApiResponse(description="طلب غير صالح"),
+        404: OpenApiResponse(description="الموظف غير موجود")
+    }
+)
+@api_view(['POST'])
+@authentication_classes([CookieAuthentication])
+@permission_classes([IsAuthenticated])
+def set_employee_availability(request):
+    try:
+        employee = almogOil_models.EmployeesTable.objects.get(phone=request.user)
+    except almogOil_models.EmployeesTable.DoesNotExist:
+        return Response({"detail": "الموظف غير موجود."}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = wholesale_serializers.EmployeeAvailabilitySerializer(employee, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "تم تحديث حالة التوفر بنجاح."})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(
+    summary="التحقق من حالة توفر الموظف",
+    description="يعرض ما إذا كان الموظف الحالي متاحًا أو غير متاح.",
+    tags=["employee"],
+    responses={
+        200: OpenApiResponse(description="تم جلب حالة التوفر بنجاح"),
+        404: OpenApiResponse(description="الموظف غير موجود"),
+        401: OpenApiResponse(description="غير مصرح")
+    }
+)
+@api_view(['GET'])
+@authentication_classes([CookieAuthentication])
+@permission_classes([IsAuthenticated])
+def check_employee_availability(request):
+    try:
+        employee = almogOil_models.EmployeesTable.objects.get(phone=request.user)
+    except almogOil_models.EmployeesTable.DoesNotExist:
+        return Response({"detail": "الموظف غير موجود."}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({
+        "is_available": employee.is_available,
+        "message": "تم جلب حالة التوفر بنجاح."
+    }, status=status.HTTP_200_OK)
+
+    
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
