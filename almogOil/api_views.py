@@ -1,3 +1,4 @@
+from collections import defaultdict
 from decimal import Decimal
 import requests
 from rest_framework.decorators import api_view
@@ -77,6 +78,18 @@ from django.conf import settings  # To access the Django SECRET_KEY
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.models import User
+from rest_framework.request import Request as DRFRequest
+from rest_framework.test import APIRequestFactory
+from django.contrib.auth.middleware import AuthenticationMiddleware
+from django.contrib.messages.middleware import MessageMiddleware
+from django.urls import resolve
+from django.contrib.sessions.middleware import SessionMiddleware
+from django.test import RequestFactory
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpRequest
+from django.core.exceptions import PermissionDenied
+
+
 
 
 EMPLOYEE_REDIRECTS = {
@@ -142,42 +155,71 @@ def logout_view(request):
 
     return response
 
+
+def is_user_authorized_for_url(user, path):
+    try:
+        match = resolve(path)
+        view_func = match.func
+
+        # Create a fake GET request to simulate access
+        factory = RequestFactory()
+        request = factory.get(path)
+        request.user = user
+
+        # Simulate session and middleware behavior
+        SessionMiddleware(lambda req: None)(request)
+        request.session.save()
+        AuthenticationMiddleware(lambda req: None)(request)
+        MessageMiddleware(lambda req: None)(request)
+
+        # Call the view (wrapped with decorators)
+        try:
+            response = view_func(request, *match.args, **match.kwargs)
+
+            # If the view returns a 403 response, deny access
+            if hasattr(response, 'status_code') and response.status_code == 403:
+                return False
+
+            return True
+
+        except PermissionDenied:
+            return False
+
+    except Exception as e:
+        print(f"[auth-check-error] path={path} => {e}")
+        return False
+
 @extend_schema(
     request=serializers.LoginSerializer,
-    description='''Login API:
-    Logs a user in of the system and starts his session.
-    ''',
+    description='''Login API: Logs a user in and redirects to where they left off (if provided).''',
     tags=["User Management"],
 )
 @api_view(["POST"])
-@authentication_classes([])      # no DRF authentication for this endpoint
-@permission_classes([AllowAny])  # anyone may hit it
+@authentication_classes([])
+@permission_classes([AllowAny])
 def sign_in(request):
     try:
         if request.method != "POST":
             return Response({"detail": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-        # ---- 1. Parse & validate -------------------------------------------------
         body = json.loads(request.body or '{}')
         username = body.get("username")
         password = body.get("password")
-        role = body.get("role")  # sent from the client
+        role = body.get("role")
+        next_url = body.get("next_url") or body.get("next") or "/"
 
         if not all([username, password, role]):
-            return Response(
-                {"error": "[username, password, role] fields are required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "[username, password, role] fields are required"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # ---- 2. Authenticate against Django’s auth_user -------------------------
         auth_user = authenticate(request, username=username, password=password)
         if auth_user is None:
-            return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid username or password"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # ---- 3. Domain-specific user retrieval and session setup -----------------
         user = None
         user_id = None
-        redirect_url = None
+        redirect_url = next_url
         employee_type = None
 
         if role == "employee":
@@ -185,7 +227,9 @@ def sign_in(request):
                 user = models.EmployeesTable.objects.get(phone=username)
                 user_id = f"{user.employee_id}"
                 employee_type = getattr(user, "type", None)
-                redirect_url = reverse(EMPLOYEE_REDIRECTS.get(employee_type, 'default-dashboard'))
+
+                if next_url == "/":
+                    redirect_url = reverse(EMPLOYEE_REDIRECTS.get(employee_type, 'default-dashboard'))
             except models.EmployeesTable.DoesNotExist:
                 return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -193,29 +237,40 @@ def sign_in(request):
             try:
                 user = models.AllClientsTable.objects.get(phone=username)
                 user_id = f"{user.clientid}"
-                redirect_url = reverse(CLIENT_REDIRECT)
-                user.is_online = True  # Mark client as online
-                user.save()  # Save the online status
+                user.is_online = True
+                user.save()
+
+                if next_url == "/":
+                    redirect_url = reverse(CLIENT_REDIRECT)
             except models.AllClientsTable.DoesNotExist:
                 return Response({"error": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
-
         else:
             return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ---- 4. Create session + JWT ---------------------------------------------
-        login(request, auth_user)  # Django session
+        # Important: ensure redirect_url is a path, not full URL
+        # If redirect_url is a full URL, parse to get path part (optional)
+
+        # Authorization check
+        is_authorized = is_user_authorized_for_url(auth_user, redirect_url)
+
+        if not is_authorized:
+            if role == "employee":
+                redirect_url = reverse(EMPLOYEE_REDIRECTS.get(employee_type, 'default-dashboard'))
+            elif role == "client":
+                redirect_url = reverse(CLIENT_REDIRECT)
+
+        login(request, auth_user)
 
         request.session["username"] = user.username
         request.session["name"] = user.name
         request.session["role"] = role
         request.session["user_id"] = user_id
         request.session["is_authenticated"] = True
-        request.session.set_expiry(3600)  # 1 hour
+        request.session.set_expiry(3600)
 
         refresh = RefreshToken.for_user(auth_user)
         access_token = str(refresh.access_token)
 
-        # ---- 5. Return API response ----------------------------------------------
         response_data = {
             "message": "Signed in successfully",
             "role": role,
@@ -225,6 +280,8 @@ def sign_in(request):
             "user_id": auth_user.id,
             "username": user.username,
             "name": user.name,
+            "is_authorized_for_next_url": is_authorized,  # <-- here!
+
         }
 
         if role == "employee":
@@ -241,6 +298,7 @@ def sign_in(request):
 
     except Exception as exc:
         return Response({"error": f"Unexpected error: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 """Drop Boxes"""
 @extend_schema(
 description='''
@@ -369,9 +427,23 @@ class EmployeesTableViewSet(viewsets.ModelViewSet):
             try:
                 if not request.user.has_perm('almogOil.add_employeestable'):
                     return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
+                data = request.data.copy()
+
+                # ✅ Phone normalization step
+                raw_phone = str(data.get('phone', '')).strip()
+                if raw_phone.startswith('0'):
+                    normalized_phone = '218' + raw_phone[1:]
+                elif not raw_phone.startswith('218'):
+                    normalized_phone = '218' + raw_phone
+                else:
+                    normalized_phone = raw_phone
+
+                data['phone'] = normalized_phone  # Replace with normalized
+                request._full_data = data  # Ensure DRF uses updated data
 
                 # Step 1: Prepare and validate client data
-                client_data = request.data.copy()
+                client_data = data.copy()
+
                 client_data.pop('last_transaction', None)  # Optional cleanup
 
                 client_serializer = serializers.AllClientsTableSerializer(data=client_data)
@@ -3883,10 +3955,19 @@ def get_all_auth_users(request):
         if not request.user.has_perm('almogOil.category_users'):
             return Response({"detail": "User permission denied, user does not have proper permissions."}, status=403)
 
-        # Fetch all users with is_staff=True
-        users = User.objects.all()
-        serializer = serializers.UsersSerializer(users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        all_users = User.objects.select_related('profile').all()
+
+        clients = all_users.filter(profile__role='client')
+        non_clients = all_users.exclude(profile__role='client')
+
+        client_serializer = serializers.UsersSerializer(clients, many=True)
+        non_client_serializer = serializers.UsersSerializer(non_clients, many=True)
+
+        return Response({
+            "clients": client_serializer.data,
+            "non_clients": non_client_serializer.data
+        }, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -3996,7 +4077,8 @@ def get_user_status(request):
     return Response({
         "username": user.username,
         "is_active": user.is_active,
-        "all_permissions": is_in_group
+        "all_permissions": is_in_group,
+        'groups': [group.name for group in user.groups.all()],
     }, status=status.HTTP_200_OK)
 
 
@@ -4024,6 +4106,15 @@ def create_user(request):
 
     try:
         user = User.objects.create_user(username=username, password=password, first_name=employee.name)
+        user.profile.role = 'employee'
+        user.profile.save()
+
+        try:
+            employee_group = Group.objects.get(name='employee')
+            user.groups.add(employee_group)
+        except Group.DoesNotExist:
+            pass  # Silently ignore if the group doesn't exist
+
         return Response({
             "message": f"User '{username}' created successfully.",
             "user_id": user.id
@@ -4462,4 +4553,95 @@ def print_api(request):
 
     return Response({"error": "Invalid label"}, status=400)
 
+@api_view(['POST'])
+def assign_group_to_user(request):
+    data = request.data
+    user_id = data.get('user_id')
+    group_name = data.get('group_name')
 
+    if not user_id or not group_name:
+        return Response({"error": "user_id and group_name are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+        group = Group.objects.get(name=group_name)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Group.DoesNotExist:
+        return Response({"error": "Group not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if group in user.groups.all():
+        # 🔁 If already in group, remove it
+        user.groups.remove(group)
+        if group.name.lower().find('employee') != -1:
+            user.profile.role = 'employee'
+        else:
+            user.profile.role = 'client'
+        user.profile.save()
+        return Response({
+            "message_en": f"Group '{group.name}' removed from user '{user.username}'.",
+            "message": f"تم إزالة المجموعة '{group.name}' من المستخدم '{user.username}'.",
+            "user": user.username,
+            "group": group.name,
+            "action": "removed"
+        }, status=status.HTTP_200_OK)
+    else:
+        # 🧹 Clear direct permissions and all groups
+        user.user_permissions.clear()
+        user.groups.clear()
+
+        # ➕ Add new group
+        user.groups.add(group)
+        if group.name.lower().find('employee') != -1:
+            user.profile.role = 'employee'
+        else:
+            user.profile.role = 'client'
+        user.profile.save()
+        return Response({
+            "message_en": f"User '{user.username}' added to group '{group.name}', and direct permissions cleared.",
+            "message": f"تم إضافة المستخدم '{user.username}' إلى المجموعة '{group.name}' وتم مسح الصلاحيات المباشرة.",
+            "user": user.username,
+            "group": group.name,
+            "permissions_inherited": [perm.codename for perm in group.permissions.all()],
+            "action": "added"
+        }, status=status.HTTP_200_OK)
+
+
+# Arabic mapping dictionary
+MODEL_NAME_ARABIC_MAP = {
+    "allclientstable": "حدول العملاء",
+    "allsourcestable": "جدول الموردين",
+    "attendance_table": "جدول الحضور",
+    "authgroup": "المجموعات",
+    "authgrouppermissions": "صلاحيات المجموعات",
+    "authpermission": "الصلاحيات",
+    "authuser": "المستخدمين",
+    "authusergroups": "مجموعات المستخدمين",
+    "authuseruser_permissions": "صلاحيات المستخدمين",
+    "buyinvoicetable": "فواتير الشراء",
+    "buyinvoiceitemstable": "اصناف فواتير الشراء",
+    "buy_return_permission": "فواتير ترجيع الشراء",
+    "buy_return_permission_items": "اصناف فواتير ترجيع الشراء",
+    "sellinvoicetable": "فواتير البيع",
+    "sellinvoiceitemstable": "اصناف فواتير البيع",
+
+    # Add more if needed
+}
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_model_permissions(request):
+    permissions = Permission.objects.select_related('content_type').all()
+
+    grouped = defaultdict(list)
+
+    for perm in permissions:
+        model = perm.content_type.model
+        arabic_model_name = MODEL_NAME_ARABIC_MAP.get(model, model)  # fallback to original if not mapped
+        grouped[arabic_model_name].append({
+            "id": perm.id,
+            "codename": perm.codename,
+            "name": perm.name,
+        })
+
+    return Response(grouped)

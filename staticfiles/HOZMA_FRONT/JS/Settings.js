@@ -1,8 +1,8 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     try {
-        const username = localStorage.getItem("session_data@EMPname");
-        const email = localStorage.getItem("session_data@EMPusername"); // optional if you store it
+        const username = localStorage.getItem("session_data@name");
+        const email = localStorage.getItem("session_data@username"); // optional if you store it
 
         const nameElement = document.getElementById('userNamePlaceholder');
         const emailElement = document.getElementById('userEmailPlaceholder');

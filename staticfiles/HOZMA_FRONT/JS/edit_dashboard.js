@@ -117,52 +117,96 @@ function populateForm(clientData) {
 
 function updateProfile() {
     const customerId = JSON.parse(localStorage.getItem("session_data@client_id")).replace(/^c-/, '');
-    
-    // Prepare form data
-    const formData = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
 
-        mobile: document.getElementById('mobile').value,
-        website: document.getElementById('website').value,
-        address: document.getElementById('address').value,
-        geo_location: document.getElementById('geo_location').value
-    };
-    
-    // Show loading state
-    const saveBtn = document.querySelector('#profileForm button[type="submit"]');
-    const originalBtnText = saveBtn.innerHTML;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> جاري الحفظ...';
-    saveBtn.disabled = true;
-    
-    // Send to API
-    customFetch(`/hozma/api/update-client/${customerId}/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => { throw err; });
-        }
-        return response.json();
-    })
-    .then(data => {
-        showToast('تم تحديث الملف الشخصي بنجاح', 'success');
-        setTimeout(() => {
-            window.location.href = '/hozma/hozmaDashbord';
-        }, 1500);
-    })
-    .catch(error => {
-        console.error('Error updating profile:', error);
-        const errorMsg = error.detail || 'حدث خطأ أثناء تحديث الملف الشخصي';
-        showToast(errorMsg, 'error');
-    })
-    .finally(() => {
-        saveBtn.innerHTML = originalBtnText;
-        saveBtn.disabled = false;
+    const nameField = document.getElementById('name');
+    const addressField = document.getElementById('address');
+
+    const newName = nameField.value;
+    const newAddress = addressField.value;
+
+    // Get current values from localStorage or hidden fields (replace this with actual sources if needed)
+    const currentName = nameField.getAttribute('data-current') || "";
+    const currentAddress = addressField.getAttribute('data-current') || "";
+
+    // If no change, do nothing
+    if (newName === currentName && newAddress === currentAddress) {
+        Toastify({
+            text: "لم تقم بأي تغيير على الاسم أو العنوان.",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "#ffc107",
+        }).showToast();
+        return;
+    }
+
+    // Show confirmation Swal
+    Swal.fire({
+        title: 'هل أنت متأكد؟',
+        text: 'سيتم تحديث الاسم أو العنوان، هل ترغب في المتابعة؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، تحديث',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        // Continue if confirmed
+        const formData = {
+            name: newName,
+            email: document.getElementById('email').value,
+            mobile: document.getElementById('mobile').value,
+            website: document.getElementById('website').value,
+            address: newAddress,
+            geo_location: document.getElementById('geo_location').value
+        };
+
+        const saveBtn = document.querySelector('#profileForm button[type="submit"]');
+        const originalBtnText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> جاري الحفظ...';
+        saveBtn.disabled = true;
+
+        customFetch(`/hozma/api/update-client/${customerId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            Toastify({
+                text: "✅ تم تحديث الملف الشخصي بنجاح",
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "#28a745",
+            }).showToast();
+
+            setTimeout(() => {
+                window.location.href = '/hozma/hozmaDashbord';
+            }, 1500);
+        })
+        .catch(error => {
+            const errorMsg = error.detail || '❌ حدث خطأ أثناء تحديث الملف الشخصي';
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ!',
+                text: errorMsg,
+                confirmButtonText: 'حسنًا'
+            });
+        })
+        .finally(() => {
+            saveBtn.innerHTML = originalBtnText;
+            saveBtn.disabled = false;
+        });
     });
 }
 

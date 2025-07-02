@@ -10,7 +10,7 @@ import random
 import re
 import difflib
 from django.contrib.auth.hashers import check_password, make_password
-from django.db.models import Count, Sum, Avg, F, Q, Exists, Case, When, OuterRef,Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
+from django.db.models import Count, Sum, Avg, F, Q, Exists, Case,DecimalField, When, OuterRef,Value,FloatField,  ExpressionWrapper, DurationField,CharField ,Min,Max,StdDev
 from django.db.models.functions import TruncMonth, TruncDay
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import generics
@@ -195,11 +195,8 @@ def get_sellinvoice_no(request):
     except Exception as e:
         # Handle unexpected errors
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+"""
 
-@extend_schema(
-description="""create a new pre-order item""",
-tags=["PreOrder","PreOrder Items"],
-)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -285,7 +282,7 @@ def Sell_invoice_create_item(request):
             return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({"error": "Invalid HTTP method. Only POST is allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
+"""
 
 @extend_schema(
     description="""Confirm PreOrder items into SellInvoice and move to SellInvoiceMainItem,
@@ -297,6 +294,11 @@ def Sell_invoice_create_item(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def confirm_or_update_preorder_items(request):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         data = request.data
         invoice_no = data.get('invoice_no')
@@ -429,15 +431,12 @@ def handle_confirm_action(preorder):
     preorder.save()
 
     return Response({"success": True, "message": "PreOrder items confirmed and moved to SellInvoice."}, status=status.HTTP_200_OK)
-
+"""
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])  # Allow access for any user
 @authentication_classes([CookieAuthentication])  # No authentication required for this view
 def send_test_whatsapp_message(request):
-    """
-    A REST API endpoint to send a WhatsApp message using Green API.
-    This endpoint expects `to` and `body` parameters in the request body.
-    """
+
     try:
         # Extract 'to' and 'body' from the request data
         to = request.data.get('to')
@@ -471,13 +470,13 @@ def send_test_whatsapp_message(request):
             {'success': False, 'message': f'An error occurred: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
+"""
  # Assuming you have this function
 
 from django.db import transaction
 
 from django.db import transaction
-
+"""
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -657,7 +656,7 @@ def full_Sell_invoice_create_item(request):
         return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
+"""
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -710,6 +709,7 @@ def show_preordersBuy(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def show_preorders_buy_v2(request):
+    
     """
     - GET  with ?invoice_no=…    → single invoice + items (unchanged, used by the modal).
     - POST {page, status_filter, sent_filter, search_term, …} → list view.
@@ -816,6 +816,11 @@ def show_preorders_buy_v2(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def confirm_or_update_preorderBuy_items(request):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         data = request.data
         invoice_no = data.get('invoice_no')
@@ -990,6 +995,11 @@ def Buyhandle_confirm_action(preorder):
 @permission_classes([IsAuthenticated])  # Allow access for any user
 @authentication_classes([CookieAuthentication])  # No authentication for this view
 def send_unsent_invoices(request):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     # Extract the invoice number from the request body
     invoice_no = request.data.get('invoice_no')
 
@@ -1319,7 +1329,7 @@ def create_excel_invoice(invoice_data):
     workbook.close()
     excel_buffer.seek(0)
     return excel_buffer
-
+"""
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -1354,7 +1364,8 @@ def create_mainitem(request):
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+"""
+"""
 @api_view(["PUT", "PATCH"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -1372,9 +1383,9 @@ def update_mainitem(request, pk):
             "data":products_serializers.MainitemSerializer(instance).data
         }, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+"""
 
-
-
+"""
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])  # No authentication required
@@ -1401,7 +1412,7 @@ def register_source_user(request):
         return Response({"message": "Source user created successfully."}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+"""
 @extend_schema(
     summary="عرض كل المصادر",
     description="إرجاع قائمة بجميع المصادر (AllSourcesTable).",
@@ -1411,6 +1422,11 @@ def register_source_user(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def show_all_sources(request):
+    if not request.user.has_perm('almogOil.hozma_Products'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     sources = almogOil_models.AllSourcesTable.objects.all()
     serializer = almogOil_serializers.SourcesSerializer(sources, many=True)
     return Response(serializer.data)
@@ -1426,6 +1442,11 @@ def show_all_sources(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def show_source_details(request, source_id):
+    if not request.user.has_perm('almogOil.hozma_Products'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         source = almogOil_models.AllSourcesTable.objects.get(clientid=source_id)
     except almogOil_models.AllSourcesTable.DoesNotExist:
@@ -1452,6 +1473,11 @@ def show_source_details(request, source_id):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def edit_source_info(request, source_id):
+    if not request.user.has_perm('almogOil.hozma_Products'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         source = almogOil_models.AllSourcesTable.objects.get(clientid=source_id)
     except almogOil_models.AllSourcesTable.DoesNotExist:
@@ -1541,6 +1567,8 @@ def validate_company_name(name):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def create_mainitem_by_source(request):
+    
+    
     data = request.data.copy()
 
     # Define required fields and their Arabic labels
@@ -1725,6 +1753,7 @@ def create_mainitem_by_source(request):
                         }, status=200)
 
                     data['oem_numbers'] = company_oem.oemno
+                    data['itemno'] = str(data.get('oem_number', '')).strip()  # 👈 ADD HERE
                     serializer = products_serializers.MainitemSerializer(data=data)
                     if serializer.is_valid():
                         serializer.save()
@@ -1738,6 +1767,8 @@ def create_mainitem_by_source(request):
                         oemno=oem_csv
                     )
                     data['oem_numbers'] = new_oem_row.oemno
+                    data['itemno'] = str(data.get('oem_number', '')).strip()  # 👈 ADD HERE
+
                     serializer = products_serializers.MainitemSerializer(data=data)
                     if serializer.is_valid():
                         serializer.save()
@@ -2022,7 +2053,7 @@ def web_filter_items(request):
     cache.set(cache_key, response_payload, timeout=300)
 
     return Response(response_payload)
-
+"""
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
@@ -2045,9 +2076,10 @@ def delete_invoice(request):
     except almogOil_models.OrderBuyinvoicetable.DoesNotExist:
         return Response({'error': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+"""
 
 
-
+"""
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -2091,11 +2123,17 @@ def delete_all_preordersBuy_and_items(request):
     return Response({
         "message": f"Deleted {orders_deleted} orders and {items_deleted} items."
     }, status=status.HTTP_200_OK)
+"""
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_buy_invoices_for_preorder(request, invoice_no):
+    if not request.user.has_perm('almogOil.hozma_SellInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     try:
         preorder = almogOil_models.PreOrderTable.objects.get(invoice_no=invoice_no)
         buy_invoices = preorder.related_buy_invoices.all()
@@ -2120,6 +2158,11 @@ def get_buy_invoices_for_preorder(request, invoice_no):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_preorders_for_buy_invoice(request, buy_invoice_no):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     try:
         buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=buy_invoice_no)
         preorders = buy_invoice.related_preorders.all()
@@ -2144,6 +2187,11 @@ def get_preorders_for_buy_invoice(request, buy_invoice_no):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_related_preorders(request, buy_invoice_id):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     try:
         buy_invoice = almogOil_models.OrderBuyinvoicetable.objects.get(invoice_no=buy_invoice_id)
         related_preorders = buy_invoice.related_preorders.all()
@@ -2172,6 +2220,11 @@ logger = logging.getLogger(__name__)
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])  # Adjust if any authentication is needed
 def api_auto_confirm_preorder(request):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     invoice_no = request.data.get('invoice_no')
     if not invoice_no:
         return Response({'error': 'Missing invoice_no'}, status=status.HTTP_400_BAD_REQUEST)
@@ -2258,6 +2311,11 @@ def api_auto_confirm_preorder(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def invoice_summary(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+        {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+        status=status.HTTP_403_FORBIDDEN
+        )   
     today = now().date()
     this_month = today.replace(day=1)
 
@@ -2293,6 +2351,11 @@ def invoice_summary(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def invoice_statistics(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     today = now()
 
     # Current month range
@@ -2346,6 +2409,11 @@ def invoice_statistics(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def item_analytics(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     # Get time period from query params (default: last 30 days)
     period = request.GET.get('period', '30d')
     
@@ -2471,6 +2539,12 @@ def item_analytics(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def item_category_analysis(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )      
+    
     analysis = (
         almogOil_models.Mainitem.objects
         .values('itemmain', 'itemsubmain', 'itemname')
@@ -2549,6 +2623,11 @@ def calculate_percentile(sorted_data, percentile):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def item_price_analysis(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     try:
         prices = list(
             almogOil_models.Mainitem.objects
@@ -2586,6 +2665,11 @@ def item_price_analysis(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def item_source_analysis(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )     
     try:
         # Annotate lead time
         items_with_lead_time = (
@@ -2651,6 +2735,11 @@ def item_source_analysis(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def SalesAnalysisView(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        ) 
     # 1. Top 10 Clients by Total Purchases
     top_clients = (
         almogOil_models.SellinvoiceTable.objects
@@ -2696,6 +2785,11 @@ def SalesAnalysisView(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def purchase_analysis(request):
+    if not request.user.has_perm('almogOil.hozma_Dashboard'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )     
     # 1. Top 10 Vendors by Total Purchases
     top_vendors = (
         almogOil_models.Buyinvoicetable.objects
@@ -2866,6 +2960,11 @@ def update_client_info(request, clientid):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])  # No authentication
 def get_oem_table_data(request):
+    if not request.user.has_perm('almogOil.hozma_Products'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )      
     oem_data = almogOil_models.Oemtable.objects.all()
     serializer = wholesale_serializers.OemTableSerializer(oem_data, many=True)
     return Response(serializer.data)
@@ -2909,6 +3008,11 @@ def get_oem_table_data(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def cached_oemtable_list(request):
+    if not request.user.has_perm('almogOil.hozma_Products'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     """
     يستقبل فلترة عبر الـ POST:
         {
@@ -3059,6 +3163,11 @@ def get_employee_image(request, pk):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def create_terms_and_conditions(request):
+    if not request.user.has_perm('almogOil.hozma_Settings'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )    
     serializer = wholesale_serializers.TermsAndConditionsSerializer(data=request.data)
     if serializer.is_valid():
         # Optional: deactivate previous active terms
@@ -3083,6 +3192,11 @@ def create_terms_and_conditions(request):
 @authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])
 def return_policy_api_view(request):
+    if not request.user.has_perm('almogOil.hozma_Settings'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     instance = almogOil_models.ReturnPolicy.objects.filter(is_active=True).first()
     serializer = wholesale_serializers.ReturnPolicySerializer(instance, data=request.data)
 
@@ -3092,7 +3206,7 @@ def return_policy_api_view(request):
 
     return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
-
+"""
 @api_view(['DELETE'])
 @authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])
@@ -3100,7 +3214,7 @@ def delete_all_images(request):
     almogOil_models.Imagetable.objects.all().delete()
     return Response({'message': 'All images deleted successfully.'}, status=status.HTTP_200_OK)
 
-
+"""
 
 @extend_schema(
     summary="تصفية العملاء مع الفرز والتصفح",
@@ -3137,6 +3251,11 @@ def delete_all_images(request):
 @authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])
 def filter_clients(request):
+    if not request.user.has_perm('almogOil.hozma_Clients'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        ) 
     data = request.data
     page = int(data.get('page', 1))
     page_size = int(data.get('page_size', 10))
@@ -3300,6 +3419,7 @@ tags=["Clients"],
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def get_all_clients1(request,id=None):
+
     if request.method == 'GET':
         clients = almogOil_models.AllClientsTable.objects.all().filter(clientid=id)
         serializer = almogOil_serializers.AllClientsTableSerializer(clients, many=True)
@@ -3461,7 +3581,8 @@ def create_preorder_with_item(request):
             # === 4. Process Each Item ===
             total_amount = Decimal("0.000")
             for product, item_value in validated_items:
-                buy_price = Decimal(product.buyprice or 0)
+                buy_price = Decimal(item.get("sellprice") or product.buyprice or 0)
+
                 discount = Decimal(client_obj.discount or 0)
                 delivery_price = Decimal(client_obj.delivery_price or 0)
 
@@ -3581,13 +3702,17 @@ def create_preorder_with_item(request):
                 invoice.related_buyorders.add(buy_invoice)
 
                 # Optional: WhatsApp
+               
                 message = f"✅ تم إضافة {product.itemname}، الكمية {item_value}، لفاتورتك رقم {invoice.invoice_no}."
                 send_whatsapp_message_via_green_api(invoice.client.mobile, message)
 
             # === 5. Finalize Invoice Total ===
-            invoice.amount = total_amount
-            invoice.net_amount = total_amount - (discount * total_amount) + delivery_price
-            invoice.save()
+            if total_amount < 300:
+                    return Response({"error": "لا يمكن إنشاء الفاتورة لأن المبلغ الإجمالي أقل من 300 دينار."}, status=400)
+            else:
+                invoice.amount = total_amount
+                invoice.net_amount = total_amount - (discount * total_amount) + delivery_price
+                invoice.save()
 
             return Response({
                 "success": True,
@@ -3641,6 +3766,11 @@ def create_preorder_with_item(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def create_supplier_packing_list_api(request):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     invoice_no = request.data.get('invoice_no')
     
     if not invoice_no:
@@ -3863,6 +3993,12 @@ def create_supplier_packing_list(invoice_data):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def download_invoice(request):
+    if not request.user.has_perm('almogOil.hozma_BuyInvoices'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )      
+
     # Extract the invoice number from the request body
     invoice_no = request.data.get('invoice_no')
 
@@ -3906,6 +4042,11 @@ def download_invoice(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def assign_preorder(request):
+    if not request.user.has_perm('almogOil.prepare_input_sellinvoice'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )       
     serializer = wholesale_serializers.AssignPreOrderSerializer(data=request.data)
     if serializer.is_valid():
         preorder = serializer.validated_data['preorder']
@@ -3929,7 +4070,11 @@ def my_assigned_orders(request):
     except almogOil_models.EmployeesTable.DoesNotExist:
         return Response({'error': 'Not authorized as delivery employee'}, status=403)
 
-    orders = almogOil_models.PreOrderTable.objects.filter(assigned_employee=emp).order_by('-invoice_date')
+    orders = almogOil_models.PreOrderTable.objects.filter(
+    assigned_employee=emp
+).exclude(
+    delivery_status='delivered'
+).order_by('-invoice_date')
     serializer = wholesale_serializers.driverPreOrderSerializer(orders, many=True)
     return Response(serializer.data)
 
@@ -4087,6 +4232,11 @@ def print_api_preorder(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def available_drivers(request, invoice_no):
+    if not request.user.has_perm('almogOil.prepare_input_sellinvoice'):  # change 'almogOil' to your app name
+       return Response(
+        {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+        status=status.HTTP_403_FORBIDDEN
+    ) 
     """Get available drivers for a specific order"""
     # First verify the order exists
     order = get_object_or_404(almogOil_models.PreOrderTable, invoice_no=invoice_no)
@@ -4126,6 +4276,11 @@ def available_drivers(request, invoice_no):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def assign_driver(request, invoice_no):
+    if not request.user.has_perm('almogOil.prepare_input_sellinvoice'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     """Assign a driver to a specific order"""
     order = get_object_or_404(almogOil_models.PreOrderTable, invoice_no=invoice_no)
     driver_id = request.data.get('driver_id')
@@ -4178,6 +4333,16 @@ def assign_driver(request, invoice_no):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def update_items(request):
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )       
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     """Update delivered quantities for order items"""
     try:
         invoice_no = request.data.get('invoice_no')
@@ -4237,7 +4402,18 @@ def update_items(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def confirm_delivery(request, order_id):
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )   
     """Mark an order as delivered with complete quantity handling"""
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     try:
         # Get employee and order
         employee = almogOil_models.EmployeesTable.objects.get(phone=request.user)
@@ -4308,6 +4484,7 @@ def confirm_delivery(request, order_id):
                     net_amount = total_amount - (discount * total_amount) + delivery_price
                 
                 # Update SellInvoice totals
+
                 sell_invoice.amount = total_amount
                 sell_invoice.net_amount = net_amount
                 sell_invoice.save()
@@ -4351,7 +4528,6 @@ def confirm_delivery(request, order_id):
         order.delvery_confirmed = True
         order.payment_status = 'تم الدفع'
         order.invoice_status = 'تم التوصيل'
-        order.assigned_employee = None
         order.save()
         
         # Update employee status
@@ -4399,6 +4575,11 @@ def confirm_delivery(request, order_id):
 @authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])
 def set_employee_availability(request):
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         employee = almogOil_models.EmployeesTable.objects.get(phone=request.user)
     except almogOil_models.EmployeesTable.DoesNotExist:
@@ -4424,6 +4605,11 @@ def set_employee_availability(request):
 @authentication_classes([CookieAuthentication])
 @permission_classes([IsAuthenticated])
 def check_employee_availability(request):
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     try:
         employee = almogOil_models.EmployeesTable.objects.get(phone=request.user)
     except almogOil_models.EmployeesTable.DoesNotExist:
@@ -4439,6 +4625,11 @@ def check_employee_availability(request):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def update_delivery_status(request, order_id):
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
     """Update delivery status (e.g., to 'in_progress')"""
     try:
         employee = almogOil_models.EmployeesTable.objects.get(phone=request.user.username)
@@ -4469,6 +4660,12 @@ def update_delivery_status(request, order_id):
 @permission_classes([IsAuthenticated])
 @authentication_classes([CookieAuthentication])
 def update_client_price_discount(request, clientid):
+    if not request.user.has_perm('almogOil.hozma_Clients'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
     try:
         client = almogOil_models.AllClientsTable.objects.get(clientid=clientid)
     except almogOil_models.AllClientsTable.DoesNotExist:
@@ -4492,3 +4689,575 @@ def client_details(request, clientId):
 
     serializer = wholesale_serializers.ClientDetailsSerializer(client)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def daily_report(request):
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+
+    # Base queryset for today sales
+    today_sales_qs = almogOil_models.SellinvoiceTable.objects.filter(invoice_date__date=today)
+    yesterday_sales_qs = almogOil_models.SellinvoiceTable.objects.filter(invoice_date__date=yesterday)
+
+    # Aggregate total sales and invoices for today
+    agg_basic = today_sales_qs.aggregate(
+        total_sales=Sum('net_amount'),
+        total_invoices=Count('invoice_no'),
+    )
+
+    # Sum paid_amount safely
+    paid_amount_sum = today_sales_qs.aggregate(
+        total_paid=Sum('paid_amount')
+    )['total_paid']
+
+    # Calculate remaining amount with ExpressionWrapper to avoid aggregate conflict
+    remaining_amount_sum = today_sales_qs.aggregate(
+        total_remaining=Sum(
+            ExpressionWrapper(
+                F('net_amount') - F('paid_amount'),
+                output_field=DecimalField()
+            )
+        )
+    )['total_remaining']
+
+    today_sales = {
+        'total_sales': agg_basic['total_sales'],
+        'total_invoices': agg_basic['total_invoices'],
+        'paid_amount': paid_amount_sum,
+        'remaining_amount': remaining_amount_sum,
+    }
+
+    yesterday_sales = yesterday_sales_qs.aggregate(
+        total_sales=Sum('net_amount')
+    )
+
+    total_sales = today_sales['total_sales'] or 0
+    total_invoices = today_sales['total_invoices'] or 0
+    average_sale = total_sales / total_invoices if total_invoices > 0 else 0
+
+    sales_growth = 0
+    if yesterday_sales['total_sales'] and today_sales['total_sales']:
+        sales_growth = ((today_sales['total_sales'] - yesterday_sales['total_sales']) / yesterday_sales['total_sales']) * 100
+
+    # Inventory Status
+    low_stock_items = almogOil_models.Mainitem.objects.filter(itemvalue__lt=5).count()
+    out_of_stock_items = almogOil_models.Mainitem.objects.filter(itemvalue=0).count()
+
+    # Client Activity
+    new_clients_today = almogOil_models.AllClientsTable.objects.filter(last_transaction=today).count()
+    active_clients_today = almogOil_models.AllClientsTable.objects.filter(last_activity__date=today).count()
+
+    top_clients = almogOil_models.AllClientsTable.objects.filter(
+        sellinvoicetable_set__invoice_date__date=today
+    ).annotate(
+        total_spent=Sum('sellinvoicetable_set__net_amount')
+    ).order_by('-total_spent')[:5]
+
+
+
+    # Supplier Activity
+    new_suppliers_today = almogOil_models.AllSourcesTable.objects.filter(last_transaction=today).count()
+    purchase_orders_today = almogOil_models.Buyinvoicetable.objects.filter(invoice_date__date=today).aggregate(
+        total_purchases=Sum('net_amount'),
+        count=Count('invoice_no')
+    )
+
+    # Employee Performance
+    employees_active_today = almogOil_models.EmployeesTable.objects.filter(
+        attendance_table__date=today,
+        attendance_table__absent=False
+    ).count()
+
+    top_performing_employees = almogOil_models.EmployeesTable.objects.filter(
+        sellinvoicetable__invoice_date__date=today
+    ).annotate(
+        sales_count=Count('sellinvoicetable'),
+        sales_amount=Sum('sellinvoicetable__net_amount')
+    ).order_by('-sales_amount')[:3]
+
+    # Financial Overview
+    returns_today = almogOil_models.return_permission.objects.filter(date=today).aggregate(
+        total_returns=Sum('amount')
+    )
+    buy_returns_today = almogOil_models.buy_return_permission.objects.filter(date=today).aggregate(
+        total_returns=Sum('amount')
+    )
+
+    # Delivery Status
+    deliveries_today = almogOil_models.SellinvoiceTable.objects.filter(
+        delivered_date__date=today
+    ).aggregate(
+        delivered=Count('invoice_no', filter=Q(delivery_status='delivered')),
+        pending=Count('invoice_no', filter=Q(delivery_status='pending')),
+        in_progress=Count('invoice_no', filter=Q(delivery_status='in_progress'))
+    )
+
+    # Pre-Orders Status (Hozma)
+    pre_orders_today = almogOil_models.PreOrderTable.objects.filter(invoice_date__date=today).aggregate(
+        total=Count('invoice_no'),
+        confirmed=Count('invoice_no', filter=Q(is_confirmed_by_client=True)),
+        declined=Count('invoice_no', filter=Q(is_declined_by_client=True)),
+        processing=Count('invoice_no', filter=Q(processing_status='processing')),
+        waiting=Count('invoice_no', filter=Q(processing_status='waiting')),
+        done=Count('invoice_no', filter=Q(processing_status='done'))
+    )
+
+    order_buy_orders = almogOil_models.OrderBuyinvoicetable.objects.filter(invoice_date__date=today).aggregate(
+        total=Count('invoice_no'),
+        amount=Sum('net_amount')
+    )
+
+    report = {
+        "date": today,
+        "sales_summary": {
+            "today": today_sales,
+            "average_sale": average_sale,
+            "yesterday": yesterday_sales,
+            "growth_percentage": sales_growth
+        },
+        "inventory": {
+            "low_stock_items": low_stock_items,
+            "out_of_stock_items": out_of_stock_items
+        },
+        "clients": {
+            "new_clients_today": new_clients_today,
+            "active_clients_today": active_clients_today,
+            "top_clients": [
+                {
+                    "id": client.clientid,
+                    "name": client.name,
+                    "total_spent": client.total_spent
+                } for client in top_clients
+            ]
+        },
+        "suppliers": {
+            "new_suppliers_today": new_suppliers_today,
+            "purchase_orders": purchase_orders_today
+        },
+        "employees": {
+            "active_today": employees_active_today,
+            "top_performers": [
+                {
+                    "id": emp.employee_id,
+                    "name": emp.name,
+                    "sales_count": emp.sales_count,
+                    "sales_amount": emp.sales_amount
+                } for emp in top_performing_employees
+            ]
+        },
+        "financials": {
+            "returns": {
+                "customer_returns": returns_today,
+                "supplier_returns": buy_returns_today
+            }
+        },
+        "deliveries": deliveries_today,
+        "hozma_operations": {
+            "pre_orders": pre_orders_today,
+            "order_buy_orders": order_buy_orders
+        }
+    }
+
+    return Response(report)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def employee_profile(request):
+    try:
+        # Assuming request.user is a phone number or user_id mapped to employee
+        employee = almogOil_models.EmployeesTable.objects.get(phone=request.user)
+        serializer = wholesale_serializers.EmployeeProfileSerializer(employee, context={'request': request})
+        return Response(serializer.data)
+    except almogOil_models.EmployeesTable.DoesNotExist:
+        return Response({'detail': 'Employee not found.'}, status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def delivery_history(request):
+    if not request.user.has_perm('almogOil.hozma_driver'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    user_phone = str(request.user)
+
+    # Get the employee
+    try:
+        employee = almogOil_models.PreOrderTable._meta.get_field('assigned_employee').related_model.objects.get(phone=user_phone)
+    except almogOil_models.PreOrderTable._meta.get_field('assigned_employee').related_model.DoesNotExist:
+        return Response([], status=200)
+
+    # Filter only orders assigned to this employee
+    orders = almogOil_models.PreOrderTable.objects.filter(
+    assigned_employee=employee,
+    delivery_status__in=['delivered', 'canceled']
+).order_by('-invoice_date')
+
+
+    # Optional filtering via query params
+    filter_by = request.query_params.get('filter', 'all')
+    now_time = now()
+    today_start = now_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now_time - timedelta(days=7)
+
+    if filter_by == 'delivered':
+        orders = orders.filter(delivery_status='delivered')
+    elif filter_by == 'cancelled':
+        orders = orders.filter(delivery_status='cancelled')  # Make sure this status exists in your system
+    elif filter_by == 'today':
+        orders = orders.filter(Q(delivery_end_time__gte=today_start) | Q(invoice_date__gte=today_start))
+    elif filter_by == 'week':
+        orders = orders.filter(Q(delivery_end_time__gte=week_ago) | Q(invoice_date__gte=week_ago))
+    
+    serialized = wholesale_serializers.PreOrderSerializerOfDelvery(orders.order_by('-date_time'), many=True)
+    return Response(serialized.data)        
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def get_client_discount_and_delivery(request):
+
+    user_identifier = str(request.user)  # يمكن أن يكون رقم الهاتف أو username حسب إعداداتك
+
+    try:
+        # البحث عن العميل بناءً على username أو phone
+        client = almogOil_models.AllClientsTable.objects.get(phone=user_identifier)
+    except almogOil_models.AllClientsTable.DoesNotExist:
+        return Response({"error": "العميل غير موجود"}, status=404)
+
+    discount = float(client.discount or 0)
+    delivery_price = float(client.delivery_price or 0)
+
+    return Response({
+        "discount": discount,  # مثال: 0.1 يعني 10٪
+        "delivery": delivery_price  # السعر الفعلي للتوصيل
+    })   
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def create_mainitem_by_source_test(request):
+    if not request.user.has_perm('almogOil.hozma_Products'):  # change 'almogOil' to your app name
+        return Response(
+            {"error": "ليس لديك الصلاحية لتأكيد ٫٫."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    data = request.data.copy()
+
+    # Define required fields and their Arabic labels
+    required_fields = {
+        'oem_number': 'رقم OEM',
+        'companyproduct': 'الشركة المصنعة',
+        'buyprice': 'سعر الشراء',
+        'showed': 'الكمية المعروضة',
+        'source': 'المصدر', 
+        'quantity_type': 'نوع الكمية'
+    }
+
+    # Check for missing fields
+    missing = [arabic for key, arabic in required_fields.items() if not data.get(key)]
+    
+    if missing:
+        return Response({'error': f'الحقول التالية مفقودة: {", ".join(missing)}'}, status=400)
+       # ---------------------------------------------------------------------
+    # 1) Handle quantity_type variations
+    quantity_type = str(data.get('quantity_type', '')).strip().lower()
+    if quantity_type not in {'single', 'box', 'pair'}:
+        return Response(
+            {'error': 'نوع الكمية يجب أن يكون single أو box أو pair'},
+            status=400
+        )
+
+    # --- BOX -------------------------------------------------------------
+    if quantity_type == 'box':
+        itemperbox = data.get('itemperbox')
+        try:
+            itemperbox_int = int(itemperbox)
+            if itemperbox_int <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response(
+                {'error': 'يرجى إدخال itemperbox كعدد صحيح أكبر من صفر عند اختيار الكمية = box'},
+                status=400
+            )
+        data['itemperbox'] = itemperbox_int          # keep as int
+        data.pop('paired_oem', None)                 # not relevant
+
+    # --- PAIR ------------------------------------------------------------
+    elif quantity_type == 'pair':
+        data.pop('itemperbox', None)
+        
+        oem_number = str(data.get('oem_number', '')).strip()
+        paired_oem = str(data.get('paired_oem', '')).strip()
+
+        if not oem_number:
+            return Response({'error': 'رقم OEM مطلوب للعنصر الجديد.'}, status=400)
+
+        if paired_oem:
+            if paired_oem == oem_number:
+                return Response({'error': 'لا يمكن إقران العنصر بنفسه'}, status=400)
+            
+            # Just store the OEM reference - signals will handle the linking
+            data['paired_oem'] = paired_oem
+            data.pop('paired_item', None)  # Let signal set this
+    else:
+        data.pop('paired_oem', None)
+        data.pop('paired_item', None)
+
+    try:
+        
+        company = str(data.get('companyproduct', '')).strip()
+        company_validation = validate_company_name(company)
+        if company_validation:
+           return company_validation
+        original_buyprice = Decimal(str(data.get('buyprice', '0'))).quantize(Decimal('0.0000'))
+        showed = data.get('showed')
+        source = str(data.get('source', '')).strip()
+        discount = Decimal(str(data.get('discount') or '0'))
+        discount_type = str(data.get('discount-type', 'source')).strip().lower()
+        category_type = str(data.get('category_type', '')).strip()
+        pno = str(data.get('pno') or '').strip()
+        source_pno = str(data.get('source_pno') or pno).strip()
+        oem_in = str(data.get('oem_number', ''))
+        external_oem = str(data.get('external_oem', ''))
+        all_oems = safe_csv(oem_in) + safe_csv(external_oem)
+        oem_csv = ",".join(all_oems)
+
+
+        
+        incoming_oems = normalize_oem_list(oem_csv)
+
+        replaceno = str(data.get('replaceno', '')).strip()
+        if not almogOil_models.ItemCategory.objects.filter(name__iexact=category_type).exists():
+            return Response({'error': f' صنف الفئة "{category_type}" غير موجودة في جدول التصنيفات'}, status=400)
+        
+
+
+        if discount > 0:
+            discounted_buyprice = (original_buyprice - (original_buyprice * discount)).quantize(Decimal('0.0000'))
+        else:
+            discounted_buyprice = original_buyprice
+
+        data['buyprice'] = str(discounted_buyprice)
+
+        try:
+            source_obj = almogOil_models.AllSourcesTable.objects.get(clientid__iexact=source)
+            commission = Decimal(str(source_obj.commission)).quantize(Decimal('0.0000'))
+
+            if discount_type == 'market':
+                # Cost price remains based on original buyprice
+                costprice = (original_buyprice - (original_buyprice * commission)).quantize(Decimal('0.0000'))
+            else:
+                # Default: cost price from discounted buyprice
+                costprice = (discounted_buyprice - (discounted_buyprice * commission)).quantize(Decimal('0.0000'))
+
+            data['costprice'] = str(costprice)
+        except almogOil_models.AllSourcesTable.DoesNotExist:
+            return Response({'error': f'المصدر "{source}" غير موجود في جدول الموردين'}, status=400)
+        
+        existing_product = almogOil_models.Mainitem.objects.filter(
+            source__exact=source,
+            source_pno__exact=source_pno
+        ).first()
+
+        if existing_product:
+            update_data = {
+                'showed': showed,
+                'costprice': str(costprice),
+                'buyprice': str(discounted_buyprice),
+                'source_pno': source_pno,
+                'oem_numbers': oem_csv
+            }
+            serializer = products_serializers.MainitemSerializer(
+                existing_product,
+                data=update_data,
+                partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'message': 'تم تحديث الحقول: الكمية المعروضة، سعر التكلفة، وسعر الشراء للمنتج المطابق لنفس المورد ورقم الخص بالمورد.',
+                    'data': data
+                }, status=200)
+            return Response(serializer.errors, status=400)
+
+               # ❷ ــــ إذا لم يُوجد منتج مطابق لـ (source, source_pno) نتابع إنشاء/تحديث المنطق القديم
+        #      يمكنك حذف كتلة if-pno القديمة بالكامل أو إبقاؤها كمعيار ثانوي إن أردت.
+        #      هنا مثال سريع لجعلها معياراً ثانوياً:
+
+        if pno:
+            with transaction.atomic():
+             existing_product = almogOil_models.Mainitem.objects.select_for_update().filter(pno=pno).first()
+             if existing_product:
+                update_data = {
+                    'showed': showed,
+                    'costprice': str(costprice),
+                    'buyprice': str(discounted_buyprice),
+                    'source_pno': source_pno,
+                    'oem_numbers': oem_csv
+                }
+                serializer = products_serializers.MainitemSerializer(
+                    existing_product,
+                    data=update_data,
+                    partial=True
+                )
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({
+                        'message': ' تم تحديث الحقول الكمية المعروضة، وسعر التكلفة، وسعر الشراء للمنتج الموجود مسبقًا',
+                        'data': data
+                    }, status=200)
+                return Response(serializer.errors, status=400)
+
+        with transaction.atomic():
+            if not pno:
+                last_product = almogOil_models.Mainitem.objects.order_by('-pno').first()
+                if last_product:
+                    try:
+                        last_pno = int(last_product.pno)
+                        pno = str(last_pno + 1)
+                    except (ValueError, TypeError):
+                        pno = '1000'
+                else:
+                    pno = '1000'
+                data['pno'] = pno
+
+            data['source_pno'] = source_pno
+
+            oem_matches = []
+            for row in almogOil_models.Oemtable.objects.all():
+                existing_oems = normalize_oem_list(row.oemno) 
+                if incoming_oems & existing_oems:  # Check if there is any intersection  
+                    oem_matches.append(row) 
+
+
+
+            if oem_matches:
+                company_oem = None
+                for match in oem_matches:
+                    if match.cname.lower() == company.lower() or match.cno.lower() == replaceno.lower():
+                        company_oem = match
+                        break
+
+                if company_oem:
+                    all_oems = safe_csv(company_oem.oemno)
+                    existing_items = almogOil_models.Mainitem.objects.filter(Q(companyproduct__iexact=company)
+                                                                              | Q(replaceno__iexact=replaceno))
+                    item_to_update = None
+                    for item in existing_items:
+                        item_oems = safe_csv(item.oem_numbers)
+                        if set(item_oems) & set(all_oems):
+                            item_to_update = item
+                            break
+
+                    if item_to_update:
+                        if Decimal(str(item_to_update.buyprice)) > discounted_buyprice:
+                            update_payload = data.copy()
+                            update_payload['oem_numbers'] = company_oem.oemno
+                            update_payload.pop('pno', None)
+                            serializer = products_serializers.MainitemSerializer(
+                                item_to_update, data=update_payload, partial=True
+                            )
+                            if serializer.is_valid():
+                                instance = serializer.save()
+                                instance.oem_numbers = company_oem.oemno
+                                instance.save()
+                                return Response({
+                                    'message': 'تم تحديث المنتج الحالي بسعر أقل',
+                                    'data': data
+                                }, status=200)
+                            return Response(serializer.errors, status=400)
+                        return Response({
+                            'message': 'المنتج الموجود لديه نفس السعر أو سعر أفضل',
+                            'data': data
+                        }, status=200)
+
+                    data['oem_numbers'] = company_oem.oemno
+                    data['itemno'] = oem_in  # 👈 ADD HERE
+                    serializer = products_serializers.MainitemSerializer(data=data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=201)
+                    return Response(serializer.errors, status=400)
+
+                else:
+                    new_oem_row = almogOil_models.Oemtable.objects.create(
+                        cname=company,
+                        cno=replaceno,
+                        oemno=oem_csv
+                    )
+                    data['oem_numbers'] = new_oem_row.oemno
+                    data['itemno'] = oem_in  # 👈 ADD HERE
+
+                    serializer = products_serializers.MainitemSerializer(data=data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=201)
+                    return Response(serializer.errors, status=400)
+
+            else:
+                new_oem_row = almogOil_models.Oemtable.objects.create(
+                    cname=company,
+                    cno=replaceno,
+                    oemno=oem_csv
+                )
+                data['oem_numbers'] = new_oem_row.oemno
+                data['itemno'] = oem_in  # 👈 ADD HERE
+                serializer = products_serializers.MainitemSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=201)
+                return Response(serializer.errors, status=400)
+
+    except Exception as e:
+        return Response({'error': f'حدث خطأ غير متوقع: {str(e)}'}, status=500)
+  
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def update_driver_location(request):
+    employee = get_object_or_404(almogOil_models.EmployeesTable, phone=request.user)
+
+    lat = request.data.get('latitude')
+    lng = request.data.get('longitude')
+
+    if lat is None or lng is None:
+        return Response({'error': 'Missing latitude or longitude'}, status=400)
+
+    employee.current_latitude = lat
+    employee.current_longitude = lng
+    employee.last_updated = timezone.now()
+    employee.save()
+
+    return Response({'status': 'Location updated'})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([CookieAuthentication])
+def get_employee_locations(request):
+# Employees with valid location
+    employees = almogOil_models.EmployeesTable.objects.filter(
+        active=True,
+        current_latitude__isnull=False,
+        current_longitude__isnull=False
+    ).exclude(current_latitude=0).exclude(current_longitude=0)
+
+    # Clients with non-empty geo_location
+    clients = almogOil_models.AllClientsTable.objects.filter(
+        geo_location__isnull=False
+    ).exclude(geo_location='').exclude(geo_location='0,0')
+
+    employee_serializer = wholesale_serializers.EmployeeLocationSerializer(employees, many=True)
+    client_serializer = wholesale_serializers.ClientLocationSerializer(clients, many=True)
+
+    return Response({
+        "employees": employee_serializer.data,
+        "clients": client_serializer.data
+    })

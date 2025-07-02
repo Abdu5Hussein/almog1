@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
             'value': value
         };
 
-        customFetch(`http://45.13.59.226/item/${itemId}/update-${field}/`, {
+        customFetch(`/item/${itemId}/update-${field}/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

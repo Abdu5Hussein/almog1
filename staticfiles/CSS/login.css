@@ -26,9 +26,8 @@ html {
 
 .logo {
     display: block;
-    margin: 0 auto 20px auto;
-    width: 200px;
-    /* Adjust as needed */
+    margin: 35px auto 20px auto; /* Example: Adds 35px top margin */
+    width: 200px; /* Adjust as needed */
 }
 
 h1 {

@@ -847,28 +847,34 @@ tags=["Clients"],
 @permission_classes([IsAuthenticated])
 def create_client_record(request):
     if request.method == 'POST':
-        data = request.data  # DRF will parse the JSON data automatically
+        data = request.data
 
-        # Validate required fields
-        if not data.get('phone'):
+        # Normalize the phone number
+        raw_phone = str(data.get('phone', '')).strip()
+        if raw_phone.startswith('0'):
+            normalized_phone = '218' + raw_phone[1:]
+        elif not raw_phone.startswith('218'):
+            normalized_phone = '218' + raw_phone
+        else:
+            normalized_phone = raw_phone
+
+        if not normalized_phone:
             return Response({'status': 'error', 'message': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if phone number already exists
-        existing_phones = User.objects.values_list('username', flat=True)
-        if data.get('phone') in existing_phones:
+        if User.objects.filter(username=normalized_phone).exists():
             return Response({'status': 'error', 'message': 'Phone number already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Encrypt the password
         password = make_password(data.get('password'))
 
-        # Create the client record
         try:
             new_item = AllClientsTable.objects.create(
                 name=data.get('client_name', '').strip() or None,
                 address=data.get('address', '').strip() or None,
                 email=data.get('email', '').strip() or None,
                 website=data.get('website', '').strip() or None,
-                phone=data.get('phone', '').strip() or None,
+                phone=normalized_phone,
                 mobile=data.get('mobile', '').strip() or None,
                 last_transaction_amount=data.get('last_transaction', '0').strip() or '0',
                 accountcurr=data.get('currency', '').strip() or None,
@@ -882,16 +888,21 @@ def create_client_record(request):
                 curr_flag=bool(int(data.get('curr_flag', '0'))) if str(data.get('curr_flag', '0')).isdigit() else False,
                 permissions=data.get('permissions', '').strip() or None,
                 other=data.get('other', '').strip() or None,
-                username=data.get('phone'),
+                username=normalized_phone,
                 password=password,
             )
 
             # Create User instance
-            
-            user = User.objects.create_user(username=data.get('phone'), email=data.get('email'), password=data.get('password'))
+            user = User.objects.create_user(
+                username=normalized_phone,
+                email=data.get('email'),
+                password=data.get('password')
+            )
             client_group = Group.objects.get(name='client')
             user.groups.add(client_group)
             user.save()
+            user.profile.role = 'client'
+            user.profile.save()
 
             return Response({'status': 'success', 'message': 'Record created successfully!'})
 

@@ -60,7 +60,7 @@ urlpatterns = [
     path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     # ReDoc UI
     path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-    path('', lambda request: redirect(reverse('home'))),
+    path('', views.servers_navigate_landing, name='servers_navigate_landing'),
     path('login', views.LogInView, name='login'),
     path('users/me/profile', views.user_profile_template, name='user_profile_template'),
     path('process-login', api_views.sign_in, name='login-process'),
@@ -76,7 +76,7 @@ urlpatterns = [
     path('partial-products-reports', views.PartialProductsReports, name='partial-products-reports'),
     path('products-movement', views.ProductsMovementReport, name='products-movement'),
     path('products-balance', views.ProductsBalance, name='products-balance'),
-    path('data-inventory', views.DataInventory, name='data-inventory'),
+    #path('data-inventory', views.DataInventory, name='data-inventory'),
     path('api/get-data/', products_api_views.get_data, name='get_data'),
     path('lost-and-damaged', views.LostDamaged, name='lost-and-damaged'),
     path('main-catalog', views.MainCat, name='main-catalog'),
@@ -316,6 +316,8 @@ urlpatterns = [
     path('print/dynamic-paper', views.dynamic_print_paper_template, name='dynamic-paper'),
     path('api/print-dynamic-paper', api_views.print_api, name='print_api'),
     path('api/modify-price/', products_api_views.modify_price, name='modify_price'),
+    path('api/users/assign-group', api_views.assign_group_to_user, name='assign_group_to_user'),
+    path('api/models/get-all-model-permissions', api_views.get_all_model_permissions, name='get_all_model_permissions'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + debug_toolbar_urls()
 

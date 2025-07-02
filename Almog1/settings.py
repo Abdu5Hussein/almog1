@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+import datetime
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,23 +28,52 @@ SECRET_KEY = 'django-insecure-#%+mz*p*)^nanq$a+pm0%m4_pp-v#u!ak!h-8q8dw4tostng@0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['marine.co.ly','www.marine.co.ly', '45.13.59.226','127.0.0.1']
+ALLOWED_HOSTS = [
+    #'marine.co.ly',
+    #'www.marine.co.ly',
+    'hozma.net',
+    'www.hozma.net',
+    '45.13.59.226',
+    '127.0.0.1'
+]
+
+
+LOG_DIR = '/home/webapps/project1/almog1/logs'
+
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': '/home/django/almog1/logs/almog1.log',
+
+    'formatters': {
+        'request_format': {
+            'format': (
+                '[{asctime}] {levelname} {message}'
+            ),
+            'style': '{',
         },
     },
+
+    'handlers': {
+        'request_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(LOG_DIR, 'requests.log'),
+            'when': 'midnight',
+            'backupCount': 7,
+            'formatter': 'request_format',
+            'encoding': 'utf-8',
+            'utc': False,
+        },
+    },
+
     'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
+        'django.request': {
+            'handlers': ['request_file'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }
@@ -119,14 +149,21 @@ SIMPLE_JWT = {
 INTERNAL_IPS = [
     "127.0.0.1",
     "45.13.59.226",
+    # Add more internal IPs if needed
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://45.13.59.226",
+    "https://45.13.59.226",
     "http://45.13.59.226:8003",
     "http://45.13.59.226:8004",
     "http://45.13.59.226:8005",
+    "http://hozma.net",
+    "http://www.hozma.net",
+    "https://hozma.net",
+    "https://www.hozma.net",
 ]
+
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -141,6 +178,7 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     "corsheaders.middleware.CorsMiddleware",
     'almogOil.middleware.RefreshTokenMiddleware',   # Custom middleware to refresh token
+    'almogOil.middleware.RequestLoggingMiddleware',
 ]
 
 CSRF_COOKIE_HTTPONLY = False  # Allow access to CSRF token in JavaScript
@@ -148,7 +186,12 @@ CSRF_COOKIE_HTTPONLY = False  # Allow access to CSRF token in JavaScript
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://45.13.59.226',
+    'https://45.13.59.226',
     'http://localhost:8000',  # In case you're using localhost
+    'http://hozma.net',
+    'http://www.hozma.net',
+    'https://hozma.net',
+    'https://www.hozma.net',
 ]
 
 ROOT_URLCONF = 'Almog1.urls'
@@ -294,3 +337,13 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Reset session timer with each request
 SESSION_SAVE_EVERY_REQUEST = True
+
+
+# Celery Beat Scheduler Configuration
+CELERY_BEAT_SCHEDULE = {
+    'backup-mssql-to-gcs-every-2-hours': {
+        'task': 'almogOil.tasks.backup_mssql_to_gcs',
+        'schedule': datetime.timedelta(hours=2),
+        'args': (),
+    },
+}

@@ -1,5 +1,5 @@
 const container = document.getElementById('brands-container');
-const apiUrl = 'http://45.13.59.226/hozma/api/companies/'; // updated endpoint
+const apiUrl = '/hozma/api/companies/'; // updated endpoint
 
 fetch(apiUrl)
   .then(response => response.json())
@@ -13,7 +13,7 @@ fetch(apiUrl)
       col.innerHTML = `
         <div class="brand-card h-100">
           <div class="card-body text-center">
-            <img src="http://45.13.59.226${brand.logo_obj}" class="img-fluid mb-3" alt="${brand.typename} Logo">
+            <img src="${brand.logo_obj}" class="img-fluid mb-3" alt="${brand.typename} Logo">
             <h5 class="card-title">${brand.typename}</h5>
             <p class="text-muted small mb-3">قطع غيار متنوعة</p>
             <a href="/hozma/brand/${encodeURIComponent(brand.typename)}/" class="btn">

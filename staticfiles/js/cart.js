@@ -1,4 +1,4 @@
-const baseUrl = "http://45.13.59.226:8000/api/v1/";
+const baseUrl = "/api/v1/";
 
 // Function to fetch products from the API
 async function fetchProducts() {

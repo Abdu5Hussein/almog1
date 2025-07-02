@@ -1353,7 +1353,7 @@ document.getElementById('add-main-btn').addEventListener('click', function () {
     alert("الرجاء اختيار صنف برقم خاص");
     return
   }
-  openWindow(`http://45.13.59.226/item/${itemId}/add-more-categories`);
+  openWindow(`/item/${itemId}/add-more-categories`);
 });
 
 // const main_choices = new Choices("#item-main", {

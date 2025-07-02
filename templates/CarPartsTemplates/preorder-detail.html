@@ -156,13 +156,21 @@
         direction: rtl;
         text-align: right;
     }
-    .diff-highlight {
-        background-color: #fff3cd;
-    }
+    
     .badge {
         font-size: 0.9em;
         padding: 5px 10px;
     }
+ 
+  .row-yellow {
+    background-color: #fff3cd; /* Bootstrap warning background (light yellow) */
+    color: #856404;
+  }
+
+  .row-blue {
+    background-color: #cce5ff; /* Bootstrap info background (light blue) */
+    color: #004085;
+  }
 
     </style>
 </head>
@@ -195,7 +203,9 @@
                             <th><i class="fas fa-tag me-2"></i>اسم المنتج</th>
                             <th><i class="fas fa-boxes me-2"></i>الكمية المطلوبة</th>
                             <th><i class="fas fa-check-circle me-2"></i>الكمية المؤكدة</th>
-                            <th><i class="fas fa-check-circle me-2"></i>الكميةالمؤكدة من السائق</th>
+                            <th>
+                                <i class="fas fa-truck me-2"></i>الكمية المؤكدة من السائق
+                              </th>
                             <th><i class="fas fa-money-bill-wave me-2"></i>سعر الوحدة</th>
                             <th><i class="fas fa-money-check-alt me-2"></i>السعر الإجمالي</th>
                             <th><i class="fas fa-cogs me-2"></i>تمت المعالجة؟</th>

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    customFetch('http://45.13.59.226/hozma/api/company-products/')
+    customFetch('/hozma/api/company-products/')
       .then(response => response.json())
       .then(data => {
         const select = document.getElementById('companyproductFilter');

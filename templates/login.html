@@ -29,44 +29,46 @@
     <div class="container">
       <div class="row justify-content-center align-items-center vh-100">
         <div class="col-md-4">
-          <div class="card shadow">
+          <div class="card shadow border-2" style="border-top: 5px solid #f39c12;">
             <div class="card-body">
               <div id="img-container" class="img-container">
                 <img
-                  src="{% static 'images/almog-palestine-logo.jpg' %}"
+                  src="{% static 'images/log_hozma.png' %}"
                   alt="Logo"
                   class="logo mb-4"
                   style="position: relative; top: -35px;"
                 />
               </div>
-              <h1 class="text-center">Login</h1>
+              <h1 class="text-center mb-4" style="color: #f39c12;">تسجيل الدخول</h1>
 
               {% if messages %} {% for message in messages %}
               <div class="alert alert-danger">{{ message }}</div>
               {% endfor %} {% endif %}
 
-              <form method="post" id="login-form">
+              <form method="post" id="login-form" onsubmit="normalizePhoneNumber(event)">
                 {% csrf_token %}
                 <div class="mb-2">
-                  <label for="username" class="form-label">Username</label>
+                  <label for="username" class="form-label">رقم الهاتف</label>
                   <input
                     type="text"
                     class="form-control"
                     id="username"
                     name="username"
-                    placeholder="Enter your username: user1"
+                    placeholder="ادخل الرقم: 92XXXXXXX"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
                     required
                   />
                 </div>
                 <div class="mb-2 position-relative">
-                  <label for="password" class="form-label">Password</label>
+                  <label for="password" class="form-label">الرمز</label>
                   <div class="input-group">
                     <input
                       type="password"
                       class="form-control"
                       id="password"
                       name="password"
-                      placeholder="Enter your password: password1"
+                      placeholder="ادخل الرمز: password1"
                       required
                     />
                     <button
@@ -82,15 +84,21 @@
                 <div class="mb-4">
                   <label for="role">Role:</label>
                   <select id="role" name="role" class="form-control">
-                    <option value="employee">Employee</option>
-                    <option value="client">Client</option>
+                    <option value="client">عميل</option>
+                    <option value="employee">موظف</option>
+                    
+                    
                   </select>
                 </div>
 
 
-                <button type="submit" class="btn btn-primary w-100">
-                  Login
-                </button>
+                <button
+  type="submit"
+  class="btn w-100 text-white fw-bold"
+  style="background-color: #f39c12; border-color: #f39c12;"
+>
+  تسجيل دخول
+</button>
               </form>
             </div>
           </div>

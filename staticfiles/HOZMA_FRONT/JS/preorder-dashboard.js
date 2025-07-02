@@ -2,26 +2,26 @@
 /* ------------------------------------------------------------------
    GLOBAL STATE
 ------------------------------------------------------------------ */
-let currentPage   = 1;
-let totalPages    = 1;
-let lastPayload   = {};           // remember the last POST body so we can re-use it
+let currentPage = 1;
+let totalPages = 1;
+let lastPayload = {};           // remember the last POST body so we can re-use it
 let preorderCache = [];           // the page we just fetched
 
 /* ------------------------------------------------------------------
    DOM REFERENCES
 ------------------------------------------------------------------ */
 document.addEventListener('DOMContentLoaded', () => {
-    const sortSelect         = document.getElementById('sortSelect');
-    const statusFilter       = document.getElementById('statusFilter');
-    const dateFilter         = document.getElementById('dateFilter');
-    const preorderList       = document.getElementById('preorder-list');
-    const loadingState       = document.getElementById('loading-state');
-    const emptyState         = document.getElementById('empty-state');
-    const refreshBtn         = document.getElementById('refresh-btn');
-    const resetFiltersBtn    = document.getElementById('reset-filters');
-    const nextBtn            = document.getElementById('next-page');
-    const prevBtn            = document.getElementById('prev-page');
-    const pageLabel          = document.getElementById('page-label');
+    const sortSelect = document.getElementById('sortSelect');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const preorderList = document.getElementById('preorder-list');
+    const loadingState = document.getElementById('loading-state');
+    const emptyState = document.getElementById('empty-state');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    const nextBtn = document.getElementById('next-page');
+    const prevBtn = document.getElementById('prev-page');
+    const pageLabel = document.getElementById('page-label');
 
     /* ---------------- initial load ---------------- */
     fetchPreorders();        // page 1 with default filters
@@ -31,18 +31,18 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('change', () => fetchPreorders(1));     // go back to first page
     });
 
-    refreshBtn.addEventListener('click', function() {
+    refreshBtn.addEventListener('click', function () {
         this.querySelector('i').classList.add('refresh-animate');
         fetchPreorders(currentPage);
         setTimeout(() => {
             this.querySelector('i').classList.remove('refresh-animate');
         }, 800);
     });
-    
+
     resetFiltersBtn.addEventListener('click', () => {
-        sortSelect.value   = 'date_desc';
+        sortSelect.value = 'date_desc';
         statusFilter.value = 'all';
-        dateFilter.value   = 'all';
+        dateFilter.value = 'all';
         fetchPreorders(1);
     });
 
@@ -60,49 +60,49 @@ document.addEventListener('DOMContentLoaded', () => {
     function fetchPreorders(page = 1) {
         /* show loading */
         loadingState.style.display = '';
-        emptyState.style.display   = 'none';
-        preorderList.innerHTML     = '';
+        emptyState.style.display = 'none';
+        preorderList.innerHTML = '';
         preorderList.appendChild(loadingState);
 
         /* build payload */
         const payload = {
-            page:        page,
-            page_size:   10,                          // change if you want a different page size
-            sort_by:     sortSelect.value,            // date_desc, amount_asc, …
+            page: page,
+            page_size: 10,                          // change if you want a different page size
+            sort_by: sortSelect.value,            // date_desc, amount_asc, …
             status_filter: statusFilter.value,        // all | confirmed | pending
-            date_filter:   dateFilter.value           // all | today | week | month
+            date_filter: dateFilter.value           // all | today | week | month
         };
 
         /* remember it so "refresh" keeps last filters */
         lastPayload = payload;
 
-        customFetch('http://45.13.59.226/hozma/api/preorders_v2/', {
+        customFetch('/hozma/api/preorders_v2/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(r => r.json())
-        .then(data => {
-            preorderCache = data.preorders || [];
-            currentPage   = data.pagination.current_page;
-            totalPages    = data.pagination.total_pages;
+            .then(r => r.json())
+            .then(data => {
+                preorderCache = data.preorders || [];
+                currentPage = data.pagination.current_page;
+                totalPages = data.pagination.total_pages;
 
-            /* summary cards & counts --------------------------------*/
-            updateSummaryCards(data.summary);
-            document.getElementById('showing-count').textContent = preorderCache.length;
-            document.getElementById('total-count').textContent   = data.summary.total_orders;
+                /* summary cards & counts --------------------------------*/
+                updateSummaryCards(data.summary);
+                document.getElementById('showing-count').textContent = preorderCache.length;
+                document.getElementById('total-count').textContent = data.summary.total_orders;
 
-            /* table + pagination UI --------------------------------*/
-            renderTable(preorderCache);
-            updatePaginationControls();
+                /* table + pagination UI --------------------------------*/
+                renderTable(preorderCache);
+                updatePaginationControls();
 
-            /* empty / loading states -------------------------------*/
-            loadingState.style.display = 'none';
-            emptyState.style.display   = preorderCache.length ? 'none' : 'block';
-        })
-        .catch(err => {
-            console.error('خطأ في جلب الطلبات المسبقة:', err);
-            loadingState.innerHTML = `
+                /* empty / loading states -------------------------------*/
+                loadingState.style.display = 'none';
+                emptyState.style.display = preorderCache.length ? 'none' : 'block';
+            })
+            .catch(err => {
+                console.error('خطأ في جلب الطلبات المسبقة:', err);
+                loadingState.innerHTML = `
                <td colspan="7" class="text-center py-4 text-danger">
                  <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
                  <p>فشل تحميل الطلبات المسبقة. الرجاء المحاولة لاحقاً.</p>
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                      <i class="fas fa-sync-alt me-1"></i> إعادة المحاولة
                  </button>
                </td>`;
-        });
+            });
     }
 
     /* ----------------------------------------------------------------
@@ -120,14 +120,14 @@ document.addEventListener('DOMContentLoaded', () => {
         nextBtn.disabled = currentPage >= totalPages;
         prevBtn.disabled = currentPage <= 1;
         pageLabel.textContent = `${currentPage} / ${totalPages}`;
-        
+
         // Add/remove classes based on state
         if (nextBtn.disabled) {
             nextBtn.classList.add('disabled');
         } else {
             nextBtn.classList.remove('disabled');
         }
-        
+
         if (prevBtn.disabled) {
             prevBtn.classList.add('disabled');
         } else {
@@ -139,12 +139,12 @@ document.addEventListener('DOMContentLoaded', () => {
        SUMMARY CARDS  –– uses `summary` block from backend
     -----------------------------------------------------------------*/
     function updateSummaryCards(summary) {
-        document.getElementById('total-orders').textContent     = summary.total_orders;
-        document.getElementById('orders-change').textContent    = '';   // remove hard-coded %
+        document.getElementById('total-orders').textContent = summary.total_orders;
+        document.getElementById('orders-change').textContent = '';   // remove hard-coded %
         document.getElementById('confirmed-orders').textContent = summary.confirmed_orders;
         document.getElementById('confirmed-change').textContent = '';
-        document.getElementById('pending-orders').textContent   = summary.pending_orders;
-        document.getElementById('pending-change').textContent   = '';
+        document.getElementById('pending-orders').textContent = summary.pending_orders;
+        document.getElementById('pending-change').textContent = '';
     }
 });   // DOMContentLoaded end
 
@@ -160,7 +160,7 @@ function renderTable(preorders) {
         row.className = 'align-middle';
 
         /* Arabic date formatting --------------------- */
-        const date   = new Date(preorder.date_time);
+        const date = new Date(preorder.date_time);
         const formattedDate = date.toLocaleDateString('en-UK', {
             year: 'numeric', month: 'long', day: 'numeric',
             hour: '2-digit', minute: '2-digit'
@@ -192,9 +192,9 @@ ${Number(preorder.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }
           </td>
           <td>
               ${preorder.shop_confrim
-                  ? '<span class="badge bg-success rounded-pill d-inline-flex align-items-center"><i class="fas fa-check-circle me-1"></i> تم التأكيد</span>'
-                  : '<span class="badge bg-warning rounded-pill d-inline-flex align-items-center"><i class="fas fa-clock me-1"></i> قيد الانتظار</span>'
-              }
+                ? '<span class="badge bg-success rounded-pill d-inline-flex align-items-center"><i class="fas fa-check-circle me-1"></i> تم التأكيد</span>'
+                : '<span class="badge bg-warning rounded-pill d-inline-flex align-items-center"><i class="fas fa-clock me-1"></i> قيد الانتظار</span>'
+            }
           </td>
           <td>
               <small class="text-muted d-flex align-items-center">

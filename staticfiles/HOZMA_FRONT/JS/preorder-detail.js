@@ -1,9 +1,6 @@
-const invoiceNo = window.location.pathname.split('/')[3];  // Get the invoice_no from the URL
-console.log('Invoice No:', invoiceNo);  // Log the invoiceNo
-
+const invoiceNo = window.location.pathname.split('/')[3];
 document.getElementById('invoice-no').textContent = invoiceNo;
 
-// Fetch the PreOrder and its items using customFetch
 async function fetchPreOrderDetails() {
     try {
         const response = await customFetch(`/hozma/api/preorders/?invoice_no=${invoiceNo}`);
@@ -13,16 +10,12 @@ async function fetchPreOrderDetails() {
         }
         
         const responseData = await response.json();
-        
-        console.log('API Response:', responseData);  // Log the entire API response
-        
-        const preorder = responseData.preorders[0]; // Get the first preorder from the response
+        const preorder = responseData.preorders[0];
         const preorderItems = responseData.preorder_items;
         
         const preorderItemsList = document.getElementById('preorder-items-list');
         const loadingState = document.getElementById('loading-state');
         
-        // Clear existing items
         preorderItemsList.innerHTML = '';
         
         // Update header info
@@ -30,48 +23,58 @@ async function fetchPreOrderDetails() {
         document.getElementById('order-date').textContent = new Date(preorder.date || Date.now()).toLocaleDateString();
         
         loadingState.style.display = 'none';
-        
+
         preorderItems.forEach(function (item) {
             const row = document.createElement('tr');
+        
             const orderedQty = parseInt(item.quantity);
             const confirmQty = parseInt(item.confirm_quantity || item.quantity);
-            const hasDifference = orderedQty !== confirmQty;
+            const confirmedDeliveryQty = item.confirmed_delevery_quantity !== null && 
+                                        item.confirmed_delevery_quantity !== undefined
+                ? parseInt(item.confirmed_delevery_quantity)
+                : confirmQty; // Default to confirmQty if not provided
+            
+            // Determine which row class to apply
+            let rowClass = '';
+            
+            // First check if delivery quantity differs from confirmed quantity (blue)
+            if (confirmedDeliveryQty !== confirmQty) {
+                rowClass = 'row-blue';
+            } 
+            // Then check if ordered quantity differs from confirmed quantity (yellow)
+            else if (orderedQty !== confirmQty) {
+                rowClass = 'row-yellow';
+            }
+            
+            row.className = rowClass;
             
             row.innerHTML = `
-    <td>${item.pno}</td>
-    <td>${item.name}</td>
-    <td class="${hasDifference ? 'diff-highlight' : ''}">${orderedQty}</td>
-    <td>
-        <input type="number" 
-               id="confirm-quantity-${item.pno}" 
-               class="quantity-input ${hasDifference ? 'diff-highlight' : ''}" 
-               value="${confirmQty}" 
-               min="0"
-               onchange="highlightDifference('${item.pno}', ${orderedQty})">
-    </td>
-       <td>
-        ${item.confirmed_delevery_quantity !== null && item.confirmed_delevery_quantity !== undefined
-            ? item.confirmed_delevery_quantity
-            : '<span class="text-muted">غير متوفر</span>'}
-    </td>
-<td>${Number(item.dinar_unit_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
-<td>${Number(item.dinar_total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
-    <td>
-        ${item.quantity_proccessed ? 
-            '<span class="badge bg-success">نعم</span>' : 
-            '<span class="badge bg-secondary">لا</span>'
-        }
-    </td>
-   
-`;
-
+                <td>${item.pno}</td>
+                <td>${item.name}</td>
+                <td>${orderedQty}</td>
+                <td>${confirmQty}</td>
+                <td>
+                    ${item.confirmed_delevery_quantity !== null && 
+                     item.confirmed_delevery_quantity !== undefined
+                        ? item.confirmed_delevery_quantity
+                        : confirmQty}
+                </td>
+                <td>${Number(item.dinar_unit_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
+                <td>${Number(item.dinar_total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })} د.ل</td>
+                <td>
+                    ${item.quantity_proccessed ? 
+                        '<span class="badge bg-success">نعم</span>' : 
+                        '<span class="badge bg-secondary">لا</span>'}
+                </td>
+            `;
+        
             preorderItemsList.appendChild(row);
         });
     } catch (error) {
-        console.error('Error fetching PreOrder details:', error);  // Use console.error for errors
+        console.error('Error fetching PreOrder details:', error);
         const loadingState = document.getElementById('loading-state');
         loadingState.innerHTML = `
-            <td colspan="5" class="text-center py-4 text-danger">
+            <td colspan="8" class="text-center py-4 text-danger">
                 <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
                 <p>Failed to load order details. Please try again later.</p>
                 <button class="btn btn-sm btn-primary" onclick="window.location.reload()">
@@ -83,22 +86,7 @@ async function fetchPreOrderDetails() {
     }
 }
 
-fetchPreOrderDetails(); // Call to fetch the preorder details
-
-function highlightDifference(itemNo, originalQty) {
-    const confirmInput = document.getElementById(`confirm-quantity-${itemNo}`);
-    const confirmQty = parseInt(confirmInput.value);
-    const row = confirmInput.closest('tr');
-    
-    if (confirmQty !== originalQty) {
-        confirmInput.classList.add('diff-highlight');
-        row.querySelector('td:nth-child(3)').classList.add('diff-highlight');
-    } else {
-        confirmInput.classList.remove('diff-highlight');
-        row.querySelector('td:nth-child(3)').classList.remove('diff-highlight');
-    }
-}
-
+fetchPreOrderDetails();
 
 async function sendPrintRequest(invoiceNo) {
     try {
@@ -111,7 +99,6 @@ async function sendPrintRequest(invoiceNo) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Add CSRF token if needed
             },
             body: JSON.stringify(payload)
         });
@@ -120,9 +107,7 @@ async function sendPrintRequest(invoiceNo) {
             throw new Error(`Failed to send print request. Status: ${response.status}`);
         }
 
-        const resultHtml = await response.text();  // Get HTML as text
-
-        // Open a new window and write the HTML content
+        const resultHtml = await response.text();
         const printWindow = window.open('', '_blank');
         printWindow.document.open();
         printWindow.document.write(resultHtml);
@@ -130,5 +115,6 @@ async function sendPrintRequest(invoiceNo) {
 
     } catch (error) {
         console.error("Error sending print request:", error);
+        alert("حدث خطأ أثناء محاولة الطباعة. يرجى المحاولة مرة أخرى.");
     }
 }

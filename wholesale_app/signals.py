@@ -10,6 +10,8 @@ from django.utils import timezone
 from almogOil import models as almogOil_models
 import logging
 from decimal import Decimal
+from django.db import transaction
+from django.db.models import Count, Sum, Avg, F, Q
 from almogOil.api_views import create_transactions_history_record
 
 @receiver(post_save, sender=PreOrderItemsTable)
@@ -103,3 +105,28 @@ def check_and_confirm_preorder(sender, instance, **kwargs):
 def update_preorder_status_on_delivery(sender, instance, **kwargs):
     if instance.invoice_status == "سلمت":
         PreOrderTable.objects.filter(invoice_no=instance.invoice_no).update(invoice_status="جاري التوصيل")
+
+@receiver(post_save, sender=Mainitem)
+def handle_item_pairing(sender, instance, created, **kwargs):
+    if instance.paired_oem and not instance.paired_item:
+        with transaction.atomic():
+            # Find matching item (check both itemno and oem_numbers)
+            paired_item = Mainitem.objects.filter(
+                Q(itemno__iexact=instance.paired_oem) |
+                Q(oem_numbers__icontains=instance.paired_oem)
+            ).exclude(pk=instance.pk).first()
+            
+            if paired_item:
+                # Link both items bidirectionally
+                instance.paired_item = paired_item
+                instance.save(update_fields=['paired_item'])
+                
+                # Only update the other item if it's not already paired
+                if not paired_item.paired_oem:
+                    paired_item.paired_oem = instance.itemno
+                    paired_item.paired_item = instance
+                    paired_item.save(update_fields=['paired_oem', 'paired_item'])
+                elif not paired_item.paired_item:
+                    paired_item.paired_item = instance
+                    paired_item.save(update_fields=['paired_item'])        
+

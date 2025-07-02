@@ -9,6 +9,15 @@ class MainitemSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Mainitem
         fields = '__all__'
+        def get_paired_item(self, obj):
+            if obj.paired_item:
+                return {
+                    "fileid": obj.paired_item.fileid,
+                    "itemno": obj.paired_item.itemno,
+                    "oem_numbers": obj.paired_item.oem_numbers,
+                    "itemname": obj.paired_item.itemname,
+                }
+            return None    
         # fields = [
         #     'fileid', 'itemno', 'itemmain', 'itemsubmain', 'itemname', 'eitemname', 'companyproduct',
         #     'replaceno', 'pno', 'barcodeno', 'memo', 'itemsize', 'itemperbox', 'itemthird', 'itemvalue',

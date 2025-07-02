@@ -1328,6 +1328,24 @@
               </div>
             </li>
             {% endif %}
+            {% if perms.almogOil.hozma_Dashboard %}
+            <li class="nav-item">
+              <a class="nav-link toggle-submenu" href="#">
+                <i class="fas fa-chevron-down"></i>حزمة
+              </a>
+              <div class="sub-menu">
+                <a class="nav-link" href="/hozma/Admin-Dashboard/" target="_blank">لوحة تحكم حزمة</a>
+                <a class="nav-link" href="#" onclick="openLiveMap(event)">فتح الخريطة الحية</a>
+              </div>
+            </li>
+            {% endif %}
+            
+            <script>
+            function openLiveMap(event) {
+                event.preventDefault();
+                window.open('/hozma/drivers/locations/', 'LiveMapWindow', 'width=1042,height=960,resizable=yes,scrollbars=yes');
+            }
+            </script>
           </ul>
         </div>
 

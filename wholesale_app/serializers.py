@@ -94,8 +94,7 @@ class ReturnPolicySerializer(serializers.ModelSerializer):
 
 
         
-
-class MainitemSerializerHozma(serializers.ModelSerializer):
+class PairedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.Mainitem
         fields = [
@@ -122,6 +121,44 @@ class MainitemSerializerHozma(serializers.ModelSerializer):
             'category_type',
             'item_category',
             'discount',
+            'quantity_type',
+            'itemperbox',
+            'paired_item',
+            'paired_oem',
+        ]        
+class MainitemSerializerHozma(serializers.ModelSerializer):
+    paired_item_details = PairedItemSerializer(source='paired_item', read_only=True)
+    class Meta:
+        model = almogOil_models.Mainitem
+        fields = [
+            'fileid',
+            'itemno',
+            'itemmain',
+            'itemsubmain',
+            'itemname',
+            'short_name',
+            'itemthird',
+            'itemsize',
+            'companyproduct',
+            'itemvalue',
+            'itemtemp',
+            'buyprice',
+            'memo',
+            'itemtype',
+            'eitemname',
+            'pno',
+            'oem_numbers',
+            'engine_no',
+            'json_description',
+            'showed',
+            'category_type',
+            'item_category',
+            'discount',
+            'quantity_type',
+            'itemperbox',
+            'paired_item',
+            'paired_oem',
+            'paired_item_details', 
         ]        
 
 
@@ -275,3 +312,59 @@ class EmployeeAvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = almogOil_models.EmployeesTable
         fields = ['is_available']       
+
+
+class EmployeeProfileSerializer(serializers.ModelSerializer):
+    employee_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = almogOil_models.EmployeesTable
+        fields = ['name', 'employee_image_url']
+
+    def get_employee_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.employee_image and hasattr(obj.employee_image, 'url'):
+            return request.build_absolute_uri(obj.employee_image.url)
+        return None       
+
+
+class PreOrderSerializerOfDelvery(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.PreOrderTable
+        fields = [
+            'autoid',
+            'client_name',
+            'invoice_no',
+            'amount',
+            'net_amount',
+            'delivery_status',
+            'delivery_start_time',
+            'delivery_end_time',
+            'invoice_date',
+            'invoice_status',
+            'date_time',
+        ]       
+
+
+class EmployeeLocationSerializer(serializers.ModelSerializer):
+    last_updated = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    
+    class Meta:
+        model = almogOil_models.EmployeesTable
+        fields = [
+            'employee_id',
+            'name',
+            'type',
+            'current_latitude',
+            'current_longitude',
+            'last_updated',
+            'is_available',
+            'phone',
+
+            'has_active_order'
+        ]        
+
+class ClientLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = almogOil_models.AllClientsTable
+        fields = ['clientid', 'geo_location', 'name','phone']  # Add 'name' or any other relevant fields if needed        

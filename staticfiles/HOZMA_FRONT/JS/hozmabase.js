@@ -5,14 +5,14 @@
 // ———————————————————————————————————————————————————————————————
 document.addEventListener("DOMContentLoaded", function () {
     // Fetch invoice‐related stats (new orders today, shop‐confirmed this month, total invoices, % increase)
-    customFetch('http://45.13.59.226/hozma/api/invoice-stats/')
+    customFetch('/hozma/api/invoice-stats/')
         .then(res => res.json())
         .then(data => {
             // Update the number of new orders badges (in navbar and sidebar)
             const newOrdersSidebar = document.getElementById('new-orders-count1');
-            const newOrdersNav     = document.getElementById('new-orders-count');
+            const newOrdersNav = document.getElementById('new-orders-count');
             if (newOrdersSidebar) newOrdersSidebar.textContent = data.new_unconfirmed_orders_today;
-            if (newOrdersNav)     newOrdersNav.textContent     = data.new_unconfirmed_orders_today;
+            if (newOrdersNav) newOrdersNav.textContent = data.new_unconfirmed_orders_today;
 
             // Update the shop-confirmed‐this‐month text and class
             const shopConfirmedEl = document.getElementById('shop-confirmed-count');
@@ -49,17 +49,17 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     try {
         const username = localStorage.getItem("session_data@EMPname");
-        const email    = localStorage.getItem("session_data@EMPusername");
+        const email = localStorage.getItem("session_data@EMPusername");
 
-        const nameEl  = document.getElementById('userNamePlaceholder');
+        const nameEl = document.getElementById('userNamePlaceholder');
         const emailEl = document.getElementById('userEmailPlaceholder');
 
         if (username) {
-            if (nameEl)  nameEl.textContent  = username;
+            if (nameEl) nameEl.textContent = username;
             if (email && emailEl) emailEl.textContent = email;
         } else {
             // If nothing is in localStorage, use defaults
-            if (nameEl)  nameEl.textContent  = "حسابي";
+            if (nameEl) nameEl.textContent = "حسابي";
             if (emailEl) emailEl.textContent = "غير معروف";
             console.warn("No user data found in localStorage. Sidebar will show default text.");
         }
@@ -87,15 +87,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // If API returned a URL, use it; otherwise fallback to default static
         const defaultImage = '/static/HOZMA_FRONT/images/default-profile.png';
-        const finalImage   = employee_image
+        const finalImage = employee_image
             ? (employee_image.startsWith('http') ? employee_image : `${window.location.origin}${employee_image}`)
             : defaultImage;
 
         // Apply to both <img> tags: #employee-profile-image (navbar) & #employee-profile-image-profile (sidebar)
-        const imgNavbar  = document.getElementById('employee-profile-image');
+        const imgNavbar = document.getElementById('employee-profile-image');
         const imgSidebar = document.getElementById('employee-profile-image-profile');
 
-        if (imgNavbar)  imgNavbar.src  = finalImage;
+        if (imgNavbar) imgNavbar.src = finalImage;
         if (imgSidebar) imgSidebar.src = finalImage;
     } catch (err) {
         console.error('Error loading employee image:', err);
@@ -122,13 +122,13 @@ function logoutFunction() {
         headers: { "Content-Type": "application/json" },
         credentials: 'include'
     })
-    .then(response => response.json())
-    .then(result => {
-        console.log("Logged out successfully:", result);
-        // Redirect to login page
-        window.location.href = "/login";
-    })
-    .catch(error => {
-        console.error("Error logging out:", error);
-    });
+        .then(response => response.json())
+        .then(result => {
+            console.log("Logged out successfully:", result);
+            // Redirect to login page
+            window.location.href = "/login";
+        })
+        .catch(error => {
+            console.error("Error logging out:", error);
+        });
 }

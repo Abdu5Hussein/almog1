@@ -44,6 +44,63 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 width: 60,
             },
+            // {
+            //     title: "الوظيفة",
+            //     field: "profile", // point to the object itself
+            //     formatter: function (cell) {
+            //         const profile = cell.getValue();
+            //         return profile ? profile.role : "";
+            //     },
+            //     visible: true
+            // },
+
+        ],
+        placeholder: "لا توجد بيانات متاحة",
+    });
+    const client_table = new Tabulator("#clients-table", {
+        height: "auto",
+        layout: "fitColumns",
+        selectable: true,
+        rowHeight: 20,
+        movableColumns: true,
+        columnHeaderVertAlign: "bottom",
+        columnMenu: true, // Enable column menu
+        data: [], // Load dynamically
+        columns: [
+            { title: "ر.م", field: "id", visible: true, width: 45 },
+            { title: "اسم المستخدم", field: "username", visible: true, width: 95 },
+            { title: "اسم الموظف", field: "first_name", visible: true, width: 95 },
+            {
+                title: "اخر دخول",
+                field: "last_login",
+                visible: true,
+                width: 135,
+                formatter: function (cell) {
+                    const value = cell.getValue();
+                    if (!value) return "-";
+                    const date = new Date(value);
+                    return date.toLocaleString(); // You can use options to customize format
+                }
+            },
+
+            {
+                title: "موظف",
+                field: "is_superuser",
+                visible: true,
+                formatter: function (cell) {
+                    return cell.getValue() ? "✗" : "✓";
+                },
+                width: 60,
+            },
+            {
+                title: "نشط",
+                field: "is_active",
+                visible: true,
+                formatter: function (cell) {
+                    return cell.getValue() ? "✓" : "✗";
+                },
+                width: 60,
+            },
             //{ title: "الاسم", field: "first_name", visible: true },
             //{ title: "اللقب", field: "last_name", visible: true },
 
@@ -63,7 +120,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("Fetched Data:", data);
 
                 // Set data in Tabulator
-                table.setData(data);
+                table.setData(data.non_clients);
+                client_table.setData(data.clients);
             })
             .catch((error) => console.error("Error fetching data:", error)).finally(() => {
 
@@ -94,7 +152,60 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     const checkboxes = document.querySelectorAll('#permissions-container input[type="checkbox"]');
     const all_permissions_check = document.getElementById("all_permissions_check");
+    const client_permissions_check = document.getElementById("client_permissions_check");
+    const employee_permissions_check = document.getElementById("employee_permissions_check");
     const is_active_toggle_check = document.getElementById("is_active_toggle_check");
+
+    client_permissions_check.addEventListener("change", function () {
+        const id = document.getElementById("user-no").value;
+        if (!id) {
+            alert("يرجى اختيار مستخدم أولاً.");
+            this.checked = !this.checked; // Uncheck the checkbox
+            return;
+        }
+        assignGroupToUser(id, "client");
+    });
+    employee_permissions_check.addEventListener("change", function () {
+        const id = document.getElementById("user-no").value;
+        if (!id) {
+            alert("يرجى اختيار مستخدم أولاً.");
+            this.checked = !this.checked; // Uncheck the checkbox
+            return;
+        }
+        assignGroupToUser(id, "employee");
+    });
+    function assignGroupToUser(userId, groupName) {
+        if (!userId || !groupName) {
+            console.error("User ID and group name are required.");
+            return;
+        }
+        customFetch("/api/users/assign-group", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                group_name: groupName,
+            })
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Request failed');
+            }
+            return response.json();
+        })
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Optionally uncheck if request fails
+                this.checked = !this.checked;
+                alert("فشل في حفظ الصلاحية. حاول مجددا.");
+            }).finally(() => {
+                window.location.reload();
+            });
+    }
 
     checkboxes.forEach(function (checkbox) {
         checkbox.addEventListener("change", function () {
@@ -108,7 +219,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            fetch("http://45.13.59.226/api/user/permissions/toggle", {
+            fetch("/api/user/permissions/toggle", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -209,6 +320,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function updateUserStatusCheckboxes(userId) {
         const allPermissionsCheck = document.getElementById("all_permissions_check");
+        const clientPermissionsCheck = document.getElementById("client_permissions_check");
+        const employeePermissionsCheck = document.getElementById("employee_permissions_check");
         const isActiveToggleCheck = document.getElementById("is_active_toggle_check");
 
         if (!userId) {
@@ -235,6 +348,8 @@ document.addEventListener("DOMContentLoaded", function () {
             // Set checkbox states
             isActiveToggleCheck.checked = !data.is_active;
             allPermissionsCheck.checked = data.all_permissions;
+            clientPermissionsCheck.checked = data.groups.includes("client");
+            employeePermissionsCheck.checked = data.groups.includes("employee");
 
         } catch (error) {
             console.error("Error fetching user status:", error);
@@ -242,6 +357,18 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     table.on("rowClick", function (e, row) {
+        console.log("Row clicked after data update:", row.getData());
+        const id = parseInt(row.getData().id); // Get pno of the clicked row
+        const username = row.getData().username;
+
+        document.getElementById("user-no").value = id;
+        document.getElementById("user-name").value = username;
+
+        getPermissions(id);
+        updateUserStatusCheckboxes(id);
+        console.log("Clicked id:", id);
+    });
+    client_table.on("rowClick", function (e, row) {
         console.log("Row clicked after data update:", row.getData());
         const id = parseInt(row.getData().id); // Get pno of the clicked row
         const username = row.getData().username;

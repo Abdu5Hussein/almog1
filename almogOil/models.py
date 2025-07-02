@@ -329,7 +329,16 @@ class Mainitem(models.Model):
     discount = models.DecimalField(db_column='discount', max_digits=19, decimal_places=4, blank=True, null=True)
     item_category = models.ForeignKey('ItemCategory', on_delete=models.SET_NULL, null=True, blank=True, db_column='item_category')
     category_type = models.CharField(max_length=100, db_collation='Arabic_CI_AS', blank=True, null=True)
-
+    quantity_type = models.CharField(db_column='quantity_type', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    box_quantity = models.IntegerField(db_column='box_quantity', blank=True, null=True)  # Field name made lowercase.
+    paired_item = models.ForeignKey(
+    'self',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='paired_with'
+)
+    paired_oem = models.CharField(max_length=255, blank=True, null=True)
     def save(self, *args, **kwargs):
         if self.category_type:
             self.item_category, _ = ItemCategory.objects.get_or_create(name=self.category_type)
@@ -516,6 +525,21 @@ class AuthPermission(models.Model):
         db_table = 'auth_permission'
         unique_together = (('content_type', 'codename'),)
 
+from django.contrib.auth.models import User
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone_number = models.CharField(max_length=15, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    role = models.CharField(max_length=50, choices=[
+        ('admin', 'Admin'),
+        ('manager', 'Manager'),
+        ('employee', 'Employee'),
+        ('client', 'Client')
+    ], default='client')
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"
 
 class AuthUser(models.Model):
     password = models.CharField(max_length=128, db_collation='Arabic_CI_AS')
@@ -533,6 +557,9 @@ class AuthUser(models.Model):
         managed = False
         db_table = 'auth_user'
         permissions = [
+
+            ('template_home', 'الصفحة الرئيسية للموظفين'),
+            ('navigate_servers', 'تصفح السيرفرات'),
 
             ('category_products', 'قسم الاصناف'),
             ('template_productdetails', 'صفحة بيانات الاصناف'),
@@ -686,8 +713,8 @@ class BuyInvoiceItemsTable(models.Model):
     item_no = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     name = models.CharField(max_length=255, db_collation='Arabic_CI_AS', blank=True, null=True)
-    company = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
-    company_no = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company_no = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     current_quantity_after_return = models.IntegerField(blank=True, null=True)
     quantity = models.IntegerField(blank=True, null=True)
     quantity_unit = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -990,7 +1017,9 @@ class EmployeesTable(models.Model):
     password = models.CharField(max_length=255,blank=True,null=True)  # This will store the hashed password
     employee_image = models.ImageField(upload_to='employee_images/', blank=True, null=True)  # Field for employee image
     contract_image = models.ImageField(upload_to='employee_contracts/', blank=True, null=True)
-
+    current_latitude = models.FloatField(null=True, blank=True)
+    current_longitude = models.FloatField(null=True, blank=True)
+    last_updated = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         managed = True
@@ -1139,7 +1168,7 @@ class return_permission_items(models.Model):
 
     def __str__(self):
         return f"{self.item_name} - {self.total}"
-    
+
 class buy_return_permission(models.Model):
     autoid = models.AutoField(primary_key=True)
     source=models.ForeignKey(AllSourcesTable,on_delete=models.CASCADE)
@@ -1176,7 +1205,7 @@ class buy_return_permission_items(models.Model):
 
     def __str__(self):
         return f"{self.item_name} - {self.total}"
-    
+
 
 class PaymentRequestTable(models.Model):
     autoid = models.AutoField(primary_key=True)
@@ -1403,7 +1432,7 @@ class ConfirmedOrderTable(models.Model):
     date_time = models.DateTimeField(default=timezone.now)
     preorder_reference = models.ForeignKey(PreOrderTable, on_delete=models.SET_NULL, null=True)
     date_confirmed = models.DateTimeField(auto_now_add=True)
-   
+
 
     class Meta:
         db_table = 'ConfirmedOrderTable'
@@ -1447,7 +1476,7 @@ class PreOrderItemsTable(models.Model):
     confirm_quantity = models.IntegerField(blank=True, null=True)
     quantity_proccessed = models.BooleanField(default=False)
     confirmed_delevery_quantity = models.IntegerField(blank=True, null=True)
-    
+
 
     class Meta:
         managed = True
@@ -1517,8 +1546,8 @@ class OrderBuyInvoiceItemsTable(models.Model):
     pno = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
     oem= models.CharField(max_length=255, db_collation='Arabic_CI_AS', blank=True, null=True)
     name = models.CharField(max_length=255, db_collation='Arabic_CI_AS', blank=True, null=True)
-    company = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
-    company_no = models.CharField(max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
+    company_no = models.CharField(max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)
     Asked_quantity = models.IntegerField(blank=True, null=True)
     Confirmed_quantity = models.IntegerField(blank=True, null=True)
     quantity_unit = models.CharField(max_length=25, db_collation='Arabic_CI_AS', blank=True, null=True)
@@ -1604,6 +1633,18 @@ class Mainitem_copy(models.Model):
     source = models.ForeignKey('AllSourcesTable', on_delete=models.CASCADE, blank=True, null=True)
     category = models.CharField(db_column='category', max_length=150, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
     discount = models.DecimalField(db_column='discount', max_digits=19, decimal_places=4, blank=True, null=True)
+    quantity_type = models.CharField(db_column='quantity_type', max_length=50, db_collation='Arabic_CI_AS', blank=True, null=True)  # Field name made lowercase.
+    box_quantity = models.IntegerField(db_column='box_quantity', blank=True, null=True)  # Field name made lowercase.
+    paired_item = models.ForeignKey(
+    'self',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='paired_with'
+)
+    paired_oem = models.CharField(max_length=255, blank=True, null=True)
+
+
     class Meta:
         managed = True
         db_table = 'MainItem_copy'

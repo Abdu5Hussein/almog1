@@ -11,7 +11,13 @@ class EmployeesSerializer(serializers.ModelSerializer):
         model = models.EmployeesTable
         fields = "__all__"
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.UserProfile
+        fields = "__all__"
+
 class UsersSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer(read_only=True)
     class Meta:
         model = User
         fields = "__all__"

@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("Fetching full table");
       console.time("fetchData"); // Start timer
 
-      fetch(`http://45.13.59.226/api/get-data/?fullTable=${full}`, {
+      fetch(`/api/get-data/?fullTable=${full}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Use the URL in your fetch request
     console.time("fetchData"); // Start timer
 
-    fetch(`http://45.13.59.226/api/get-data/?page=${page}&size=${size}`, {
+    fetch(`/api/get-data/?page=${page}&size=${size}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -457,7 +457,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log(data);
 
-    fetch("http://45.13.59.226/create_main_item/", {
+    fetch("/create_main_item/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -538,7 +538,7 @@ document.addEventListener("DOMContentLoaded", function () {
       };
 
       // Send the data to the server via a PATCH request
-      fetch("http://45.13.59.226/edit_main_item/", {
+      fetch("/edit_main_item/", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -579,7 +579,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log(data);
     if (companyName && companyNo) {
 
-      fetch("http://45.13.59.226/oem/", {
+      fetch("/oem/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -781,7 +781,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.time("FilterTime");
 
-    fetch("http://45.13.59.226/api/filter-items", {
+    fetch("/api/filter-items", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -914,7 +914,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
       // Use fetch to communicate with your backend and delete the record
-      fetch('http://45.13.59.226/delete-record/', {
+      fetch('/delete-record/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -947,7 +947,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function fetchItemData(fileid) {
     console.log("item with file id: ", fileid);
     // Make an AJAX request to the Django backend
-    fetch(`http://45.13.59.226/get_item_data/${fileid}/`, {
+    fetch(`/get_item_data/${fileid}/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1063,22 +1063,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     };
-  
+
     if (flag === false) {
       clearFormElements();
       return;
     }
-  
+
     window.requestAnimationFrame(() => {
       clearFormElements();
-  
+
       if (typeof table !== 'undefined') {
         table.clearFilter();
         fetchDataFromServer({ page: 1, size: pageSize });
       }
     });
   }
-  
+
 
   function updatePagination(lastPage, currentPage) {
     const pagination = document.querySelector(".pagination");
@@ -1305,7 +1305,7 @@ editableCells.forEach((cell) => {
     }
 
     // Send the updated value to the server
-    fetch("http://45.13.59.226/update-user", {
+    fetch("/update-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1348,7 +1348,7 @@ document.getElementById('add-main-btn').addEventListener('click', function () {
     alert("الرجاء اختيار صنف برقم خاص");
     return
   }
-  openWindow(`http://45.13.59.226/item/${itemId}/add-more-categories`);
+  openWindow(`/item/${itemId}/add-more-categories`);
 });
 
 // const main_choices = new Choices("#item-main", {

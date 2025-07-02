@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-        loadEmployeeData();
+    loadEmployeeData();
 
 
     // Add
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     function fetchEmployeeData(employeeId) {
         // API URL for fetching employee data by ID
-        const url = `http://45.13.59.226/api/employees-api/${employeeId}/`;
+        const url = `/api/employees-api/${employeeId}/`;
 
         // Make a GET request to the API
         customFetch(url)

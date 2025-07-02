@@ -2,7 +2,7 @@ from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from .models import SellinvoiceTable, AllClientsTable, EmployeeQueue
 from .notifications import send_order_tracking_notification, send_order_assigned_notification
-
+from django.db import transaction
 # Temporary cache for invoice status before saving
 _previous_invoice_status = {}
 
@@ -70,3 +70,17 @@ def order_assigned_notification(sender, instance, created, **kwargs):
                 print(f"❌ Error sending notification: {str(e)}")
         else:
             print(f"❌ Employee {employee.employee_id} has no FCM token.")
+
+
+from django.contrib.auth.models import User
+from .models import UserProfile
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'profile'):
+        instance.profile.save()

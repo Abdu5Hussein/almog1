@@ -10,6 +10,10 @@ document.addEventListener("DOMContentLoaded", () => {
     /* -------------------------------------------------
      * 2. Submit handler
      * -------------------------------------------------*/
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -19,15 +23,17 @@ document.addEventListener("DOMContentLoaded", () => {
         // Example: <select id="role"><option value="employee">Employee</option><option value="client">Client</option></select>
         const roleElement = document.getElementById("role");
         const role = roleElement ? roleElement.value : "employee";  // default to employee if no selector
-
+        const nextUrl = getQueryParam("next") || "/";
         const payload = {
             username: document.getElementById("username").value.trim(),
             password: passwordInput.value,
             role: role,  // dynamically set role
+            next_url: nextUrl,  // 👈 send to backend
+
         };
 
         try {
-            const res = await fetch("http://45.13.59.226/process-login", {
+            const res = await fetch("/process-login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -57,7 +63,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 /* ---------- Redirect ---------- */
-                window.location.href = result.redirect_url || "/login";
+                window.location.href = result.redirect_url || "/hozma/products/";
+                console.log("redirecting to:", result.redirect_url || "/hozma/products/");
 
             } else {
                 showError(result.message || "Login failed. Please try again.");
@@ -87,4 +94,21 @@ document.addEventListener("DOMContentLoaded", () => {
         (document.querySelector(".card-body") || document.body).prepend(box);
         setTimeout(() => box.remove(), 5_000);
     }
+    
+
 });
+function normalizePhoneNumber(event) {
+    const input = document.getElementById('username');
+    let phone = input.value.trim();
+
+    // Prevent non-digit input
+    phone = phone.replace(/\D/g, '');
+
+    if (phone.startsWith('0')) {
+      phone = '218' + phone.slice(1);
+    } else if (!phone.startsWith('218')) {
+      phone = '218' + phone;
+    }
+
+    input.value = phone;
+  }

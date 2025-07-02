@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Environments Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-weight: 300;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .server-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .server-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .card-header.production {
+            background-color: var(--primary-color);
+        }
+
+        .card-header.testing {
+            background-color: var(--secondary-color);
+        }
+
+        .card-body {
+            padding: 1.5rem !important;
+        }
+
+        .server-status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .status-active {
+            background-color: #d5f5e3;
+            color: var(--success-color);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 80%;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a252f;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2980b9;
+        }
+
+        .server-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .info-value {
+            color: var(--dark-color);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Project Environments Dashboard</h1>
+            <p class="subtitle">Access and manage your project servers</p>
+        </header>
+
+        <div class="dashboard">
+            <!-- Project 1 Production -->
+            <div class="server-card">
+                <div class="card-header production">
+                    <h2>Project 1 Production</h2>
+                </div>
+                <div class="card-body">
+                    <span class="server-status status-active">Active</span>
+                    <div class="server-info">
+                        <div class="info-item">
+                            <span class="info-label">Environment:</span>
+                            <span class="info-value">Production</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Version:</span>
+                            <span class="info-value">v2.4.1</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Updated:</span>
+                            <span class="info-value">Jun 25, 2023</span>
+                        </div>
+                    </div>
+                    <a href="http://45.13.59.226/login" class="btn btn-primary">Access Server</a>
+                </div>
+            </div>
+
+            <!-- Project 1 Testing -->
+            <div class="server-card">
+                <div class="card-header testing">
+                    <h2>Project 1 Testing</h2>
+                </div>
+                <div class="card-body">
+                    <span class="server-status status-active">Active</span>
+                    <div class="server-info">
+                        <div class="info-item">
+                            <span class="info-label">Environment:</span>
+                            <span class="info-value">Testing</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Version:</span>
+                            <span class="info-value">v2.5.0-rc1</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Updated:</span>
+                            <span class="info-value">Jun 28, 2023</span>
+                        </div>
+                    </div>
+                    <a href="http://45.13.59.226:8005/" class="btn btn-secondary">Access Server</a>
+                </div>
+            </div>
+
+            <!-- Project 2 Production -->
+            <div class="server-card">
+                <div class="card-header production">
+                    <h2>Project 2 Production</h2>
+                </div>
+                <div class="card-body">
+                    <span class="server-status status-active">Active</span>
+                    <div class="server-info">
+                        <div class="info-item">
+                            <span class="info-label">Environment:</span>
+                            <span class="info-value">Production</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Version:</span>
+                            <span class="info-value">v1.8.3</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Updated:</span>
+                            <span class="info-value">Jun 20, 2023</span>
+                        </div>
+                    </div>
+                    <a href="http://45.13.59.226:8003/" class="btn btn-primary">Access Server</a>
+                </div>
+            </div>
+
+            <!-- Project 2 Testing -->
+            <div class="server-card">
+                <div class="card-header testing">
+                    <h2>Project 2 Testing</h2>
+                </div>
+                <div class="card-body">
+                    <span class="server-status status-active">Active</span>
+                    <div class="server-info">
+                        <div class="info-item">
+                            <span class="info-label">Environment:</span>
+                            <span class="info-value">Testing</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Version:</span>
+                            <span class="info-value">v1.9.0-beta2</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Updated:</span>
+                            <span class="info-value">Jun 27, 2023</span>
+                        </div>
+                    </div>
+                    <a href="http://45.13.59.226:8004/" class="btn btn-secondary">Access Server</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2023 Company Name. All rights reserved.</p>
+            <p>For support, contact <a href="mailto:support@company.com">support@company.com</a></p>
+        </footer>
+    </div>
+</body>
+</html>

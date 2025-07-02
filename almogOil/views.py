@@ -1,7 +1,8 @@
 #import datetime
+from collections import defaultdict
 from decimal import Decimal
 import hashlib
-
+from django.contrib.auth.models import User, Permission,Group
 from django.forms import model_to_dict
 from .Tasks import assign_orders
 import json
@@ -261,6 +262,7 @@ def ModelView(request):
     })
 
 @login_required
+@permission_required('almogOil.template_home', raise_exception=True)
 def HomeView(request):
     return render(request, 'home.html')
 
@@ -1130,11 +1132,6 @@ def ClientsManagement(request):
     }
     return render(request,'clients-management.html',context)
 
-@login_required
-def DataInventory(req):
-    users = []  # Fetch users or relevant data from your new model if needed
-    context = {'users': users}
-    return render(req, 'data-inventory.html', context)
 
 
 @login_required
@@ -2439,6 +2436,8 @@ def return_permission_profile(request, id):
     }
     return render(request, 'return_permission_profile.html', context)
 
+from almogOil.api_views import MODEL_NAME_ARABIC_MAP
+
 @login_required
 @permission_required('almogOil.template_users_management', raise_exception=True)
 def users_management(request):
@@ -2466,9 +2465,26 @@ def users_management(request):
         permissions[perm] = request.user.has_perm(f"almogOil.{perm}")
 
     employees = models.EmployeesTable.objects.all().values("name", "employee_id","phone")
+
+    permissions = Permission.objects.select_related('content_type').all()
+    grouped = defaultdict(list)
+
+    default_prefixes = ('add_', 'change_', 'delete_', 'view_')
+
+    for perm in permissions:
+        if perm.codename.startswith(default_prefixes):  # filter default perms only
+            model = perm.content_type.model
+            arabic_model_name = MODEL_NAME_ARABIC_MAP.get(model, model)  # fallback
+            grouped[arabic_model_name].append({
+                "codename": perm.codename,
+                "name": perm.name,
+            })
+
     context = {
+        #Remove the flat permissions list unless needed elsewhere
         "Permissions": permissions,
-        "employees": employees,
+        "employees": employees,  # make sure employees is defined or remove this line
+        "model_permissions": dict(grouped),
     }
     return render(request, "users-management.html", context)
 
@@ -2710,7 +2726,7 @@ def statement_paper_template(request):
     }
     return render(request, 'statement-paper-template.html', context)
 
-
+@login_required
 def dynamic_print_paper_template(request):
     if request.method == 'POST':
         context = json.loads(request.body)
@@ -2732,3 +2748,39 @@ def dynamic_print_paper_template(request):
         return render(request, 'paper-show-dynamic-print.html', context)
     else:
         return render(request, 'paper-input-dynamic-print.html')
+
+
+@login_required
+def servers_navigate_landing(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+    if request.GET.get('admin') == 'true':
+        return render(request, 'servers_navigate_landing_admin.html')
+
+    user_profile = getattr(request.user, 'profile', None)
+
+    if not user_profile:
+        return JsonResponse({'error': 'User profile not found'}, status=400)
+
+    role = user_profile.role
+
+    if role == 'client':
+        return redirect('wholesale_app:item_filter_page')
+
+    elif role == 'employee':
+        try:
+            employee = models.EmployeesTable.objects.get(phone=request.user.username)
+        except models.EmployeesTable.DoesNotExist:
+            return JsonResponse({'error': 'Employee record not found'}, status=404)
+
+        # Now check employee.type to redirect based on it
+        if employee.type == 'Hozma_employee':  # Example: driver
+            return redirect('wholesale_app:Admin_Dashboard')  # Change to actual driver page
+        elif employee.type == 'driver':  # Example: storekeeper
+            return redirect('wholesale_app:Hozmadriver')  # Change to actual warehouse URL
+        else:
+            return redirect('home')  # Default for other employee types
+
+    else:
+        return redirect('wholesale_app:item_filter_page')

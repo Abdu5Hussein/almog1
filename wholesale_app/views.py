@@ -280,9 +280,11 @@ def preorders_buy_page(request):
     return render(request, 'CarPartsTemplates/show_preordersBuy.html')
 
 @login_required
+@permission_required('almogOil.hozma_Dashboard', raise_exception=True)
 def Admin_Dashboard(request):
     return render(request, 'CarPartsTemplates/e-commerce admin panel.html')
 @login_required
+@permission_required('almogOil.hozma_Products', raise_exception=True)
 def Item_Dashboard(request):
     return render(request, 'CarPartsTemplates/Hozma_Item_Mangment.html')
 
@@ -374,3 +376,12 @@ def Hozmadriver(request):
 def HozmaAsgindriver(request, invoice_no):
    
     return render(request, 'CarPartsTemplates/delevery_mangment.html')
+
+@login_required
+@permission_required('almogOil.hozma_driver', raise_exception=True)
+def HozmaDriverHistory(request):
+   return render(request, 'CarPartsTemplates/delevery_man_History.html')
+@login_required
+@permission_required('almogOil.hozma_driver', raise_exception=True)
+def HozmaDriverlocations(request):
+   return render(request, 'CarPartsTemplates/tracking_driver.html')

@@ -1,0 +1,399 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل التوصيل</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #3f37c9;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-md: 0 10px 15px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Tajawal', 'Segoe UI', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 1.2rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            padding: 0.5rem 0.8rem;
+            border-radius: var(--border-radius);
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        .nav-link i {
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        /* Filter Buttons */
+        .filters-container {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            scrollbar-width: none;
+        }
+
+        .filters-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-btn {
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            border: none;
+            background-color: white;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .filter-btn i {
+            font-size: 0.8rem;
+        }
+
+        .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        /* Orders List */
+        .orders-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .order-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .invoice-number {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-delivered {
+            background-color: rgba(46, 201, 113, 0.2);
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #721c24;
+        }
+
+        .card-body {
+            padding: 1.2rem;
+        }
+
+        .order-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        .order-info-label {
+            color: var(--gray);
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .order-info-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem 1.5rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            color: var(--light-gray);
+            margin-bottom: 1rem;
+        }
+
+        .empty-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .empty-description {
+            color: var(--gray);
+            font-size: 0.9rem;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid rgba(67, 97, 238, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 2rem auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 0.8rem 1rem;
+            }
+
+            .navbar-links {
+                width: 100%;
+                margin-top: 0.8rem;
+                justify-content: space-between;
+            }
+
+            .nav-link {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.8rem;
+            }
+
+            .orders-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .brand-text {
+                font-size: 1rem;
+            }
+
+            .filter-btn {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <img src="{% static 'img/delivery-logo.png' %}" alt="Logo" class="brand-logo">
+                <span class="brand-text">نظام التوصيل</span>
+            </div>
+            <div class="navbar-links">
+                <a href="/hozma/drivers/" class="nav-link">
+                    <i class="fas fa-home"></i> الرئيسية
+                </a>
+                <a href="#" class="nav-link" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                </a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">سجل طلبات التوصيل</h1>
+                <div id="employeeInfo">
+                    <span id="employeeName">مرحباً، محمد أحمد</span>
+                </div>
+            </div>
+            
+            <div class="filters-container">
+                <button class="filter-btn active" onclick="filterOrders('all', this)">
+                    <i class="fas fa-list"></i> الكل
+                </button>
+                <button class="filter-btn" onclick="filterOrders('delivered', this)">
+                    <i class="fas fa-check-circle"></i> تم التسليم
+                </button>
+                <button class="filter-btn" onclick="filterOrders('cancelled', this)">
+                    <i class="fas fa-times-circle"></i> ملغية
+                </button>
+                <button class="filter-btn" onclick="filterOrders('today', this)">
+                    <i class="fas fa-calendar-day"></i> اليوم
+                </button>
+                <button class="filter-btn" onclick="filterOrders('week', this)">
+                    <i class="fas fa-calendar-week"></i> هذا الأسبوع
+                </button>
+                
+            </div>
+            
+            <div class="orders-list" id="historyContainer"></div>
+            
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            
+            <div id="noHistory" class="empty-state" style="display: none;">
+                <i class="fas fa-box-open empty-icon"></i>
+                <h3 class="empty-title">لا توجد طلبات مسلمة</h3>
+                <p class="empty-description">عند تسليم طلبات جديدة، ستظهر هنا في سجل التوصيل الخاص بك</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+
+    </script>
+<script src="{% static 'HOZMA_FRONT/JS/delevery_man_History.js' %}"></script>
+
+</body>
+</html>

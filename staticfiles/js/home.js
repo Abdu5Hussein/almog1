@@ -353,6 +353,13 @@ document.addEventListener("DOMContentLoaded", function () {
             width: 1100,
             height: 700,
         },
+        {
+            id: "item-15-1",
+            url: "/hozma/Admin-Dashboard/",
+            name: "Hozma-Admin-Dashboard",
+            width: 1100,
+            height: 700,
+        },
     ];
 
     // Assign click events for all menu items
@@ -387,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
     //////analtytic and statistics
 
     async function loadAnalytics() {
-        const response = await fetch("http://45.13.59.226/hozma/api/analytics/items/?period=300");
+        const response = await fetch("/hozma/api/analytics/items/?period=300");
         const data = await response.json();
 
         // Inventory stats
@@ -527,7 +534,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     // Fetch top products
-    /*customFetch('http://45.13.59.226/hozma/api/top-products/')
+    /*customFetch('/hozma/api/top-products/')
       .then(response => response.json())
       .then(data => {
         const topProductsList = document.getElementById('topProductsList');
@@ -551,7 +558,7 @@ document.addEventListener("DOMContentLoaded", function () {
          }, 3000);
      });*/
 
-    customFetch("http://45.13.59.226/hozma/api/preorders/")
+    customFetch("/hozma/api/preorders/")
         .then(response => response.json())
         .then(data => {
             const tbody = document.getElementById("preordersBody");
@@ -585,7 +592,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Failed to load preorders:", error);
         });
 
-    customFetch('http://45.13.59.226/hozma/api/invoice-summary/')
+    customFetch('/hozma/api/invoice-summary/')
         .then(response => response.json())
         .then(data => {
             const totalAmount = data.total_amount.toLocaleString('EN-UK', { style: 'currency', currency: 'LYD' });
@@ -609,7 +616,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-    customFetch('http://45.13.59.226/hozma/api/invoice-stats/')  // Replace with your actual API endpoint
+    customFetch('/hozma/api/invoice-stats/')  // Replace with your actual API endpoint
         .then(res => res.json())
         .then(data => {
             // Update the number of new orders
@@ -634,7 +641,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(err => console.error("Error loading stats:", err));
 
     // Fetch inventory data
-    /*customFetch('http://45.13.59.226/hozma/api/inventory/')
+    /*customFetch('/hozma/api/inventory/')
       .then(response => response.json())
       .then(data => {
         const inventoryTable = document.getElementById('inventoryTable');
@@ -671,7 +678,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     // Fetch data from API
-    fetch('http://45.13.59.226/hozma/api/sales-analysis/')
+    fetch('/hozma/api/sales-analysis/')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -813,7 +820,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-    fetch('http://45.13.59.226/hozma/api/purchase-analysis/')
+    fetch('/hozma/api/purchase-analysis/')
         .then(response => response.json())
         .then(apiData => {
             // Arabic months
