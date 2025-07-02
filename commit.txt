@@ -1,0 +1,42 @@
+ This commit introduces a suite of new features and significant improvements across the                  │
+ │    application, focusing on driver management, user experience, and API capabilities.                      │
+ │                                                                                                            │
+ │    Key changes include:                                                                                    │
+ │                                                                                                            │
+ │    - **Driver Management System:**                                                                         │
+ │      - New driver dashboard with real-time location tracking, order assignment, and delivery               │
+ │    confirmation.                                                                                           │
+ │      - Dedicated history and live map views for delivery personnel.                                        │
+ │      - API endpoints for updating driver location, checking availability, and managing assigned            │
+ │    orders.                                                                                                 │
+ │    - **Enhanced User Management:**                                                                         │
+ │      - Revamped user management interface with separate tables for employees and clients.                  │
+ │      - Improved group assignment logic and granular model-level permissions.                               │
+ │      - New API endpoints for assigning user groups and retrieving model permissions.                       │
+ │    - **Improved Product & Inventory Handling:**                                                            │
+ │      - Extended product model (`Mainitem`) to support `quantity_type` (single, box, pair),                 │
+ │    `box_quantity`, `paired_item`, and `paired_oem` for more flexible inventory management.                 │
+ │      - Updated Excel import functionality to support new product fields.                                   │
+ │      - Implemented automatic pairing of related items based on OEM numbers.                                │
+ │    - **UI/UX Refinements:**                                                                                │
+ │      - Modernized login page with improved styling and phone number normalization.                         │
+ │      - Enhanced invoice display with detailed quantity breakdowns and visual cues for changes.             │
+ │      - Integrated SweetAlert2 for improved user confirmations and Toastify for non-intrusive               │
+ │    notifications.                                                                                          │
+ │      - Updated various static assets (CSS, JS libraries like Bootstrap, AG-Grid, jsPDF,                    │
+ │    Tabulator) for better performance and appearance.                                                       │
+ │    - **API & Backend Enhancements:**                                                                       │
+ │      - Introduced `RequestLoggingMiddleware` for comprehensive request logging.                            │
+ │      - Added `UserProfile` model and associated signals for better user profile management.                │
+ │      - Implemented new API endpoints for daily reports, employee profiles, delivery history,               │
+ │    and client-specific discounts/delivery information.                                                     │
+ │      - Refined existing API views with robust permission checks and improved data handling.                │
+ │    - **Core Infrastructure:**                                                                              │
+ │      - Configured Celery Beat for scheduled database backups to Google Cloud Storage, enhancing            │
+ │    data reliability.                                                                                       │
+ │      - Updated `requirements.txt` to include `google-cloud-storage`.                                       │
+ │                                                                                                            │
+ │    These updates aim to provide a more robust, user-friendly, and feature-rich experience for              │
+ │    managing various aspects of the business operations.'      
+
+                          
